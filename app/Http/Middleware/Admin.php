@@ -23,50 +23,23 @@ class Admin
         $path = request()->getPathInfo();
         $parts = explode('/',$path);
         $active = 1;
-        if(in_array('protocole',$parts) || in_array('protocoles',$parts)){
-            $active = 202;
-        }
-        if(in_array('contrat',$parts) || in_array('contrats',$parts)){
+        if(in_array('dossiers',$parts) || !in_array('prospects',$parts) || in_array('instruction',$parts)){
             $active = 201;
         }
-        if(in_array('banks',$parts)){
-            $active = 301;
+        if(in_array('programmes',$parts)){
+            $active = 3;
         }
-        if(in_array('client',$parts) || in_array('clients',$parts)){
-            $active = 302;
+        if(in_array('entreprises',$parts)|| in_array('entreprise',$parts)){
+            $active = 4;
         }
-        if(in_array('cooperative',$parts) || in_array('cooperatives',$parts)){
-            $active = 303;
+        if(in_array('prospects',$parts)){
+            $active = 5;
         }
-        if(in_array('villages',$parts)){
-            $active = 401;
+        if(in_array('users',$parts)){
+            $active = 6;
         }
-        if(in_array('arrondissements',$parts)){
-            $active = 402;
-        }
-        if(in_array('departements',$parts)){
-            $active = 403;
-        }
-        if(in_array('regions',$parts)){
-            $active = 404;
-        }
-        if(in_array('saisons',$parts)){
+        if(in_array('territoire',$parts)){
             $active = 701;
-        }
-        if(in_array('operateurs',$parts)){
-            $active = 702;
-        }
-        if(in_array('rbassins',$parts)){
-            $active = 703;
-        }
-        if(in_array('pays',$parts)){
-            $active = 704;
-        }
-        if(in_array('a_transactions',$parts)){
-            $active = 501;
-        }
-        if(in_array('livraisons',$parts)){
-            $active = 2;
         }
         Session::put('active',$active);
         return $next($request);

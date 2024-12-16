@@ -10,15 +10,12 @@ class Agence extends Model
     protected $guarded = [];
     public $timestamps = false;
 
-    public function ville()
+    public function representation()
     {
-        return $this->belongsTo('App\Models\Ville');
+        return $this->belongsTo('App\Models\Representation');
     }
 
-    public function libelles()
-    {
-        return $this->belongsToMany('App\Models\Libelle','libelle_agences');
-    }
+   
 
     public function departement()
     {

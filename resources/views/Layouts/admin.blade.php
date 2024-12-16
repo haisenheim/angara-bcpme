@@ -17,46 +17,93 @@
         <h6 class="mainnav__caption mt-0 px-3 fw-bold">Navigation</h6>
         <ul class="mainnav__menu nav flex-column">
            <li class="nav-item">
-               <a href="{{ route('admin.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-5 me-2"></i>
+               <a href="{{ route('admin.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-3 me-2"></i>
                    <span class="nav-label mininav-content ms-1">Tableau de board</span>
                </a>
            </li>
 
-           <li class="nav-item">
-               <a href="{{ route('admin.transactions.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-sync fs-5 me-2"></i>
-                   <span class="nav-label mininav-content ms-1">Transactions</span>
-               </a>
-           </li>
+
+        <!-- Link with submenu -->
+         <li class="nav-item has-sub">
+            <a href="#" class="mininav-toggle nav-link {{ ($active>200&&$active<300)?'active':'' }}"><i class="pli-folders fs-5 me-2"></i>
+                <span class="nav-label ms-1">DOSSIERS</span>
+            </a>
+            <!-- Settings submenu list -->
+            <ul class="mininav-content nav collapse">
+                <li class="nav-item">
+                    <a href="{{ route('admin.dossiers.index') }}" class="nav-link {{ $active==201?'active':'' }}">DOSSIERS D'INSTRUCTION</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link {{ $active==202?'active':'' }}">DOSSIERS DE COMPENSATION</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link {{ $active==203?'active':'' }}">DOSSIERS D'INVESTISSEMENT</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link {{ $active==201?'active':'' }}">DOSSIERS DE GARANTIE</a>
+                </li>
+
+            </ul>
+            <!-- END : Dashboard submenu list -->
+        </li>
+        <!-- END : Link with submenu -->
 
            <li class="nav-item">
-            <a href="{{ route('admin.users.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-conference fs-5 me-2"></i>
+                <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-affiliate fs-2 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">PROGRAMMES</span>
+                </a>
+            </li>
+
+
+
+            <li class="nav-item">
+                <a href="{{ route('admin.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">ENTREPRISES</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-phone-2 fs-2 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">PROSPECTS</span>
+                </a>
+            </li>
+
+
+           <li class="nav-item">
+            <a href="{{ route('admin.users.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-conference fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Utilisateurs</span>
             </a>
         </li>
 
+         <!-- Link with submenu -->
+         <li class="nav-item has-sub">
+             <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}"><i class="pli-map fs-5 me-2"></i>
+                 <span class="nav-label ms-1">Territore</span>
+             </a>
+             <!-- Settings submenu list -->
+             <ul class="mininav-content nav collapse">
+                 <li class="nav-item">
+                     <a href="{{ route('admin.territoire') }}" class="nav-link {{ $active==701?'active':'' }}">Organisation administrative</a>
+                 </li>
+
+             </ul>
+             <!-- END : Dashboard submenu list -->
+         </li>
+         <!-- END : Link with submenu -->
+
 
             <!-- Link with submenu -->
             <li class="nav-item has-sub">
-                <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}"><i class="demo-pli-gears fs-5 me-2"></i>
+                <a href="#" class="mininav-toggle nav-link {{ ($active>800&&$active<900)?'active':'' }}"><i class="demo-pli-gears fs-5 me-2"></i>
                     <span class="nav-label ms-1">Parametres</span>
                 </a>
                 <!-- Settings submenu list -->
                 <ul class="mininav-content nav collapse">
                     <li class="nav-item">
-                        <a href="{{ route('admin.libelles.index') }}" class="nav-link {{ $active==701?'active':'' }}">Libellés d'ecriture</a>
+                        <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
+                        <a href="#" class="nav-link {{ $active==801?'active':'' }}">Banques</a>
                     </li>
-                   <li class="nav-item">
-                       <a href="{{ route('admin.caisses.index') }}" class="nav-link {{ $active==702?'active':'' }}">Caisses</a>
-                   </li>
-                   <li class="nav-item">
-                       <a href="{{ route('admin.agences.index') }}" class="nav-link {{ $active==703?'active':'' }}">Agences</a>
-                   </li>
-                   <li class="nav-item">
-                    <a href="{{ route('admin.tiers.index') }}" class="nav-link {{ $active==705?'active':'' }}">Tiers</a>
-                </li>
-                   <li class="nav-item">
-                       <a href="{{ route('admin.comptes.index') }}" class="nav-link {{ $active==706?'active':'' }}">Comptes</a>
-                   </li>
+
                 </ul>
                 <!-- END : Dashboard submenu list -->
             </li>

@@ -13,20 +13,23 @@ class HomeController extends Controller
        // dd(auth()->user());
         if($user){
             $role_id = $user->role_id;
-           // dd($role_id);
            if($role_id == 1){
-            //Auth::logout();
             return redirect('/admin/dashboard');
            }
            if($role_id == 2){
-            return redirect('/comptable/dashboard');
+            return redirect('/pca/dashboard');
            }
-           if($role_id == 3){
-            return redirect('/caissier/dashboard');
+           if($role_id == 12){
+            return redirect('/ca/dashboard');
            }
-           if($role_id == 4){
-            return redirect('/dcomptable/dashboard');
+           if($role_id == 13){
+            return redirect('/gestionnaire/dashboard');
            }
+           if($role_id == 14){
+            return redirect('/analyste/dashboard');
+           }
+
+
 
 
            return redirect('/login');

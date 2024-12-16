@@ -16,4 +16,8 @@ class Departement extends Model
         return $this->hasMany('App\Models\Agence');
     }
 
+    public function children(){
+        return $this->hasMany('App\Models\Arrondissement','departement_id');
+    }
+
 }

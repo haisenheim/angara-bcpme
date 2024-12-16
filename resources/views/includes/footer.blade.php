@@ -67,12 +67,13 @@
 <link rel="stylesheet" href="{{ asset('assets/vendors/zangdar/zangdar.min.css') }}">
 <!-- Popper JS [ OPTIONAL ] -->
 <script src="{{ asset('assets/vendors/popperjs/popper.min.js') }}" defer></script>
-
+<script src="{{ asset('js/jquery.min.js') }}"></script>
 <!-- Bootstrap JS [ OPTIONAL ] -->
 <script src="{{ asset('assets/vendors/bootstrap/bootstrap.min.js') }}" defer></script>
-
+<script src="{{ asset('assets/vendors/zangdar/zangdar.min.js') }}"></script>
 <!-- Nifty JS [ OPTIONAL ] -->
 <script src="{{ asset('assets/js/nifty.js') }}" defer></script>
+
 <script>
     $('#btn-logout').click(function(){
         $('#logout-form').submit();

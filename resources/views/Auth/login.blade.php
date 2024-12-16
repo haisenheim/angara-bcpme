@@ -31,50 +31,35 @@
     <!-- PAGE CONTAINER -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <div id="root" class="root front-container">
-        <div style="grid-area:2/1/2/2;" class="d-flex justify-content-center m-3">
-            <div>
-                <img style="width:100px;vertical-align:middle;" src="{{ asset('img/logo.png') }}" />
+        <div style="padding: 0; height:100vh;" class="d-flex flex-wrap justify-content-between">
+            <div class="flex-fill" style="background-image: url({{ asset('img/cover.jpg') }});height:100%; background-size:cover">
             </div>
-        </div>
-        <!-- CONTENTS -->
-        <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-        <section id="content" class="content">
-            <div class="content__boxed w-100 min-vh-100 d-flex flex-column align-items-center justify-content-center">
-                <div class="content__wrap">
-                    <!-- Login card -->
-                    <div class="card shadow-lg">
-                        <div class="card-header">
-                            @include('includes.flash-message')
-                        </div>
-                        <div class="card-body">
-                            <div class="text-center">
-                                <h1 class="h3">Connexion</h1>
-                                <p>Connectez vous a votre compte</p>
+            <div id="login" class="w-300px">
+                <div style="" class="card shadow-lg w-100 h-100">
+                    <div style="display:flex; flex-direction:column; justify-content:center; height:100%;" class="card-body">
+                        <div class="text-center">
+                            <div>
+                                <img src="{{asset('img/logo.png')}}" class="rounded-circle" style="width: 100px; height: 100px; margin-bottom: 20px;" alt="">
                             </div>
-
-                            <form class="mt-4" method="POST" action="/login">
-                                @csrf
-                                <div class="mb-3">
-                                    <input type="email" name="email" class="form-control" placeholder="Email" autofocus>
-                                </div>
-                                <div class="mb-3">
-                                    <input type="password" name="password" class="form-control" placeholder="Password">
-                                </div>
-                                <div class="d-grid mt-5">
-                                    <button class="btn btn-primary btn-lg" type="submit">Se connecter</button>
-                                </div>
-                            </form>
-
+                            <h1 class="h3">Connexion</h1>
+                            <p>Connectez vous a votre compte</p>
                         </div>
+                        <form method="POST" action="{{route('login')}}">
+                            @csrf
+                            <div class="mb-3">
+                                <input type="email" name="email" class="form-control" v-model="user.email" placeholder="Email" autofocus>
+                            </div>
+                            <div class="mb-3">
+                                <input type="password" name="password" v-model="user.password" class="form-control" placeholder="Password">
+                            </div>
+                            <div class="d-grid mt-5">
+                                <button class="btn btn-primary btn-lg text-yellow-darken-2" type="submit">Se connecter</button>
+                            </div>
+                        </form>
                     </div>
-                    <!-- END : Login card -->
-
                 </div>
             </div>
-        </section>
-
-        <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-        <!-- END - CONTENTS -->
+        </div>
     </div>
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- END - PAGE CONTAINER -->

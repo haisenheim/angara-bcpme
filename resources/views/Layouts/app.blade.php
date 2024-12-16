@@ -6,7 +6,7 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
     <meta name="description" content="Systeme de reporting de COGELO.">
-    <title>@yield('title') | COGELO</title>
+    <title>@yield('title') | ANGARA</title>
 
     <!-- STYLESHEETS -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--- -->
@@ -25,6 +25,7 @@
     <!-- Nifty Demo Icons [ OPTIONAL ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link href="{{ asset('css/jquill.css') }}" rel="stylesheet">
 
     <!-- Demo purpose CSS [ DEMO ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
@@ -34,6 +35,7 @@
 
     <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
     <script src="{{ asset('js/jquery.min.js') }}"></script>
+
 
 </head>
 
@@ -97,7 +99,7 @@
 
 
                      <!-- Brand title -->
-                     <div class="brand-title">Cogelo</div>
+                     <div class="brand-title">ANGARA</div>
                   </div>
                </div>
                <!-- End - Brand -->
@@ -126,7 +128,7 @@
 
                         <!-- Searchbox input -->
                         <form class="searchbox searchbox--auto-expand searchbox--hide-btn input-group">
-                           <input id="header-search-input" class="searchbox__input form-control bg-transparent" type="search" placeholder="Rechercher ..." aria-label="Search">
+                           <input id="header-search-input" class="searchbox__input form-control bg-transparent" type="search" placeholder="Rechercher ..."  oninput="onFilterTextBoxChanged()" aria-label="Search">
                            <div class="searchbox__backdrop">
                               <button class="searchbox__btn header__btn btn btn-icon rounded shadow-none border-0 btn-sm" type="button">
                                  <i class="demo-pli-magnifi-glass"></i>
@@ -197,6 +199,7 @@
                     <!-- End - Profile widget -->
      <!-- Navigation Category -->
      @yield('navigation')
+     @yield('script')
      <!-- END : Navigation Category -->
  </div>
  <!-- End - Navigation menu -->

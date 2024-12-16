@@ -1,0 +1,48 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc --noEmit && vite build"
+    },
+    "devDependencies": {
+        "@inertiajs/vue3": "^1.0.0",
+        "@tailwindcss/forms": "^0.5.3",
+        "@vitejs/plugin-vue": "^5.0.4",
+        "autoprefixer": "^10.4.12",
+        "axios": "^1.6.4",
+        "laravel-vite-plugin": "^1.0",
+        "postcss": "^8.4.31",
+        "sass": "^1.77.4",
+        "tailwindcss": "^3.2.1",
+        "typescript": "^5.0.2",
+        "vite": "^5.0",
+        "vue": "^3.4.0",
+        "vue-tsc": "^1.8.27"
+    },
+    "dependencies": {
+        "@ckeditor/ckeditor5-build-classic": "^41.3.1",
+        "@handsontable/vue3": "^14.3.0",
+        "@meforma/vue-toaster": "^1.3.0",
+        "@popperjs/core": "^2.11.8",
+        "@syncfusion/ej2-vue-pdfviewer": "^26.1.41",
+        "ag-grid-community": "^33.0.1",
+        "ag-grid-vue3": "^31.3.2",
+        "bootstrap": "^5.3.3",
+        "chart.js": "^4.4.3",
+        "cors": "^2.8.5",
+        "handsontable": "^14.3.0",
+        "html2pdf.js": "^0.10.1",
+        "mitt": "^3.0.1",
+        "pdf-vue3": "^1.0.12",
+        "primevue": "^3.52.0",
+        "vue-chartjs": "^5.3.1",
+        "vue-loading-overlay": "^6.0.4",
+        "vue-pdf-embed": "^2.0.3",
+        "vue-router": "^4.3.2",
+        "vuetify": "^3.6.9",
+        "vuex": "^4.1.0",
+        "vuex-persist": "^3.1.3",
+        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
+    }
+}

@@ -25,54 +25,59 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Telephone</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Departement</th>
-                        <td>Statut</td>
-                        <td>
-                            
-                        </td>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($items as $item)
+            <div style="max-height: 50vh; overflow: scroll;">
+                <table  class="table table-hover table-striped table-sm">
+                    <thead>
                         <tr>
-                            <td>{{ $item->name }}</td>
-                            <td>{{ $item->phone }}</td>
-                            <td>{{ $item->email }}</td>
-                            <th>{{ $item->role->name }}</th>
-                            <td>{{ $item->departement?$item->departement->name:'-'  }}</td>
-                            <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
+                            <th>Nom</th>
+                            <th>Telephone</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Agence</th>
+                            <th>Direction</th>
+                            <td>Statut</td>
                             <td>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-                                       Actions
-                                       <span class="vr"></span>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        @if($item->active)
-                                            <li><a class="dropdown-item" href="{{ route('admin.user.disable',$item->token) }}">Verrouiller</a></li>
-                                        @else
-                                            <li><a class="dropdown-item" href="{{ route('admin.user.enable',$item->token) }}">Activer</a></li>
-                                        @endif
 
-                                        @if($item->role_id==4)
-                                            <li><a data-id="{{ $item->id }}" data-bs-target="#depModal" data-bs-toggle="modal" class="dropdown-item btn-user" href="#">Affecter</a></li>
-                                        @endif
-                                       
-                                                                          
-                                    </ul>
-                                 </div>
                             </td>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($items as $item)
+                            <tr>
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->phone }}</td>
+                                <td>{{ $item->email }}</td>
+                                <th>{{ $item->role->name }}</th>
+                                <td>{{ $item->agence?$item->agence->name:'-'  }}</td>
+                                <td>{{ $item->representation?->name  }}</td>
+                                <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                           Actions
+                                           <span class="vr"></span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            @if($item->active)
+                                                <li><a class="dropdown-item" href="{{ route('admin.user.disable',$item->token) }}">Verrouiller</a></li>
+                                            @else
+                                                <li><a class="dropdown-item" href="{{ route('admin.user.enable',$item->token) }}">Activer</a></li>
+                                            @endif
+
+                                            @if($item->role_id==4)
+                                                <li><a data-id="{{ $item->id }}" data-bs-target="#depModal" data-bs-toggle="modal" class="dropdown-item btn-user" href="#">Affecter</a></li>
+                                            @endif
+
+
+                                        </ul>
+                                     </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
     <div class="modal fade" id="addModal">
@@ -98,6 +103,24 @@
                                         <option value="">Role ...</option>
                                         @foreach($roles as $role)
                                             <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">Agence</label>
+                                    <select required name="agence_id" id="ville_id" class="form-control">
+                                        <option value="0">Selectionner une agence</option>
+                                        @foreach($agences as $item)
+                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">Direction</label>
+                                    <select required name="representation_id" id="ville_id" class="form-control">
+                                        <option value="0">Selectionner une agence</option>
+                                        @foreach($representations as $item)
+                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -137,26 +160,21 @@
                         @csrf
                         <input type="hidden" name="user_id" id="user_id">
                         <div class="mt-3">
-                            <label for="">Ville</label>
-                            <select required name="ville_id" id="ville_id" class="form-control">
-                                <option value="">Selectionner une ville</option>
-                                @foreach($villes as $item)
+                            <label for="">Agence</label>
+                            <select required name="agence_id" id="ville_id" class="form-control">
+                                <option value="">Selectionner une agence</option>
+                                @foreach($agences as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="mt-3">
-                            <label for="">Agence</label>
-                            <select required name="agence_id" id="agence_id" class="form-control">
-                                <option value="">Selectionner une agence</option>
-                                
-                            </select>
-                        </div>
-                        <div class="mt-3">
-                            <label for="">Caisse</label>
-                            <select required name="caisse_id" id="caisse_id" class="form-control">
-                                <option value="">Selectionner une caisse</option>
-                                
+                            <label for="">Role</label>
+                            <select required name="role_id" id="ville_id" class="form-control">
+                                <option value="">choisir</option>
+                                @foreach($roles as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-5">
@@ -168,84 +186,10 @@
         </div>
     </div>
 
-    <div class="modal fade" id="depModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle Affectation</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.user.departement') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="user_id" id="_user_id">
-                        <div class="mt-3">
-                            <label for="">Departement</label>
-                            <select required name="departement_id" id="departement_id" class="form-control">
-                                <option value="">Selectionner un departement</option>
-                                @foreach($departements as $item)
-                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
     <script>
         $(document).ready(function(){
 
-            $('.btn-user').click(function(){
-                var _id = $(this).data('id');
-                $('#user_id').val(_id);
-                $('#_user_id').val(_id);
-            });
 
-            $('#ville_id').change(function(){
-                 var _id = $('#ville_id').val();
-                $.ajax({
-                    url: "{{ route('util.ville.agences') }}",
-                    type:'get',
-                    dataType:'json',
-                    data:{id:_id},
-                    success:function(data){
-                        $('#agence_id').html("<option value=0>Choisir une agence ...</option>");
-                        data.forEach(element => {
-                            $('#agence_id').append(`<option value=${element.id}>${element.name}</option>`);
-                        });
-
-                    },
-                    error:function(err){
-                        console.log(err)
-                    }
-                });
-            })
-
-            $('#agence_id').change(function(){
-                 var _id = $('#agence_id').val();
-                $.ajax({
-                    url: "{{ route('util.agence.caisses') }}",
-                    type:'get',
-                    dataType:'json',
-                    data:{id:_id},
-                    success:function(data){
-                        $('#caisse_id').html("<option value=0>Choisir une caisse ...</option>");
-                        data.forEach(element => {
-                            $('#caisse_id').append(`<option value=${element.id}>${element.name}</option>`);
-                        });
-
-                    },
-                    error:function(err){
-                        console.log(err)
-                    }
-                });
-            })
         })
     </script>
 @endsection

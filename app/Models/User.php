@@ -38,21 +38,19 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Role','role_id');
     }
 
-    public function caisses(){
-        return $this->belongsToMany('App\Models\Caisse','caisses_users');
+    public function agence(){
+        return $this->belongsTo('App\Models\Agence');
     }
+
 
     public function departement(){
         return $this->belongsTo('App\Models\Departement');
     }
 
-    public function region(){
-        return $this->belongsTo('App\Models\Region');
+    public function representation(){
+        return $this->belongsTo('App\Models\Representation');
     }
 
-    public function producteurs(){
-        return $this->belongsToMany('App\Models\Cooperative','operateurs_producteurs','operateur_id','producteur_id');
-    }
 
     public function getStatusAttribute(){
         $data = [
@@ -76,8 +74,8 @@ class User extends Authenticatable
         }else{
             $path = $host.'/img/avatar.png';
         }
-        return $path;  
-        
+        return $path;
+
     }
 
 

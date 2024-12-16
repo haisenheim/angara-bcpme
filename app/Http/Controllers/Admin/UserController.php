@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agence;
 use App\Models\CaisseUser;
 use App\Models\Departement;
+use App\Models\Representation;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Ville;
@@ -21,38 +23,17 @@ class UserController extends Controller
     public function index()
     {
         //
-        $items = User::all();
-        $roles = Role::all();
-        $villes = Ville::all();
-        $departements = Departement::all();
-        return view('/Admin/Users/index')->with(compact('items','roles','villes','departements'));
+        $items = User::where('role_id','>',1)->get();
+        $roles = Role::where('metier',1)->get();
+        $representations = Representation::all();
+        $agences = Agence::all();
+        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences'));
     }
 
-    public function setCaisse(){
-        $item = CaisseUser::where('user_id',request()->user_id)->where('caisse_id',request()->caisse_id)->first();
-        if(!$item){
-            $item = new CaisseUser();
-            $item->user_id = request()->user_id;
-            $item->caisse_id = request()->caisse_id;
-            $item->save();
-            Session::flash('success','Enregistrement effectué avec succès!');
-        }
-        return back();
-    }
 
-    public function setDepartement(){
-        $item = User::find(request()->user_id);
-        $item->departement_id = request()->departement_id;
-        $item->save();
-        return back();
-     }
-
-    public function _setCaisse(){
-       $item = User::find(request()->user_id);
-       $item->caisse_id = request()->caisse_id;
-       $item->save();
-       Session::flash('success','Enregistrement effectué avec succès!');
-        return back();
+    public function getRoles(){
+        $items = Role::where('metier',1)->get();
+        return view('/Admin/Users/roles')->with(compact('items'));
     }
 
 
@@ -84,6 +65,8 @@ class UserController extends Controller
         $user->role_id = request()->role_id;
         $user->phone = request()->phone;
         $user->email = request()->email;
+        $user->agence_id = request()->agence_id;
+        $user->representation_id = request()->representation_id;
         $user->save();
         return back();
     }
@@ -110,7 +93,7 @@ class UserController extends Controller
      */
 	public function show($token)
 	{
-		
+
 	}
 
 
