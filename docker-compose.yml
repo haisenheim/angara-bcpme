@@ -1,7 +1,7 @@
 version: '1.0'
 services:
   instruction:
-    image: instruction:latest
+    image: alliages/angara-instruction:latest
     container_name: instruction_container
     restart: unless-stopped
     build:
@@ -38,11 +38,9 @@ services:
     expose:
       - 3307
     volumes:
-      - ./db:/var/lib/mysql
+      - /var/lib/mysql:/var/lib/mysql
     networks:
       - app-network
-
-volumes:
-  db:
+ 
 networks:
   app-network:
