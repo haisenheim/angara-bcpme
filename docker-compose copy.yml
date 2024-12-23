@@ -10,7 +10,7 @@ services:
     ports:
       - 8081:8080
     env_file:
-      - .env_dc
+      - .env_ms_instruction
     volumes:
       - ./:/home/node/app
       - /home/node/app/node_modules
@@ -28,8 +28,7 @@ services:
     ports:
       - 3310:3306
     environment:
-      MYSQL_USER: 'haisen'
-      # You can use whatever password you like
+      MYSQL_USER: 'jojo'
       MYSQL_PASSWORD: 'youcan'
       MYSQL_DATABASE: 'angara_db'
       # Password for root access
@@ -41,7 +40,6 @@ services:
       - ./db:/var/lib/mysql
     networks:
       - app-network
-
 volumes:
   db:
 networks:
