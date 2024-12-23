@@ -3,10 +3,10 @@
 use App\Http\Controllers\HomeController;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 use App\Models\Produit;
 use App\Models\Question;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +18,28 @@ use App\Models\User;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+Route::get('init/permissions',function(){
+    //die();
+    app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    Permission::create(['name'=>'entreprises.*','label'=>'Gestion des entreprises']);
+    Permission::create(['name'=>'dossiers.*','label'=>'Gestion des dossiers']);
+    Permission::create(['name'=>'entreprises.list','label'=>'Lister toutes les entreprises']);
+    Permission::create(['name'=>'entreprises.my','label'=>'Lister mes entreprises uniquement']);
+    Permission::create(['name'=>'dossiers.list','label'=>'Lister tous les dossiers d\'instruction']);
+    Permission::create(['name'=>'dossiers.my','label'=>'Lister mes dossiers d\'instruction uniquement']);
+    Permission::create(['name'=>'entreprises.create','label'=>'Creer des entreprises']);
+    Permission::create(['name'=>'entreprises.edit','label'=>'Editer toute entreprise']);
+    Permission::create(['name'=>'entreprises.show','label'=>'Afficher une entreprise']);
+    Permission::create(['name'=>'entreprises.extract','label'=>'Extraire de fiche signalitique de l\'entreprise']);
+    Permission::create(['name'=>'dossiers.create','label'=>'Inclure de l\'entreprise au programme']);
+    Permission::create(['name'=>'dossiers.edit','label'=>'Instruire un dossier']);
+    Permission::create(['name'=>'dossiers.show','label'=>'Afficher un dossier d\'instruction']);
+    Permission::create(['name'=>'dossiers.extract','label'=>'Extraire un dossier d\'instruction']);
+    Permission::create(['name'=>'users.handle','label'=>'Gerer des utilisateurs']);
+
+    return 'Initialisation des droits terminee';
+});
 
 Route::get('load',function(){
     /* $produits = Produit::all();
@@ -90,6 +112,9 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
 
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
+        Route::post('programme/user/permissions','ProgrammeController@saveUserPermissions')->name('programme.user.permissions.save');
+        Route::post('programme/poste','ProgrammeController@savePoste')->name('programme.poste.save');
+        Route::post('programme/user','ProgrammeController@saveUser')->name('programme.user.save');
 
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
@@ -125,16 +150,10 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::resource('users','UserController');
         Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
         Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
-        Route::resource('caisses','CaisseController');
-        Route::resource('departements','DepartementController');
-        Route::get('departement/enable/{token}','DepartementController@enable')->name('departement.enable');
-        Route::get('departement/disable/{token}','DepartementController@disable')->name('departement.disable');
+
+
         Route::post('user/caisse','UserController@setCaisse')->name('user.caisse');
         Route::post('user/departement','UserController@setDepartement')->name('user.departement');
-        Route::post('caisse/compte','CaisseController@addCompte')->name('caisse.compte');
-        Route::post('caisse/set/compte','CaisseController@setCompte')->name('caisse.set.compte');
-        Route::post('caisse/add/compte','CaisseController@addCompte')->name('caisse.add.compte');
-        Route::get('caisse/enable/{token}','CaisseController@enable')->name('caisse.enable');
 
         Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
 
@@ -147,7 +166,7 @@ Route::namespace('App\Http\Controllers\Admin')
 
     });
 
-    Route::namespace('App\Http\Controllers\Gestionnaire')
+Route::namespace('App\Http\Controllers\Gestionnaire')
     ->prefix('gestionnaire')
     ->middleware(['auth','gestionnaire'])
     ->name('gestionnaire.')
@@ -199,7 +218,7 @@ Route::namespace('App\Http\Controllers\Admin')
     });
 
 
-    Route::namespace('App\Http\Controllers\Analyste')
+Route::namespace('App\Http\Controllers\Analyste')
     ->prefix('analyste')
     ->middleware(['auth','analyste'])
     ->name('analyste.')
@@ -241,6 +260,54 @@ Route::namespace('App\Http\Controllers\Admin')
 
         Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
 
+        Route::post('instruction/dossier/dsf','InstructionController@loadDsf')->name('instruction.dsf');
+        Route::get('instruction/dossier/create','InstructionController@createDossier')->name('instruction.dossier.create');
+        Route::get('instruction/dossier/{id}','InstructionController@getDossier')->name('instruction.dossier');
+        Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
+        Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+        Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
+
+    });
+
+Route::namespace('App\Http\Controllers\Program')
+    ->prefix('program')
+    ->middleware(['auth','program'])
+    ->name('program.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::get('entreprises','CompanyController@index')->name('entreprises.index')->middleware('permission:entreprises.list');
+        //Route::resource('entreprises','CompanyController')->middleware();
+        //Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+        //Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
+        Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
+        Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
+
+        Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
+        Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
+
+        Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
+        Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
+
+        Route::resource('dossiers','DossierController');
+
+        //Route::resource('programmes','ProgrammeController');
+        Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
+        Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
+
+        Route::resource('users','UserController');
+        Route::get('territoire','TerritoireController@index')->name('territoire');
+        Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+
+
+        //Route::resource('entreprises','EntrepriseController');
+        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+        Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+        Route::post('engagement','EntrepriseController@setEngagement')->name('entreprise.set.engagement');
+        Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
+        Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
         Route::post('instruction/dossier/dsf','InstructionController@loadDsf')->name('instruction.dsf');
         Route::get('instruction/dossier/create','InstructionController@createDossier')->name('instruction.dossier.create');
         Route::get('instruction/dossier/{id}','InstructionController@getDossier')->name('instruction.dossier');

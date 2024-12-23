@@ -42,6 +42,10 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Agence');
     }
 
+    public function poste(){
+        return $this->belongsTo('App\Models\Poste');
+    }
+
 
     public function departement(){
         return $this->belongsTo('App\Models\Departement');

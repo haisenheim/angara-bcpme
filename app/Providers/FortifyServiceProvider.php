@@ -6,8 +6,10 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Models\Programme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -27,7 +29,7 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 return redirect('/');
             }
-        }); 
+        });
     }
 
     /**
@@ -35,6 +37,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        //Fortify::ignoreRoutes();
+
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
@@ -51,6 +55,18 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::loginView(function () {
+            $host = request()->header('host');
+            $names = explode('.',$host);
+            $subdomain = $names[0];
+            $program = Programme::all();
+            $program = $program->filter(function($item)use($subdomain){
+                $name = str_replace('-',' ',$subdomain);
+                return strtoupper($item->name) == strtoupper($subdomain);
+            })->first();
+            //dd($program);
+            if($program){
+                return view('Auth.Programs.login',compact('program'));
+            }
             return view('Auth.login');
         });
     }

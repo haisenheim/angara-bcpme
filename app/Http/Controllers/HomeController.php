@@ -29,6 +29,10 @@ class HomeController extends Controller
             return redirect('/analyste/dashboard');
            }
 
+           if($role_id == 19){
+            return redirect('/program/dashboard');
+           }
+
 
 
 

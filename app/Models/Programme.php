@@ -8,10 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Programme extends Model
 {
     use HasFactory;
+    protected $table = 'programmes';
     protected $guarded = [];
 
     public function composantes(){
         return $this->hasMany('App\Models\Composante','programme_id');
+    }
+
+    public function users(){
+        return $this->hasMany('App\Models\User','programme_id');
+    }
+
+    public function postes(){
+        return $this->hasMany('App\Models\Poste','programme_id');
     }
 
     public function organismes(){

@@ -8,13 +8,16 @@ use App\Models\Banque;
 use App\Models\Composante;
 use App\Models\Indicateur;
 use App\Models\Organisme;
+use App\Models\Poste;
 use App\Models\Programme;
 use App\Models\ProgrammeAppui;
 use App\Models\ProgrammeIndicateur;
 use App\Models\ProgrammeOrgamisme;
 use App\Models\ProgrammeProduit;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Spatie\Permission\Models\Permission;
 
 class ProgrammeController extends Controller
 {
@@ -104,8 +107,41 @@ class ProgrammeController extends Controller
         $banques = Banque::all();
         $organismes = Organisme::all();
         $indicateurs = Indicateur::all();
-        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs'));
+        $permissions = Permission::all();
+        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','permissions'));
     }
+
+
+    public function saveUserPermissions(Request $request){
+       // dd($request->all());
+       $user = User::find($request->user_id);
+       $permissions = $request->permissions;
+       $user->syncPermissions($permissions);
+       Session::flash('success','Enregistrement effectué avec succès!');
+       return back();
+    }
+
+    public function saveUser(Request $request){
+         //dd($request->all());
+         $user = new User();
+         $user->name = $request->name;
+         $user->email = $request->email;
+         $user->phone = $request->phone;
+         $user->password = bcrypt($request->password);
+         $user->token = sha1(time().auth()->user()->id);
+         $user->role_id = 19;
+         $user->programme_id = $request->programme_id;
+        $user->save();
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return back();
+     }
+
+     public function savePoste(Request $request){
+        // dd($request->all());
+        Poste::create($request->all());
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return back();
+     }
 
 
     public function saveComposante(Request $request)

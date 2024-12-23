@@ -20,6 +20,8 @@
         <li><a class="dropdown-item" data-bs-target="#addModal" data-bs-toggle="modal" href="#">Ajouter une composante</a></li>
         <li><a class="dropdown-item" data-bs-target="#addIndModal" data-bs-toggle="modal" href="#">Ajouter un objectif</a></li>
         <li><a class="dropdown-item" href="#">Editer des informations du programme</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addUserModal" data-bs-toggle="modal" href="#">Ajouter un utilisateur programme</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addPosteModal" data-bs-toggle="modal" href="#">Ajouter un poste programme</a></li>
     </ul>
  </div>
 @endsection
@@ -110,7 +112,10 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Entreprises</button>
-                         </li>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1"><i class="pli-conference fs-4 me-2 text-blue"></i> Comptes utilisateurs</button>
+                        </li>
                     </ul>
 
 
@@ -210,6 +215,47 @@
                                         <td>{{ $ent->name }}</td>
                                         <td>{{ $ent->localite }}</td>
                                         <td>{{ $ent->taille }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                       </div>
+                       <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                        <table class="table table-bordered table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Poste</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Permissions</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($item->users as $user)
+                                    <tr>
+                                        <td>{{ $user->name }}</td>
+                                        <td>{{ $user->poste?->name }}</td>
+                                        <td>{{ $user->email }}</td>
+                                        <td>{{ $user->phone }}</td>
+                                        <td>
+                                            <ul class="list-inline">
+                                                @foreach ($user->permissions as $p)
+                                                    <li class="list-inline-item">{{ $p->label }},</li>
+                                                @endforeach
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false"> </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item permission-link" data-id="{{ $user->id }}" data-bs-target="#permissionsModal" data-bs-toggle="modal" href="#">Definir les droits</a></li>
+                                                    <li><a class="dropdown-item" href="#">Bloquer le compte</a></li>
+
+                                                </ul>
+                                             </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -327,7 +373,128 @@
         </div>
     </div>
 
+    <div class="modal fade" id="permissionsModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Definition des droits</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('admin.programme.user.permissions.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="token" value="{{ $item->token }}">
+                        <input type="hidden" id="user_id" name="user_id" >
+                        <div style="max-height: 400px; overflow: scroll;">
+                            <ul class="list-group">
+                                @foreach ($permissions as $permission)
+                                    <li class="list-group-item">
+                                        <div class="form-group">
+                                            <div class="form-check form-check-inline">
+                                                <label for="" class="form-check-label">{{ $permission->label }}</label>
+                                                <input id="" class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}">
+
+                                            </div>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addPosteModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouveau poste</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('admin.programme.poste.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="programme_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="mb-3">
+                                    <label for="">Intitulé du poste  </label>
+                                    <input type="text" name="name"  id="name" class="form-control">
+                                </div>
+                            </div>
+                        <div class="mt-2">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addUserModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouvel utilisateur</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form  action="{{ route('admin.programme.user.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="programme_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="mb-3">
+                                    <label for="">Nom  </label>
+                                    <input required type="text" name="name"  id="name" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="">Poste  </label>
+                                    <select required name="poste_id"  class="form-control">
+                                        <option value="">Choisir un poste ...</option>
+                                        @foreach ($item->postes as $poste)
+                                            <option value="{{ $poste->id }}">{{ $poste->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="">Téléphone  </label>
+                                    <input required type="text" name="phone"  id="phone" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="">Email  </label>
+                                    <input required type="email" name="email"  id="email" class="form-control">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="">Mot de passe  </label>
+                                    <input required type="password" name="password"  id="password" class="form-control">
+                                </div>
+                            </div>
+                        <div class="">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+
+        $('.permission-link').click(function(){
+            $('#user_id').val($(this).data('id'))
+        })
+
+
         $('#banque_id').change(function(){
             $('#name').val($('#banque_id option:selected').text())
             $('#organisme_id').prop('disabled',true)
