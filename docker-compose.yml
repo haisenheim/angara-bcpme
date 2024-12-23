@@ -10,7 +10,7 @@ services:
     ports:
       - 8081:8080
     env_file:
-      - .env_dc
+      - .env_ms_instruction
     volumes:
       - ./:/home/node/app
       - /home/node/app/node_modules
