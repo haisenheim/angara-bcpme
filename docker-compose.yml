@@ -37,9 +37,10 @@ services:
     expose:
       - 3307
     volumes:
-      - /var/lib/mysql:/var/lib/mysql
+      - ./db:/var/lib/mysql
     networks:
       - app-network
-
+volumes:
+  db:
 networks:
   app-network:
