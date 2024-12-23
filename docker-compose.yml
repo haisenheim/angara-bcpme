@@ -29,7 +29,6 @@ services:
       - 3307:3306
     environment:
       MYSQL_USER: 'haisen'
-      # You can use whatever password you like
       MYSQL_PASSWORD: 'youcan'
       MYSQL_DATABASE: 'angara_db'
       # Password for root access
