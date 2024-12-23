@@ -1,4 +1,4 @@
-version: '1.0'
+version: '2.2'
 services:
   instruction:
     image: alliages/angara-instruction:latest
@@ -41,6 +41,6 @@ services:
       - /var/lib/mysql:/var/lib/mysql
     networks:
       - app-network
- 
+
 networks:
   app-network:
