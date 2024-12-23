@@ -26,9 +26,9 @@ services:
     container_name: mysql
     restart: always
     ports:
-      - 3307:3306
+      - 3310:3306
     environment:
-      MYSQL_USER: 'haisen'
+      MYSQL_USER: 'jojo'
       MYSQL_PASSWORD: 'youcan'
       MYSQL_DATABASE: 'angara_db'
       # Password for root access
