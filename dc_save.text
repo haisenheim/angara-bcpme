@@ -1,5 +1,5 @@
-version: '2.2'
-services:
+#version: '3'
+#services:
   instruction:
     image: alliages/angara-instruction:latest
     container_name: instruction_container
@@ -40,7 +40,7 @@ services:
       - ./db:/var/lib/mysql
     networks:
       - app-network
-volumes:
+#volumes:
   db:
-networks:
+#networks:
   app-network:

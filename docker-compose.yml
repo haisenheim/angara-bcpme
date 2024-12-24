@@ -1,48 +1,46 @@
-version: '2.2'
+version: '3.8'
+
 services:
-  instruction:
-    image: alliages/angara-instruction:latest
-    container_name: instruction_container
-    restart: unless-stopped
-    build:
-      context: .
-      target: build
-    ports:
-      - 8081:8080
-    env_file:
-      - .env_ms_instruction
+  # Service MySQL
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: secret  # Remplacez par un mot de passe sécurisé
+      MYSQL_DATABASE: angara_db                  # Nom de la base de données
+      MYSQL_USER: 'adonis_user'                    # Nom de l'utilisateur de la base de données
+      MYSQL_PASSWORD: youcan          # Mot de passe de l'utilisateur
+      #MYSQL_ROOT_HOST: '%'
     volumes:
-      - ./:/home/node/app
-      - /home/node/app/node_modules
-    #command: node ace serve --watch
+      - mysql-data:/var/lib/mysql
     networks:
-      - app-network
+      - custom_network
+    ports:
+      - "3310:3306"  # Expose le port 3306 pour l'accès depuis l'hôte (si nécessaire)
+
+  # Service AdonisJS
+  adonisjs:
+    image: alliages/angara-instruction:latest
+    environment:
+      NODE_ENV: production
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: 'adonis_user'
+      DB_PASSWORD: youcan
+      DB_DATABASE: angara_db
+      PORT: 8080
+      APP_KEY: jhjwejewjhjehwjejwhgew738232787329939
     depends_on:
       - mysql
-
-
-  mysql:
-    image: mysql:8.0.40
-    container_name: mysql
-    restart: always
-    ports:
-      - 3310:3306
-    environment:
-      MYSQL_USER: 'haisen'
-      # You can use whatever password you like
-      MYSQL_PASSWORD: 'youcan'
-      MYSQL_DATABASE: 'angara_db'
-      # Password for root access
-      MYSQL_ROOT_PASSWORD: 'secret'
-
-    expose:
-      - 3307
-    volumes:
-      - ./db:/var/lib/mysql
     networks:
-      - app-network
+      - custom_network
+    ports:
+      - "8080:8080"  # Expose le port 3333 pour l'accès à l'application AdonisJS depuis l'hôte
+
+networks:
+  custom_network:
+    driver: bridge  # Utilisation du driver bridge, mais sur un réseau personnalisé
 
 volumes:
-  db:
-networks:
-  app-network:
+  mysql-data:
+    driver: local
