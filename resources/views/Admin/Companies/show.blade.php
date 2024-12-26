@@ -314,7 +314,7 @@
                                                 <th>{{ $tier->company->name }}</th>
                                                 <td>{{ $tier->company->email }}</td>
                                                 <td>{{ $tier->company->phone }}</td>
-                                                <td>{{ $tier->company->produit->name }}</td>
+                                                <td>{{ $tier->company->produit?->name }}</td>
                                                 <td>{{ $tier->company->manager }}</td>
                                                 <th>{{ $tier->lien }}</th>
                                                 <td><span class="badge bg-{{ $tier->company->prospect?'danger':'success' }}">{{ $tier->company->prospect?'E':'I' }}</span></td>
