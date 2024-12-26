@@ -16,9 +16,11 @@ class ApmeImport implements ToCollection, SkipsEmptyRows,WithHeadingRow
 
     public function collection(Collection $rows)
     {
+        $i=0;
         foreach ($rows as $row)
         {
             //dd($row);
+            $i++;
             $agence = Agence::find($row['agence_id']);
             $gestionnaire = User::where('role_id',13)->where('agence_id',$agence->id)->first();
             $phones=null;
@@ -34,6 +36,7 @@ class ApmeImport implements ToCollection, SkipsEmptyRows,WithHeadingRow
                 'manager_sexe'=>$row['sexe_du_dirigeant']?(trim($row['sexe_du_dirigeant'])=='F'?'Femme':'Homme'):null,
                 'manager_contact'=>$row['numero_principal_mobile_money']?$row['numero_principal_mobile_money']:'',
                 'mm_phone'=>$phones?$phones[0]:'',
+                'token'=>sha1(time().$i),
             ]);
         }
     }
