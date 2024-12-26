@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Imports\ApmeImport;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Route;
 use App\Models\Produit;
 use App\Models\Question;
 use App\Models\User;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Permission;
 
 /*
@@ -40,6 +42,14 @@ Route::get('init/permissions',function(){
 
     return 'Initialisation des droits terminee';
 });
+
+Route::get('apme',function(){
+    //$file = request()->fichier;
+    Excel::import(new ApmeImport, public_path('files/apme.xlsx'));
+    return 'Ok';
+});
+
+
 
 Route::get('load',function(){
     /* $produits = Produit::all();
