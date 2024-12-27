@@ -39,7 +39,7 @@
             /* Changes the color of the grid background */
             backgroundColor: "rgb(241, 247, 255)",
             /* Changes the header color of the top row */
-            headerBackgroundColor: "rgb(228, 237, 250)",
+            headerBackgroundColor: "rgb(36,40,47)",
             /* Changes the hover color of the row*/
             rowHoverColor: "rgb(216, 226, 255)",
             });
@@ -61,9 +61,9 @@
 
             const gridOptions = {
             theme: agGrid.themeBalham.withParams({
-                headerBackgroundColor: '#0f85f2',
+                headerBackgroundColor: '#24282f',
                 headerHeight: '30px',
-                headerTextColor: 'white',
+                headerTextColor: 'rgba(242, 142, 142, 0.7)',
             }),
             rowData: null,
             columnDefs: columnDefs,
@@ -114,11 +114,5 @@
             });
     </script>
     @endsection
-
-
-    <style>
-        .form-group{
-            margin-top: 1rem;
-        }
     </style>
 @endsection

@@ -19,7 +19,7 @@ body {
 :root {
   --nf-backdrop-bg: rgba(26, 29, 33, 0.75);
   --nf-content-title-size: 2.25rem;
-  --nf-content-title-color: #a51416; /* var(--bs-primary); */
+  --nf-content-title-color: var(--bs-primary);
   --nf-content-title-weight: 500;
 }
 
@@ -750,7 +750,7 @@ body[style*=background]:not(.boxed-layout) > .front-container, .bg-img:not(.boxe
   color: inherit !important;
 }
 .root.mn--min .nav-item:not(.has-sub) .nav-link.active > .nav-label {
-  color: #a51416;
+  color: var(--nf-mainnav-link-active);
   text-decoration: var(--nf-mainnav-link-active-underline) var(--nf-mainnav-link-active-underline-color);
   text-underline-offset: 5px;
 }
@@ -1587,7 +1587,7 @@ body[style*=background]:not(.boxed-layout) > .front-container, .bg-img:not(.boxe
   --nf-mainnav-bg: var(--bs-primary);
   --nf-mainnav-color: var(--bs-primary-color);
   --nf-mainnav-secondary-color: rgba(var(--bs-primary-color-rgb), 0.4);
-  --nf-mainnav-link-color: rgba(242, 142, 142, 0.7);
+  --nf-mainnav-link-color: rgba(var(--bs-primary-color-rgb), 0.7);
   --nf-mainnav-link-hover: var(--bs-primary-color);
   --nf-mainnav-link-active: var(--bs-primary-color);
   --nf-mainnav-link-active-underline-color: rgba(var(--bs-primary-color-rgb), 0.3);

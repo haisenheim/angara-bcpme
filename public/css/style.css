@@ -43,12 +43,12 @@ legend{
     width:75px;
 }
 body{
-    background-image:url('/img/logo.png');
+   /* background-image:url('/img/logo.png'); */
     background-size:contain;
     background-repeat: no-repeat;
     background-position:center;
     /*opacity: 0.95; */
-    opacity: 0.98;
+   /* opacity: 0.98;*/
 }
 
 #content{

@@ -2,54 +2,48 @@
 <html lang="en" data-bs-theme="light" data-scheme="night" style="font-size:14px;">
 
 <head>
+    <meta name="generator" content="Hugo 0.87.0" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
-    <meta name="description" content="The navigation will transform into a small vertical bar that will save you space for the content to be displayed on the screen.">
-    <title>ANGARA | @yield('title')</title>
-
+    <meta name="description" content="Systeme de reporting de COGELO.">
+    <title>@yield('title') | ANGARA</title>
 
     <!-- STYLESHEETS -->
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
+    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--- -->
+    <link rel="icon" type="image/svg" sizes="32x32" href="{{ asset('img/favicon.ico') }}">
     <!-- Fonts [ OPTIONAL ] -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;family=Ubuntu:wght@400;500;700&amp;display=swap" rel="stylesheet">
-
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS [ REQUIRED ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.css') }}">
 
     <!-- Nifty CSS [ REQUIRED ] -->
-    <link rel="stylesheet" href="{{ asset('assets/css/nifty.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/nifty.min.css') }}">
 
-       <!-- Nifty Demo Icons [ OPTIONAL ] -->
-       <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
-       <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-       <link href="{{ asset('css/jquill.css') }}" rel="stylesheet">
+    <!-- Nifty Demo Icons [ OPTIONAL ] -->
+    <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link href="{{ asset('css/jquill.css') }}" rel="stylesheet">
 
-        <!-- Demo purpose CSS [ DEMO ] -->
-        <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/line-icons/premium-line-icons.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/solid-icons/premium-solid-icons.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/solid-icons/premium-line-icons.min.css') }}">
+    <!-- Demo purpose CSS [ DEMO ] -->
+    <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/line-icons/premium-line-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/solid-icons/premium-solid-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/solid-icons/premium-line-icons.min.css') }}">
 
-        <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
-        <script src="{{ asset('js/jquery.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
+    <script src="{{ asset('js/jquery.min.js') }}"></script>
 
-        <!-- Favicons [ OPTIONAL ] -->
-        <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
-        <link rel="manifest" href="./site.webmanifest">
 
- </head>
+</head>
 
 <body class="out-quart" style="">
 
     <!-- PAGE CONTAINER -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <div id="root" class="root mn--max tm--primary-mn">
+    <div id="root" class="root mn--min tm--fair-hd">
 
         <!-- CONTENTS -->
         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
