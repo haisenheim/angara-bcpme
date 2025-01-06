@@ -54,16 +54,13 @@ class Entreprise extends Model
         return $this->belongsTo('App\Models\User');
     }
 
-    public function agence(){
-        return $this->belongsTo('App\Models\agence');
-    }
 
     public function taille(){
-        return $this->belongsTo('App\Models\taille');
+        return $this->belongsTo('App\Models\Taille');
     }
 
     public function representation(){
-        return $this->belongsTo('App\Models\agence');
+        return $this->belongsTo('App\Models\Representation');
     }
 
     public function region(){

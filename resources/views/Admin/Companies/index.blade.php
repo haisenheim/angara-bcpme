@@ -64,9 +64,9 @@
 
             const gridOptions = {
             theme: agGrid.themeBalham.withParams({
-                headerBackgroundColor: '#0f85f2',
+                headerBackgroundColor: "var(--bs-primary)",
                 headerHeight: '30px',
-                headerTextColor: 'white',
+                headerTextColor: 'var(--nf-mainnav-link-color)',
             }),
             rowData: null,
             columnDefs: columnDefs,
@@ -88,7 +88,8 @@
             paginationPageSizeSelector: [100, 200, 1000],
             rowSelection: {
                 mode: 'singleRow',
-                hideDisabledCheckboxes: true
+                checkboxes: false,
+                enableClickSelection: true,
             },
         };
 

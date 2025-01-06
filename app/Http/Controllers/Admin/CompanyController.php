@@ -13,7 +13,6 @@ use App\Models\EntrepriseProduit;
 use App\Models\Forme;
 use App\Models\Person;
 use App\Models\Programme;
-use App\Models\Question;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Tier;
