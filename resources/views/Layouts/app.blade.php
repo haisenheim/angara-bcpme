@@ -42,6 +42,16 @@
         <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
         <link rel="manifest" href="./site.webmanifest">
+        <style>
+            @media (min-width: 768px) {
+              div.mn--max  a.brand-img{
+                    margin-inline-start: -25px;
+                    margin-top:-10px;
+                    height: 50px;
+                    width: var(--nf-mainnav-max-width);
+                }
+            }
+        </style>
 
  </head>
 
@@ -99,13 +109,9 @@
                   <div class="brand-wrap">
 
                      <!-- Brand logo -->
-                     <a href="index.html" class="brand-img stretched-link">
-                        <img style="width: 40px; height:40px; color:white" src="{{ asset('img/logo.png') }}" alt="Nifty Logo" class="Nifty logo mt-1" width="16" height="16">
+                     <a href="#" class="brand-img stretched-link">
+                        <img style="width: 100%; height:50px; color:white" src="{{ asset('img/logo.jpg') }}" alt="Angara Logo" class="Nifty logo mt-1" width="16" height="16">
                      </a>
-
-
-                     <!-- Brand title -->
-                     <div class="brand-title">ANGARA</div>
                   </div>
                </div>
                <!-- End - Brand -->
@@ -171,7 +177,10 @@
 
                         <!-- Profile picture  -->
                         <div class="mininav-toggle text-center py-2">
-                            <img class="mainnav__avatar img-md rounded-circle border" src="{{ asset('assets/img/profile-photos/1.png') }}" alt="Profile Picture">
+                            <?php
+                                $uxx = \Illuminate\Support\Facades\Session::get('user');
+                            ?>
+                            <img class="mainnav__avatar img-md rounded-circle border" src="{{ $uxx->photo  }}" alt="Profile Picture">
                         </div>
 
                         <div class="mininav-content collapse d-mn-max">

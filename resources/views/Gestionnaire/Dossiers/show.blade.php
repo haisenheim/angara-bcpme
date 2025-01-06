@@ -18,7 +18,7 @@
     <span class="vr"></span>
     </button>
     <ul class="dropdown-menu analyse">
-        <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations de l’Analyste Financier</a></li>
+        <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations du gestionnaire</a></li>
     </ul>
 </div>
 @endsection

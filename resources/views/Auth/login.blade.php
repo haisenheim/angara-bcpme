@@ -39,7 +39,7 @@
                     <div style="display:flex; flex-direction:column; justify-content:center; height:100%;" class="card-body">
                         <div class="text-center">
                             <div>
-                                <img src="{{asset('img/logo.png')}}" class="rounded-circle" style="width: 100px; height: 100px; margin-bottom: 20px;" alt="">
+                                <img src="{{asset('img/logo.jpg')}}" class="" style="width: 100%; height: 100px; margin-bottom: 20px;" alt="">
                             </div>
                             <h1 class="h3">Connexion</h1>
                             <p>Connectez vous a votre compte</p>

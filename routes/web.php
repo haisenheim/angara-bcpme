@@ -414,4 +414,5 @@ Route::namespace('App\Http\Controllers\Program')
 
 Route::get('/home',[HomeController::class,'index'])->name('home')->middleware('auth');
 Route::get('/profile',[HomeController::class,'profile'])->name('profile')->middleware('auth');
+Route::post('/profile',[HomeController::class,'storeProfile'])->name('profile.store')->middleware('auth');
 Route::post('/logout',[HomeController::class,'logout'])->name('logout')->middleware('auth');
