@@ -4,11 +4,12 @@ use App\Http\Controllers\HomeController;
 use App\Imports\ApmeImport;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Route;
-use App\Models\Produit;
 use App\Models\Question;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Permission;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,34 @@ Route::get('apme',function(){
     //$file = request()->fichier;
     Excel::import(new ApmeImport, public_path('files/apme.xlsx'));
     return 'Ok';
+});
+
+Route::get('test-airtel',function(){
+    $headers = array(
+        'Content-Type' => 'application/json',
+        'Accept' => '*/*',
+        'X-Country' => 'CG',
+        'X-Currency' => 'XAF',
+        'Authorization' => 'Bearer UC*****2w',
+        'x-signature' => 'MGsp*********Ag==',
+        'x-key' => 'DVZC***********NM='
+      );
+      $client = new Http();
+      // Define array of request body.
+      $request_body = array();
+      try {
+        $response = $client->post('https://openapiuat.airtel.africa/standard/v2/cashin/', array(
+          'headers' => $headers,
+          'json' => $request_body
+          )
+        );
+       print_r($response->getBody()->getContents());
+      }
+      catch (HttpException $e) {
+      // handle exception or api errors.
+        print_r($e->getMessage());
+      }
+
 });
 
 
@@ -278,6 +307,56 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
     });
+
+Route::namespace('App\Http\Controllers\Ca')
+    ->prefix('ca')
+    ->middleware(['auth','ca'])
+    ->name('ca.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::get('entreprises','CompanyController@index')->name('entreprises.index');
+        Route::get('entreprises/{token}','CompanyController@show')->name('entreprises.show');
+        Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+        Route::resource('dossiers','DossierController');
+        Route::get('programmes','ProgrammeController@index')->name('programmes.index');
+        Route::get('programmes/{token}','ProgrammeController@show')->name('programmes.show');
+        Route::get('users','UserController@index')->name('users.index');
+        Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
+        Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
+        Route::get('territoire','TerritoireController@index')->name('territoire');
+        Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+        Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+        Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+});
+
+Route::namespace('App\Http\Controllers\Regional')
+    ->prefix('regional')
+    ->middleware(['auth','regional'])
+    ->name('regional.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::get('entreprises','CompanyController@index')->name('entreprises.index');
+        Route::get('entreprises/{token}','CompanyController@show')->name('entreprises.show');
+        Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+        Route::resource('dossiers','DossierController');
+        Route::get('programmes','ProgrammeController@index')->name('programmes.index');
+        Route::get('programmes/{token}','ProgrammeController@show')->name('programmes.show');
+        Route::get('users','UserController@index')->name('users.index');
+        Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
+        Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
+        Route::get('territoire','TerritoireController@index')->name('territoire');
+        Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+        Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+        Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+});
 
 Route::namespace('App\Http\Controllers\Program')
     ->prefix('program')

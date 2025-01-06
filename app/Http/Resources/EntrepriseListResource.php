@@ -20,6 +20,8 @@ class EntrepriseListResource extends JsonResource
             'cnps'=>$this->cnps,
             'rccm'=>$this->rccm,
             'niu'=>$this->niu,
+            'agence'=>$this->agence?->name,
+            'representation'=>$this->representation?->name,
             'commune'=>$this->arrondissement?->name,
             'departement'=>$this->departement?->name,
             'region'=>$this->region?->name,
