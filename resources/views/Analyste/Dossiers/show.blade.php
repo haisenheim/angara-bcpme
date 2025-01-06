@@ -453,7 +453,7 @@
             data: new FormData( this ),
             success:function(data){
                 console.log(data)
-                window.location.replace('/analyste/dossier/'+token)
+                window.location.replace('/analyste/dossiers/'+token)
             },
             processData: false,
             contentType: false
