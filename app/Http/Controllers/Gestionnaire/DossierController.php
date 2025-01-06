@@ -39,6 +39,6 @@ class DossierController extends Controller
         $banques = $resp['banques'];
         $sme = $resp['sme'];
 
-        return view('/Gestionnaire/dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
+        return view('Gestionnaire/Dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
     }
 }

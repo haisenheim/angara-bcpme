@@ -4,10 +4,7 @@ namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
-use App\Http\Resources\EntrepriseListResource;
 use App\Models\Dossier;
-use App\Models\Entreprise;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class DossierController extends Controller
@@ -39,6 +36,6 @@ class DossierController extends Controller
         $banques = $resp['banques'];
         $sme = $resp['sme'];
 
-        return view('/Analyste/dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
+        return view('Analyste/Dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
     }
 }
