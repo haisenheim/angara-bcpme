@@ -47,7 +47,8 @@
                 <form enctype="multipart/form-data" id="form" method="post">
                     @csrf
                     <div class="form-group">
-                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" placeholder="Saisir ici l'ID assigne au dossier dans le service de creation" name="dossier_id" class="form-control">
+                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
+                        <input type="hidden" id="token" value="{{ $item->token }}">
                     </div>
                     <div class="form-group">
                         <label for="">ANNEE N</label>
@@ -444,6 +445,7 @@
         .submit( function( e ) {
             var _url = "http://localhost:8080/dossier"
             var dossier_id = $('#dossier_id').val()
+            var token = $('#token').val()
             console.log(dossier_id)
             $.ajax( {
             url: _url,
@@ -451,7 +453,7 @@
             data: new FormData( this ),
             success:function(data){
                 console.log(data)
-                window.location.replace('/analyste/instruction/dossier/'+dossier_id)
+                window.location.replace('/analyste/instruction/dossier/'+token)
             },
             processData: false,
             contentType: false
