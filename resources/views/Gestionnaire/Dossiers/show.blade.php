@@ -39,23 +39,6 @@
             <p><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
         </div>
         <div class="card-body">
-            <form enctype="multipart/form-data" id="form" method="post">
-                @csrf
-                <div class="form-group">
-                    <input type="hidden" id="dossier_id" value="{{ $item->id }}" placeholder="Saisir ici l'ID assigne au dossier dans le service de creation" name="dossier_id" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="">ANNEE N</label>
-                    <input type="number" name="annee" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label for="">FICHIER DSF</label>
-                    <input type="file" name="upload" class="form-control">
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-primary"><i class="pli-save"></i>ENREGISTRER</button>
-                </div>
-            </form>
         </div>
         <div class="card-footer">
             @if($sme)

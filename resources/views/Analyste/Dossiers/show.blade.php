@@ -63,9 +63,11 @@
                 </form>
             </div>
             <div class="card-footer">
-                <h3>{{ $sme['name'] }}</h3>
-                <h4>{{ $sme['mention'] }}</h4>
-                <p>{{ $sme['description'] }}</p>
+                @if($sme)
+                    <h3>{{ $sme['name'] }}</h3>
+                    <h4>{{ $sme['mention'] }}</h4>
+                    <p>{{ $sme['description'] }}</p>
+                @endif
             </div>
         </div>
         <div class="card flex-fill">
@@ -73,23 +75,24 @@
                 <div class="">
                     <!-- Underline nav tabs with base -->
                     <div class="tab-base">
-                       <!-- Nav tabs -->
-                       <ul class="nav nav-underline nav-component border-bottom" role="tablist">
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
-                          </li>
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
-                          </li>
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
-                          </li>
-                       </ul>
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-underline nav-component border-bottom" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
+                        </li>
+                    </ul>
 
 
-                       <!-- Tabs content -->
-                       <div class="tab-content">
-                          <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+                    <!-- Tabs content -->
+                    <div class="tab-content">
+                        <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
@@ -104,6 +107,7 @@
 
                                     </tr>
                                 </thead>
+                                @if(count($indicateurs))
                                 <tbody>
                                     <tr>
                                         <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
@@ -188,9 +192,10 @@
                                             <th colspan="2">{{ $sme['name'] }}</th>
                                         </tr>
                                 </tbody>
+                                @endif
                             </table>
-                          </div>
-                          <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
+                        </div>
+                        <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
                                 <div class="mt-2 border rounded rounded-2 p-2">
                                     <h4>1. INFORMATIONS GENERALES</h4>
                                     <p><?= $dossier['donneesGenerales'] ?></p>
@@ -219,8 +224,8 @@
                                     <h4>7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
                                     <p><?= $dossier['conclusionsAnalyste'] ?></p>
                                 </div>
-                          </div>
-                          <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                        </div>
+                        <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table sm table-bordered">
                                 <thead>
                                     <tr>
@@ -250,10 +255,10 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                          </div>
-                       </div>
+                        </div>
                     </div>
-                 </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
