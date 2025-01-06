@@ -47,7 +47,8 @@
                 <form enctype="multipart/form-data" id="form" method="post">
                     @csrf
                     <div class="form-group">
-                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" placeholder="Saisir ici l'ID assigne au dossier dans le service de creation" name="dossier_id" class="form-control">
+                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
+                        <input type="hidden" id="token" value="{{ $item->token }}">
                     </div>
                     <div class="form-group">
                         <label for="">ANNEE N</label>
@@ -125,7 +126,7 @@
                                     @endforeach
                                     <tr>
                                         <td colspan="7"></td>
-                                        <th>{{ $criteres[0]['note'] }}</th>
+                                        <th>{{ isset($criteres[0]['note'])?$criteres[0]['note']:0 }}</th>
                                     </tr>
                                     <tr>
                                         <th rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
@@ -143,7 +144,7 @@
                                     @endforeach
                                     <tr>
                                         <td colspan="7"></td>
-                                        <th>{{ $criteres[1]['note'] }}</th>
+                                        <th>{{ isset($criteres[1]['note'])?$criteres[1]['note']:0  }}</th>
                                     </tr>
                                     <tr>
                                         <td rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</td>
@@ -179,7 +180,7 @@
                                         @endforeach
                                         <tr>
                                             <td colspan="7"></td>
-                                            <th>{{ $criteres[3]['note'] }}</th>
+                                            <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
                                         </tr>
                                         <tr>
                                             <th colspan="4"></th>
@@ -444,6 +445,7 @@
         .submit( function( e ) {
             var _url = "http://localhost:8080/dossier"
             var dossier_id = $('#dossier_id').val()
+            var token = $('#token').val()
             console.log(dossier_id)
             $.ajax( {
             url: _url,
@@ -451,7 +453,7 @@
             data: new FormData( this ),
             success:function(data){
                 console.log(data)
-                window.location.replace('/admin/instruction/dossier/'+dossier_id)
+                window.location.replace('/admin/dossiers/'+token)
             },
             processData: false,
             contentType: false

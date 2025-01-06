@@ -126,7 +126,7 @@
                                     @endforeach
                                     <tr>
                                         <td colspan="7"></td>
-                                        <th>{{ $criteres[0]['note'] }}</th>
+                                        <th>{{ isset($criteres[0]['note'])?$criteres[0]['note']:0 }}</th>
                                     </tr>
                                     <tr>
                                         <th rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
@@ -144,7 +144,7 @@
                                     @endforeach
                                     <tr>
                                         <td colspan="7"></td>
-                                        <th>{{ $criteres[1]['note'] }}</th>
+                                        <th>{{ isset($criteres[1]['note'])?$criteres[1]['note']:0  }}</th>
                                     </tr>
                                     <tr>
                                         <td rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</td>
@@ -180,7 +180,7 @@
                                         @endforeach
                                         <tr>
                                             <td colspan="7"></td>
-                                            <th>{{ $criteres[3]['note'] }}</th>
+                                            <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
                                         </tr>
                                         <tr>
                                             <th colspan="4"></th>
