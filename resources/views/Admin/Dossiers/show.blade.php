@@ -63,9 +63,11 @@
                 </form>
             </div>
             <div class="card-footer">
-                <h3>{{ $sme['name'] }}</h3>
-                <h4>{{ $sme['mention'] }}</h4>
-                <p>{{ $sme['description'] }}</p>
+                @if($sme)
+                    <h3>{{ $sme['name'] }}</h3>
+                    <h4>{{ $sme['mention'] }}</h4>
+                    <p>{{ $sme['description'] }}</p>
+                @endif
             </div>
         </div>
         <div class="card flex-fill">
@@ -90,6 +92,7 @@
                        <!-- Tabs content -->
                        <div class="tab-content">
                           <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
@@ -104,6 +107,7 @@
 
                                     </tr>
                                 </thead>
+                                @if(count($criteres))
                                 <tbody>
                                     <tr>
                                         <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
@@ -188,6 +192,7 @@
                                             <th colspan="2">{{ $sme['name'] }}</th>
                                         </tr>
                                 </tbody>
+                                @endif
                             </table>
                           </div>
                           <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
