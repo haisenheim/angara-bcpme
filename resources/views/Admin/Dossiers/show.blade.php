@@ -107,7 +107,7 @@
 
                                     </tr>
                                 </thead>
-                                @if(count($criteres))
+                                @if(count($indicateurs))
                                 <tbody>
                                     <tr>
                                         <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
