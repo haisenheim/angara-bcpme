@@ -417,7 +417,17 @@
                             </table>
                        </div>
                        <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="fichier-tab">
-                        <h5>FICHIERS</h5>
+                        <h5 class="fs-6">PIECES CONSTITUTIVES</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <th>DOCUMENT</th>
+                                <th>LIEN</th>
+                                <th></th>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
                    </div>
                     </div>
                  </div>

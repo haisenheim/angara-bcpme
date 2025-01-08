@@ -22,6 +22,10 @@ class Entreprise extends Model
         return $this->hasMany('App\Models\Dossier','entreprise_id');
     }
 
+    public function fichiers(){
+        return $this->hasMany('App\Models\Fichier','entreprise_id');
+    }
+
     public function produit(){
         return $this->belongsTo('App\Models\Produit'); //produit principale
     }
