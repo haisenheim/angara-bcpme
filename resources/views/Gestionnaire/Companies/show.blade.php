@@ -17,7 +17,7 @@
        <span class="vr"></span>
     </button>
     <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="#">Ajouter un appui</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
@@ -448,6 +448,39 @@
                                         <option value="0">Selectionner un analyste ...</option>
                                         @foreach($analystes as $it)
                                             <option value="{{ $it->id }}">{{ $it->name }}-{{ $it->agence?->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addAppuiModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Ajouter un appui</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.appui.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="form-group">
+                                    <label for="">Programme</label>
+                                    <select required  name="appui_id" id="appui_id" class="form-control cmp">
+                                        <option value="0">Selectionner un appui ...</option>
+                                        @foreach($appuis as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }} ({{ $it->financier?'financier':'non financier' }})</option>
                                         @endforeach
                                     </select>
                                 </div>

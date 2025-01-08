@@ -217,6 +217,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
+        Route::post('entreprise/appui','CompanyController@saveAppui')->name('entreprise.appui.save');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 

@@ -24,12 +24,12 @@
 @section('content')
     <div class="d-flex justify-content-center">
         <div class="d-flex gap-0" style="width: 900px">
-            <div style="width: 20px;" class="bg-blue">
+            <div style="width: 20px;" class="bg-dark">
 
             </div>
             <div class="card flex-fill">
                 <div class="card-header">
-                    <h5>POUR L'ENTREPRISE: <span class="text-blue">{{ $item->name }}</span></h5>
+                    <h5>POUR L'ENTREPRISE: <span class="text-danger">{{ $item->name }}</span></h5>
                 </div>
                 <div class="card-body">
                     <form method="post" action="{{ route('gestionnaire.entreprise.morale.save') }}">

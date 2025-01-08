@@ -31,7 +31,6 @@
 
 
 @section('content')
-
 <div class="d-flex gap-1">
     <div class="card w-400px">
         <div class="card-header">
@@ -95,7 +94,7 @@
                                         <td>{{ $sc['sequence'] }}</td>
                                         <td>{{ $sc['default'] }}%</td>
                                         <td>{{ $sc['name'] }}</td>
-                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"></span></td>
                                         <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
                                         <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
                                         <td></td>
@@ -113,7 +112,7 @@
                                         <td>{{ $sc['sequence'] }}</td>
                                         <td>{{ $sc['default'] }}%</td>
                                         <td>{{ $sc['name'] }}</td>
-                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }}</td>
                                         <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
                                         <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
                                         <td></td>
@@ -149,7 +148,7 @@
                                             <td>{{ $sc['sequence'] }}</td>
                                             <td>{{ $sc['default'] }}%</td>
                                             <td>{{ $sc['name'] }}</td>
-                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }}</td>
                                             <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
                                             <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
                                             <td></td>
@@ -175,31 +174,31 @@
                       </div>
                       <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>1. INFORMATIONS GENERALES</h4>
+                                <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
                                 <p><?= $dossier['donneesGenerales'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>2. ANALYSE D'ENSEMBLE</h4>
+                                <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
                                 <p><?= $dossier['analyseEnsemble'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>3. ANALYSE FINANCIERE</h4>
+                                <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
                                 <p><?= $dossier['analyseFinanciere'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
+                                <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
                                 <p><?= $dossier['appuis'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
+                                <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
                                 <p><?= $dossier['analyseRisque'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
+                                <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
                                 <p><?= $dossier['analyseRentabilite'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
-                                <h4>7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
+                                <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
                                 <p><?= $dossier['conclusionsAnalyste'] ?></p>
                             </div>
                       </div>

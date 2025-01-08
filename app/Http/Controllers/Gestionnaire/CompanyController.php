@@ -16,6 +16,7 @@ use App\Models\Programme;
 use App\Models\Question;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
+use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -107,17 +108,10 @@ class CompanyController extends Controller
     {
         //
        $data = $request->except('_token','type_personnel');
-        //$anfs = explode(',',$request->appuisnf);
-        //$afs = explode(',',$request->appuisf);
-        //$produits = explode(',',$request->autres);
         $type_personnel = $request->type_personnel;
-        //$data['token'] = sha1(time().rand(0,99));
         $ar = Arrondissement::find($data['arrondissement_id']);
         $data['departement_id'] = $ar->departement_id;
         $data['region_id'] = $ar->departement->region_id;
-       // $data['user_id'] = auth()->user()->id;
-        //$data['agence_id'] = auth()->user()->agence_id;
-       // $data['representation_id'] = auth()->user()->representation_id;
         $data['personnel_'.$type_personnel] = 1;
         $entreprise = Entreprise::updateOrcreate(['token'=>$data['token']],$data);
 
@@ -157,7 +151,8 @@ class CompanyController extends Controller
         $mr = $groups;
         $analystes = User::where('role_id',14)->where('agence_id',auth()->user()->agence_id)->get();
         $programmes = Programme::all();
-        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes'));
+        $appuis = Service::all();
+        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis'));
 
     }
 
@@ -178,6 +173,18 @@ class CompanyController extends Controller
             ],
             $data
         );
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return back();
+    }
+
+    public function saveAppui(Request $request)
+    {
+
+        EntrepriseAppui::create([
+            'entreprise_id'=>$request->entreprise_id,
+            'service_id'=>$request->appui_id
+        ]);
+
         Session::flash('success','Enregistrement effectué avec succès!');
         return back();
     }
