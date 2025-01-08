@@ -211,7 +211,10 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
     ->name('gestionnaire.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
+
         Route::resource('entreprises','CompanyController');
+        Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
+
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
@@ -328,9 +331,9 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
-        Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-        Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+       // Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+       // Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+       // Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
 });
 
 Route::namespace('App\Http\Controllers\Regional')
@@ -353,9 +356,9 @@ Route::namespace('App\Http\Controllers\Regional')
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
-        Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-        Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+       // Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+       // Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+       // Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
 });
 
 Route::namespace('App\Http\Controllers\Program')
@@ -380,19 +383,19 @@ Route::namespace('App\Http\Controllers\Program')
         Route::resource('dossiers','DossierController');
 
         //Route::resource('programmes','ProgrammeController');
-        Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
-        Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
+        //Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
+        //Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
 
         Route::resource('users','UserController');
-        Route::get('territoire','TerritoireController@index')->name('territoire');
+        //Route::get('territoire','TerritoireController@index')->name('territoire');
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
-        Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        //Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
 
 
         //Route::resource('entreprises','EntrepriseController');
-        Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+       Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
         Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
         Route::post('engagement','EntrepriseController@setEngagement')->name('entreprise.set.engagement');
         Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');

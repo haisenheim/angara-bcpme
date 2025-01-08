@@ -23,7 +23,7 @@
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
-        <li><a class="dropdown-item" href="#">Editer des information de l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}">Editer des information de l'entreprise</a></li>
     </ul>
  </div>
 @endsection

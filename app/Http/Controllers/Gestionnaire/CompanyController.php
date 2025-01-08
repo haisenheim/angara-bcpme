@@ -103,6 +103,30 @@ class CompanyController extends Controller
         return redirect(route('gestionnaire.entreprises.index'));
     }
 
+    public function save(Request $request)
+    {
+        //
+       $data = $request->except('_token','type_personnel');
+        //$anfs = explode(',',$request->appuisnf);
+        //$afs = explode(',',$request->appuisf);
+        //$produits = explode(',',$request->autres);
+        $type_personnel = $request->type_personnel;
+        //$data['token'] = sha1(time().rand(0,99));
+        $ar = Arrondissement::find($data['arrondissement_id']);
+        $data['departement_id'] = $ar->departement_id;
+        $data['region_id'] = $ar->departement->region_id;
+       // $data['user_id'] = auth()->user()->id;
+        //$data['agence_id'] = auth()->user()->agence_id;
+       // $data['representation_id'] = auth()->user()->representation_id;
+        $data['personnel_'.$type_personnel] = 1;
+        $entreprise = Entreprise::updateOrcreate(['token'=>$data['token']],$data);
+
+        //dd($data);
+        Session::flash('success','Enregistrement effectué avec succès!');
+        //return back();
+        return redirect(route('gestionnaire.entreprises.index'));
+    }
+
     /**
      * Display the specified resource.
      */
@@ -268,9 +292,15 @@ class CompanyController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $token)
     {
         //
+        $item = Entreprise::where('token',$token)->first();
+        if($item){
+            $formes = Forme::all();
+            return view('Gestionnaire.Companies.edit',compact('item','formes'));
+        }
+        return back();
     }
 
     /**

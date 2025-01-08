@@ -78,7 +78,7 @@
          <!-- Link with submenu -->
          <li class="nav-item has-sub">
              <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}"><i class="pli-map fs-5 me-2"></i>
-                 <span class="nav-label ms-1">Territore</span>
+                 <span class="nav-label ms-1">Territoire</span>
              </a>
              <!-- Settings submenu list -->
              <ul class="mininav-content nav collapse">
