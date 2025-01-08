@@ -199,6 +199,9 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
                          </li>
+                         <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">PIECES CONSTITUTIVES</button>
+                         </li>
                     </ul>
 
 
@@ -413,6 +416,9 @@
                                 </tbody>
                             </table>
                        </div>
+                       <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="fichier-tab">
+                        <h5>FICHIERS</h5>
+                   </div>
                     </div>
                  </div>
             </div>
