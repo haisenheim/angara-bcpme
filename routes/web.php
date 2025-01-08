@@ -276,7 +276,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
         Route::resource('dossiers','DossierController');
-
+        Route::post('dossier/dsf','DossierController@loadDsf')->name('dossier.dsf');
         Route::resource('programmes','ProgrammeController');
         Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
         Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');

@@ -44,7 +44,7 @@
                 <p><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
             </div>
             <div class="card-body">
-                <form enctype="multipart/form-data" id="form" method="post">
+                <form enctype="multipart/form-data" action="{{ route('analyste.dossier.dsf') }}" id="form" method="post">
                     @csrf
                     <div class="form-group">
                         <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
@@ -198,31 +198,31 @@
                         </div>
                         <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>1. INFORMATIONS GENERALES</h4>
+                                    <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
                                     <p><?= $dossier['donneesGenerales'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>2. ANALYSE D'ENSEMBLE</h4>
+                                    <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
                                     <p><?= $dossier['analyseEnsemble'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>3. ANALYSE FINANCIERE</h4>
+                                    <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
                                     <p><?= $dossier['analyseFinanciere'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
+                                    <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
                                     <p><?= $dossier['appuis'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
+                                    <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
                                     <p><?= $dossier['analyseRisque'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
+                                    <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
                                     <p><?= $dossier['analyseRentabilite'] ?></p>
                                 </div>
                                 <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4>7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
+                                    <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
                                     <p><?= $dossier['conclusionsAnalyste'] ?></p>
                                 </div>
                         </div>
@@ -441,7 +441,7 @@
         })
         //var url = "{{ route('analyste.instruction.dsf') }}"
 
-        $( '#form' )
+        $( '#form_' )
         .submit( function( e ) {
             var _url = "http://localhost:8080/dossier"
             var dossier_id = $('#dossier_id').val()

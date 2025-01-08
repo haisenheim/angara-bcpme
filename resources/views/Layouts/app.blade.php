@@ -6,11 +6,8 @@
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
     <meta name="description" content="The navigation will transform into a small vertical bar that will save you space for the content to be displayed on the screen.">
     <title>ANGARA | @yield('title')</title>
-
-
     <!-- STYLESHEETS -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
     <!-- Fonts [ OPTIONAL ] -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -36,6 +33,7 @@
 
         <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
         <script src="{{ asset('js/jquery.min.js') }}"></script>
+        <script src="{{ asset('js/quill.min.js') }}"></script>
 
         <!-- Favicons [ OPTIONAL ] -->
         <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -180,7 +178,7 @@
                             <?php
                                 $uxx = \Illuminate\Support\Facades\Session::get('user');
                             ?>
-                            <img class="mainnav__avatar img-md rounded-circle border" src="{{ $uxx->photo  }}" alt="Profile Picture">
+                            <img class="mainnav__avatar img-md rounded-circle border" src="{{ $uxx?->photo  }}" alt="Profile Picture">
                         </div>
 
                         <div class="mininav-content collapse d-mn-max">
