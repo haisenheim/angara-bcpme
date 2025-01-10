@@ -1587,11 +1587,11 @@ body[style*=background]:not(.boxed-layout) > .front-container, .bg-img:not(.boxe
   --nf-mainnav-bg: var(--bs-primary);
   --nf-mainnav-color: var(--bs-primary-color);
   --nf-mainnav-secondary-color: rgba(var(--bs-primary-color-rgb), 0.4);
-  --nf-mainnav-link-color: rgba(242, 142, 142, 0.7);
+  --nf-mainnav-link-color: rgba(255, 255, 255, 0.7);
   --nf-mainnav-link-hover: var(--bs-primary-color);
   --nf-mainnav-link-active: var(--bs-primary-color);
   --nf-mainnav-link-active-underline-color: rgba(var(--bs-primary-color-rgb), 0.3);
-  --nf-mainnav-icon-color: var(--bs-primary-color);
+  --nf-mainnav-icon-color: rgba(255, 255, 255);;
   --nf-mainnav-heading-color: var(--bs-primary-color);
   --nf-mainnav-border-color: var(--bs-primary-border);
   --nf-mainnav-submenu-active-bg: rgba(0, 0, 0, 0.25);

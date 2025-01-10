@@ -12,6 +12,10 @@ legend{
     font-size:0.75rem;
 }
 
+.btn-primary{
+    --bs-btn-color:rgba(255, 255, 255, 0.7);
+}
+
 .details span{
     font-weight: 800;
 }
