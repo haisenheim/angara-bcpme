@@ -25,7 +25,7 @@ class Gestionnaire
         $path = request()->getPathInfo();
         $parts = explode('/',$path);
         $active = 1;
-        if(in_array('dossiers',$parts) || !in_array('prospects',$parts) || in_array('instruction',$parts)){
+        if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
             $active = 201;
         }
         if(in_array('programmes',$parts)){

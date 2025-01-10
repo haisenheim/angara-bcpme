@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 use Symfony\Component\HttpFoundation\Response;
 
 class Pca
@@ -19,6 +20,28 @@ class Pca
         if($user->role_id!=2){
             return redirect('/login');
         }
+        $path = request()->getPathInfo();
+        $parts = explode('/',$path);
+        $active = 1;
+        if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
+            $active = 201;
+        }
+        if(in_array('programmes',$parts)){
+            $active = 3;
+        }
+        if(in_array('entreprises',$parts)|| in_array('entreprise',$parts)){
+            $active = 4;
+        }
+        if(in_array('prospects',$parts)){
+            $active = 5;
+        }
+        if(in_array('users',$parts)){
+            $active = 6;
+        }
+        if(in_array('territoire',$parts)){
+            $active = 701;
+        }
+        Session::put('active',$active);
         return $next($request);
     }
 }

@@ -19,8 +19,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     $active = \Illuminate\Support\Facades\Session::get('active');
 ?>
      <!-- Navigation Category -->
-     <div class="mainnav__categoriy py-3">
-        <h6 class="mainnav__caption mt-0 px-3 fw-bold">Navigation</h6>
+     <div class="mainnav__categoriy py-3 mb-4">
         <ul class="mainnav__menu nav flex-column">
            <li class="nav-item">
                <a href="{{ route('analyste.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-3 me-2"></i>
