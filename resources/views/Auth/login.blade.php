@@ -32,16 +32,8 @@
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <div id="root" class="root front-container">
         <div style="padding: 0; height:100vh;" class="d-flex flex-wrap justify-content-between">
-            <div class="flex-fill">
-                <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        
-                        <div class="carousel-item">
-                            <img src="{{ asset('img/slides/slide_2.jpg') }}" class="d-block w-100"  alt="...">
-                        </div>
+            <div style="background-image: url({{ asset('img/slides/slide_13.jpg') }});height:100%; background-size:cover" class="flex-fill">
 
-                    </div>
-                </div>
             </div>
             <div id="login" class="w-300px">
                 <div style="" class="card shadow-lg w-100 h-100">

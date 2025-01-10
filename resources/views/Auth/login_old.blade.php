@@ -34,10 +34,22 @@
 
         <section id="content" class="content">
             <div class="content__boxed w-100 min-vh-100 d-flex">
-                <div style="background: url({{ asset('img/cover.jpg') }}); height:100%" class="flex-fill">
-
+                <div style="height:100%; max-width:900px;" class="">
+                        <div id="carouselExampleSlidesOnly" style="width: 100%;" class="carousel slide" data-bs-ride="carousel">
+                                <div style="width: 100%;" class="carousel-inner">
+                                    <div  class="carousel-item active">
+                                        <img src="{{ asset('img/slides/slide_11.jpg') }}" class="d-block w-100" alt="...">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ asset('img/slides/slide_12.jpg') }}" class="d-block w-100" alt="...">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ asset('img/slides/slide_5.jpg') }}" class="d-block w-100" alt="...">
+                                    </div>
+                                </div>
+                        </div>
                 </div>
-                <div class="content__wrap w-300px">
+                <div style="width: 300px;" class="content__wrap w-300px">
                     <div style="margin:1rem auto;">
                         <img style="width:100px; margin:1px auto;" src="{{ asset('img/logo.png') }}" />
                     </div>
