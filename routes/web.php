@@ -168,7 +168,10 @@ Route::namespace('App\Http\Controllers\Admin')
 
         Route::resource('programmes','ProgrammeController');
         Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
+        Route::post('programme/appui','ProgrammeController@saveAppui')->name('programme.appui.save');
+        Route::post('programme/produit','ProgrammeController@saveProduit')->name('programme.produit.save');
         Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
+        Route::post('programme/save','ProgrammeController@save')->name('programmes.save');
 
         Route::resource('users','UserController');
         Route::get('territoire','TerritoireController@index')->name('territoire');

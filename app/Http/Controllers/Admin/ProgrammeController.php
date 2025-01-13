@@ -14,6 +14,7 @@ use App\Models\ProgrammeAppui;
 use App\Models\ProgrammeIndicateur;
 use App\Models\ProgrammeOrgamisme;
 use App\Models\ProgrammeProduit;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -93,6 +94,18 @@ class ProgrammeController extends Controller
 
     }
 
+    public function save(Request $request)
+    {
+        $data = $request->except('_token','type_entreprise','type_personne');
+        $data['user_id'] = auth()->user()->id;
+        $data['type_pp'] = implode('-',$request->type_personne);
+        $data['type_pm'] = implode('-',$request->type_entreprise);
+        $item = Programme::updateOrCreate(['id'=>$request->id],$data);
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return redirect(route('admin.programmes.show',$item->token));
+
+    }
+
     /**
      * Display the specified resource.
      */
@@ -108,7 +121,8 @@ class ProgrammeController extends Controller
         $organismes = Organisme::all();
         $indicateurs = Indicateur::all();
         $permissions = Permission::all();
-        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','permissions'));
+        $services = Service::all();
+        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','permissions','services'));
     }
 
 
@@ -161,6 +175,38 @@ class ProgrammeController extends Controller
         return redirect(route('admin.programmes.show',$token));
     }
 
+
+    public function saveAppui(Request $request)
+    {
+        //dd($request->all());
+        $token = $request->token;
+        $data = $request->except('token');
+        ProgrammeAppui::updateOrCreate(
+            [
+            'programme_id'=>$request->programme_id,
+            'service_id'=>$request->service_id??0
+            ],
+            $data
+        );
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return redirect(route('admin.programmes.show',$token));
+    }
+
+    public function saveProduit(Request $request)
+    {
+        $token = $request->token;
+        $data = $request->except('token');
+        ProgrammeProduit::updateOrCreate(
+            [
+            'programme_id'=>$request->programme_id,
+            'produit_id'=>$request->produit_id??0
+            ],
+            $data
+        );
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return redirect(route('admin.programmes.show',$token));
+    }
+
     public function saveResultat(Request $request)
     {
         //dd($request->all());
@@ -180,9 +226,11 @@ class ProgrammeController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $token)
     {
         //
+        $item = Programme::where('token',$token)->first();
+        return view('/Admin/Programmes/edit',compact('item'));
     }
 
     /**

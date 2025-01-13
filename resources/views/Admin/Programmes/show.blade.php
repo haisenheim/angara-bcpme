@@ -3,6 +3,9 @@
 @section('title', 'Accueil')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
+    <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/default/easyui.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/icon.css') }}">
+    <script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
        <li class="breadcrumb-item"><a href="#">Programmes</a></li>
@@ -19,7 +22,9 @@
     <ul class="dropdown-menu">
         <li><a class="dropdown-item" data-bs-target="#addModal" data-bs-toggle="modal" href="#">Ajouter une composante</a></li>
         <li><a class="dropdown-item" data-bs-target="#addIndModal" data-bs-toggle="modal" href="#">Ajouter un objectif</a></li>
-        <li><a class="dropdown-item" href="#">Editer des informations du programme</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addProdModal" data-bs-toggle="modal" href="#">Ajouter un secteur</a></li>
+        <li><a class="dropdown-item" href="{{ route('admin.programmes.edit',$item->token) }}">Editer des informations du programme</a></li>
         <li><a class="dropdown-item" data-bs-target="#addUserModal" data-bs-toggle="modal" href="#">Ajouter un utilisateur programme</a></li>
         <li><a class="dropdown-item" data-bs-target="#addPosteModal" data-bs-toggle="modal" href="#">Ajouter un poste programme</a></li>
     </ul>
@@ -363,6 +368,70 @@
                             <div class="mb-3">
                                 <label for="">Objectif attendu </label>
                                 <input required type="text" name="attente"  id="name" class="form-control">
+                            </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addAppuiModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouvel objectif</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('admin.programme.appui.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="token" value="{{ $item->token }}">
+                        <input type="hidden" name="programme_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="form-group">
+                                    <label for="">Appui</label>
+                                    <select required  name="service_id" id="service_id" class="form-control cmp">
+                                        <option value="0">Selectionner un service ...</option>
+                                        @foreach($services as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addProdModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouvel objectif</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('admin.programme.produit.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="token" value="{{ $item->token }}">
+                        <input type="hidden" name="programme_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div style="width: 300px" class="form-group mt-2 mb-3">
+                                    <select id="produit_id" name="produit_id" class="easyui-combotree form-control" style="width: 300px"
+                                        data-options="url:'{{ route('util.produits.list') }}',method:'get',label:'Produit principal:',labelPosition:'top'">
+                                    </select>
+                                </div>
                             </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
