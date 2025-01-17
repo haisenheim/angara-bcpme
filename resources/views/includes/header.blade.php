@@ -26,6 +26,9 @@
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
+    <!-- Angara Custom Style -->
+    <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+
     <!-- Demo purpose CSS [ DEMO ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/line-icons/premium-line-icons.min.css') }}">

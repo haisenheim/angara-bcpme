@@ -1,88 +1,100 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light" data-scheme="night">
+<html lang="fr">
 
-<head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
-    <meta name="description" content="The login page allows a user to gain access to an application by entering their username and password or by authenticating using a social media login.">
-    <title>Login | ANGARA</title>
-    <link rel="icon" type="image/svg" sizes="32x32" href="{{ asset('img/favicon.ico') }}">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>
+			@yield('title') | ANGARA FINANCE
+		</title>
+		<link href="{{ asset('img/favicon.ico') }}" rel="icon">
+		<link href="{{ asset('img/apple-icon.png') }}" rel="apple-icon">
+		<link href="https://fonts.cdnfonts.com/css/roboto" rel="stylesheet">
+		<link href="https://fonts.cdnfonts.com/css/open-sans" rel="stylesheet">
+		<!-- Bootstrap CSS [ REQUIRED ] -->
+        <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
+        <!-- Angara Custom Style -->
+        <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+		<link href="{{ asset('css/style.css') }}" rel="stylesheet">
+		<link rel="stylesheet" href="{{ asset('css/nice-select2.css') }}">
 
-    <!-- STYLESHEETS -->
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--- -->
+	</head>
 
-    <!-- Fonts [ OPTIONAL ] -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <!-- Bootstrap CSS [ REQUIRED ] -->
-    <link rel="stylesheet" href="{{asset('assets/css/bootstrap.css')}}">
-
-    <!-- Nifty CSS [ REQUIRED ] -->
-    <link rel="stylesheet" href="{{ asset('assets/css/nifty.css') }}">
-
-    <!-- Nifty Demo Icons [ OPTIONAL ] -->
-    <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
-</head>
-
-<body class="">
-
-    <!-- PAGE CONTAINER -->
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <div id="root" class="root front-container">
-        <div style="padding: 0; height:100vh;" class="d-flex flex-wrap justify-content-between">
-            <div style="background-image: url({{ asset('img/slides/slide_13.jpg') }});height:100%; background-size:cover" class="flex-fill">
-
-            </div>
-            <div id="login" class="w-300px">
-                <div style="" class="card shadow-lg w-100 h-100">
-                    <div style="display:flex; flex-direction:column; justify-content:center; height:100%;" class="card-body">
-                        <div class="text-center">
-                            <div>
-                                <img src="{{asset('img/logo.jpg')}}" class="" style="width: 100%; height: 100px; margin-bottom: 20px;" alt="">
+	<body>
+		<div id="menu-overlay"></div>
+			<div class="main-container"> 
+                @php
+                    $table = [
+                        [
+                            'src' => "img/new/slides/slide-1.jpg",
+                            'alt' => "Angara agriculture",
+                            'text' => "Le système expert en finances pour fédérer tous les secteurs d’activités"
+                        ],
+                        [
+                            'src' => "img/new/slides/slide-2.jpg",
+                            'alt' => "Angara Elevage",
+                            'text' => "Recevez en temps réel les informations financières de votre secteur d’activité."
+                        ],
+                        [
+                            'src' => "img/new/slides/slide-3.jpg",
+                            'alt' => "Angara agriculture",
+                            'text' => "Mettez à niveau votre entreprise au niveau structurel et financier"
+            ],
+            [
+                            'src' => "img/new/slides/slide-4.jpg",
+                            'alt' => "Angara agriculture",
+                            'text' => "Optimisez votre entreprise pour vos besoins d'investissement"
+                        ]
+                    ];
+                @endphp
+				<form method="post" class="form" action="{{route('login')}}">
+                    @csrf
+                    <div class="login-container">
+                        <aside>
+                            <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
+                                <ol class="carousel-indicators">
+                                    @for ($i = 0; $i < count($table); $i++)
+                                        <li data-target="#carouselExampleIndicators" data-slide-to="{{ $i }}" class="{{ $i === 0 ? 'active' : '' }} indicator-item"></li>
+                                    @endfor
+                                </ol>
+                                <div class="carousel-inner h-100">
+                                    @for ($i = 0; $i < count($table); $i++)
+                                        <div class="carousel-item h-100 {{ $i === 0 ? 'active' : '' }}">
+                                            <div class="d-block w-100 h-100 mask" style="background-image: url({{ $table[$i]['src'] }});">
+                                                <div class="d-flex flex-column justify-content-end carousel-text h-100 w-30">
+                                                    <h3 class="color-primary bold">ANGARA</h3>
+                                                    <h4 class="color-ligth bold">{{ $table[$i]['text'] }}</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endfor
+                                </div>
                             </div>
-                            <h1 class="h3">Connexion</h1>
-                            <p>Connectez vous a votre compte</p>
+                        </aside>
+                        <div class="login-content d-flex flex-column align-items-center justify-content-center">
+                            <img src="{{asset('img/logo.png')}}" alt="angara" class="margin-bottom">
+                            <h3 class="bold margin-bottom">Connectez vous</h3>
+                            <input type="email" name="email" class="margin-bottom" v-model="user.email" placeholder="Email" autofocus>
+                            {{-- @if ($errors->has('email'))
+                                <span class="text-danger">{{ $errors->first('email') }}</span>
+                            @endif --}}
+                            <input type="password" name="password" v-model="user.password" class="margin-bottom" placeholder="Password">
+                            {{-- @if ($errors->has('password'))
+                                <span class="text-danger">{{ $errors->first('password') }}</span>
+                            @endif --}}
+                            
+                            <button class="btn btn-dark margin-bottom">Connexion</button>
+                            {{-- @if ($errors->has('password') || $errors->has('email'))
+                                @include('includes.flash-message')
+                            @endif --}}
                         </div>
-                        <form method="POST" action="{{route('login')}}">
-                            @csrf
-                            <div class="mb-3">
-                                <input type="email" name="email" class="form-control" v-model="user.email" placeholder="Email" autofocus>
-                            </div>
-                            <div class="mb-3">
-                                <input type="password" name="password" v-model="user.password" class="form-control" placeholder="Password">
-                            </div>
-                            <div class="d-grid mt-5">
-                                <button class="btn btn-primary" type="submit">Se connecter</button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- END - PAGE CONTAINER -->
+                </form>
+			</div>
+		</body>
+		<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
+		<script src="/js/app.js"></script>
 
+	</html>
 
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- END - BOXED LAYOUT : BACKGROUND IMAGES CONTENT [ DEMO ] -->
-    <!-- JAVASCRIPTS -->
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
-    <!-- Popper JS [ OPTIONAL ] -->
-    <script src="./assets/vendors/popperjs/popper.min.js" defer></script>
-
-    <!-- Bootstrap JS [ OPTIONAL ] -->
-    <script src="./assets/vendors/bootstrap/bootstrap.min.js" defer></script>
-
-    <!-- Nifty JS [ OPTIONAL ] -->
-    <script src="./assets/js/nifty.js" defer></script>
-
-    <!-- Nifty Settings [ DEMO ] -->
-    <script src="./assets/js/demo-purpose-only.js" defer></script>
-
-</body>
-
-</html>

@@ -1,0 +1,58 @@
+i.icon {
+  width: 25px;
+  height: 25px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+i.icon:hover {
+  transform: scale(1.1);
+}
+
+i.icon.building {
+  background-image: url(/img/new/icons/building-office-2icon-white.svg);
+}
+
+i.icon.dashboard {
+  background-image: url(/img/new/icons/dashboardicon-white-.svg);
+}
+
+i.icon.users {
+  background-image: url(/img/new/icons/usersicon-white.svg);
+}
+
+i.icon.settings {
+  background-image: url(/img/new/icons/cog-6-toothicon-white.svg);
+}
+
+i.icon.chevron {
+  background-image: url(/img/new/icons/chevron-down-white.svg);
+}
+
+i.icon.chevron-up {
+  background-image: url(/img/new/icons/chevron-up.svg);
+}
+
+i.icon.chevron-right {
+  background-image: url(/img/new/icons/chevron-right.svg);
+}
+
+i.icon.home {
+  background-image: url(/img/new/icons/home.svg);
+}
+
+i.icon.arrow-down {
+  background-image: url(/img/new/icons/heroicons-mini-arrow-up.svg);
+}
+
+i.icon.search {
+  background-image: url(/img/new/icons/heroicons-mini-magnifying-glass-w.svg);
+}
+
+i.icon.chevron-down {
+  background-image: url(/img/new/icons/heroicons-mini-chevron-down.svg);
+}
+
+i.icon.search-dark {
+  background-image: url(/img/new/icons/heroicons-mini-magnifying-glass.svg);
+}
