@@ -10,7 +10,47 @@
     --blue-color: #1294de;
     --orange-color: rgb(255, 136, 0);
     --common-padding: 15px;
-    height: 100%;
+    --nf-header-bg: var(--bs-component-bg);
+    --nf-header-color: var(--bs-component-color);
+    --nf-header-secondary-color: var(--bs-secondary-color);
+    --nf-header-border-color: var(--bs-border-color);
+    --nf-header-height1: 4.125rem !important;
+    --nf-header-shadow: var(--bs-box-shadow-sm);
+    --nf-header-btn-hover-bg: rgba(var(--bs-body-color-rgb), 0.1);
+    --nf-header-btn-hover-color: var(--bs-heading-color);
+    --nf-header-btn-border-radius: calc(var(--bs-border-radius) * 2);
+    --nf-header-transition-duration: 0.35s;
+    --nf-header-transition-timing: ease;
+    --bs-component-bg: #fff;
+    --bs-component-bg-rgb: 255, 255, 255;
+    --bs-component-color: #414547;
+    --bs-component-color-rgb: 65, 69, 71;
+    --bs-component-hover-bg: #d5d9dd;
+    --bs-component-hover-bg-rgb: 213, 217, 221;
+    --bs-component-hover-color: #1a1d21;
+    --bs-component-hover-color-rgb: 26, 29, 33;
+    --bs-component-alt-bg: rgba(147, 147, 147, 0.5);
+    --bs-component-alt-active-bg: rgba(27, 29, 33, 0.5);
+    --bs-form-disabled-opacity: 0.5;
+    --bs-box-shadow-color: 27, 23, 65;
+    --bs-box-shadow-alpha: 0.25;
+    --bs-box-shadow-alpha-xs: 0.075;
+    --bs-box-shadow-alpha-sm: 0.125;
+    --bs-box-shadow-alpha-lg: 0.25;
+    --bs-box-shadow-alpha-inset: 0.1;
+    --bs-primary-color: #a2161a;
+    --bs-primary-color-rgb: 255, 255, 255;
+    --bs-primary-border: #456092;
+}
+
+.mn--max,
+.mn--min {
+    --nf-mainnav-max-width: 17.75rem;
+    --nf-mainnav-max-transition-duration: 0.35s;
+    --nf-mainnav-max-transition-timing: ease;
+    --nf-mainnav-min-width: 3.75rem;
+    --nf-mainnav-min-transition-duration: 0.35s;
+    --nf-mainnav-min-transition-timing: ease;
 }
 
 body,
@@ -23,35 +63,72 @@ form,
     background-color: var(--bg-color);
 }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    padding-left: var(--common-padding);
-    padding-right: var(--common-padding);
-    height: 70px;
-    position: relative;
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.09);
-    background-color: var(--ligth-color);
+.header__brand {
     align-items: center;
-}
-header v .logo-container {
-    flex: 1;
-}
-header v .logo-container img {
-    width: 171px;
-    height: 48px;
-}
-header .context {
+    background-color: var(--ligth-color) !important;
+    color: var(--nf-brand-color);
     display: flex;
-    flex: 2;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
+    height: 100%;
+    -webkit-margin-end: unset !important;
+            margin-inline-end: unset !important;
+    -webkit-padding-start: unset !important;
+            padding-inline-start: unset !important;
 }
-@media (max-width: 767.98px) {
-    header .context {
-        gap: 0px;
+
+.header__inner {
+    height: var(--nf-header-height1) !important;
+    padding-inline: 1rem;
+}
+
+.mn--min .brand-img {
+    display: none !important;
+}
+.mn--min .brand-icon {
+    display: flex !important;
+}
+
+.mn--max .brand-img {
+    display: none !important;
+}
+@media (min-width: 768px) {
+    .mn--max .brand-img {
+        display: flex !important;
     }
+}
+.mn--max .brand-icon {
+    display: flex !important;
+}
+@media (min-width: 768px) {
+    .mn--max .brand-icon {
+        display: none !important;
+    }
+}
+
+.brand-img,
+.brand-icon {
+    align-items: center;
+    justify-content: center;
+    -webkit-margin-start: unset !important;
+            margin-inline-start: unset !important;
+    margin: unset !important;
+    width: unset !important;
+}
+.brand-img img,
+.brand-icon img {
+    width: 80%;
+    height: auto;
+}
+
+@media (max-width: 767.98px) {
+    .brand-icon img {
+        width: 40px;
+        height: auto;
+    }
+}
+.nav-item .icon-nav img {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5rem;
 }
 
 a .btn-dark {
@@ -87,6 +164,11 @@ li,
 label,
 input::placeholder {
     font-family: "Poppins", sans-serif;
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 0.5rem !important;
 }
 
 .clip {
@@ -128,11 +210,17 @@ input::placeholder {
     font-size: 11px;
 }
 
+.sub-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
 /* LOGIN CONTAINER */
 .login-container {
     display: flex;
     justify-content: space-between;
-    height: 100%;
+    height: 100vh;
     width: 100%;
     background-color: var(--ligth-color);
 }
@@ -197,7 +285,7 @@ input::placeholder {
     padding-left: 5px;
 }
 .login-container .login-content button {
-    width: 290px;
+    width: 308px;
     height: 30px;
 }
 .login-container .login-content .alert {
@@ -388,7 +476,7 @@ main .board-container {
 /********* BUTTONS ***********/
 button,
 .btn {
-    padding: 8px 17px;
+    padding: 8px 10px;
     gap: 8px;
     border-radius: 8px;
     font-family: "Poppins", sans-serif;
@@ -493,6 +581,7 @@ a.btn.btn-red.small {
     padding: 16px;
     flex-direction: column;
     align-items: flex-start;
+    font-size: 0.9rem !important;
     gap: 1px;
     flex-shrink: 0;
     background-color: var(--ligth-color);
@@ -502,7 +591,7 @@ a.btn.btn-red.small {
     display: flex !important;
     align-items: center;
     gap: 8px;
-    padding: 0.25rem 0.6rem !important;
+    padding: 0.85rem 0.6rem !important;
 }
 .dropdown-menu.actions {
     width: 270px;
@@ -1001,7 +1090,6 @@ h6.label {
 }
 
 .form-check {
-    margin: 15px 0;
     display: flex;
     align-items: center;
 }
@@ -1009,13 +1097,21 @@ h6.label {
 .form-check-label {
     font-size: 14px;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 500;
     line-height: normal;
     letter-spacing: -0.28px;
     margin-left: 5px;
+    margin-bottom: 0 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+fieldset {
+    border: 1px solid #ccc !important;
+    border-radius: 5px;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
 }
 
 .checkbox-container .buttons {
@@ -1040,9 +1136,10 @@ h6.label {
 }
 
 .form-check-input:checked {
-    border: #1294de solid 3px;
+    border: var(--primary-color) solid 3px;
     width: 17px;
     height: 17px;
+    background-color: var(--ligth-color);
 }
 
 .checkbox-container .input-group {
@@ -1467,4 +1564,11 @@ hr.sub-separator {
 .status.status-retard {
     background: rgba(240, 45, 45, 0.2);
     color: var(--primary-color);
+}
+
+@media (min-width: 992px) {
+    .mn--min .mainnav__menu > .nav-item > .nav-link.active i,
+.mn--min .mainnav__menu > .nav-item > .nav-link.active .nav-icon {
+        color: var(--ligth-color) !important;
+    }
 }

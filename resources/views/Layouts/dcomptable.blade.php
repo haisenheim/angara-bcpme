@@ -14,8 +14,8 @@
 ?>
      <!-- Navigation Category -->
      <div class="mainnav__categoriy py-3">
-        <h6 class="mainnav__caption mt-0 px-3 fw-bold">Navigation</h6>
-        <ul class="mainnav__menu nav flex-column">
+        
+        <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
                <a href="{{ route('comptable.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-5 me-2"></i>
                    <span class="nav-label mininav-content ms-1">Accueil</span>

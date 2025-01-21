@@ -25,6 +25,9 @@
        <link rel="stylesheet" href="{{ asset('css/style.css') }}">
        <link href="{{ asset('css/jquill.css') }}" rel="stylesheet">
 
+       <!-- Angara Custom Style -->
+        <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+
         <!-- Demo purpose CSS [ DEMO ] -->
         <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
         <link rel="stylesheet" href="{{ asset('assets/premium/icon-sets/line-icons/premium-line-icons.min.css') }}">
@@ -40,16 +43,6 @@
         <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
         <link rel="manifest" href="./site.webmanifest">
-        <style>
-            @media (min-width: 768px) {
-              div.mn--max  a.brand-img{
-                    margin-inline-start: -25px;
-                    margin-top:-10px;
-                    height: 50px;
-                    width: var(--nf-mainnav-max-width);
-                }
-            }
-        </style>
 
  </head>
 
@@ -57,7 +50,7 @@
 
     <!-- PAGE CONTAINER -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <div id="root" class="root mn--max tm--primary-mn">
+    <div id="root" class="root mn--max tm--primary-mn hd--sticky mn--sticky">
 
         <!-- CONTENTS -->
         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -108,7 +101,12 @@
 
                      <!-- Brand logo -->
                      <a href="#" class="brand-img stretched-link">
-                        <img style="width: 100%; height:50px; color:white" src="{{ asset('img/logo.jpg') }}" alt="Angara Logo" class="Nifty logo mt-1" width="16" height="16">
+                        <img src="{{ asset('img/logo-angara-black.svg') }}" alt="Angara Logo" class="Nifty logo" >
+                     </a>
+
+                     <!-- Icon logo -->
+                     <a href="#" class="brand-icon stretched-link">
+                        <img src="{{ asset('img/icon-angara-black.png') }}" alt="Angara Icon" >
                      </a>
                   </div>
                </div>
@@ -151,9 +149,9 @@
 
 
                   <!-- Content Header - Right Side: -->
-                  <div class="header__content-end">
-                        @yield('top')
-                  </div>
+                  
+                @yield('top')
+                  
                </div>
             </div>
          </header>
@@ -171,17 +169,15 @@
                     <!-- Profile Widget -->
                     <div class="mainnav__profile mt-3 d-flex3">
 
-                        <div class="mt-2 d-mn-max"></div>
-
                         <!-- Profile picture  -->
-                        <div class="mininav-toggle text-center py-2">
+                        {{-- <div class="mininav-toggle text-center py-2">
                             <?php
                                 $uxx = \Illuminate\Support\Facades\Session::get('user');
                             ?>
                             <img class="mainnav__avatar img-md rounded-circle border" src="{{ $uxx?->photo  }}" alt="Profile Picture">
-                        </div>
+                        </div> --}}
 
-                        <div class="mininav-content collapse d-mn-max">
+                        {{-- <div class="mininav-content collapse d-mn-max">
                             <div class="d-grid">
 
                                 <!-- User name and position -->
@@ -206,7 +202,7 @@
                                 </div>
 
                             </div>
-                        </div>
+                        </div> --}}
 
                     </div>
                     <!-- End - Profile widget -->

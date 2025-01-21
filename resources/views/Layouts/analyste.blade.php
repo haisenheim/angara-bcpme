@@ -20,7 +20,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
 ?>
      <!-- Navigation Category -->
      <div class="mainnav__categoriy py-3 mb-4">
-        <ul class="mainnav__menu nav flex-column">
+        <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
                <a href="{{ route('analyste.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-3 me-2"></i>
                    <span class="nav-label mininav-content ms-1">Tableau de board</span>

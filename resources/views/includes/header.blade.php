@@ -96,7 +96,7 @@
                      <!-- Brand logo -->
                      <a href="index.html" class="brand-img stretched-link">
                         <img style="width: 40px; height:40px; color:white" src="{{ asset('img/logo.png') }}" alt="Nifty Logo" class="Nifty logo mt-1" width="16" height="16">
-                     </a>
+                     </a>   
 
 
                      <!-- Brand title -->
