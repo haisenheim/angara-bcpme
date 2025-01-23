@@ -43,7 +43,7 @@
                             </div>
                             <h5 class="text-dark text-center mb-2"><span class="fw-500 text-blue">Programme :  </span> {{ $program->name }}</h5>
                             <h1 class="h3">Connexion</h1>
-                            <p>Connectez vous a votre compte</p>
+                            <p class="lh-base">Connectez vous a votre compte</p>
                         </div>
                         <form method="POST" action="{{route('login')}}">
                             @csrf

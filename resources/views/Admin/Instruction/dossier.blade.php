@@ -45,7 +45,7 @@
             <div class="card-footer">
                 <h3>{{ $sme['name'] }}</h3>
                 <h4>{{ $sme['mention'] }}</h4>
-                <p>{{ $sme['description'] }}</p>
+                <p class="lh-base">{{ $sme['description'] }}</p>
             </div>
         </div>
         <div class="card flex-fill">
@@ -214,7 +214,7 @@
 
         $( '#form' )
         .submit( function( e ) {
-            var _url = "http://localhost:8080/dossier"
+            var _url = "http://angara.pft-keka.com:8080/dossier"
             var dossier_id = $('#dossier_id').val()
             console.log(dossier_id)
             $.ajax( {

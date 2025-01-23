@@ -29,13 +29,13 @@
                         <img style="vertical-align: middle" class="image-circle image-thumnail image-75"  src="{{ $item->cooperative->photo }}" alt="">
                     </div>
                     <div id="d-text" class="d-flex justify-content-center flex-column">
-                        <p>COOPERATIVE : {{ $item->cooperative->name }}</p>
-                        <p>SAISON : {{ $item->saison->name }}</p>
-                        <p>Tonnage attendu : <span class="badge bg-dark">{{ $item->quantity }} tonne(s)</span></p>
-                        <p>Tonnage livré : <span class="badge bg-dark">{{ $item->qtyl }} tonne(s)</span></p>
-                        <p>Taux d'exécution : <span class="badge bg-dark">{{ $item->percentage }} %</span></p>
-                        <p>Village : <span class="badge bg-dark">{{ $item->village?$item->village->name:'-' }} </span></p>
-                        <p>Arrondissement : <span class="badge bg-dark">{{ $item->arrondissement?$item->arrondissement->name:'-' }} </span></p>
+                        <p class="lh-base">COOPERATIVE : {{ $item->cooperative->name }}</p>
+                        <p class="lh-base">SAISON : {{ $item->saison->name }}</p>
+                        <p class="lh-base">Tonnage attendu : <span class="badge bg-dark">{{ $item->quantity }} tonne(s)</span></p>
+                        <p class="lh-base">Tonnage livré : <span class="badge bg-dark">{{ $item->qtyl }} tonne(s)</span></p>
+                        <p class="lh-base">Taux d'exécution : <span class="badge bg-dark">{{ $item->percentage }} %</span></p>
+                        <p class="lh-base">Village : <span class="badge bg-dark">{{ $item->village?$item->village->name:'-' }} </span></p>
+                        <p class="lh-base">Arrondissement : <span class="badge bg-dark">{{ $item->arrondissement?$item->arrondissement->name:'-' }} </span></p>
                     </div>
                 </div>
             </div>
@@ -50,9 +50,9 @@
                         @foreach($item->livraisons as $liv)
                             <div  class="card bg-light w-25">
                                 <div class="card-body">
-                                    <p>Date de livraison : <span class="badge bg-primary">{{ $liv->day->format('d/m/Y') }}</span></p>
-                                    <p>Quantité : <span class="badge bg-primary">{{ $liv->quantity }} tonne(s)</span></p>
-                                    <p>Lieu : <span class="badge bg-primary">{{ $liv->village?$liv->village->name:$liv->arrondissement->name }}</span></p>
+                                    <p class="lh-base">Date de livraison : <span class="badge bg-primary">{{ $liv->day->format('d/m/Y') }}</span></p>
+                                    <p class="lh-base">Quantité : <span class="badge bg-primary">{{ $liv->quantity }} tonne(s)</span></p>
+                                    <p class="lh-base">Lieu : <span class="badge bg-primary">{{ $liv->village?$liv->village->name:$liv->arrondissement->name }}</span></p>
                                 </div>
                                 <div class="card-footer bg-{{ $liv->status['color']}}">
                                     <p class="text-center text-white">{{ $liv->status['name'] }}</p>
@@ -63,7 +63,7 @@
                 @else
                     <div class="">
                         <div class="text-center">
-                            <p>Aucune livraison faite</p>
+                            <p class="lh-base">Aucune livraison faite</p>
                             <a href="#" data-bs-target="#addModal" data-bs-toggle="modal" class="btn btn-sm btn-danger"><i class="pli-file-edit"></i> Ordonner une préparation de livraison</a>
                         </div>
                     </div>

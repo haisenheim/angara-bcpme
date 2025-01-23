@@ -262,7 +262,8 @@ class CompanyController extends Controller
             return back();
         }
         $criteres = QuestionSousCritere::all();
-        return view('/Admin/Companies/questionnaire',compact('item','criteres'));
+        $isOpen = false; // Pour contrôller l'ouverture de l'accordeon
+        return view('/Admin/Companies/questionnaire',compact('item','criteres', 'isOpen'));
     }
 
     public function saveQuestionnaire(Request $request)

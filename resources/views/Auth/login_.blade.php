@@ -42,7 +42,7 @@
                                 <img src="{{asset('img/logo.jpg')}}" class="" style="width: 100%; height: 100px; margin-bottom: 20px;" alt="">
                             </div>
                             <h1 class="h3">Connexion</h1>
-                            <p>Connectez vous a votre compte</p>
+                            <p class="lh-base">Connectez vous a votre compte</p>
                         </div>
                         <form method="POST" action="{{route('login')}}">
                             @csrf

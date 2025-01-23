@@ -72,7 +72,7 @@
             })
             //console.log(ponderations)
             $.ajax({
-                url:'http://localhost:8080/test',
+                url:'http://angara.pft-keka.com:8080/test',
                 type:'post',
                 dataType:'json',
                 data:{ponderations:ponderations,programme_id:programme_id},

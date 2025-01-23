@@ -37,7 +37,7 @@
     </a>
     <br><br>
     <!-- START MAIN DESCRIPTION -->
-    <p>AG Grid is a <strong>fully-featured</strong> and <strong>highly customizable</strong> JavaScript Data Grid. It delivers <strong>outstanding performance</strong>, has <strong>no third-party dependencies</strong> and comes with support for <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-react"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/react.svg?raw=true" height="16" width="16" alt="React Logo"> React</a></strong>, <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-angular"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/angular.svg?raw=true" height="16" width="16" alt="Angular Logo"> Angular</a></strong> and <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-vue3"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/vue.svg?raw=true" height="16" width="16" alt="Vue Logo"> Vue</a></strong>.</p>
+    <p class="lh-base">AG Grid is a <strong>fully-featured</strong> and <strong>highly customizable</strong> JavaScript Data Grid. It delivers <strong>outstanding performance</strong>, has <strong>no third-party dependencies</strong> and comes with support for <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-react"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/react.svg?raw=true" height="16" width="16" alt="React Logo"> React</a></strong>, <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-angular"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/angular.svg?raw=true" height="16" width="16" alt="Angular Logo"> Angular</a></strong> and <strong><a href="https://github.com/ag-grid/ag-grid/tree/latest/packages/ag-grid-vue3"><img src="https://github.com/ag-grid/ag-grid/blob/latest/documentation/ag-grid-docs/public/images/fw-logos/vue.svg?raw=true" height="16" width="16" alt="Vue Logo"> Vue</a></strong>.</p>
     <!-- END MAIN DESCRIPTION -->
     <br>
 </div>
@@ -117,7 +117,7 @@ AG Grid is available in two versions: Community & Enterprise.
 | [Support](https://ag-grid.zendesk.com/hc/en-us)                                                                                                                | ❌                | ✅                 |
 
 <blockquote>
-    <p>ℹ️ <b>Note:</b></p>
+    <p class="lh-base">ℹ️ <b>Note:</b></p>
     <span>Visit the <a href="https://www.ag-grid.com/license-pricing/?utm_source=ag-grid-readme&utm_medium=repository&utm_campaign=github">Pricing</a> page for a full comparison.</span>
 </blockquote>
 
@@ -128,7 +128,7 @@ We've created several demos to showcase AG Grid's rich feature set across differ
 <details open>
   <summary>🏦 <b>Financial Demo</b></summary>
   <br>
-  <p>Financial data example featuring live updates and sparklines:</p>
+  <p class="lh-base">Financial data example featuring live updates and sparklines:</p>
   <a href="https://ag-grid.com/example-finance/?utm_source=ag-grid-readme&utm_medium=repository&utm_campaign=github">
     <picture>
       <source srcset="https://github.com/ag-grid/ag-grid/blob/latest/readme-assets/finance-demo-light.gif?raw=true" media="(prefers-color-scheme: light)">
@@ -143,7 +143,7 @@ We've created several demos to showcase AG Grid's rich feature set across differ
 <details>
   <summary>📦 <b>Inventory Demo</b></summary>
   <br>
-  <p>Inventory data example to view and manage products:</p>
+  <p class="lh-base">Inventory data example to view and manage products:</p>
   <a href="https://ag-grid.com/example-inventory/?utm_source=ag-grid-readme&utm_medium=repository&utm_campaign=github">
     <picture>
       <source srcset="https://github.com/ag-grid/ag-grid/blob/latest/readme-assets/inventory-demo-light.gif?raw=true" media="(prefers-color-scheme: light)">
@@ -158,7 +158,7 @@ We've created several demos to showcase AG Grid's rich feature set across differ
     
   <summary>🧑‍💼 <b>HR Demo</b></summary>
   <br>
-  <p>HR data example showing hierarchical employee data:</p>
+  <p class="lh-base">HR data example showing hierarchical employee data:</p>
   <a href="https://ag-grid.com/example-hr/?utm_source=ag-grid-readme&utm_medium=repository&utm_campaign=github">
     <picture>
       <source srcset="https://github.com/ag-grid/ag-grid/blob/latest/readme-assets/hr-demo-light.gif?raw=true" media="(prefers-color-scheme: light)">
@@ -216,7 +216,7 @@ Create the Data Grid inside of your container div using `createGrid`.
 const gridOptions = {};
 
 // Your Javascript code to create the Data Grid
-const myGridElement = document.querySelector('#myGrid');
+const myGridElement = document.querySelector("#myGrid");
 agGrid.createGrid(myGridElement, gridOptions);
 ```
 
@@ -227,19 +227,24 @@ agGrid.createGrid(myGridElement, gridOptions);
 const gridOptions = {
     // Row Data: The data to be displayed.
     rowData: [
-        { make: 'Tesla', model: 'Model Y', price: 64950, electric: true },
-        { make: 'Ford', model: 'F-Series', price: 33850, electric: false },
-        { make: 'Toyota', model: 'Corolla', price: 29600, electric: false },
+        { make: "Tesla", model: "Model Y", price: 64950, electric: true },
+        { make: "Ford", model: "F-Series", price: 33850, electric: false },
+        { make: "Toyota", model: "Corolla", price: 29600, electric: false },
     ],
     // Column Definitions: Defines the columns to be displayed.
-    columnDefs: [{ field: 'make' }, { field: 'model' }, { field: 'price' }, { field: 'electric' }],
+    columnDefs: [
+        { field: "make" },
+        { field: "model" },
+        { field: "price" },
+        { field: "electric" },
+    ],
 };
 ```
 
 <!-- END SETUP -->
 
 <blockquote>
-    <p>ℹ️ <b>Note:</b></p>
+    <p class="lh-base">ℹ️ <b>Note:</b></p>
     <span>For more information on building Data Grids with AG Grid, refer to our <a href="https://www.ag-grid.com/javascript-data-grid/getting-started/?utm_source=ag-grid-readme&utm_medium=repository&utm_campaign=githu">Documentation</a>.</span>
 </blockquote>
 
@@ -337,7 +342,7 @@ To supply a custom cell renderer and filter components to the Grid, create a dir
 gridOptions = {
     columnDefs: [
         {
-            field: 'country', // The column to add the component to
+            field: "country", // The column to add the component to
             cellRenderer: CountryCellRenderer, // Your custom cell component
             filter: CountryFilter, // Your custom filter component
         },

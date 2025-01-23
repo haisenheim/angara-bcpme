@@ -34,8 +34,8 @@
 <div class="d-flex gap-1">
     <div class="card w-400px">
         <div class="card-header">
-            <p><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
-            <p><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
+            <p class="lh-base"><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
+            <p class="lh-base"><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
         </div>
         <div class="card-body">
         </div>
@@ -43,7 +43,7 @@
             @if($sme)
                 <h3>{{ $sme['name'] }}</h3>
                 <h4>{{ $sme['mention'] }}</h4>
-                <p>{{ $sme['description'] }}</p>
+                <p class="lh-base">{{ $sme['description'] }}</p>
             @endif
         </div>
     </div>
@@ -175,31 +175,31 @@
                       <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
-                                <p><?= $dossier['donneesGenerales'] ?></p>
+                                <p class="lh-base"><?= $dossier['donneesGenerales'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
-                                <p><?= $dossier['analyseEnsemble'] ?></p>
+                                <p class="lh-base"><?= $dossier['analyseEnsemble'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
-                                <p><?= $dossier['analyseFinanciere'] ?></p>
+                                <p class="lh-base"><?= $dossier['analyseFinanciere'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
-                                <p><?= $dossier['appuis'] ?></p>
+                                <p class="lh-base"><?= $dossier['appuis'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
-                                <p><?= $dossier['analyseRisque'] ?></p>
+                                <p class="lh-base"><?= $dossier['analyseRisque'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
-                                <p><?= $dossier['analyseRentabilite'] ?></p>
+                                <p class="lh-base"><?= $dossier['analyseRentabilite'] ?></p>
                             </div>
                             <div class="mt-2 border rounded rounded-2 p-2">
                                 <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
-                                <p><?= $dossier['conclusionsAnalyste'] ?></p>
+                                <p class="lh-base"><?= $dossier['conclusionsAnalyste'] ?></p>
                             </div>
                       </div>
                       <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
@@ -301,7 +301,7 @@
 
         $( '#form' )
         .submit( function( e ) {
-            var _url = "http://localhost:8080/dossier"
+            var _url = "http://angara.pft-keka.com:8080/dossier"
             var dossier_id = $('#dossier_id').val()
             console.log(dossier_id)
             $.ajax( {

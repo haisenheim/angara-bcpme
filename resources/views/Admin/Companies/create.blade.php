@@ -213,116 +213,132 @@
                     
                 </section>
 
+                
                 <section data-step="step-2">
                     <h3 class="text-center mb-3">Étape 2: Objet Social   </h3>
-                    <div class="d-flex justify-content-center">
-                        <div>
+                    
                             <fieldset>
-                                <legend>Produit principal</legend>
-                                <div>
-                                    <div style="width: 600px" class="form-group mt-2 mb-3">
-                                        <select id="produit_id" name="produit_id" class="easyui-combotree form-control" style="width:600px;"
+                                
+                                <legend class="font-bold bold mb-3 text-md-start">Produit principal</legend>
+                                <div class="row g-3 mb-5">
+                                    <div class="col-md-6 col-xl-4">
+                                        <select id="produit_id" name="produit_id" class="easyui-combotree form-control" style=""
                                             data-options="url:'{{ route('util.produits.list') }}',method:'get',label:'Produit principal:',labelPosition:'top'">
                                         </select>
                                     </div>
-                                    <div style="width: 600px" class="form-group mt-3">
+                                    <div class="col-md-6 col-xl-4 mt-4">
                                         <label for="">Ancienneté dans le service/produit principal (Année )</label>
                                         <input name="produit_year_start" id="produit_year_start" class="form-control"  type="number">
                                     </div>
+                                
                                 </div>
                             </fieldset>
 
                             <fieldset class="mt-3">
+                                
                                 <legend>Produits secondaires</legend>
-                                <div style="width: 600px" class="form-group mt-3">
-                                    <label for="">Choix des autres produits</label>
-                                    <input id="ct" class="form-control"  type="text">
-                                </div>
+                                <div class="row g-3 mb-5">
+                                    <div class="col-12 mt-4">
+                                        <label for="">Choix des autres produits</label>
+                                        <input id="ct" class="form-control"  type="text">
+                                    </div>
 
-                                <h5 class="text-center mt-4 mb-3">Liste des produits/services secondaires</h5>
-                                <div>
-                                    <ul id="produits" class="list-group mt-3 fw-bold fs-6">
-                                    </ul>
+                                    <h5 class="text-center mt-4 mb-3">Liste des produits/services secondaires</h5>
+                                    <div>
+                                        <ul id="produits" class="list-group mt-3 fw-bold fs-6">
+                                        </ul>
+                                    </div>
                                 </div>
                             </fieldset>
+
+                    <div class="row border-top">
+                        <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-between">
+                            <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
+                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
                         </div>
                     </div>
-
-                    <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                    <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                    
                 </section>
 
-                {{-- STEP 3 --}}
+                
                 <section data-step="step-3">
-                    <div class="d-flex justify-content-center">
-                        <div>
-                            <h3 class="text-center">Étape 3: Appuis sollicités</h3>
-                        <fieldset class="mt-3">
-                            <legend>Appuis Financiers</legend>
-                            <div style="width: 600px" class="form-group mt-3">
-                                <label for="">Choix des appuis financiers</label>
-                                <input id="af" class="form-control"  type="text">
-                            </div>
+                    
+                        
+                        <h3 class="text-center">Étape 3: Appuis sollicités</h3>
+                        <fieldset class="">
+                            <legend class="font-bold bold mb-3 text-md-start">Appuis Financiers</legend>
+                            <div class="row g-3 mb-5">
+                                <div class="col-12">
+                                    <label for="">Choix des appuis financiers</label>
+                                    <input id="af" class="form-control"  type="text">
+                                </div>
 
-                            <h5 class="text-center mt-4 mb-3">Liste des appuis financiers</h5>
-                            <div>
-                                <ul id="afs" class="list-group mt-3 fw-bold fs-6">
-                                </ul>
+                                <h5 class="text-center mt-4 mb-3">Liste des appuis financiers</h5>
+                                <div>
+                                    <ul id="afs" class="list-group mt-3 fw-bold fs-6">
+                                    </ul>
+                                </div>
                             </div>
                         </fieldset>
 
                         <fieldset class="mt-3">
-                            <legend>Appuis non Financiers</legend>
-                            <div style="width: 600px" class="form-group mt-3">
-                                <label for="">Choix des appuis non financiers</label>
-                                <input  id="anf" class="form-control"  type="text">
-                            </div>
+                            <legend class="font-bold bold mb-3 text-md-start">Appuis non Financiers</legend>
+                            <div class="row g-3 mb-5">
+                                <div class="col-12">
+                                    <label for="">Choix des appuis non financiers</label>
+                                    <input  id="anf" class="form-control"  type="text">
+                                </div>
 
-                            <h5 class="text-center mt-4 mb-3">Liste des  appuis non financiers</h5>
-                            <div>
-                                <ul id="anfs" class="list-group mt-3 fw-bold fs-6">
-                                </ul>
+                                <h5 class="text-center mt-4 mb-3">Liste des  appuis non financiers</h5>
+                                <div>
+                                    <ul id="anfs" class="list-group mt-3 fw-bold fs-6">
+                                    </ul>
+                                </div>
                             </div>
                         </fieldset>
+                        
+
+                    
+                    <div class="row border-top">
+                        <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-between">
+                            <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
+                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
                         </div>
-
-                    </div>
-                    <div>
-                        <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                        <button class="btn btn-primary mt-2" data-next>Suivant</button>
                     </div>
                 </section>
+
+                
                 <section data-step="step-4">
-                    <div class="d-flex justify-content-center">
-                        <div>
-                            <h3 class="text-center">Étape 4: Localisation / Contact</h3>
-                        <fieldset class="mt-3">
-                            <legend>Localisation</legend>
-                            <div style="width: 600px" class="form-group mt-3">
-                                <label for="">Commune</label>
-                                <input  id="arrondissement_id" class="form-control"  type="text">
+                        <h3 class="text-center">Étape 4: Localisation / Contact</h3>
+                        <fieldset class="">
+                            <legend class="font-bold bold mb-3 text-md-start">Localisation</legend>
+                            <div class="row g-3 mb-5">
+                                <div class="col-12">
+                                    <label for="">Commune</label>
+                                    <input  id="arrondissement_id" class="form-control"  type="text">
+                                </div>
                             </div>
                         </fieldset>
 
                         <fieldset class="mt-3">
-                            <legend>Contact</legend>
-                            <div style="width: 600px" class="form-group mt-3">
-                                <label for="">Telephone</label>
-                                <input name="phone" id="phone" class="form-control"  type="text">
+                            <legend class="font-bold bold mb-3 text-md-start">Contact</legend>
+                            <div class="row g-3 mb-5">
+                                <div class="col-12">
+                                    <label for="">Telephone</label>
+                                    <input name="phone" id="phone" class="form-control"  type="text">
+                                </div>
+                                <div class="col-12">
+                                    <label for="">Email</label>
+                                    <input name="email" id="email" class="form-control"  type="email">
+                                </div>
                             </div>
-                            <div style="width: 600px" class="form-group mt-3">
-                                <label for="">Email</label>
-                                <input name="email" id="email" class="form-control"  type="email">
-                            </div>
-
                         </fieldset>
+                    
+                    <div class="row border-top">
+                        <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-between">
+                            <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
+                            <button class="btn btn-success mt-2" data-next>Enregistrer</button>
                         </div>
-
-                    </div>
-                    <div>
-                        <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                        <button class="btn btn-success mt-2" data-next>Enregistrer</button>
-
                     </div>
                 </section>
             </form>

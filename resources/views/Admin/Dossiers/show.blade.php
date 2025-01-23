@@ -3,7 +3,7 @@
 @section('title', 'Accueil')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
+    <ol class="breadcrumb mb-0">
        <li class="breadcrumb-item"><a href="#">ANGARA</a></li>
        <li class="breadcrumb-item"><a href="#">INSTRUCTION</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $dossier['name'] }}</li>
@@ -13,7 +13,9 @@
 
 @section('actions')
 <div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+    <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
+    Importer DSF</button>
+    <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
     Actions
     <span class="vr"></span>
     </button>
@@ -30,67 +32,145 @@
 @endsection
 
 @section('page-header')
-    <div>
-        <h5 class="page-title mb-0 mt-2">DOSSIER D'INSTRUCTION</h5>
+    <div class="d-flex justify-content-between w-100">
+        <h5 class="page-title mb-0 mt-3">DOSSIER D'INSTRUCTION</h5>
+
+    </div>
+
+    <div class="angara-card top-info single mt-4">
+        <div class="infos-enterprise d-flex justify-content-between flex-column flex-md-row">
+            <div class="infos-left d-flex flex-column mb-3 mb-md-0 w-100"> 
+                <div class="society-name d-flex align-items-center">
+                    <h2 class="title-1 mb-0">{{ $entreprise['name'] }}</h2>
+                    
+                    <div class="badges d-flex">
+                        <span style="width: 24px; height: 25px;"><img src="/img/new/icons/badges/check-badge.svg"></span>
+                        <span style="width: 24px; height: 25px;"><img src="/img/new/icons/badges/shield-check.svg"></span>
+                    </div>
+                    
+                </div>
+                <h3>Dossier : {{ $dossier['programme']['name'] }}</h3>
+                <div class="agent">
+                    <span>Créé par : Jackie Flore OMGBA ESSAMA</span>
+                </div>
+            </div>
+            <div class="notes d-flex flex-column w-100">
+                <div class="d-flex justify-content-end gap-4">
+                    <div class="notation pointer">
+                        <div
+                            class="d-flex flex-column align-items-center justify-content-center angara-card-border infos-right"
+                        >
+                            <a class="text-black">
+                                <div class="note d-flex justify-content-between align-items-center gap-4">
+                                    @if($sme) <div class="moyenne">{{ $sme['note'] }}</div> @endif
+                                    <div class="indicator d-flex flex-colum gap-1">
+                                        
+                                            <span class="up"></span>
+                                       
+                                            <span class="down"></span>
+                                      
+                                    </div>
+                                </div>
+
+                                <div class="txt-moyenne truncate">Moyenne pondérée finale</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="notation pointer"  data-bs-target="#notePonderee" data-bs-toggle="modal">
+                        <div
+                            class="d-flex flex-column align-items-center justify-content-center angara-card-border infos-right"
+                        >
+                            <a class="text-black">
+                                <div class="note d-flex justify-content-between align-items-center gap-4">
+                                    @if($sme) <div class="moyenne">{{ $sme['name'] }}</div> @endif
+                                    <div class="indicator d-flex flex-colum gap-1">
+                                        
+                                            <span class="up"></span>
+                                       
+                                            <span class="down"></span>
+                                      
+                                    </div>
+                                </div>
+
+                                <div class="txt-moyenne truncate" *ngIf="label">Notation PME</div>
+                            </a>
+                        </div>
+                    </div>
+                    {{-- <x-note-box moyenne="0" :up="false" />
+                    <x-note-box moyenne="SME4" label="Notation PME" /> --}}
+                </div>
+            </div>
+            
+            {{-- <div class="angara-card-border infos-right d-flex flex-column justify-content-center align-items-center">
+                <a href="/admin/enterprises/notes/576">
+                    <div class="moyenne">
+                        0
+                    </div>
+                    <div class="txt-moyenne">
+                        Moyenne pondérée
+                    </div>
+                </a>
+                
+            </div> --}}
+        </div>
+        <div class="accordion accordion-flush mt-3" id="_dm-transAccordion">
+            <div class="accordion-item bg-transparent">
+                <div class="accordion-header" id="_dm-transAccHeadingOne">
+                    <button class="accordion-button bg-transparent px-3 border rounded collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#_dm-transAccCollapseOne" aria-expanded="false" aria-controls="_dm-transAccCollapseOne">
+                        <h4 class="mb-0">Notes des Sous-critères</h4>
+                    </button>
+                </div>
+                <div id="_dm-transAccCollapseOne" class="accordion-collapse bg-transparent collapse" aria-labelledby="_dm-transAccHeadingOne" data-bs-parent="#_dm-transAccordion" style="">
+                    <div class="sous-criteres pt-4 d-flex flex-column gap-3 border-top">
+            
+                        <div class="d-flex flex-wrap gap-4">
+                            <x-note-box moyenne="1.03" label="Activités" :down="false" />
+                            <x-note-box moyenne="1.45" label="Gestion et Stratégie" :down="false" />
+                            <x-note-box moyenne="1.93" label="Finance" :up="false" />
+                            <x-note-box moyenne="0.3" label="Qualité de l’information financière" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
 
 @section('content')
-    <div class="d-flex gap-1">
-        <div class="card w-400px">
-            <div class="card-header">
-                <p><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
-                <p><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
-            </div>
-            <div class="card-body">
-                <form enctype="multipart/form-data" id="form" method="post">
-                    @csrf
-                    <div class="form-group">
-                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
-                        <input type="hidden" id="token" value="{{ $item->token }}">
+    <div class="" style="margin-top: -16px;">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="tab-base">
+                    <div class="nav-container position-relative">
+                        <!-- Flèche gauche -->
+                        <button class="scroll-arrow left-arrow" id="scroll-left">
+                            &lt;
+                        </button>
+
+                        <!-- Navigation -->
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-underline nav-component d-block border-bottom scrollmenu" id="nav-menu" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
+                            </li>
+                        
+                        </ul>
+
+                        <!-- Flèche droite -->
+                        <button class="scroll-arrow right-arrow" id="scroll-right">
+                            &gt;
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="">ANNEE N</label>
-                        <input type="number" name="annee" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="">FICHIER DSF</label>
-                        <input type="file" name="upload" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-primary"><i class="pli-save"></i>ENREGISTRER</button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer">
-                @if($sme)
-                    <h3>{{ $sme['name'] }}</h3>
-                    <h4>{{ $sme['mention'] }}</h4>
-                    <p>{{ $sme['description'] }}</p>
-                @endif
-            </div>
-        </div>
-        <div class="card flex-fill">
-            <div style="height: 70vh; overflow:scroll;" class="card-body">
-                <div class="">
-                    <!-- Underline nav tabs with base -->
-                    <div class="tab-base">
-                       <!-- Nav tabs -->
-                       <ul class="nav nav-underline nav-component border-bottom" role="tablist">
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
-                          </li>
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
-                          </li>
-                          <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
-                          </li>
-                       </ul>
 
 
-                       <!-- Tabs content -->
+                    <!-- Tabs content -->
                        <div class="tab-content">
                           <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
 
@@ -197,33 +277,33 @@
                             </table>
                           </div>
                           <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>1. INFORMATIONS GENERALES</h4>
-                                    <p><?= $dossier['donneesGenerales'] ?></p>
+                                    <p class="lh-base"><?= $dossier['donneesGenerales'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>2. ANALYSE D'ENSEMBLE</h4>
-                                    <p><?= $dossier['analyseEnsemble'] ?></p>
+                                    <p class="lh-base"><?= $dossier['analyseEnsemble'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>3. ANALYSE FINANCIERE</h4>
-                                    <p><?= $dossier['analyseFinanciere'] ?></p>
+                                    <p class="lh-base"><?= $dossier['analyseFinanciere'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
-                                    <p><?= $dossier['appuis'] ?></p>
+                                    <p class="lh-base"><?= $dossier['appuis'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
-                                    <p><?= $dossier['analyseRisque'] ?></p>
+                                    <p class="lh-base"><?= $dossier['analyseRisque'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
-                                    <p><?= $dossier['analyseRentabilite'] ?></p>
+                                    <p class="lh-base"><?= $dossier['analyseRentabilite'] ?></p>
                                 </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
+                                <div class="mt-3 border rounded rounded-2 p-3">
                                     <h4>7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
-                                    <p><?= $dossier['conclusionsAnalyste'] ?></p>
+                                    <p class="lh-base"><?= $dossier['conclusionsAnalyste'] ?></p>
                                 </div>
                           </div>
                           <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
@@ -258,17 +338,75 @@
                             </table>
                           </div>
                        </div>
-                    </div>
                  </div>
+            </div>
+        </div>
+    </div>  
+
+    <div class="modal fade" id="importDsfModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content ">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form enctype="multipart/form-data" id="form" method="post">
+                    @csrf
+                    <div class="modal-body">
+                        
+                            <div class="form-group">
+                                <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
+                                <input type="hidden" id="token" value="{{ $item->token }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="">ANNEE N</label>
+                                <input type="number" name="annee" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="">FICHIER DSF</label>
+                                <input type="file" name="upload" class="form-control">
+                            </div>
+                        
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary"><i class="pli-save"></i>ENREGISTRER</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="notePonderee">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notation PME</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+                <div class="modal-body">
+                    
+                    @if($sme)
+                    <h3 class="title-1">{{ $sme['name'] }}</h3>
+                    <h4>{{ $sme['mention'] }}</h4>
+                    <p class="lh-base">{{ $sme['description'] }}</p>
+                @endif
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            
             </div>
         </div>
     </div>
 
     <div class="modal fade" id="report1Modal">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content ">
                 <div class="modal-header justify-content-between">
-                    <div style="float: right">
+                    <div class="d-flex justify-content-end">
                         <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
                     </div>
                 </div>
@@ -278,7 +416,7 @@
                         @csrf
                         <input type="hidden" value="{{ $dossier['id'] }}" name="dossier_id">
                         <input type="hidden" id="sequence" name="sequence">
-                        <div class="mt-2">
+                        <div class="mt-3">
                             <x-quill :name="'content'"></x-quill>
                         </div>
                         <div class="mt-1">
@@ -291,8 +429,8 @@
     </div>
 
     <div class="modal fade" id="critereModal">
-        <div class="modal-dialog modal-dialog-scrollable modal-sm modal-dialog-centered">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-scrollable modal-sm modal-dialog-center">
+            <div class="modal-content ">
                 <div class="modal-header justify-content-between">
                     <h5 class="modal-title">Choix de la valeur</h5>
                     <div style="float: right">
@@ -304,7 +442,7 @@
                         @csrf
                         <input type="hidden" id="_dossier_id" name="dossier_id">
                         <input type="hidden" id="id" name="critere_id">
-                        <div class="mt-2">
+                        <div class="mt-3">
                             <label id="name" for=""></label>
                             <select required name="choice_id" id="critere_id" class="form-control">
 
@@ -321,7 +459,7 @@
 
     <div class="modal fade" id="editModal">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content ">
                 <div class="modal-header justify-content-between">
                     <h5 class="modal-title">Editer</h5>
                     <div style="float: right">
@@ -382,6 +520,56 @@
     </div>
 
 
+    {{-- NAV MENU SLIDER --}}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const scrollMenu = document.getElementById("nav-menu");
+            const scrollLeft = document.getElementById("scroll-left");
+            const scrollRight = document.getElementById("scroll-right");
+            const navContainer = document.querySelector(".nav-container");
+
+            const scrollAmount = 100; // Nombre de pixels à défiler
+
+            // Fonction pour mettre à jour la visibilité des flèches
+            function updateArrows() {
+                const scrollLeftMax = scrollMenu.scrollLeft;
+                const scrollRightMax = scrollMenu.scrollWidth - scrollMenu.clientWidth;
+
+                // Afficher ou masquer les flèches en fonction de la position du défilement
+                scrollLeft.style.display = scrollLeftMax > 0 ? "flex" : "none";
+
+                // Utiliser une comparaison plus précise pour détecter la fin du défilement à droite
+                scrollRight.style.display = scrollLeftMax < scrollRightMax - 1 ? "flex" : "none";
+            }
+
+            // Gérer le clic sur les flèches
+            scrollLeft.addEventListener("click", () => {
+                scrollMenu.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+            });
+
+            scrollRight.addEventListener("click", () => {
+                scrollMenu.scrollBy({ left: scrollAmount, behavior: "smooth" });
+            });
+
+            // Mettre à jour la visibilité des flèches à chaque défilement
+            scrollMenu.addEventListener("scroll", updateArrows);
+
+            // Initialiser l'état des flèches
+            updateArrows();
+
+            // Masquer les flèches si le curseur n'est pas sur le conteneur
+            navContainer.addEventListener("mouseenter", () => {
+                updateArrows();
+                scrollLeft.style.opacity = "1";
+                scrollRight.style.opacity = "1";
+            });
+
+            navContainer.addEventListener("mouseleave", () => {
+                scrollLeft.style.opacity = "0";
+                scrollRight.style.opacity = "0";
+            });
+        });
+    </script>
 
     <script>
         const labels = [
@@ -443,7 +631,7 @@
 
         $( '#form' )
         .submit( function( e ) {
-            var _url = "http://localhost:8080/dossier"
+            var _url = "http://angara.pft-keka.com:8080/dossier"
             var dossier_id = $('#dossier_id').val()
             var token = $('#token').val()
             console.log(dossier_id)

@@ -227,8 +227,8 @@
                 success:function(data){
                     console.log(data);
                     var html = `<div>
-                                    <p>Tonnage : <span class="text-bold">${data.qty}</span></p>
-                                    <p>Montant : <span class="text-bold">${data.price} FCFA</span></p>
+                                    <p class="lh-base">Tonnage : <span class="text-bold">${data.qty}</span></p>
+                                    <p class="lh-base">Montant : <span class="text-bold">${data.price} FCFA</span></p>
                                 </div>`
                             elt.html(html);
                 }

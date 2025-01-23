@@ -28,11 +28,11 @@
                         <img style="vertical-align: middle" class="image-circle image-thumnail image-75"  src="{{ $protocole->cooperative->photo }}" alt="">
                     </div>
                     <div id="d-text" class="d-flex justify-content-center flex-column">
-                        <p>COOPERATIVE : {{ $protocole->cooperative->name }}</p>
-                        <p>SAISON : {{ $protocole->saison->name }}</p>
-                        <p>TONNAGE ATTENDU : <span class="bg-info badge">{{ $protocole->quantity }} tonne(s)</span></p>
-                        <p>TONNAGE LIVRE : <span class="bg-info badge">{{ $protocole->qtyl }} tonne(s)</span></p>
-                        <p>TAUX D'EXECUTION : <span class="bg-success badge">{{ $protocole->percentage }} %</span></p>
+                        <p class="lh-base">COOPERATIVE : {{ $protocole->cooperative->name }}</p>
+                        <p class="lh-base">SAISON : {{ $protocole->saison->name }}</p>
+                        <p class="lh-base">TONNAGE ATTENDU : <span class="bg-info badge">{{ $protocole->quantity }} tonne(s)</span></p>
+                        <p class="lh-base">TONNAGE LIVRE : <span class="bg-info badge">{{ $protocole->qtyl }} tonne(s)</span></p>
+                        <p class="lh-base">TAUX D'EXECUTION : <span class="bg-success badge">{{ $protocole->percentage }} %</span></p>
                     </div>
                 </div>
             </div>

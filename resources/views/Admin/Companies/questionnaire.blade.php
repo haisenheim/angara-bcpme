@@ -17,74 +17,124 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Formulaire de mise en relation</h5>
+        <h5 class="page-title mb-0 mt-2">Formulaire de mise en relation :: {Entreprise}</h5>
     </div>
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-center">
-        <div class="d-flex gap-0" style="width: 900px">
-            <div style="width: 20px;" class="bg-blue">
-
-            </div>
-            <div class="card flex-fill">
-                <div class="card-body">
-                    <div id="my-form">
-                        @csrf
-                        <input type="hidden" id="id" name="id" value="{{ $item->id }}">
-                        <input type="hidden" id="token" name="token" value="{{ $item->token }}">
-                        <div>
-                            <div class="tab-base tab-vertical d-flex">
-                                <!-- Nav tabs -->
-                                <ul class="nav nav-tabs w-25" style="height: 60vh; overflow: scroll;" role="tablist">
-                                    @foreach ($criteres as $sc)
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $sc->id==1?'active':'' }}" data-bs-toggle="tab" data-bs-target="#_vtab_{{ $sc->id }}" type="button" role="tab" aria-controls="tab_{{ $sc->id }}" aria-selected="true">{{ $sc->name }}</button>
-                                     </li>
-                                    @endforeach
-                                </ul>
-                                <!-- Tabs content -->
-                                <div class="tab-content flex-fill">
-                                    @foreach ($criteres as $sc)
-                                    <div id="_vtab_{{ $sc->id }}" class="tab-pane fade {{ $sc->id==1?'show active':'' }}" role="tabpanel" aria-labelledby="v{{ $sc->id }}-tab">
-                                        <h5>{{ $sc->name }}</h5>
-                                        <table class="table table-sm table-striped">
-                                            <thead>
+    <div  id="my-form">
+        @csrf
+        <input type="hidden" id="id" name="id" value="{{ $item->id }}">
+        <input type="hidden" id="token" name="token" value="{{ $item->token }}">
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2 accordion mb-" id="_dm-defaultAccordion">
+                @foreach ($criteres as $sc)
+                    <div class="accordion-item mb-3">
+                        <div class="accordion-header" id="_dm-defAccHeadingOne">
+                            <button class="accordion-button collapsed {{ $isOpen ? 'border-bottom' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#_dm-{{ $sc->id }}" aria-expanded="false" aria-controls="_dm-{{ $sc->id }}">
+                                {{ $sc->name }}
+                            </button>
+                        </div>
+                        <div id="_dm-{{ $sc->id }}" class="accordion-collapse collapse" aria-labelledby="_dm-defAccHeadingOne" data-bs-parent="#_dm-defaultAccordion" style="">
+                            <div class="accordion-body">
+                                <table class="table table-sm table-striped responsive-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Questions</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($sc->questions as $question)
                                                 <tr>
-                                                    <th>Question</th>
-                                                    <th></th>
+                                                    <td>{{ $question->name }}</td>
+                                                    <td>
+                                                        <select data-critere_id="{{ $sc->critere_id }}" data-sc_id="{{ $sc->id }}" data-question_id="{{ $question->id }}" name="" id="" class="form-control choice">
+                                                            <option value=0>Choisir ...</option>
+                                                            @foreach ($question->choices as $choice)
+                                                                <option data-value="{{ $choice->value }}" value="{{ $choice->id }}">{{ $choice->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($sc->questions as $question)
-                                                    <tr>
-                                                        <td>{{ $question->name }}</td>
-                                                        <td>
-                                                            <select data-critere_id="{{ $sc->critere_id }}" data-sc_id="{{ $sc->id }}" data-question_id="{{ $question->id }}" name="" id="" class="form-control choice">
-                                                                <option value=0>Choisir ...</option>
-                                                                @foreach ($question->choices as $choice)
-                                                                    <option data-value="{{ $choice->value }}" value="{{ $choice->id }}">{{ $choice->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                     </div>
-                                    @endforeach
-                                </div>
-
-                             </div>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                             </div>
                         </div>
-                </div>
-                <div class="card-footer">
-                    <button id="btn-save" class="btn btn-primary">Enregister</button>
+                    </div>
+                @endforeach
+
+                <div class="card">
+                    <div class="card-body">
+                        <button id="btn-save" class="btn btn-primary">Enregister</button>
+                    </div>
                 </div>
             </div>
+
+            
         </div>
+        
     </div>
+    
+    {{-- <div class="card mb-3">
+        
+        <div class="card-body px-md-5 pt-md-5">
+            <div id="my-form">
+                @csrf
+                <input type="hidden" id="id" name="id" value="{{ $item->id }}">
+                <input type="hidden" id="token" name="token" value="{{ $item->token }}">
+                <div>
+                    <div class="tab-base tab-vertical d-flex">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs w-25" style="height: 60vh; overflow: scroll;" role="tablist">
+                            @foreach ($criteres as $sc)
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {{ $sc->id==1?'active':'' }}" data-bs-toggle="tab" data-bs-target="#_vtab_{{ $sc->id }}" type="button" role="tab" aria-controls="tab_{{ $sc->id }}" aria-selected="true">{{ $sc->name }}</button>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <!-- Tabs content -->
+                        <div class="tab-content flex-fill">
+                            @foreach ($criteres as $sc)
+                            <div id="_vtab_{{ $sc->id }}" class="tab-pane fade {{ $sc->id==1?'show active':'' }}" role="tabpanel" aria-labelledby="v{{ $sc->id }}-tab">
+                                <h5>{{ $sc->name }}</h5>
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Question</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($sc->questions as $question)
+                                            <tr>
+                                                <td>{{ $question->name }}</td>
+                                                <td>
+                                                    <select data-critere_id="{{ $sc->critere_id }}" data-sc_id="{{ $sc->id }}" data-question_id="{{ $question->id }}" name="" id="" class="form-control choice">
+                                                        <option value=0>Choisir ...</option>
+                                                        @foreach ($question->choices as $choice)
+                                                            <option data-value="{{ $choice->value }}" value="{{ $choice->id }}">{{ $choice->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        </div>
+                    </div>
+                </div>
+        </div>
+        <div class="card-footer">
+            <button id="btn-save" class="btn btn-primary">Enregister</button>
+        </div>
+
+    </div> --}}
     <script>
         var _url = "{{ route('admin.entreprise.questionnaire.save') }}"
         var token = $('#token').val();

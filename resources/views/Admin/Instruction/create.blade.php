@@ -75,7 +75,7 @@
 
     <script>
         var url = "{{ route('admin.instruction.dsf') }}"
-        var _url = "http://localhost:8080/dossier"
+        var _url = "http://angara.pft-keka.com:8080/dossier"
         var dossier_id = $('#dossier_id').val()
         console.log(dossier_id)
         $( '#form' )

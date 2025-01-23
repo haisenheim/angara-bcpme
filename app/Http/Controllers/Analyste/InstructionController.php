@@ -23,7 +23,7 @@ class InstructionController extends Controller
     }
 
     public function getCritereParamsForm(){
-        $criteres = Http::get('http://localhost:8080/test');
+        $criteres = Http::get('http://angara.pft-keka.com:8080/test');
         $items = json_decode($criteres->body(),true);
         return view('/Analyste/Instruction/params')->with(compact('items'));
     }
@@ -64,13 +64,13 @@ class InstructionController extends Controller
         ];
        $ret =  Http::
        //attach('upload', $upload)->
-       post('http://localhost:8080/dossier',$data);
+       post('http://angara.pft-keka.com:8080/dossier',$data);
        dd($ret->body());
         return redirect(route('analyste.instruction.dossier',$dossier_id));
     }
 
     public function getDossier($id){
-        $dossier = Http::get('http://localhost:8080/dossier/'.$id);
+        $dossier = Http::get('http://angara.pft-keka.com:8080/dossier/'.$id);
         $dossier = json_decode($dossier->body(),true);
         $note3 = $dossier['exercices'][0]['notation'];
        // dd($note3);
@@ -80,7 +80,7 @@ class InstructionController extends Controller
     public function findDossier(){
         $id = request('dossier_id');
         $programme_id = request('programme_id');
-        $dossier = Http::get('http://localhost:8080/dossier?id='.$id.'&programme_id='.$programme_id);
+        $dossier = Http::get('http://angara.pft-keka.com:8080/dossier?id='.$id.'&programme_id='.$programme_id);
         $dossier = json_decode($dossier->body(),true);
         $note3 = $dossier['exercices'][0]['notation'];
         $criteres = $dossier['criteres'];
@@ -95,7 +95,7 @@ class InstructionController extends Controller
         //$dossier_id = request('dossier_id');
 
         $id = request('id');
-        $choices = Http::get('http://localhost:8080/critere/choices?id='.$id);
+        $choices = Http::get('http://angara.pft-keka.com:8080/critere/choices?id='.$id);
         $choices = json_decode($choices->body(),true);
        // dd($criteres);
         return response()->json($choices);
@@ -110,7 +110,7 @@ class InstructionController extends Controller
             'critere_id'=>$critere_id,
             'dossier_id'=>$dossier_id,
         ];
-        $response = Http::post('http://localhost:8080/critere/reponse',$data);
+        $response = Http::post('http://angara.pft-keka.com:8080/critere/reponse',$data);
         return back();
     }
 

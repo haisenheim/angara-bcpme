@@ -57,7 +57,7 @@
                         <div class="card-body">
                             <div class="text-center">
                                 <h1 class="h3">Connexion</h1>
-                                <p>Connectez vous a votre compte</p>
+                                <p class="lh-base">Connectez vous a votre compte</p>
                             </div>
 
                             <form class="mt-4" method="POST" action="/login">

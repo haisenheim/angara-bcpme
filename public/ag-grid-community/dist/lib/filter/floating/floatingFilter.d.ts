@@ -46,7 +46,7 @@ export interface IFloatingFilterParams<P = InbuiltParentType, TData = any, TCont
      * it should have a method your floating A can call to set the state
      * when the user updates via the floating filter.
      */
-    parentFilterInstance: (callback: IFloatingFilterParentCallback<P>) => void;
+    parentFilterInstance: (callback: IFloatingFilterParentCallback<p class="lh-base">) => void;
     /**
      * Shows the parent filter popup.
      */
@@ -67,9 +67,9 @@ export interface IFloatingFilter<P = any> {
      */
     afterGuiAttached?(): void;
     /** A hook to perform any necessary operations when the column definition is updated. */
-    onParamsUpdated?(params: IFloatingFilterParams<P>): void;
+    onParamsUpdated?(params: IFloatingFilterParams<p class="lh-base">): void;
 }
-export interface IFloatingFilterComp<P = any> extends IFloatingFilter<P>, IComponent<IFloatingFilterParams<P>> {
+export interface IFloatingFilterComp<P = any> extends IFloatingFilter<p class="lh-base">, IComponent<IFloatingFilterParams<p class="lh-base">> {
 }
 export interface BaseFloatingFilterChange {
     model: ProvidedFilterModel;

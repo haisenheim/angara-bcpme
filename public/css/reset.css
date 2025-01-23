@@ -80,12 +80,12 @@ time,
 mark,
 audio,
 video {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font-size: 100%;
-  font: inherit;
-  vertical-align: baseline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
 }
 
 /* HTML5 display-role reset for older browsers */
@@ -100,43 +100,43 @@ hgroup,
 menu,
 nav,
 section {
-  display: block;
+    display: block;
 }
 
 body {
-  line-height: 1;
+    line-height: 1;
 
-  * {
-    box-sizing: border-box;
-  }
+    * {
+        box-sizing: border-box;
+    }
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 ol,
 ul,
 li {
-  list-style: none;
+    list-style: none;
 }
 
 blockquote,
 q {
-  quotes: none;
+    quotes: none;
 }
 
 blockquote:before,
 blockquote:after,
 q:before,
 q:after {
-  content: '';
-  content: none;
+    content: "";
+    content: none;
 }
 
 table {
-  border-collapse: collapse;
-  border-spacing: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 [role="button"],
@@ -144,9 +144,9 @@ input[type="submit"],
 input[type="reset"],
 input[type="button"],
 button {
-  -webkit-box-sizing: content-box;
-  -moz-box-sizing: content-box;
-  box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
 }
 
 /* Reset `button` and button-style `input` default styles */
@@ -154,41 +154,51 @@ input[type="submit"],
 input[type="reset"],
 input[type="button"],
 button {
-  background: none;
-  border: 0;
-  color: inherit;
-  /* cursor: default; */
-  font: inherit;
-  line-height: normal;
-  overflow: visible;
-  padding: 0;
-  -webkit-appearance: button;
-  /* for input */
-  -webkit-user-select: none;
-  /* for button */
-  -moz-user-select: none;
-  -ms-user-select: none;
+    background: none;
+    border: 0;
+    color: inherit;
+    /* cursor: default; */
+    font: inherit;
+    line-height: normal;
+    overflow: visible;
+    padding: 0;
+    -webkit-appearance: button;
+    /* for input */
+    -webkit-user-select: none;
+    /* for button */
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 input::-moz-focus-inner,
 button::-moz-focus-inner {
-  border: 0;
-  padding: 0;
+    border: 0;
+    padding: 0;
 }
 
 textarea {
-  border: none;
-  overflow: auto;
-  outline: none;
+    border: none;
+    overflow: auto;
+    outline: none;
 
-  -webkit-box-shadow: none;
-  -moz-box-shadow: none;
-  box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
 }
 
 a,
 a:hover,
 a:visited {
-  color: unset;
-  text-decoration: unset;
+    color: unset;
+    text-decoration: unset;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
 }
