@@ -54,12 +54,12 @@
                     <span class="">Demande d'appui préliminaire</span>
                 </div>
             </div>
-            <div class="notes d-flex flex-column w-100">
+            {{-- <div class="notes d-flex flex-column w-100">
                 <div class="d-flex gap-4">
                     <x-note-box moyenne="0" :up="false" />
                     <x-note-box moyenne="SME4" label="Notation PME" />
                 </div>
-            </div>
+            </div> --}}
             
             {{-- <div class="angara-card-border infos-right d-flex flex-column justify-content-center align-items-center">
                 <a href="/admin/enterprises/notes/576">
@@ -73,7 +73,7 @@
                 
             </div> --}}
         </div>
-        <div class="accordion accordion-flush mt-3" id="_dm-transAccordion">
+        {{-- <div class="accordion accordion-flush mt-3" id="_dm-transAccordion">
             <div class="accordion-item bg-transparent">
                 <div class="accordion-header" id="_dm-transAccHeadingOne">
                     <button class="accordion-button bg-transparent px-3 border rounded collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#_dm-transAccCollapseOne" aria-expanded="false" aria-controls="_dm-transAccCollapseOne">
@@ -92,7 +92,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 
     

@@ -156,6 +156,7 @@ input::placeholder {
 label {
     display: inline-block;
     margin-bottom: 0.5rem !important;
+    color: #000;
 }
 
 .clip {
@@ -726,6 +727,31 @@ a.btn.btn-red.small {
 .nav-menu {
     margin-left: -30px;
     margin-right: -30px;
+}
+
+.mainnav__inner {
+    background-color: var(--ligth-color);
+    .nav-link {
+        color: #000 !important;
+        &.active {
+            color: var(--primary-color) !important;
+            font-weight: normal !important;
+        }
+    }
+}
+
+.mainnav__bottom-content {
+    background: #ffffff !important;
+}
+
+.mainnav__inner
+    :where(.border-top, .border-end, .border-bottom, .border-start) {
+    border-color: #c3c4c5 !important;
+}
+
+:where(.ag-header.ag-header-allow-overflow) .ag-header-row {
+    overflow: visible;
+    background: #000 !important;
 }
 
 /************ TYPO *************/
