@@ -22,13 +22,9 @@
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-center">
-        <div class="d-flex gap-0" style="width: 900px">
-            <div style="width: 20px;" class="bg-blue">
-
-            </div>
-            <div class="card flex-fill">
-                <div class="card-body">
+    <div class="card mb-3">
+        
+        <div class="card-body px-md-5 pt-md-5">
                     <form action="{{ route('admin.programmes.store') }}" method="post" id="my-form">
                         @csrf
                         <input type="hidden" id="appuisnf" name="appuisnf">
@@ -36,39 +32,37 @@
                         <input type="hidden" id="prods" name="produits">
                         <input type="hidden" id="organismes" name="bailleurs">
                         <section data-step="step-1">
-                            <h3 class="text-center mb-3">Étape 1: Identification</h3>
-                            <div class="d-flex gap-2">
-                                <div class="form-group flex-fill">
+                            <h3 class="sub-title text-center mb-3">Étape 1: Identification</h3>
+                            <div class="row g-3 mb-5">
+                                <div class="col-md-12 col-xl-6 mt-4">
                                     <label for="">Dénomination</label>
                                     <input required type="text" id="name" placeholder="Dénomination du programme" name="name" class="form-control">
                                 </div>
-                                <div class="form-group w-300px">
+                                <div class="col-md-12 col-xl-6 mt-4">
                                     <label for="">N° Référence de la Convention cadre du programme</label>
                                     <input required type="text" id="convention" name="convention" placeholder="N° Référence de la Convention cadre du programme" class="form-control">
                                 </div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <div class="form-group w-30">
+                                <div class="col-md-12 col-xl-6 mt-4">
                                     <label for="">Date de signature de la convention cadre</label>
                                     <input required type="date" id="dt_sig_conv"  name="dt_sig_conv" class="form-control">
                                 </div>
-                                <div class="form-group flex-fill">
+                                <div class="col-md-12 col-xl-6 mt-4">
                                     <label for="">Institution signataire</label>
                                     <input required type="text" id="signataire" name="signataire" placeholder="Institution nationale signataire" class="form-control">
                                 </div>
                             </div>
                             <fieldset>
-                                <legend>Budgets du programme</legend>
-                                <div class="d-flex gap-2">
-                                    <div class="form-group flex-fill">
+                                <legend class="font-bold bold mb-3 text-md-start">Budgets du programme</legend>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6 col-xl-4 mt-4">
                                         <label for="">Pour appuis financiers</label>
                                         <input required type="number" value="0" id="budget_af" name="budget_af" placeholder="Budget pour les appuis financiers" class="form-control">
                                     </div>
-                                    <div class="form-group flex-fill">
+                                    <div class="col-md-6 col-xl-4 mt-4">
                                         <label for="">Pour appuis non financiers</label>
                                         <input required type="number" value="0" id="budget_anf" name="budget_anf" placeholder="Budget pour les appuis non financiers" class="form-control">
                                     </div>
-                                    <div class="form-group flex-fill">
+                                    <div class="col-md-6 col-xl-4 mt-4">
                                         <label for="">Pour la coordination</label>
                                         <input required type="number" value="0" id="budget_coord" name="budget_coord" placeholder="Budget pour lea coordination" class="form-control">
                                     </div>
@@ -144,7 +138,11 @@
                                     <input required type="text" id="contact" name="contact" placeholder="Personnes ressources et contact du programme" class="form-control">
                                 </div>
                             </div>
-                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <div class="row border-top">
+                                <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-end">
+                                    <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                                </div>
+                            </div>
                         </section>
                         <section data-step="step-2">
                             <div class="d-flex justify-content-center">
@@ -181,9 +179,11 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button  class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <div class="row border-top">
+                                <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-end">
+                                    <button class="btn btn-light mt-2" data-prev>Precdent</button>
+                                    <button  class="btn btn-primary mt-2" data-next>Suivant</button>
+                                </div>
                             </div>
                         </section>
 
@@ -221,14 +221,15 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button  class="btn btn-success mt-2" >Enregistrer</button>
+                            <div class="row border-top">
+                                <div class="step-footer col-12 col-md-8 offset-md-2 d-flex justify-content-end">
+                                    <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
+                                    <button  class="btn btn-success mt-2" >Enregistrer</button>
+                                </div>
                             </div>
                         </section>
                     </form>
-                </div>
-            </div>
+                
         </div>
     </div>
 

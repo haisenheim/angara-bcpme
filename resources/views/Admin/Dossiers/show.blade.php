@@ -3,7 +3,7 @@
 @section('title', 'Accueil')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb mb-0">
+    <ol class="breadcrumb mb-3 mb-md-0">
        <li class="breadcrumb-item"><a href="#">ANGARA</a></li>
        <li class="breadcrumb-item"><a href="#">INSTRUCTION</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $dossier['name'] }}</li>
@@ -13,8 +13,10 @@
 
 @section('actions')
 <div class="btn-group">
+    <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#exampleModal" data-bs-toggle="modal">
+    Test modal</button>  
     <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
-    Importer DSF</button>
+    Importer DSF</button>   
     <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
     Actions
     <span class="vr"></span>
@@ -34,7 +36,6 @@
 @section('page-header')
     <div class="d-flex justify-content-between w-100">
         <h5 class="page-title mb-0 mt-3">DOSSIER D'INSTRUCTION</h5>
-
     </div>
 
     <div class="angara-card top-info single mt-4">
@@ -54,64 +55,13 @@
                     <span>Créé par : Jackie Flore OMGBA ESSAMA</span>
                 </div>
             </div>
-            <div class="notes d-flex flex-column w-100">
-                <div class="d-flex justify-content-end gap-4">
-                    <div class="notation pointer">
-                        <div
-                            class="d-flex flex-column align-items-center justify-content-center angara-card-border infos-right"
-                        >
-                            <a class="text-black">
-                                <div class="note d-flex justify-content-between align-items-center gap-4">
-                                    @if($sme) <div class="moyenne">{{ $sme['note'] }}</div> @endif
-                                    <div class="indicator d-flex flex-colum gap-1">
-                                        
-                                            <span class="up"></span>
-                                       
-                                            <span class="down"></span>
-                                      
-                                    </div>
-                                </div>
-
-                                <div class="txt-moyenne truncate">Moyenne pondérée finale</div>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="notation pointer"  data-bs-target="#notePonderee" data-bs-toggle="modal">
-                        <div
-                            class="d-flex flex-column align-items-center justify-content-center angara-card-border infos-right"
-                        >
-                            <a class="text-black">
-                                <div class="note d-flex justify-content-between align-items-center gap-4">
-                                    @if($sme) <div class="moyenne">{{ $sme['name'] }}</div> @endif
-                                    <div class="indicator d-flex flex-colum gap-1">
-                                        
-                                            <span class="up"></span>
-                                       
-                                            <span class="down"></span>
-                                      
-                                    </div>
-                                </div>
-
-                                <div class="txt-moyenne truncate" *ngIf="label">Notation PME</div>
-                            </a>
-                        </div>
-                    </div>
-                    {{-- <x-note-box moyenne="0" :up="false" />
-                    <x-note-box moyenne="SME4" label="Notation PME" /> --}}
+            <div class="notes d-flex flex-column w-100 over">
+                <div class="d-flex justify-content-md-end flex-wrap flex-md-nowrap gap-4">
+                    <x-note-box moyenne="{{ $sme['note'] }}" label="Moyenne pondérée finale" :up="false" />
+                    <x-note-box moyenne="{{ $sme['name'] }}" label="Notation PME" />
+                    
                 </div>
             </div>
-            
-            {{-- <div class="angara-card-border infos-right d-flex flex-column justify-content-center align-items-center">
-                <a href="/admin/enterprises/notes/576">
-                    <div class="moyenne">
-                        0
-                    </div>
-                    <div class="txt-moyenne">
-                        Moyenne pondérée
-                    </div>
-                </a>
-                
-            </div> --}}
         </div>
         <div class="accordion accordion-flush mt-3" id="_dm-transAccordion">
             <div class="accordion-item bg-transparent">
@@ -343,7 +293,7 @@
         </div>
     </div>  
 
-    <div class="modal fade" id="importDsfModal">
+    <div class="modal fade" id="importDsfModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content ">
                 <div class="modal-header">
@@ -407,7 +357,7 @@
             <div class="modal-content ">
                 <div class="modal-header justify-content-between">
                     <div class="d-flex justify-content-end">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                        <button data-bs-dismiss="modal" class="btn btn-icon btn-light btn-sm rounded-circle" >x</button> 
                     </div>
                 </div>
                 <div class="modal-body">
@@ -428,7 +378,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="critereModal">
+    <div class="modal fade" id="critereModal"  tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-sm modal-dialog-center">
             <div class="modal-content ">
                 <div class="modal-header justify-content-between">
@@ -453,6 +403,24 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam nam odit enim sapiente, ex eaque tempore quis magni culpa. In?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
             </div>
         </div>
     </div>

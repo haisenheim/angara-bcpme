@@ -37,6 +37,8 @@
         <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
         <script src="{{ asset('js/jquery.min.js') }}"></script>
         <script src="{{ asset('js/quill.min.js') }}"></script>
+        
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
         <!-- Favicons [ OPTIONAL ] -->
         <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -59,7 +61,7 @@
                 <div class="content__wrap">
                     @include('includes.flash-message')
                    <!-- Breadcrumb -->
-                   <div class="d-flex justify-content-between align-items-center">
+                   <div class="d-flex justify-content-between  flex-column flex-md-row align-items-center">
                         @yield('breadcrumb')
                         @yield('actions')
                    </div>

@@ -1,7 +1,7 @@
 
 @if ($message = session('success'))
-    <div class="alert alert-success alert-block">
-        <button type="button" class="close btn btn-xs btn-danger mr-2" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
+    <div class="d-flex align-items-center alert alert-success alert-block">
+        <button type="button" class="close btn btn-xs btn-success mr-2" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
             <strong>{{ $message }}</strong>
     </div>
 @endif
@@ -9,7 +9,7 @@
 
 @if ($message = session('error'))
 
-<div class="alert alert-danger alert-block">
+<div class="d-flex align-items-center alert alert-danger alert-block">
 	<button type="button" class="close btn btn-xs btn-danger mr-2" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
         <strong>{{ $message }}</strong>
 </div>
@@ -18,9 +18,9 @@
 
 @if ($message = session('warning'))
 
-<div class="alert alert-warning alert-block">
+<div class="d-flex align-items-center alert alert-warning alert-block">
 
-	<button type="button" class="close btn btn-xs btn-danger mr-2" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
+	<button type="button" class="close btn btn-xs btn-warning mr-2" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
 
 	<strong>{{ $message }}</strong>
 
@@ -31,7 +31,7 @@
 
 @if ($message = session('info'))
 
-<div class="alert alert-info alert-block">
+<div class="d-flex align-items-center  alert alert-info alert-block">
 
 	<button type="button" class="close" title="fermer ce message d'alerte !" data-bs-dismiss="alert">×</button>
 
