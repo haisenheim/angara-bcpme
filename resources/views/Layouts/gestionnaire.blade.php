@@ -73,6 +73,22 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                 </a>
             </li>
 
+            <!-- Link with submenu -->
+            <li class="nav-item has-sub">
+                <a href="#" class="mininav-toggle nav-link {{ ($active>600&&$active<700)?'active':'' }}"><i class="pli-leafs fs-5 me-2"></i>
+                    <span class="nav-label ms-1">FILIERES</span>
+                </a>
+                <!-- Settings submenu list -->
+                <ul class="mininav-content nav collapse">
+                    <li class="nav-item">
+                        <a href="{{ route('gestionnaire.cooperatives.index') }}" class="nav-link {{ $active==601?'active':'' }}">Organisations</a>
+                    </li>
+
+                </ul>
+                <!-- END : Dashboard submenu list -->
+            </li>
+            <!-- END : Link with submenu -->
+
 
 
             <!-- Link with submenu -->
@@ -86,7 +102,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                         <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
                         <a href="#" class="nav-link {{ $active==801?'active':'' }}">Banques</a>
                     </li>
-
                 </ul>
                 <!-- END : Dashboard submenu list -->
             </li>

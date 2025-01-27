@@ -8,16 +8,10 @@ use App\Http\Resources\ObjectResource;
 use App\Http\Resources\ProduitListResource;
 use App\Http\Resources\ServiceListResource;
 use App\Models\Agence;
-use App\Models\Arrondissement;
-use App\Models\Caisse;
-use App\Models\Departement;
-use App\Models\Village;
-use App\Models\Cooperative;
 use App\Models\Organisme;
 use App\Models\Produit;
 use App\Models\Region;
 use App\Models\Service;
-use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {

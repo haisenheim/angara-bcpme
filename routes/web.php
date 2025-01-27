@@ -261,6 +261,14 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
+        Route::resource('cooperatives','CooperativeController');
+        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
+
+        Route::resource('members','MemberController');
+        Route::get('member/data','MemberController@fetchAll')->name('members.all');
+
+        Route::resource('entrepots','EntrepotController');
+
     });
 
 
