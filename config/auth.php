@@ -46,6 +46,10 @@ return [
             'driver' => 'jwt',
             'provider' => 'users',
         ],
+        'agent' => [
+            'driver' => 'jwt',
+            'provider' => 'agents',
+        ],
     ],
 
     /*
@@ -69,6 +73,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'agents' => [
+            'driver' => 'eloquent',
+            'model' =>  App\Models\Structuration\Agent::class,
         ],
 
         // 'users' => [

@@ -2,11 +2,20 @@
 
 namespace App\Models\Structuration;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class Agent extends Model
+class Agent extends Authenticatable implements JWTSubject
 {
     protected $guarded = [];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'created_at',
+        'updated_at',
+    ];
+
     public function cooperative()
     {
         return $this->belongsTo('App\Models\Structuration\Cooperative');
@@ -20,5 +29,18 @@ class Agent extends Model
             $path = $host.'/img/avatar.png';
         }
         return $path;
+    }
+
+    public function getJWTIdentifier()
+    {
+      return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+      return [
+        'email'=>$this->email,
+        'name'=>$this->name
+      ];
     }
 }
