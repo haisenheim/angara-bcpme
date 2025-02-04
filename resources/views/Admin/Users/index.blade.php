@@ -47,7 +47,7 @@
                                 <td>{{ $item->name }}</td>
                                 <td>{{ $item->phone }}</td>
                                 <td>{{ $item->email }}</td>
-                                <th>{{ $item->role->name }}</th>
+                                <th>{{ $item->role?->name }}</th>
                                 <td>{{ $item->agence?$item->agence->name:'-'  }}</td>
                                 <td>{{ $item->representation?->name  }}</td>
                                 <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
@@ -145,51 +145,4 @@
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="caisseModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle Affectation</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.user.caisse') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="user_id" id="user_id">
-                        <div class="mt-3">
-                            <label for="">Agence</label>
-                            <select required name="agence_id" id="ville_id" class="form-control">
-                                <option value="">Selectionner une agence</option>
-                                @foreach($agences as $item)
-                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mt-3">
-                            <label for="">Role</label>
-                            <select required name="role_id" id="ville_id" class="form-control">
-                                <option value="">choisir</option>
-                                @foreach($roles as $item)
-                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        $(document).ready(function(){
-
-
-        })
-    </script>
 @endsection

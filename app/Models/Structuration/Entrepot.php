@@ -9,14 +9,10 @@ class Entrepot extends Model
     //
     protected $guarded = [];
 
-    public function livraisons()
-    {
-        return $this->hasMany('App\Models\OrderItem','entrepot_source_id');
-    }
 
-    public function receptions()
+    public function stocks()
     {
-        return $this->hasMany('App\Models\OrderItem','entrepot_target_id');
+        return $this->hasMany('App\Models\Structuration\EntrepotGamme','entrepot_id');
     }
 
     public function arrondissement()
@@ -41,5 +37,12 @@ class Entrepot extends Model
     public function cooperative()
     {
         return $this->belongsTo('App\Models\Cooperative');
+    }
+
+    public function getStockAttribute(){
+        $stocks = $this->stocks;
+        return $stocks->reduce(function($c,$i){
+            return $c + $i->quantity;
+        });
     }
 }

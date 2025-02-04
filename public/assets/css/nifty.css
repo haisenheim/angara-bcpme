@@ -777,7 +777,7 @@ body[style*=background]:not(.boxed-layout) > .front-container, .bg-img:not(.boxe
   text-decoration-color: currentColor;
 }
 .root .mainnav__inner .nav-link i, .root .mainnav__inner .nav-link .nav-icon {
-  color: var(--nf-mainnav-icon-color) !important;
+  color: var(--nf-mainnav-icon-color) #000;
 }
 
 .mainnav__menu .mininav-content {
@@ -1591,7 +1591,7 @@ body[style*=background]:not(.boxed-layout) > .front-container, .bg-img:not(.boxe
   --nf-mainnav-link-hover: var(--bs-primary-color);
   --nf-mainnav-link-active: var(--bs-primary-color);
   --nf-mainnav-link-active-underline-color: rgba(var(--bs-primary-color-rgb), 0.3);
-  --nf-mainnav-icon-color: rgba(255, 255, 255);;
+  --nf-mainnav-icon-color: #000;
   --nf-mainnav-heading-color: var(--bs-primary-color);
   --nf-mainnav-border-color: var(--bs-primary-border);
   --nf-mainnav-submenu-active-bg: rgba(0, 0, 0, 0.25);

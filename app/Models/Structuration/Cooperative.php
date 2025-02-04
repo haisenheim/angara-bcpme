@@ -35,6 +35,10 @@ class Cooperative extends Model
         return $this->belongsTo('App\Models\Arrondissement');
     }
 
+    public function wallets(){
+        return $this->hasMany('App\Models\Structuration\CooperativeOperateur','cooperative_id');
+    }
+
     public function paiements(){
         return $this->hasMany('App\Models\Paiement','cooperative_id');
     }
@@ -62,5 +66,12 @@ class Cooperative extends Model
         }
         return $path;
 
+    }
+
+    public function getStockAttribute(){
+        $items = $this->entrepots;
+        return $items->reduce(function($c,$i){
+            return $c + $i->stock;
+        });
     }
 }

@@ -20,6 +20,5 @@ class Agent extends Model
             $path = $host.'/img/avatar.png';
         }
         return $path;
-
     }
 }

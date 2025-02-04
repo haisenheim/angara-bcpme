@@ -88,3 +88,12 @@ body {
     background-repeat: no-repeat;
     background-size: contain;
 }
+
+
+.mainnav__inner .nav-link .nav-icon {
+    color: var(--nf-mainnav-icon-color) !important;
+}
+
+.table:not(.table-borderless):not(.table-bordered) > :not(:last-child) > :last-child > * {
+    border-bottom: 2px #000 solid;
+}

@@ -206,7 +206,7 @@
 ?>
      <!-- Navigation Category -->
      <div class="mainnav__categoriy py-3">
-        
+
         <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
                <a href="{{ route('admin.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}">
@@ -309,9 +309,13 @@
                 <ul class="mininav-content nav collapse">
                     <li class="nav-item">
                         <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
-                        <a href="#" class="nav-link {{ $active==801?'active':'' }}">Banques</a>
                     </li>
-
+                    <li class="nav-item">
+                        <a href="#" class="nav-link {{ $active==802?'active':'' }}">Banques</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
+                    </li>
                 </ul>
                 <!-- END : Dashboard submenu list -->
             </li>

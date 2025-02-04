@@ -85,6 +85,7 @@ class Kernel extends HttpKernel
         'ca'=> \App\Http\Middleware\Ca::class,
         'gestionnaire'=> \App\Http\Middleware\Gestionnaire::class,
         'analyste'=> \App\Http\Middleware\Analyste::class,
+        'cooperative'=> \App\Http\Middleware\Cooperative::class,
         'program'=> \App\Http\Middleware\Program::class,
     ];
 }

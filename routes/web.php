@@ -126,10 +126,16 @@ Route::get('/', function () {
     return redirect('login');
 });
 
+
+
 Route::namespace('App\Http\Controllers\Util')
     ->prefix('util')
     ->name('util.')
     ->group(function(){
+        Route::get('region/departements','SearchController@getDepartementsByRegionId')->name('region.departements');
+        Route::get('departement/arrondissements','SearchController@getArrondissementsByDepartementId')->name('departement.arrondissements');
+        Route::get('arrondissement/villages','SearchController@getVillagesByArrondissementId')->name('arrondissement.villages');
+
         Route::get('localites','SearchController@getLocalites')->name('localites');
         Route::get('organismes','SearchController@getOrganismes')->name('organismes');
         Route::get('ville/agences','SearchController@getAgencesByVilleId')->name('ville.agences');
@@ -193,9 +199,7 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
         Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
 
-
-        Route::post('user/caisse','UserController@setCaisse')->name('user.caisse');
-        Route::post('user/departement','UserController@setDepartement')->name('user.departement');
+        Route::resource('operateurs','OperateurController');
 
         Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
 
@@ -260,6 +264,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
+        Route::resource('wallets','WalletController');
 
         Route::resource('cooperatives','CooperativeController');
         Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
@@ -268,6 +273,9 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('member/data','MemberController@fetchAll')->name('members.all');
 
         Route::resource('entrepots','EntrepotController');
+        Route::resource('requests','RequestController');
+        Route::post('request/validate','RequestController@valider')->name('request.validate');
+        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
 
     });
 
@@ -372,6 +380,37 @@ Route::namespace('App\Http\Controllers\Regional')
        // Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
        // Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
 });
+
+Route::namespace('App\Http\Controllers\Cooperative')
+    ->prefix('cooperative')
+    ->middleware(['auth','cooperative'])
+    ->name('cooperative.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::resource('exploitants','ExploitantController');
+        Route::resource('members','MemberController');
+        Route::post('member/key','MemberController@addKey')->name('member.add.key');
+        Route::resource('entrepots','EntrepotController');
+        Route::resource('villages','VillageController');
+        Route::resource('entrepots','EntrepotController');
+        Route::resource('agents','AgentController');
+        Route::resource('mouvements','MouvementController');
+        Route::resource('requests','RequestController');
+        Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
+
+        Route::resource('entrees','EntreeController');
+        Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
+
+        Route::resource('sorties','SortieController');
+        Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');
+
+        Route::resource('wallets','WalletController');
+        Route::post('wallet/recharge','WalletController@recharger')->name('wallet.recharge');
+        Route::get('recharges','WalletController@getRecharges')->name('recharges');
+        Route::get('wallet/disable/{token}','WalletController@disable')->name('wallet.disable');
+        Route::get('wallet/enable/{token}','WalletController@enable')->name('wallet.enable');
+        Route::get('kpi/agents/solde','KpiController@getAgentSolde')->name('kpi.agents.solde');
+    });
 
 Route::namespace('App\Http\Controllers\Program')
     ->prefix('program')

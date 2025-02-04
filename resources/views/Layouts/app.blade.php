@@ -37,7 +37,7 @@
         <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
         <script src="{{ asset('js/jquery.min.js') }}"></script>
         <script src="{{ asset('js/quill.min.js') }}"></script>
-        
+
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
         <!-- Favicons [ OPTIONAL ] -->
@@ -151,9 +151,9 @@
 
 
                   <!-- Content Header - Right Side: -->
-                  
+
                 @yield('top')
-                  
+
                </div>
             </div>
          </header>

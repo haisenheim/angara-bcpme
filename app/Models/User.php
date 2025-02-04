@@ -55,6 +55,10 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Representation');
     }
 
+    public function cooperative(){
+        return $this->belongsTo('App\Models\Structuration\Cooperative');
+    }
+
 
     public function getStatusAttribute(){
         $data = [
