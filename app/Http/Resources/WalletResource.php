@@ -17,7 +17,7 @@ class WalletResource extends JsonResource
         $data = [
             'id'=>$this->id,
             'operateur'=>$this->operateur,
-            'solde'=>$this->montant,
+            'solde'=> number_format($this->montant),
             'status'=>$this->status,
             'phone'=>$this->phone,
         ];
