@@ -14,6 +14,7 @@ class HomeController extends Controller
     public function getProducteurs(){
         $page = request()->page;
         //$user_id = request()->user
+        //dd()
         if(!$page){
             $page=1;
         }
