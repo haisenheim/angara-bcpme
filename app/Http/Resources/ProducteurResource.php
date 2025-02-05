@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AgentUserResource extends JsonResource
+class ProducteurResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -19,6 +19,7 @@ class AgentUserResource extends JsonResource
             'name'=>$this->name,
             'phone'=>$this->phone,
             'photo'=>$this->photo,
+            'village'=>$this->village?->name,
             'cooperative'=> new CooperativeListResource($this->cooperative),
         ];
     }

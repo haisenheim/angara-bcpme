@@ -37,6 +37,12 @@ Route::namespace('App\Http\Controllers\Api')
         //Route::post('notify/all','SyncController@notifyAll');
 });
 
+Route::namespace('App\Http\Controllers\Api\Agent')
+   ->middleware('api')
+    ->group(function () {
+        Route::get('membres','HomeController@getProducteurs');
+});
+
 Route::namespace('App\Http\Controllers\Api')
     ->middleware('api')
     ->group(function () {
