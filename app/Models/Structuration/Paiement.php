@@ -4,20 +4,15 @@ namespace App\Models\Structuration;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Entree extends Model
+class Paiement extends Model
 {
     //
     protected $guarded = [];
     //protected $table ='mouvements';
 
-    public function gamme()
+    public function entree()
     {
-        return $this->belongsTo('App\Models\Structuration\Gamme');
-    }
-
-    public function entrepot()
-    {
-        return $this->belongsTo('App\Models\Structuration\Entrepot','entrepot_id');
+        return $this->belongsTo('App\Models\Structuration\Entree');
     }
 
     public function agent()
@@ -45,25 +40,8 @@ class Entree extends Model
         return $this->belongsTo('App\Models\Representation');
     }
 
-    public function paiements(){
-        return $this->hasMany('App\Models\Structuration\Paiement','entree_id');
-    }
-
-
     public function saison()
     {
         return $this->belongsTo('App\Models\Structuration\Saison');
     }
-
-    public function getVersementsAttribute(){
-        return $this->paiements->reduce(function($c,$item){
-            return $c + $item->montant;
-        });
-    }
-
-    public function getResteAttribute(){
-        return $this->montant - $this->versements;
-    }
-
-
 }

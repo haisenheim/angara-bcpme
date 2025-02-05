@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProducteurResource extends JsonResource
+class ProducteurListResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -20,11 +20,6 @@ class ProducteurResource extends JsonResource
             'name'=>$this->name,
             'phone'=>$this->phone,
             'photo'=>$this->photo,
-            'cni'=>$this->cni,
-            'nb_enfants'=>$this->nb_enfants,
-            'dtn'=>Carbon::parse($this->dtn)->format('d/m/Y'),
-            'lieu'=>$this->lieu,
-            'entrees'=>EntreeResource::collection($this->stocks),
             'age'=>Carbon::parse($this->dtn)->age,
             'village'=>$this->village?->name,
             'cooperative'=> new CooperativeListResource($this->cooperative),

@@ -41,6 +41,7 @@ Route::namespace('App\Http\Controllers\Api\Agent')
    ->middleware('api')
     ->group(function () {
         Route::get('membres','HomeController@getProducteurs');
+        Route::get('villages','HomeController@getVillages');
 });
 
 Route::namespace('App\Http\Controllers\Api')

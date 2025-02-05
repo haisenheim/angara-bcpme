@@ -21,6 +21,10 @@ class Agent extends Authenticatable implements JWTSubject
         return $this->belongsTo('App\Models\Structuration\Cooperative');
     }
 
+    public function wallets(){
+        return $this->hasMany('App\Models\Structuration\AgentOperateur');
+    }
+
     public function getPhotoAttribute(){
         $host = request()->getSchemeAndHttpHost();
         if($this->photo_uri){

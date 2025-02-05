@@ -11,6 +11,8 @@ class Operateur extends Model
     protected $table = 'operateur_mobiles';
     public $timestamps = false;
 
+    protected $appends = ['photo'];
+
     public function requests(){
         return $this->hasMany('App\Models\Structuration\Request','operateur_id');
     }

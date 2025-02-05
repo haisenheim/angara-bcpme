@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AgentUserResource extends JsonResource
+class WalletResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,13 +14,13 @@ class AgentUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id'=>$this->id,
-            'name'=>$this->name,
+            'operateur'=>$this->operateur,
+            'solde'=>$this->montant,
+            'status'=>$this->status,
             'phone'=>$this->phone,
-            'photo'=>$this->photo,
-            'wallets'=>WalletResource::collection($this->wallets),
-            'cooperative'=> new CooperativeListResource($this->cooperative),
         ];
+        return $data;
     }
 }
