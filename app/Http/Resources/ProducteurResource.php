@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,7 @@ class ProducteurResource extends JsonResource
             'name'=>$this->name,
             'phone'=>$this->phone,
             'photo'=>$this->photo,
+            'age'=>Carbon::parse($this->dtn)->age,
             'village'=>$this->village?->name,
             'cooperative'=> new CooperativeListResource($this->cooperative),
         ];
