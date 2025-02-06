@@ -98,7 +98,8 @@ class EntreeController extends ExtendedController
      */
 	public function show($token)
 	{
-
+        $item = Entree::where('token',$token)->first();
+        return view('Cooperative.Entrees.show',compact('item'));
 	}
 
 

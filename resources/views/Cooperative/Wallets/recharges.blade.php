@@ -35,7 +35,7 @@
                     @foreach ($items as $item)
                         <tr>
                             <td>{{ $item->created_at->format('d/m/Y H:i') }}</td>
-                            <td> <span><img src="{{ $item->agent?->photo }}" width="20" alt=""></span>{{ $item->agent?->name }}</td>
+                            <td> <span><img class="rounded-circle" src="{{ $item->agent?->photo }}" width="20" alt=""></span>{{ $item->agent?->name }}</td>
                             <td> <img src="{{ $item->operateur?->photo }}" width="20" alt=""> {{ $item->operateur?->name }}</td>
                             <td>{{ number_format($item->montant,0,',','.') }}</td>
 

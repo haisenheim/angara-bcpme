@@ -103,30 +103,25 @@
                         <table class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th></th>
-                                    <th colspan="4">QUANTITES</th>
-                                    <th colspan="3"></th>
-                                </tr>
-                                <tr>
-                                    <th>GRADE 1</th>
-                                    <th>GRADE 2</th>
-                                    <th>HS</th>
-                                    <th>TOTAL</th>
+                                    <th>DATE</th>
+                                    <th>GAMME</th>
+                                    <th>QUANTITE</th>
+                                    <th>PRIX UNITAIRE</th>
                                     <th>MONTANT</th>
                                     <th>VERSEMENT</th>
                                     <th>RESTE</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($parts as $part)
+                                @foreach($item->stocks as $part)
                                     <tr>
-                                        <td> {{ $part->grd1_qty *1000 }} kg ({{ $part->grd1_qty }} t)</td>
-                                        <td> {{ $part->grd2_qty *1000 }} kg ({{ $part->grd2_qty }} t)</td>
-                                        <td> {{ $part->hs_qty *1000 }} kg ({{ $part->hs_qty }} t)</td>
-                                        <th>{{ number_format($part->quantity*1000,0,',','.') }} kg ({{ $part->quantity }} t)</th>
-                                        <th>{{ number_format($part->total,0,',','.') }} FCFA</th>
-                                        <th>{{ number_format($part->versement,0,',','.') }} FCFA</th>
-                                        <th>{{ number_format($part->reste,0,',','.') }} FCFA</th>
+                                        <td>{{ $part->created_at->format('d/m/Y') }}</td>
+                                        <td>{{ $part->gamme->name }}</td>
+                                        <td>{{ number_format($part->quantity) }}kg</td>
+                                        <td>{{ number_format($part->pu,0,',','.') }}</td>
+                                        <td>{{ number_format($part->montant,0,',','.') }}</td>
+                                        <td>{{ number_format($part->versements,0,',','.') }}</td>
+                                        <td>{{ number_format($part->reste,0,',','.') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -143,10 +138,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pps as $pp)
+                                @foreach($item->paiements as $pp)
                                     <tr>
                                         <td>{{ $pp->created_at->format('d/m/Y H:i') }}</td>
-                                        <td>{{ $pp->paiement->name }}</td>
+                                        <td>{{ $pp->name }}</td>
                                         <th>{{ number_format($pp->montant,0,',','.') }} FCFA</th>
                                     </tr>
                                 @endforeach

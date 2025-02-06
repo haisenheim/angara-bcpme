@@ -400,6 +400,7 @@ Route::namespace('App\Http\Controllers\Cooperative')
 
         Route::resource('entrees','EntreeController');
         Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
+        Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
 
         Route::resource('sorties','SortieController');
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');

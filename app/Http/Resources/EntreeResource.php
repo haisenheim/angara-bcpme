@@ -27,6 +27,8 @@ class EntreeResource extends JsonResource
             'pu'=>number_format($this->pu,0,',','.'),
             'date'=>$this->created_at->format('d/m/Y'),
             'quantity'=>$this->quantity,
+            'versements'=>number_format($this->versements,0,',','.'),
+            'reste'=>number_format($this->reste,0,',','.'),
         ];
     }
 }
