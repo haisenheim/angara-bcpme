@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Forme extends Model  //Forme Juridique
+class ElementConstitutif extends Model  //Forme Juridique
 {
     use HasFactory;
     //protected $table = 'entreprise_types';
-    protected $table = 'formes_juridiques';
+    protected $table = 'elements_constitutifs_types';
     public $timestamps = false;
     protected $guarded = [];
 }

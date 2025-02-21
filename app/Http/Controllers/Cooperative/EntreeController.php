@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Cooperative;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntreeResource;
 use App\Models\Structuration\Agent;
+use App\Models\Structuration\AgentOperateur;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
 use App\Models\Structuration\Entrepot;
 use App\Models\Structuration\EntrepotGamme;
 use App\Models\Structuration\Exploitant;
 use App\Models\Structuration\Gamme;
+use App\Models\Structuration\Paiement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -101,6 +103,31 @@ class EntreeController extends ExtendedController
         $item = Entree::where('token',$token)->first();
         return view('Cooperative.Entrees.show',compact('item'));
 	}
+
+    public function getPaiements(){
+        $items = Paiement::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        return view('Cooperative.Entrees.paiements',compact('items'));
+    }
+
+    public function addPaiement(){
+        $item = Entree::find(request()->entree_id);
+        $cop = Cooperative::find(auth()->user()->cooperative_id);
+        $wallet = AgentOperateur::find(request()->wallet_id);
+        $wallet->montant = $wallet->montant - request()->montant;
+        $wallet->save();
+        Paiement::create([
+            'entree_id'=>$item->id,
+            'wallet_id'=>request()->wallet_id,
+            'montant'=>request()->montant,
+            'cooperative_id'=>auth()->user()->cooperative_id,
+            'agent_id'=>$item->id,
+            'exploitant_id'=>$item->exploitant_id,
+
+
+        ]);
+        Session::flash('success','Paiement effectué avec succès!');
+        return back();
+    }
 
 
 }

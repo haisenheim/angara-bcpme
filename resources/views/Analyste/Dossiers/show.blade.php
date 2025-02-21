@@ -37,7 +37,7 @@
 
 
 @section('content')
-    <div class="d-flex gap-1">
+    <div style="" class="d-flex gap-1">
         <div class="card w-400px">
             <div class="card-header">
                 <p class="lh-base"><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
@@ -72,7 +72,7 @@
             </div>
         </div>
         <div class="card flex-fill">
-            <div style="height: 70vh; overflow:scroll;" class="card-body">
+            <div style="overflow:scroll;" class="card-body">
                 <div class="">
                     <!-- Underline nav tabs with base -->
                     <div class="tab-base">
@@ -290,34 +290,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="critereModal">
-        <div class="modal-dialog modal-dialog-scrollable modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Choix de la valeur</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('analyste.instruction.critere.reponse') }}" method="post">
-                        @csrf
-                        <input type="hidden" id="_dossier_id" name="dossier_id">
-                        <input type="hidden" id="id" name="critere_id">
-                        <div class="mt-2">
-                            <label id="name" for=""></label>
-                            <select required name="choice_id" id="critere_id" class="form-control">
-
-                            </select>
-                        </div>
-                        <div class="mt-1">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="modal fade" id="editModal">
         <div class="modal-dialog modal-dialog-centered">
@@ -411,55 +383,87 @@
         })
     </script>
 
-    <script>
-            $('.btn-critere').click(function(){
-            var url = "{{ route('analyste.instruction.critere.choices') }}"
-            var name = $(this).data('name')
-            var dossier_id = $(this).data('dossier_id')
-            var id = $(this).data('id')
-            $('#name').text(name)
-            $('#_dossier_id').val(dossier_id)
-            $('#id').val(id)
+@endsection
 
-            $.ajax({
-                url: url,
-                type: 'get',
-                dataType:'json',
-                data: {id:id},
-                success:function(data){
-                    console.log(data)
-                    $('#critere_id').html('')
-                    $('#critere_id').append(`<option value="">Choisir ...</option>`)
-                    data.forEach(choice => {
-                        $('#critere_id').append(`<option value=${choice.id}>${choice.valeur}</option>`)
-                    });
-                    //window.location.replace('/analyste/instruction/dossier/'+dossier_id)
-                },
-                //processData: false,
-               // contentType: false
-            } );
-        })
-        //var url = "{{ route('analyste.instruction.dsf') }}"
+@section('modal')
 
-        $( '#form_' )
-        .submit( function( e ) {
-            var _url = "http://angara.pft-keka.com:8080/dossier"
-            var dossier_id = $('#dossier_id').val()
-            var token = $('#token').val()
-            console.log(dossier_id)
-            $.ajax( {
-            url: _url,
-            type: 'POST',
-            data: new FormData( this ),
-            success:function(data){
-                console.log(data)
-                window.location.replace('/analyste/dossiers/'+token)
-            },
-            processData: false,
-            contentType: false
-            } );
-            e.preventDefault();
-        } );
-    </script>
+<div class="modal fade" id="critereModal">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header justify-content-between">
+                <h5 class="modal-title">Choix de la valeur</h5>
+                <div style="float: right">
+                    <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('analyste.instruction.critere.reponse') }}" method="post">
+                    @csrf
+                    <input type="hidden" id="_dossier_id" name="dossier_id">
+                    <input type="hidden" id="id" name="critere_id">
+                    <div class="mt-2">
+                        <label id="name" for=""></label>
+                        <select required name="choice_id" id="critere_id" class="form-control">
+
+                        </select>
+                    </div>
+                    <div class="mt-1">
+                        <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('.btn-critere').click(function(){
+    var url = "{{ route('analyste.instruction.critere.choices') }}"
+    var name = $(this).data('name')
+    var dossier_id = $(this).data('dossier_id')
+    var id = $(this).data('id')
+    $('#name').text(name)
+    $('#_dossier_id').val(dossier_id)
+    $('#id').val(id)
+
+    $.ajax({
+        url: url,
+        type: 'get',
+        dataType:'json',
+        data: {id:id},
+        success:function(data){
+            console.log(data)
+            $('#critere_id').html('')
+            $('#critere_id').append(`<option value="">Choisir ...</option>`)
+            data.forEach(choice => {
+                $('#critere_id').append(`<option value=${choice.id}>${choice.valeur}</option>`)
+            });
+            //window.location.replace('/analyste/instruction/dossier/'+dossier_id)
+        },
+        //processData: false,
+       // contentType: false
+    } );
+})
+//var url = "{{ route('analyste.instruction.dsf') }}"
+
+$( '#form_' ).submit( function( e ) {
+    var _url = "http://localhost:8080/dossier"
+    var dossier_id = $('#dossier_id').val()
+    var token = $('#token').val()
+    console.log(dossier_id)
+    $.ajax( {
+    url: _url,
+    type: 'POST',
+    data: new FormData( this ),
+    success:function(data){
+        console.log(data)
+        window.location.replace('/analyste/dossiers/'+token)
+    },
+    processData: false,
+    contentType: false
+    } );
+    e.preventDefault();
+} );
+</script>
 
 @endsection

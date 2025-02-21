@@ -79,11 +79,11 @@
                                         <label class="col-form-label">Caractère : </label>
                                         <div class="">
                                            <div class="form-check form-check-inline">
-                                              <input id="_dm-inlineRadio2" checked class="form-check-input" type="radio" name="caractere" value="Formel">
+                                              <input data-formal="1" id="_dm-inlineRadio2" checked class="form-check-input caractere" type="radio" name="caractere" value="Formel">
                                               <label for="_dm-inlineRadio2" class="form-check-label">Formel</label>
                                            </div>
                                            <div class="form-check form-check-inline">
-                                              <input id="_dm-inlineRadio3" class="form-check-input" type="radio" name="caractere" value="Informel">
+                                              <input data-formal="0" id="_dm-inlineRadio3" class="form-check-input caractere" type="radio" name="caractere" value="Informel">
                                               <label for="_dm-inlineRadio3" class="form-check-label">Informel</label>
                                            </div>
                                         </div>
@@ -93,9 +93,7 @@
                                     <label for="">Forme juridique  </label>
                                     <select required name="forme_id" id="forme_id" class="form-control">
                                         <option value="">Choisir ...</option>
-                                        @foreach ($formes as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
+
                                     </select>
                                 </div>
                             </div>
@@ -116,7 +114,7 @@
                                 </div>
                                 <div class="form-group w-25">
                                     <label for="">Capital social de l'entreprise</label>
-                                    <input required type="number" id="capital" placeholder="Capital social de l'entreprise" name="capital" class="form-control">
+                                    <input required type="number" id="capital" placeholder="Capital social de l'entreprise" name="capital" class="form-control formal-control">
                                 </div>
                                 <div class="form-group w-25">
                                     <label for="">Date de création formelle</label>
@@ -130,11 +128,11 @@
                             <div class="d-flex gap-3">
                                 <div class="form-group w-25">
                                     <label for="">Ressources propres </label>
-                                    <input required type="number" id="ressources_propres"  name="ressources_propres" placeholder="Ressources propres de l'entreprise " class="form-control">
+                                    <input required type="number" id="ressources_propres"  name="ressources_propres" placeholder="Ressources propres de l'entreprise " class="form-control formal-control">
                                 </div>
                                 <div class="form-group w-25">
                                     <label for="">Total actif (Voir bilan)</label>
-                                    <input required type="number" id="total_actif"  name="total_actif" placeholder="Total actif de l'entreprise" class="form-control">
+                                    <input required type="number" id="total_actif"   name="total_actif" placeholder="Total actif de l'entreprise" class="form-control formal-control">
                                 </div>
                                 <div class="form-group w-30 mt-3">
                                     <label for="">Type de personnel : </label>
@@ -339,7 +337,7 @@
 
  <script>
     document.addEventListener('DOMContentLoaded', () => {
-            const wizard = new Zangdar('#my-form')
+            const wizard = new Zangdar('#my-form');
     })
  </script>
  <script src="{{ asset('dropdowncombotree/comboTreePlugin.js') }}"></script>
@@ -353,6 +351,7 @@
     var items = [];
     var anfs = [];
     var afs = [];
+    var formes = [];
     $(document).ready(function($){
         $.ajax({
              'url':"{{ route('util.entreprise.create.data') }}",
@@ -360,6 +359,13 @@
              'dataType':'json',
              success:function(arr){
                  console.log(arr);
+                    formes = arr.formes;
+                    console.log(formes);
+                    formes.forEach(elt => {
+                        if(elt.formel==1){
+                            $('#forme_id').append(`<option value="${elt.id}">${elt.name}</option>`)
+                        }
+                    });
                     combo = $('#ct').comboTree({
                          source : arr.produits,
                          collapse: true,
@@ -405,8 +411,25 @@
                          anfs = anf._selectedItems;
                          buildAnf()
                      });
+
+                     $('.caractere').change(function(){
+                        var c = $(this).data('formal');
+                        if(c==0){
+                            $('.formal-control').prop('disabled', true)
+                        }else{
+                            $('.formal-control').prop('disabled', false)
+                        }
+                        $('#forme_id').html(`<option value="">Choisir une forme ...</option>`)
+                        formes.forEach(elt => {
+                            if(elt.formel==c){
+                                $('#forme_id').append(`<option value="${elt.id}">${elt.name}</option>`)
+                            }
+                        });
+                    });
              }
          });
+
+
 
     })
 

@@ -225,6 +225,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::post('entreprise/appui','CompanyController@saveAppui')->name('entreprise.appui.save');
+        Route::post('entreprise/element','CompanyController@addElement')->name('entreprise.element.save');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 
@@ -351,9 +352,19 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-       // Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
-       // Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-       // Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+
+        Route::resource('wallets','WalletController');
+
+        Route::resource('cooperatives','CooperativeController');
+        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
+
+        Route::resource('members','MemberController');
+        Route::get('member/data','MemberController@fetchAll')->name('members.all');
+
+        Route::resource('entrepots','EntrepotController');
+        Route::resource('requests','RequestController');
+        Route::post('request/validate','RequestController@valider')->name('request.validate');
+        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
 });
 
 Route::namespace('App\Http\Controllers\Regional')
@@ -401,6 +412,7 @@ Route::namespace('App\Http\Controllers\Cooperative')
         Route::resource('entrees','EntreeController');
         Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
         Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
+        Route::get('paiements','EntreeController@getPaiements')->name('paiements');
 
         Route::resource('sorties','SortieController');
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');

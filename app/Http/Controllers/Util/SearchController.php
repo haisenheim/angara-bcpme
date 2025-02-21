@@ -8,6 +8,7 @@ use App\Http\Resources\ObjectResource;
 use App\Http\Resources\ProduitListResource;
 use App\Http\Resources\ServiceListResource;
 use App\Models\Agence;
+use App\Models\Forme;
 use App\Models\Organisme;
 use App\Models\Produit;
 use App\Models\Region;
@@ -57,12 +58,14 @@ class SearchController extends Controller
         $produits = ProduitListResource::collection($produits);
         $anfs = ServiceListResource::collection($anfs);
         $afs = ServiceListResource::collection($afs);
+        $formes = Forme::all();
 
         return response()->json([
             'produits'=>$produits,
             'afs'=>$afs,
             'anfs'=>$anfs,
-            'localites'=>$localites
+            'localites'=>$localites,
+            'formes'=>$formes,
         ]);
     }
 

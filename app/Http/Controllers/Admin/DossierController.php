@@ -28,8 +28,10 @@ class DossierController extends Controller
     public function show($token){
 
         $item = Dossier::where('token',$token)->first();
-        $resp = Http::get('http://angara.pft-keka.com:8080/entreprise/dossier?id='.$item->id);
+       // dd($item);
+        $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$item->id);
         $resp = json_decode($resp->body(),true);
+        //dd($resp);
         $dossier = $resp['dossier'];
         //dd($dossier);
         $entreprise = $resp['entreprise'];

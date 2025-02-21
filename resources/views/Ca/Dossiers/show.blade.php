@@ -257,52 +257,14 @@
             `Rentabilité de la relation pour l’établissement (conditions, commissions, retombées attendues, soldes moyens, commentaires ratios de couverture de risques).`,
             `Conclusions motivées, recommandations de l’Analyste Financier`,
         ]
-        $('.analyse .dropdown-item').click(function(){
-            var seq = $(this).data('sequence')
-            console.log(seq)
-            description = labels[seq-1]
-            $('#description').text(description)
-            $('#sequence').val(seq)
-        })
 
-        $('.btn-edit').click(function(){
-            var id = $(this).data('engagement_id')
-            $('#engagement_id').val(id)
-        })
+
     </script>
 
     <script>
-            $('.btn-critere').click(function(){
-            var url = "{{ route('ca.instruction.critere.choices') }}"
-            var name = $(this).data('name')
-            var dossier_id = $(this).data('dossier_id')
-            var id = $(this).data('id')
-            $('#name').text(name)
-            $('#_dossier_id').val(dossier_id)
-            $('#id').val(id)
-
-            $.ajax({
-                url: url,
-                type: 'get',
-                dataType:'json',
-                data: {id:id},
-                success:function(data){
-                    console.log(data)
-                    $('#critere_id').html('')
-                    $('#critere_id').append(`<option value="">Choisir ...</option>`)
-                    data.forEach(choice => {
-                        $('#critere_id').append(`<option value=${choice.id}>${choice.valeur}</option>`)
-                    });
-                    //window.location.replace('/ca/instruction/dossier/'+dossier_id)
-                },
-                //processData: false,
-               // contentType: false
-            } );
-        })
-
         $( '#form' )
         .submit( function( e ) {
-            var _url = "http://angara.pft-keka.com:8080/dossier"
+            var _url = "http://localhost:8080/dossier"
             var dossier_id = $('#dossier_id').val()
             console.log(dossier_id)
             $.ajax( {

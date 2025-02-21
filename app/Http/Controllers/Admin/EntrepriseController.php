@@ -16,14 +16,14 @@ class EntrepriseController extends Controller
      */
     public function index()
     {
-        $resp = Http::get('http://angara.pft-keka.com:8080/entreprises');
+        $resp = Http::get('http://localhost:8080/entreprises');
         $items = json_decode($resp->body(),true);
         //dd($items);
         return view('/Admin/Entreprises/index')->with(compact('items'));
     }
 
     public function getDossier($id){
-        $resp = Http::get('http://angara.pft-keka.com:8080/entreprise/dossier?id='.$id);
+        $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$id);
         $resp = json_decode($resp->body(),true);
         $dossier = $resp['dossier'];
         $entreprise = $resp['entreprise'];
@@ -40,7 +40,7 @@ class EntrepriseController extends Controller
     }
 
     public function _getDossier($id){
-        $dossier = Http::get('http://angara.pft-keka.com:8080/dossier?id='.$id);
+        $dossier = Http::get('http://localhost:8080/dossier?id='.$id);
         $dossier = json_decode($dossier->body(),true);
         $note3 = $dossier['exercices'][0]['notation'];
         $criteres = $dossier['criteres'];
@@ -92,7 +92,7 @@ class EntrepriseController extends Controller
      */
 	public function show($id)
 	{
-		$resp = Http::get('http://angara.pft-keka.com:8080/entreprise?id='.$id);
+		$resp = Http::get('http://localhost:8080/entreprise?id='.$id);
         $resp = json_decode($resp->body(),true);
         $item = $resp['entreprise'];
         $engagements = $resp['engagements'];
@@ -103,14 +103,14 @@ class EntrepriseController extends Controller
     public function setEngagement(){
         $data = request()->except('_token');
         //dd($data);
-        $resp = Http::post('http://angara.pft-keka.com:8080/entreprise/engagement',$data);
+        $resp = Http::post('http://localhost:8080/entreprise/engagement',$data);
         return back();
     }
 
     public function setAnalyse(){
         $data = request()->except('_token');
         //dd($data);
-        $resp = Http::post('http://angara.pft-keka.com:8080/entreprise/dossier/analyse',$data);
+        $resp = Http::post('http://localhost:8080/entreprise/dossier/analyse',$data);
         return back();
     }
 

@@ -14,7 +14,7 @@
 @section('actions')
 <div class="btn-group">
     <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
-    Importer DSF</button>   
+    Importer DSF</button>
     <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
     Actions
     <span class="vr"></span>
@@ -38,15 +38,15 @@
 
     <div class="angara-card top-info single mt-4">
         <div class="infos-enterprise d-flex justify-content-between flex-column flex-md-row">
-            <div class="infos-left d-flex flex-column mb-3 mb-md-0 w-100"> 
+            <div class="infos-left d-flex flex-column mb-3 mb-md-0 w-100">
                 <div class="society-name d-flex align-items-center">
                     <h2 class="title-1 mb-0">{{ $entreprise['name'] }}</h2>
-                    
+
                     <div class="badges d-flex">
                         <span style="width: 24px; height: 25px;"><img src="/img/new/icons/badges/check-badge.svg"></span>
                         <span style="width: 24px; height: 25px;"><img src="/img/new/icons/badges/shield-check.svg"></span>
                     </div>
-                    
+
                 </div>
                 <h3>Dossier : {{ $dossier['programme']['name'] }}</h3>
                 <div class="agent">
@@ -57,7 +57,7 @@
                 <div class="d-flex justify-content-md-end flex-wrap flex-md-nowrap gap-4">
                     <x-note-box moyenne="{{ $sme['note'] }}" label="Moyenne pondérée finale" :up="false" />
                     <x-note-box moyenne="{{ $sme['name'] }}" label="Notation PME" />
-                    
+
                 </div>
             </div>
         </div>
@@ -70,7 +70,7 @@
                 </div>
                 <div id="_dm-transAccCollapseOne" class="accordion-collapse bg-transparent collapse" aria-labelledby="_dm-transAccHeadingOne" data-bs-parent="#_dm-transAccordion" style="">
                     <div class="sous-criteres pt-4 d-flex flex-column gap-3 border-top">
-            
+
                         <div class="d-flex flex-wrap gap-4">
                             <x-note-box moyenne="1.03" label="Activités" :down="false" />
                             <x-note-box moyenne="1.45" label="Gestion et Stratégie" :down="false" />
@@ -108,7 +108,7 @@
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
                             </li>
-                        
+
                         </ul>
 
                         <!-- Flèche droite -->
@@ -289,7 +289,7 @@
                  </div>
             </div>
         </div>
-    </div>  
+    </div>
 
     <div class="modal fade" id="importDsfModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -301,7 +301,7 @@
                 <form enctype="multipart/form-data" id="form" method="post">
                     @csrf
                     <div class="modal-body">
-                        
+
                             <div class="form-group">
                                 <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
                                 <input type="hidden" id="token" value="{{ $item->token }}">
@@ -314,7 +314,7 @@
                                 <label for="">FICHIER DSF</label>
                                 <input type="file" name="upload" class="form-control">
                             </div>
-                        
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -332,20 +332,20 @@
                 <h5 class="modal-title">Notation PME</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
+
                 <div class="modal-body">
-                    
+
                     @if($sme)
                     <h3 class="title-1">{{ $sme['name'] }}</h3>
                     <h4>{{ $sme['mention'] }}</h4>
                     <p class="lh-base">{{ $sme['description'] }}</p>
                 @endif
-                    
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 </div>
-            
+
             </div>
         </div>
     </div>
@@ -355,7 +355,7 @@
             <div class="modal-content ">
                 <div class="modal-header justify-content-between">
                     <div class="d-flex justify-content-end">
-                        <button data-bs-dismiss="modal" class="btn btn-icon btn-light btn-sm rounded-circle" >x</button> 
+                        <button data-bs-dismiss="modal" class="btn btn-icon btn-light btn-sm rounded-circle" >x</button>
                     </div>
                 </div>
                 <div class="modal-body">
@@ -579,7 +579,7 @@
 
         $( '#form' )
         .submit( function( e ) {
-            var _url = "http://angara.pft-keka.com:8080/dossier"
+            var _url = "http://localhost:8080/dossier"
             var dossier_id = $('#dossier_id').val()
             var token = $('#token').val()
             console.log(dossier_id)

@@ -2,12 +2,19 @@
        <div class="mainnav__bottom-content border-top pb-2">
         <ul id="mainnav" class="mainnav__menu nav flex-column">
             <li class="nav-item">
+
                 <a id="btn-logout" href="#" class="nav-link">
                     <i class="demo-pli-unlock fs-5 me-2"></i>
                     <span class="nav-label ms-1">Se déconnecter</span>
                 </a>
             </li>
         </ul>
+        <div style="display: none">
+            <form id="logout-form" method="POST" action="{{ route('logout') }}">
+                @csrf
+                
+            </form>
+        </div>
     </div>
     <!-- End - Bottom navigation menu -->
 

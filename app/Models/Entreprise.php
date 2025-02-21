@@ -38,6 +38,10 @@ class Entreprise extends Model
         return $this->belongsToMany('App\Models\Service','entreprise_appuis'); //autres produits
     }
 
+    public function elements(){
+        return $this->hasMany('App\Models\EntrepriseElementConstitutif','entreprise_id'); //autres produits
+    }
+
     public function filiere(){
         return $this->belongsTo('App\Models\Filiere');
     }

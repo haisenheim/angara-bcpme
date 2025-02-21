@@ -18,6 +18,7 @@
     </button>
     <ul class="dropdown-menu">
         <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
+        <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#">Ajouter une pièce </a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
@@ -268,7 +269,7 @@
                                 </tbody>
                             </table>
                        </div>
-                       <div id="_tab3" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                       <div id="_tab3" class="tab-pane fade table-responsive" role="tabpanel" aria-labelledby="contact-tab">
                             <fieldset class="mt-4">
                                 <legend>LISTES DES TIERS PERSONNE PHYSIQUE</legend>
                                 <table class="table table-striped">
@@ -417,17 +418,24 @@
                             </table>
                        </div>
                        <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="fichier-tab">
-                       
-                        <table class="table table-sm">
-                            <thead>
-                                <th>DOCUMENT</th>
-                                <th>LIEN</th>
-                                <th></th>
-                            </thead>
-                            <tbody>
 
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <th>DOCUMENT</th>
+                                    <th>LIEN</th>
+                                    <th></th>
+                                </thead>
+                                <tbody>
+                                    @foreach ($item->elements as $element)
+                                       <tr>
+                                            <td>{{ $element->type?->name }}</td>
+                                            <td><a class="btn-link" href="{{ $element->path }}">Cliquer ici </a></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                    </div>
                     </div>
                  </div>
@@ -502,6 +510,44 @@
                                 </div>
                             </div>
                         <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="addElementModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Ajouter un Element constitutif</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.element.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="form-group">
+                                    <label for="">Pièce</label>
+                                    <select required  name="type_id" class="form-control cmp">
+                                        <option value="0">Selectionner un type de pièce  ...</option>
+                                        @foreach($elements as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">FICHIER</label>
+                                    <input type="file" name="fichier" class="form-control">
+                                </div>
+                            </div>
+                        <div class="mt-5 d-grid">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
                         </div>
                     </form>

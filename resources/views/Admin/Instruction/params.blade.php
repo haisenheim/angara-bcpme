@@ -46,7 +46,7 @@
                                 <td>{{ $sc['sequence'] }}</td>
                                 <td>{{ $sc['name'] }}</td>
                                 <td data-critere_id="{{ $sc['id'] }}" class="td-edit border-1 border-muted" contenteditable="true">{{ $sc['default'] }}</td>
-                            </tr>    
+                            </tr>
                             @endforeach
                     @endforeach
                 </tbody>
@@ -72,7 +72,7 @@
             })
             //console.log(ponderations)
             $.ajax({
-                url:'http://angara.pft-keka.com:8080/test',
+                url:'http://localhost:8080/test',
                 type:'post',
                 dataType:'json',
                 data:{ponderations:ponderations,programme_id:programme_id},

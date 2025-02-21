@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
 use App\Models\Critere;
 use App\Models\Dossier;
+use App\Models\ElementConstitutif;
 use App\Models\Entreprise;
 use App\Models\EntrepriseAppui;
+use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
 use App\Models\Person;
@@ -22,7 +25,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
-class CompanyController extends Controller
+class CompanyController extends ExtendedController
 {
     /**
      * Display a listing of the resource.
@@ -41,7 +44,7 @@ class CompanyController extends Controller
 
 
     public function fetchAll(){
-        $items = Entreprise::where('prospect',0)->where('user_id',auth()->user()->id)->get();
+        $items = Entreprise::orderBy('created_at','DESC')->where('prospect',0)->where('user_id',auth()->user()->id)->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
     }
@@ -58,8 +61,8 @@ class CompanyController extends Controller
     public function create()
     {
         //
-        $formes = Forme::all();
-        return view('/Gestionnaire/Companies/create',compact('formes'));
+
+        return view('/Gestionnaire/Companies/create');
     }
 
     /**
@@ -152,7 +155,8 @@ class CompanyController extends Controller
         $analystes = User::where('role_id',14)->where('agence_id',auth()->user()->agence_id)->get();
         $programmes = Programme::all();
         $appuis = Service::all();
-        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis'));
+        $elements = ElementConstitutif::where('active',1)->get();
+        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis','elements'));
 
     }
 
@@ -184,6 +188,27 @@ class CompanyController extends Controller
             'entreprise_id'=>$request->entreprise_id,
             'service_id'=>$request->appui_id
         ]);
+
+        Session::flash('success','Enregistrement effectué avec succès!');
+        return back();
+    }
+
+
+    public function addElement(Request $request)
+    {
+        $token = sha1(time().auth()->user()->id);
+        EntrepriseElementConstitutif::updateOrCreate(
+            [
+                'entreprise_id'=>$request->entreprise_id,
+                'type_id'=>$request->type_id,
+            ],
+            [
+                'entreprise_id'=>$request->entreprise_id,
+                'type_id'=>$request->type_id,
+                'uri'=>$this->entityDocumentCreate($request->fichier,'elements_constitutifs',$token),
+                'token'=>$token
+            ]
+        );
 
         Session::flash('success','Enregistrement effectué avec succès!');
         return back();
