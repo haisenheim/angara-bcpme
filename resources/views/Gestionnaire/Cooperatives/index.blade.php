@@ -43,13 +43,17 @@
                         <fieldset>
                             <legend>Infos de la cooperative</legend>
                             <div class="d-flex gap-2 flex-grow">
-                                <div class=" w-75">
+                                <div class=" w-50">
                                     <label for="">NOM</label>
                                     <input type="text" name="name" placeholder="Saisir le nom de la cooperative" class="form-control">
                                 </div>
                                 <div class="">
                                     <label for="">Logo/Photo</label>
                                     <input required type="file" name="photo" class="form-control">
+                                </div>
+                                <div class="w-30">
+                                    <label for="">Telephone</label>
+                                    <input required type="text" name="phone" placeholder="Numero de telephone de la cooperative" class="form-control">
                                 </div>
                             </div>
                             <div class="d-flex gap-2 flex-grow mt-3">
@@ -62,20 +66,18 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="flex-fill">
-                                    <div style="width: 100%" class="">
-                                        <label for="">Commune</label>
-                                        <input  id="arrondissement_id" class="form-control"  type="text">
+                                <div class="">
+                                    <div style="max-width: 200px" class="form-group">
+                                        <select id="arrondissement_id" name="arrondissement_id" class="easyui-combotree form-control" style="max-width:200px;"
+                                            data-options="url:'{{ route('util.localites') }}',method:'get',label:'Commune:',labelPosition:'top'">
+                                        </select>
                                     </div>
                                 </div>
                                 <div class=" w-30">
                                     <label for="">Adresse physique</label>
                                     <input required type="text" name="address" placeholder="Adresse physque de la cooperative" class="form-control">
                                 </div>
-                                <div class="w-30">
-                                    <label for="">Telephone</label>
-                                    <input required type="text" name="phone" placeholder="Numero de telephone de la cooperative" class="form-control">
-                                </div>
+
                             </div>
                         </fieldset>
                         <fieldset>
@@ -108,30 +110,11 @@
 <link rel="stylesheet" href="{{ asset('dropdowncombotree/comboTreeStyle.css') }}">
 <script src="{{ asset('js/ag-grid-community.min.js') }}"></script>
 <script src="{{ asset('dropdowncombotree/comboTreePlugin.js') }}"></script>
-<script>
-    $.expr[':'].icontains = function (obj, index, meta, stack) { return (obj.textContent || obj.innerText || jQuery(obj).text() || '').toLowerCase().indexOf(meta[3].toLowerCase()) >= 0; };
-</script>
-<script>
-    $.ajax({
-        url:'{{ route("util.localites") }}',
-        type:'get',
-        dataType:'json',
-        success:function(data){
-                var arrond = $('#arrondissement_id').comboTree({
-                        source : data,
-                        collapse: true,
-                        isMultiple:false,
-                        editable:true,
-                });
-                $('.ct-arrow-btn').html('<i class="pli-arrow-down"></i>');
-                arrond.onChange(function(){
-                         var elt = arrond._selectedItem;
-                         $('#arr_id').val(elt.id);
-                     });
-            }
-        });
+<link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/default/easyui.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/icon.css') }}">
+<script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
 
-
+<script>
             const columnDefs = [
                         { field: "name", minWidth: 100,headerName:'Designation',filter:true},
                         { field: "commune" },
@@ -202,8 +185,18 @@
     </script>
 
     <style>
-        .form-group{
-            margin-top: 1rem;
+        .textbox-label {
+            display: inline-block;
+            width: 80px;
+            height: 20px;
+            line-height: 10px;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin: 0;
+                margin-bottom: 0px;
+            padding-right: 5px;
         }
     </style>
 @endsection

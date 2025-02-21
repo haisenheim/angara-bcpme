@@ -18,12 +18,14 @@ class LocaliteListResource extends JsonResource
             'id'=>$this->id,
             'name'=>$this->name,
             'title'=>$this->name,
-            'children'=>[],
+            'text'=>$this->name,
+            //'children'=>[],
         ];
         if($this->children){
             $data['children'] = LocaliteListResource::collection($this->children);
             $data['subs'] = LocaliteListResource::collection($this->children);
             $data['nb']=$this->children->count();
+            $data['state'] ='closed';
         }
         return $data;
     }
