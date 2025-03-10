@@ -50,46 +50,10 @@ Route::get('apme',function(){
     return 'Ok';
 });
 
-Route::get('test-airtel',function(){
-    $headers = array(
-        'Content-Type' => 'application/json',
-        'Accept' => '*/*',
-        'X-Country' => 'CG',
-        'X-Currency' => 'XAF',
-        'Authorization' => 'Bearer UC*****2w',
-        'x-signature' => 'MGsp*********Ag==',
-        'x-key' => 'DVZC***********NM='
-      );
-      $client = new Http();
-      // Define array of request body.
-      $request_body = array();
-      try {
-        $response = $client->post('https://openapiuat.airtel.africa/standard/v2/cashin/', array(
-          'headers' => $headers,
-          'json' => $request_body
-          )
-        );
-       print_r($response->getBody()->getContents());
-      }
-      catch (HttpException $e) {
-      // handle exception or api errors.
-        print_r($e->getMessage());
-      }
-
-});
 
 
 
 Route::get('load',function(){
-    /* $produits = Produit::all();
-    foreach($produits as $p){
-        foreach($produits as $item){
-            if(Str::startsWith($item->code, $p->code) && ($item->code != $p->code)){
-                $item->parent_id = $p->id;
-                $item->save();
-            }
-        }
-    } */
    $users = User::whereNull('token')->get();
    foreach($users as $user){
     $names = explode(' ',$user->name);
@@ -123,7 +87,7 @@ Route::get('questions',function(){
 });
 
 Route::get('/', function () {
-    return redirect('login');
+    return redirect(route('login'));
 });
 
 
