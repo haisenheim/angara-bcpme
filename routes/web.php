@@ -351,9 +351,6 @@ Route::namespace('App\Http\Controllers\Regional')
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-       // Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
-       // Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-       // Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
 });
 
 Route::namespace('App\Http\Controllers\Cooperative')
