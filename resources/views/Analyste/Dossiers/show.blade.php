@@ -37,137 +37,86 @@
 
 
 @section('content')
-    <div style="" class="d-flex gap-1">
-        <div class="card w-400px">
-            <div class="card-header">
-                <p class="lh-base"><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
-                <p class="lh-base"><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
-            </div>
-            <div class="card-body">
-                <form enctype="multipart/form-data" action="{{ route('analyste.dossier.dsf') }}" id="form" method="post">
-                    @csrf
-                    <div class="form-group">
-                        <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
-                        <input type="hidden" id="token" value="{{ $item->token }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="">ANNEE N</label>
-                        <input type="number" name="annee" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="">FICHIER DSF</label>
-                        <input type="file" name="upload" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-primary"><i class="pli-save"></i>ENREGISTRER</button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer">
-                @if($sme)
-                    <h3>{{ $sme['name'] }}</h3>
-                    <h4>{{ $sme['mention'] }}</h4>
-                    <p class="lh-base">{{ $sme['description'] }}</p>
-                @endif
+    <div style="" class="row">
+        <div class="col-md-3 col-sm-12 p-1">
+            <div class="card h-100">
+                <div class="card-header">
+                    <p class="lh-base"><span class="label">ENTREPRISE : </span> <span>{{ $entreprise['name'] }}</span></p>
+                    <p class="lh-base"><span class="label">PROGRAMME : </span> <span>{{ $dossier['programme']['name'] }}</span></p>
+                </div>
+                <div class="card-body">
+                    <form enctype="multipart/form-data" action="{{ route('analyste.dossier.dsf') }}" id="form" method="post">
+                        @csrf
+                        <div class="form-group">
+                            <input type="hidden" id="dossier_id" value="{{ $item->id }}" name="dossier_id" class="form-control">
+                            <input type="hidden" id="token" value="{{ $item->token }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="">ANNEE N</label>
+                            <input type="number" name="annee" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="">FICHIER DSF</label>
+                            <input type="file" name="upload" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-primary"><i class="pli-save"></i>ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    @if($sme)
+                        <h3>{{ $sme['name'] }}</h3>
+                        <h4>{{ $sme['mention'] }}</h4>
+                        <p class="lh-base">{{ $sme['description'] }}</p>
+                    @endif
+                </div>
             </div>
         </div>
-        <div class="card flex-fill">
-            <div style="overflow:scroll;" class="card-body">
-                <div class="">
-                    <!-- Underline nav tabs with base -->
-                    <div class="tab-base">
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-underline nav-component border-bottom" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
-                        </li>
-                    </ul>
+        <div class="col-md-9 col-sm-12 p-1">
+            <div style="overflow:scroll; max-height: 100vh;" class="card">
+                <div  class="card-body">
+                    <div class="">
+                        <!-- Underline nav tabs with base -->
+                        <div class="tab-base">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-underline nav-component border-bottom" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseHome" type="button" role="tab" aria-controls="home" aria-selected="true">GRILLE DE NOTATION</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
+                            </li>
+                        </ul>
 
 
-                    <!-- Tabs content -->
-                    <div class="tab-content">
-                        <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+                        <!-- Tabs content -->
+                        <div class="tab-content">
+                            <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
 
-                            <table class="table table-sm table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Critere Principaux</th>
-                                        <td>&numero; sous-critere</td>
-                                        <td>Pourcentage</td>
-                                        <th>Sous - critere</th>
-                                        <th>Valeur</th>
-                                        <th>Note par sous-critere</th>
-                                        <th>Note ponderee</th>
-                                        <th>Note critere pondere</th>
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Critere Principaux</th>
+                                            <td>&numero; sous-critere</td>
+                                            <td>Pourcentage</td>
+                                            <th>Sous - critere</th>
+                                            <th>Valeur</th>
+                                            <th>Note par sous-critere</th>
+                                            <th>Note ponderee</th>
+                                            <th>Note critere pondere</th>
 
-                                    </tr>
-                                </thead>
-                                @if(count($indicateurs))
-                                <tbody>
-                                    <tr>
-                                        <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
-                                    </tr>
-                                    @foreach($criteres[0]['souscriteres'] as $sc)
-                                        <tr>
-                                            <td>{{ $sc['sequence'] }}</td>
-                                            <td>{{ $sc['default'] }}%</td>
-                                            <td>{{ $sc['name'] }}</td>
-                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
-                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
-                                            <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
-                                            <td></td>
                                         </tr>
-                                    @endforeach
-                                    <tr>
-                                        <td colspan="7"></td>
-                                        <th>{{ isset($criteres[0]['note'])?$criteres[0]['note']:0 }}</th>
-                                    </tr>
-                                    <tr>
-                                        <th rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
-                                    </tr>
-                                    @foreach($criteres[1]['souscriteres'] as $sc)
+                                    </thead>
+                                    @if(count($indicateurs))
+                                    <tbody>
                                         <tr>
-                                            <td>{{ $sc['sequence'] }}</td>
-                                            <td>{{ $sc['default'] }}%</td>
-                                            <td>{{ $sc['name'] }}</td>
-                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
-                                            <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
-                                            <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
-                                            <td></td>
+                                            <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
                                         </tr>
-                                    @endforeach
-                                    <tr>
-                                        <td colspan="7"></td>
-                                        <th>{{ isset($criteres[1]['note'])?$criteres[1]['note']:0  }}</th>
-                                    </tr>
-                                    <tr>
-                                        <td rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</td>
-                                    </tr>
-                                        @foreach($indicateurs[0]['notation']['details'] as $sc)
-                                        <tr>
-                                            <td>{{ $sc['sequence'] }}</td>
-                                            <td>{{ $sc['pourcentage'] }}%</td>
-                                            <td>{{ $sc['critere'] }}</td>
-                                            <td>{{ $sc['valeur'] }}</td>
-                                            <td>{{ $sc['note'] }}</td>
-                                            <td>{{ $sc['pondere'] }}</td>
-                                            <td></td>
-                                        </tr>
-                                        @endforeach
-                                        <tr>
-                                            <td colspan="7"></td>
-                                            <th >{{ $indicateurs[0]['notation']['note'] }}</th>
-                                        </tr>
-                                        <tr>
-                                            <th rowspan="{{ count($criteres[3]['souscriteres'])+1 }}">{{ $criteres[3]['name'] }}</th>
-                                        </tr>
-                                        @foreach($criteres[3]['souscriteres'] as $sc)
+                                        @foreach($criteres[0]['souscriteres'] as $sc)
                                             <tr>
                                                 <td>{{ $sc['sequence'] }}</td>
                                                 <td>{{ $sc['default'] }}%</td>
@@ -180,84 +129,139 @@
                                         @endforeach
                                         <tr>
                                             <td colspan="7"></td>
-                                            <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
+                                            <th>{{ isset($criteres[0]['note'])?$criteres[0]['note']:0 }}</th>
                                         </tr>
                                         <tr>
-                                            <th colspan="4"></th>
-                                            <th colspan="2">NOTE PONDERE FINALE/CRITERE</th>
-                                            <th colspan="2">NOTATION PME</th>
+                                            <th rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
+                                        </tr>
+                                        @foreach($criteres[1]['souscriteres'] as $sc)
+                                            <tr>
+                                                <td>{{ $sc['sequence'] }}</td>
+                                                <td>{{ $sc['default'] }}%</td>
+                                                <td>{{ $sc['name'] }}</td>
+                                                <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                                <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
+                                                <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
+                                                <td></td>
+                                            </tr>
+                                        @endforeach
+                                        <tr>
+                                            <td colspan="7"></td>
+                                            <th>{{ isset($criteres[1]['note'])?$criteres[1]['note']:0  }}</th>
                                         </tr>
                                         <tr>
-                                            <th colspan="4"></th>
-                                            <th colspan="2">{{ $dossier['note'] }}</th>
-                                            <th colspan="2">{{ $sme['name'] }}</th>
+                                            <td rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</td>
                                         </tr>
-                                </tbody>
-                                @endif
-                            </table>
-                        </div>
-                        <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
-                                    <p class="lh-base"><?= $dossier['donneesGenerales'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
-                                    <p class="lh-base"><?= $dossier['analyseEnsemble'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
-                                    <p class="lh-base"><?= $dossier['analyseFinanciere'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
-                                    <p class="lh-base"><?= $dossier['appuis'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
-                                    <p class="lh-base"><?= $dossier['analyseRisque'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
-                                    <p class="lh-base"><?= $dossier['analyseRentabilite'] ?></p>
-                                </div>
-                                <div class="mt-2 border rounded rounded-2 p-2">
-                                    <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
-                                    <p class="lh-base"><?= $dossier['conclusionsAnalyste'] ?></p>
-                                </div>
-                        </div>
-                        <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <table class="table sm table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th colspan="1"></th>
-                                        <th colspan="3">ENCOURS</th>
-                                        <th colspan="3">SOLLICITES</th>
-                                        <th colspan="2">TOTAL</th>
-                                    </tr>
-                                    <tr>
-                                        <th>ENGAGEMENT</th>
-                                        <th>MONTANT</th>
-                                        <th>IMPAYES</th>
-                                        <th>DATE DE VALIDITE</th>
+                                            @foreach($indicateurs[0]['notation']['details'] as $sc)
+                                            <tr>
+                                                <td>{{ $sc['sequence'] }}</td>
+                                                <td>{{ $sc['pourcentage'] }}%</td>
+                                                <td>{{ $sc['critere'] }}</td>
+                                                <td>{{ $sc['valeur'] }}</td>
+                                                <td>{{ $sc['note'] }}</td>
+                                                <td>{{ $sc['pondere'] }}</td>
+                                                <td></td>
+                                            </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td colspan="7"></td>
+                                                <th >{{ $indicateurs[0]['notation']['note'] }}</th>
+                                            </tr>
+                                            <tr>
+                                                <th rowspan="{{ count($criteres[3]['souscriteres'])+1 }}">{{ $criteres[3]['name'] }}</th>
+                                            </tr>
+                                            @foreach($criteres[3]['souscriteres'] as $sc)
+                                                <tr>
+                                                    <td>{{ $sc['sequence'] }}</td>
+                                                    <td>{{ $sc['default'] }}%</td>
+                                                    <td>{{ $sc['name'] }}</td>
+                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
+                                                    <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
+                                                    <td></td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td colspan="7"></td>
+                                                <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4"></th>
+                                                <th colspan="2">NOTE PONDERE FINALE/CRITERE</th>
+                                                <th colspan="2">NOTATION PME</th>
+                                            </tr>
+                                            <tr>
+                                                <th colspan="4"></th>
+                                                <th colspan="2">{{ $dossier['note'] }}</th>
+                                                <th colspan="2">{{ $sme['name'] }}</th>
+                                            </tr>
+                                    </tbody>
+                                    @endif
+                                </table>
+                            </div>
+                            <div id="_dm-coTabsBaseProfile" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
+                                        <p class="lh-base"><?= $dossier['donneesGenerales'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
+                                        <p class="lh-base"><?= $dossier['analyseEnsemble'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
+                                        <p class="lh-base"><?= $dossier['analyseFinanciere'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
+                                        <p class="lh-base"><?= $dossier['appuis'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
+                                        <p class="lh-base"><?= $dossier['analyseRisque'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
+                                        <p class="lh-base"><?= $dossier['analyseRentabilite'] ?></p>
+                                    </div>
+                                    <div class="mt-2 border rounded rounded-2 p-2">
+                                        <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
+                                        <p class="lh-base"><?= $dossier['conclusionsAnalyste'] ?></p>
+                                    </div>
+                            </div>
+                            <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                                <table class="table sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="1"></th>
+                                            <th colspan="3">ENCOURS</th>
+                                            <th colspan="3">SOLLICITES</th>
+                                            <th colspan="2">TOTAL</th>
+                                        </tr>
+                                        <tr>
+                                            <th>ENGAGEMENT</th>
+                                            <th>MONTANT</th>
+                                            <th>IMPAYES</th>
+                                            <th>DATE DE VALIDITE</th>
 
-                                        <th>MONTANT</th>
-                                        <th>DATE DE VALIDITE</th>
-                                        <th>VARIATION</th>
+                                            <th>MONTANT</th>
+                                            <th>DATE DE VALIDITE</th>
+                                            <th>VARIATION</th>
 
-                                        <th>MONTANT</th>
-                                        <th>DATE DE VALIDITE</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($engagements as $eng)
-                                        <x-engagement :eng="json_encode($eng)"></x-engagement>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                            <th>MONTANT</th>
+                                            <th>DATE DE VALIDITE</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($engagements as $eng)
+                                            <x-engagement :eng="json_encode($eng)"></x-engagement>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                        </div>
                     </div>
                 </div>
             </div>
