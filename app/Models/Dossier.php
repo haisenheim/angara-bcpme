@@ -34,4 +34,8 @@ class Dossier extends Model
         return $this->belongsTo('App\Models\Representation','represenantion_id');
     }
 
+    public function indicateurs(){
+        return $this->hasMany('App\Models\IndicateurFinancier','dossier_id');
+    }
+
 }

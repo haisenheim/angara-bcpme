@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Controller;
 use App\Models\Compte;
+use App\Models\Instruction\Choice;
+use App\Models\Instruction\Reponse;
 use App\Models\Libelle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -32,42 +34,7 @@ class InstructionController extends Controller
         return view('/Analyste/Instruction/create');
     }
 
-    public function loadDsf(){
-        $upload = request('upload');
-        $programme_id = request('programme_id');
-        $dossier_id = request('dossier_id');
-        $annee = request('annee');
-        //dd($upload);
-        //$upload->move('./dsf');
-        $name_without_extension = time();
-        $ext = $upload->getClientOriginalExtension();
-        $name_with_extension = $name_without_extension . '.' . $ext;
-            if(!file_exists(public_path('files'))){
-                mkdir(public_path('files'));
-            }
-			if (file_exists(public_path('files') . '/' . $name_with_extension)) {
-				unlink(public_path('files') . '/' . $name_with_extension);
-			}
-			$imageUri = 'files'.'/'.$name_with_extension;
-			$upload->move(public_path('files'), $name_with_extension);
-        $file =  [
-                    'name' => 'upload',
-                    'contents' => file_get_contents(public_path('files').'/'.$name_with_extension),
-                ];
 
-                //dd($file);
-        $data = [
-            'annee'=>$annee,
-            'programme_id'=>$programme_id,
-            'dossier_id'=>$dossier_id,
-            'multipart'=>$file,
-        ];
-       $ret =  Http::
-       //attach('upload', $upload)->
-       post('http://localhost:8080/dossier',$data);
-       dd($ret->body());
-        return redirect(route('analyste.instruction.dossier',$dossier_id));
-    }
 
     public function getDossier($id){
         $dossier = Http::get('http://localhost:8080/dossier/'.$id);
@@ -95,9 +62,7 @@ class InstructionController extends Controller
         //$dossier_id = request('dossier_id');
 
         $id = request('id');
-        $choices = Http::get('http://localhost:8080/critere/choices?id='.$id);
-        $choices = json_decode($choices->body(),true);
-       // dd($criteres);
+        $choices = Choice::where('critere_id',$id)->get();
         return response()->json($choices);
     }
 
@@ -110,7 +75,11 @@ class InstructionController extends Controller
             'critere_id'=>$critere_id,
             'dossier_id'=>$dossier_id,
         ];
-        $response = Http::post('http://localhost:8080/critere/reponse',$data);
+        Reponse::updateOrCreate([
+            'choice_id'=>$choice_id,
+            'dossier_id'=>$dossier_id
+        ],$data);
+        //$response = Http::post('http://localhost:8080/critere/reponse',$data);
         return back();
     }
 

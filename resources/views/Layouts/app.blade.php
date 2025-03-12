@@ -52,7 +52,7 @@
 
     <!-- PAGE CONTAINER -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <div id="root" class="root mn--max tm--primary-mn hd--sticky mn--sticky">
+    <div id="root" class="root mn--min tm--primary-mn hd--sticky mn--sticky">
 
         <!-- CONTENTS -->
         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->

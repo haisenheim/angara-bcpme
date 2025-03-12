@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Instruction;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Indicateur extends Model
+class IndicateurFinancier extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    
+    protected $table = 'indicateurs_financiers';
+
 }
