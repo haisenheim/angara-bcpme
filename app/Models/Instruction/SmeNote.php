@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Instruction;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Critere extends Model
+class SmeNote extends Model
 {
     use HasFactory;
 }

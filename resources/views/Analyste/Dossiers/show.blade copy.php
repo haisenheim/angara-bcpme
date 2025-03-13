@@ -5,7 +5,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">ANGARA</a></li>
-       <li class="breadcrumb-item"><a href="#">DOSSIER INSTRUCTION</a></li>
+       <li class="breadcrumb-item"><a href="#">INSTRUCTION</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $item['name'] }}</li>
     </ol>
  </nav>
@@ -27,6 +27,12 @@
         <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations de l’Analyste Financier</a></li>
     </ul>
 </div>
+@endsection
+
+@section('page-header')
+    <div>
+        <h5 class="page-title mb-0 mt-2">DOSSIER D'INSTRUCTION</h5>
+    </div>
 @endsection
 
 
@@ -180,15 +186,15 @@
                                                     <td colspan="7"></td>
                                                     <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
                                                 </tr>
-                                                <tr class="border border-dark">
+                                                <tr>
                                                     <th colspan="4"></th>
                                                     <th colspan="2">NOTE PONDERE FINALE/CRITERE</th>
                                                     <th colspan="2">NOTATION PME</th>
                                                 </tr>
-                                                <tr style="position: sticky; top: 30px" class="border border-dark">
+                                                <tr>
                                                     <th colspan="4"></th>
-                                                    <th class="fw-bold" colspan="2">{{ $item['note'] }}</th>
-                                                    <th class="fw-bold" colspan="2">{{ $sme['name'] }}</th>
+                                                    <th colspan="2">{{ $item['note'] }}</th>
+                                                    <th colspan="2">{{ $sme['name'] }}</th>
                                                 </tr>
                                         </tbody>
                                         @endif
@@ -201,27 +207,27 @@
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
-                                            <p class="lh-base"><?= $item['analyseEnsemble'] ?></p>
+                                            <p class="lh-base"><?= $dos['analyseEnsemble'] ?></p>
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
-                                            <p class="lh-base"><?= $item['analyseFinanciere'] ?></p>
+                                            <p class="lh-base"><?= $dossier['analyseFinanciere'] ?></p>
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
-                                            <p class="lh-base"><?= $item['appuis'] ?></p>
+                                            <p class="lh-base"><?= $dossier['appuis'] ?></p>
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
-                                            <p class="lh-base"><?= $item['analyseRisque'] ?></p>
+                                            <p class="lh-base"><?= $dossier['analyseRisque'] ?></p>
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
-                                            <p class="lh-base"><?= $item['analyseRentabilite'] ?></p>
+                                            <p class="lh-base"><?= $dossier['analyseRentabilite'] ?></p>
                                         </div>
                                         <div class="mt-2 border rounded rounded-2 p-2">
                                             <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
-                                            <p class="lh-base"><?= $item['conclusionsAnalyste'] ?></p>
+                                            <p class="lh-base"><?= $dossier['conclusionsAnalyste'] ?></p>
                                         </div>
                                 </div>
                                 <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
@@ -276,7 +282,7 @@
                     <p id="description"></p>
                     <form action="{{ route('analyste.entreprise.dossier.analyse') }}" method="post">
                         @csrf
-                        <input type="hidden" value="{{ $item['id'] }}" name="dossier_id">
+                        <input type="hidden" value="{{ $dossier['id'] }}" name="dossier_id">
                         <input type="hidden" id="sequence" name="sequence">
                         <div class="mt-2">
                             <x-quill :name="'content'"></x-quill>
