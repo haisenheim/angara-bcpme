@@ -9,18 +9,31 @@ class EngagementEntreprise extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'engagement_id',
-        'encours_montant',
-        'encours_part',
-        'encours_impaye',
-        'sollicite_montant',
-        'sollicite_part'
-    ];
+    protected $guarded = [];
 
     // Relations
     public function engagement()
     {
         return $this->belongsTo(Engagement::class);
+    }
+
+    public function banque()
+    {
+        return $this->belongsTo('App\Models\Banque');
+    }
+
+    public function entreprise()
+    {
+        return $this->belongsTo('App\Models\Entreprise');
+    }
+
+    public function getEncoursDtVadiliteAttribute()
+    {
+        return $this->encours_dt_vadilite ? $this->encours_dt_vadilite->format('d/m/Y') : null;
+    }
+
+    public function getSolliciteDtVadiliteAttribute()
+    {
+        return $this->sollicite_dt_vadilite ? $this->sollicite_dt_vadilite->format('d/m/Y') : null;
     }
 }

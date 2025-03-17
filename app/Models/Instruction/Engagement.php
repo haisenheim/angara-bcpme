@@ -5,6 +5,7 @@ namespace App\Models\Instruction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class Engagement extends Model
 {
@@ -32,39 +33,55 @@ class Engagement extends Model
         return $this->hasMany(Engagement::class, 'parent_id');
     }
 
-    public function items()
+    public function getItemsAttribute()
     {
-        return $this->hasMany(EngagementEntreprise::class);
+        return new Collection();//$this->hasMany(EngagementEntreprise::class);
     }
 
-    // Méthode pour calculer la somme
-    private function sum($engagement, $field)
+    public function getElts($entreprise_id)
     {
-        if ($engagement->is_leaf) {
-            return $engagement->items->sum($field);
-        } else {
-            return $engagement->children->sum(function ($child) use ($field) {
-                return $this->sum($child, $field);
-            });
+        if($this->is_leaf){
+            return $this->hasMany(EngagementEntreprise::class)->where('entreprise_id', $entreprise_id)->get();
+        }else{
+            return null;
         }
     }
+
 
     // Accessor pour encours_montant
     public function getEncoursMontantAttribute()
     {
-        return $this->sum($this, 'encours_montant');
+        if($this->is_leaf){
+            $_items = $this->items;
+            return $_items?->reduce(function($carry,$item){
+                return $carry + $item->encours_montant;
+            },0);
+        }else{
+            return $this->children->reduce(function ($carry, $child) {
+                return $carry + $child->encours_montant;
+            }, 0);
+        }
     }
 
     // Accessor pour encours_part
     public function getEncoursPartAttribute()
     {
-        return $this->sum($this, 'encours_part');
+        return 0;
     }
 
     // Accessor pour encours_impaye
     public function getEncoursImpayeAttribute()
     {
-        return $this->sum($this, 'encours_impaye');
+        if($this->is_leaf){
+            $_items = $this->items;
+            return $_items?->reduce(function($carry,$item){
+                return $carry + $item->encours_impaye;
+            },0);
+        }else{
+            return $this->children->reduce(function ($carry, $child) {
+                return $carry + $child->encours_impaye;
+            }, 0);
+        }
     }
 
     // Accessor pour encours_dt_validite
@@ -76,13 +93,22 @@ class Engagement extends Model
     // Accessor pour sollicite_montant
     public function getSolliciteMontantAttribute()
     {
-        return $this->sum($this, 'sollicite_montant');
+        if($this->is_leaf){
+            $_items = $this->items;
+            return $_items?->reduce(function($carry,$item){
+                return $carry + $item->sollicite_montant;
+            },0);
+        }else{
+            return $this->children->reduce(function ($carry, $child) {
+                return $carry + $child->sollicite_montant;
+            }, 0);
+        }
     }
 
     // Accessor pour sollicite_part
     public function getSollicitePartAttribute()
     {
-        return $this->sum($this, 'sollicite_part');
+        return 0;
     }
 
     // Accessor pour variation

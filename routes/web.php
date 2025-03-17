@@ -256,6 +256,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
+        Route::get('entreprise/engagements/{token}','EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
 
         Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
         Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
@@ -282,7 +283,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
         Route::post('engagement','EntrepriseController@setEngagement')->name('entreprise.set.engagement');
 
-        Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
+        Route::post('dossier/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
 
 
         Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');

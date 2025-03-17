@@ -10,4 +10,9 @@ class SousCritere extends Model
     use HasFactory;
     protected $table = 'sous_criteres';
 
+    public function reponses()
+    {
+        return $this->hasMany(Reponse::class, 'critere_id');
+    }
+
 }

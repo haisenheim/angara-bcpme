@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Controller;
+use App\Models\Banque;
+use App\Models\Dossier;
+use App\Models\Entreprise;
+use App\Models\Instruction\Engagement;
+use App\Models\Instruction\EngagementEntreprise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -21,44 +26,6 @@ class EntrepriseController extends Controller
         //dd($items);
         return view('/Analyste/Entreprises/index')->with(compact('items'));
     }
-
-    public function getDossier($id){
-        $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$id);
-        $resp = json_decode($resp->body(),true);
-        $dossier = $resp['dossier'];
-        $entreprise = $resp['entreprise'];
-        $engagements = $resp['engagements'];
-        $criteres = $resp['criteres'];
-        $indicateurs = $dossier['indicateurs'];
-        $banques = $resp['banques'];
-        //$note3 = $dossier['exercices'][0]['notation'];
-        //$criteres = $dossier['criteres'];
-        //$notes = $dossier['notes'];
-       // $nf = $dossier['note'];
-        $sme = $resp['sme'];
-        return view('/Analyste/Entreprises/dossier',compact('id','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
-    }
-
-    public function _getDossier($id){
-        $dossier = Http::get('http://localhost:8080/dossier?id='.$id);
-        $dossier = json_decode($dossier->body(),true);
-        $note3 = $dossier['exercices'][0]['notation'];
-        $criteres = $dossier['criteres'];
-        $notes = $dossier['notes'];
-        $nf = $dossier['note'];
-        $sme = $dossier['sme'];
-
-        return view('/Analyste/Instruction/dossier',compact('id','note3','criteres','notes','nf','sme'));
-    }
-
-    public function getCreateInstruction($id){
-        return view('/Analyste/Instruction/create',compact('id'));
-    }
-
-
-
-
-
 
 
 
@@ -84,28 +51,86 @@ class EntrepriseController extends Controller
         return back();
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Projet  $projet
-     * @return \Illuminate\Http\Response
-     */
-	public function show($id)
-	{
-		$resp = Http::get('http://localhost:8080/entreprise?id='.$id);
-        $resp = json_decode($resp->body(),true);
-        $item = $resp['entreprise'];
-        $engagements = $resp['engagements'];
-        $banques = $resp['banques'];
-        return view('/Analyste/Entreprises/show')->with(compact('item','engagements','banques'));
-	}
 
-    public function setEngagement(){
-        $data = request()->except('_token');
-        //dd($data);
-        $resp = Http::post('http://localhost:8080/entreprise/engagement',$data);
+
+    private function parse($eng,$id){
+
+        $data = [
+            'id'=>$eng->id,
+            'name'=>$eng->name,
+            'montant'=>$eng->montant??0,
+            'encours_montant'=>$eng->encours_montant??0,
+            'encours_impaye'=>$eng->encours_impaye??0,
+            'sollicite_montant'=>$eng->sollicite_montant??0,
+            'variation'=>$eng->variation,
+            'parent_id'=>$eng->parent_id,
+            'is_title'=>$eng->is_title,
+            'is_leaf'=>$eng->is_leaf,
+            'niveau'=>$eng->niveau,
+        ];
+        if($data['is_leaf']){
+            $elts = EngagementEntreprise::where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
+            //dd($elts);
+            $data['encours_montant'] = $elts->reduce(function($carry,$item){
+                return $carry + $item->encours_montant;
+            },0);
+            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
+                return $carry + $item->sollicite_montant;
+            },0);
+            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
+                return $carry + $item->encours_impaye;
+            },0);
+            $data['elts'] = $elts;
+            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
+
+        }else{
+            $data['children'] = $eng->children->map(function($child)use($id){
+                return $this->parse($child,$id);
+            });
+            foreach($data['children'] as $child){
+                $data['encours_montant'] += $child['encours_montant'];
+                $data['sollicite_montant'] += $child['sollicite_montant'];
+                $data['encours_impaye'] += $child['encours_impaye'];
+                $data['variation'] += $child['variation'];
+            }
+        }
+        return $data;
+    }
+
+    public function getEngagementReport($token){
+        $entreprise = Entreprise::where('token',$token)->first();
+        if($entreprise){
+            $engagements = Engagement::where('parent_id',0)->get();
+             $data = [];
+             foreach($engagements as $eng){
+                 $data[] = $this->parse($eng,$entreprise->id);
+             }
+             //dd($data);
+
+            $engagements = $data;
+            $banques = Banque::all();
+            //$engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
+            return view('Analyste.Companies.engagement_report',compact('engagements','entreprise','banques'));
+        }else{
+            return back();
+        }
+
+    }
+
+    public function setEngagement(Request $request){
+        $data = $request->all();
+        EngagementEntreprise::updateOrCreate(
+          [
+            'banque_id'=>$data['banque_id'],
+            'entreprise_id'=>$data['entreprise_id'],
+            'engagement_id'=>$data['engagement_id'],
+          ],
+          $data
+        );
         return back();
     }
+
+
 
     public function setAnalyse(){
         $data = request()->except('_token');

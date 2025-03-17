@@ -10,4 +10,9 @@ class Reponse extends Model
     use HasFactory;
     protected $guarded = [];
 
+    public function choice()
+    {
+        return $this->belongsTo(Choice::class);
+    }
+
 }

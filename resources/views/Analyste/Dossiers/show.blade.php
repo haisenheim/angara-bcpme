@@ -18,6 +18,7 @@
     <span class="vr"></span>
     </button>
     <ul class="dropdown-menu analyse">
+        <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements',$item->entreprise->token) }}">Etat des engagement de l'entreprise</a></li>
         <li><a data-sequence="1" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Brèves données générales actualisées sur l'emprunteur</a></li>
         <li><a data-sequence="2" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse critique d'ensemble</a></li>
         <li><a data-sequence="3" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse financière de l'emprunteur</a></li>
@@ -82,9 +83,6 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
-                                </li>
                             </ul>
 
 
@@ -92,60 +90,62 @@
                             <div class="tab-content">
                                 <div id="_dm-coTabsBaseHome" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
 
-                                    <table class="table table-sm table-bordered">
+                                    <table class="table table-sm table-bordered table-notation">
                                         <thead>
                                             <tr>
-                                                <th>Critere Principaux</th>
-                                                <td>&numero; sous-critere</td>
+                                                <th>Critère Principaux</th>
+                                                <td>&numero; sous-critère</td>
                                                 <td>Pourcentage</td>
-                                                <th>Sous - critere</th>
+                                                <th>Sous - critère</th>
                                                 <th>Valeur</th>
                                                 <th>Note par sous-critere</th>
-                                                <th>Note ponderee</th>
-                                                <th>Note critere pondere</th>
+                                                <th>Note pondérée</th>
 
                                             </tr>
                                         </thead>
                                         @if(count($indicateurs))
                                         <tbody>
                                             <tr>
-                                                <th rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
+                                                <th class="vertical-align" rowspan="{{ count($criteres[0]['souscriteres'])+1 }}">{{ $criteres[0]['name'] }}</th>
                                             </tr>
                                             @foreach($criteres[0]['souscriteres'] as $sc)
-                                                <tr>
-                                                    <td>{{ $sc['sequence'] }}</td>
-                                                    <td>{{ $sc['default'] }}%</td>
+                                                <tr class="border">
+                                                    <td class="border">{{ $sc['sequence'] }}</td>
+                                                    <td class="border">{{ $sc['default'] }}%</td>
                                                     <td>{{ $sc['name'] }}</td>
-                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
-                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
-                                                    <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
-                                                    <td></td>
+
+                                                    <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-programme_id="{{ $item->programme_id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                                    <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['note']:'-' }}</td>
+                                                    <td>{{ isset($sc['reponse']['choice'])?($sc['reponse']['note']*$sc['default']/100):'-' }}</td>
+
                                                 </tr>
                                             @endforeach
-                                            <tr>
-                                                <td colspan="7"></td>
+                                            <tr class="bg-light">
+                                                <td colspan="4"></td>
+                                                <th colspan="2">Note critère pondérée</th>
                                                 <th>{{ isset($criteres[0]['note'])?$criteres[0]['note']:0 }}</th>
                                             </tr>
                                             <tr>
-                                                <th rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
+                                                <th class="vertical-align" rowspan="{{ count($criteres[1]['souscriteres'])+1 }}">{{ $criteres[1]['name'] }}</th>
                                             </tr>
                                             @foreach($criteres[1]['souscriteres'] as $sc)
                                                 <tr>
                                                     <td>{{ $sc['sequence'] }}</td>
                                                     <td>{{ $sc['default'] }}%</td>
                                                     <td>{{ $sc['name'] }}</td>
-                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
-                                                    <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
-                                                    <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
-                                                    <td></td>
+                                                    <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-programme_id="{{ $item->programme_id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                                    <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['note']:'-' }}</td>
+                                                    <td>{{ isset($sc['reponse']['choice'])?($sc['reponse']['note']*$sc['default']/100):'-' }}</td>
+
                                                 </tr>
                                             @endforeach
-                                            <tr>
-                                                <td colspan="7"></td>
+                                            <tr class="bg-light">
+                                                <td colspan="4"></td>
+                                                <th colspan="2">Note critère pondérée</th>
                                                 <th>{{ isset($criteres[1]['note'])?$criteres[1]['note']:0  }}</th>
                                             </tr>
                                             <tr>
-                                                <td rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</td>
+                                                <th class="vertical-align" rowspan="{{ count($indicateurs[0]['notation']['details'])+1 }}">FINANCE</th>
                                             </tr>
                                                 @foreach($indicateurs[0]['notation']['details'] as $sc)
                                                 <tr>
@@ -155,33 +155,35 @@
                                                     <td>{{ $sc['valeur'] }}</td>
                                                     <td>{{ $sc['note'] }}</td>
                                                     <td>{{ $sc['pondere'] }}</td>
-                                                    <td></td>
+
                                                 </tr>
                                                 @endforeach
-                                                <tr>
-                                                    <td colspan="7"></td>
+                                                <tr class="bg-light">
+                                                    <td colspan="4"></td>
+                                                    <th colspan="2">Note critère pondérée</th>
                                                     <th >{{ $indicateurs[0]['notation']['note'] }}</th>
                                                 </tr>
                                                 <tr>
-                                                    <th rowspan="{{ count($criteres[3]['souscriteres'])+1 }}">{{ $criteres[3]['name'] }}</th>
+                                                    <th class="vertical-align" rowspan="{{ count($criteres[3]['souscriteres'])+1 }}">{{ $criteres[3]['name'] }}</th>
                                                 </tr>
                                                 @foreach($criteres[3]['souscriteres'] as $sc)
                                                     <tr>
                                                         <td>{{ $sc['sequence'] }}</td>
                                                         <td>{{ $sc['default'] }}%</td>
                                                         <td>{{ $sc['name'] }}</td>
-                                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
-                                                        <td>{{ isset($sc['reponses'][0])?$sc['reponses'][0]['note']:'-' }}</td>
-                                                        <td>{{ isset($sc['reponses'][0])?($sc['reponses'][0]['note']*$sc['default']/100):'-' }}</td>
-                                                        <td></td>
+                                                        <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['choice']['valeur']:'-' }} <span class="float-right"><button data-bs-toggle="modal" data-bs-target="#critereModal" data-name="{{ $sc['name'] }}" data-dossier_id="{{ $item->id }}" data-programme_id="{{ $item->programme_id }}" data-id="{{ $sc['id'] }}" class="btn btn-xs btn-critere"><i class="pli-pencil"></i></button></span></td>
+                                                        <td>{{ isset($sc['reponse']['choice'])?$sc['reponse']['note']:'-' }}</td>
+                                                        <td>{{ isset($sc['reponse']['choice'])?($sc['reponse']['note']*$sc['default']/100):'-' }}</td>
+
                                                     </tr>
                                                 @endforeach
-                                                <tr>
-                                                    <td colspan="7"></td>
+                                                <tr class="bg-light">
+                                                    <td colspan="4"></td>
+                                                    <th colspan="2">Note critère pondérée</th>
                                                     <th>{{ isset($criteres[3]['note'])?$criteres[3]['note']:0  }}</th>
                                                 </tr>
                                                 <tr class="border border-dark">
-                                                    <th colspan="4"></th>
+                                                    <th colspan="3"></th>
                                                     <th colspan="2">NOTE PONDERE FINALE/CRITERE</th>
                                                     <th colspan="2">NOTATION PME</th>
                                                 </tr>
@@ -224,37 +226,6 @@
                                             <p class="lh-base"><?= $item['conclusionsAnalyste'] ?></p>
                                         </div>
                                 </div>
-                                <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                                    <table class="table sm table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="1"></th>
-                                                <th colspan="3">ENCOURS</th>
-                                                <th colspan="3">SOLLICITES</th>
-                                                <th colspan="2">TOTAL</th>
-                                            </tr>
-                                            <tr>
-                                                <th>ENGAGEMENT</th>
-                                                <th>MONTANT</th>
-                                                <th>IMPAYES</th>
-                                                <th>DATE DE VALIDITE</th>
-
-                                                <th>MONTANT</th>
-                                                <th>DATE DE VALIDITE</th>
-                                                <th>VARIATION</th>
-
-                                                <th>MONTANT</th>
-                                                <th>DATE DE VALIDITE</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($engagements as $eng)
-                                                <x-engagement :eng="json_encode($eng)"></x-engagement>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
                             </div>
                             </div>
                         </div>
@@ -274,7 +245,7 @@
                 </div>
                 <div class="modal-body">
                     <p id="description"></p>
-                    <form action="{{ route('analyste.entreprise.dossier.analyse') }}" method="post">
+                    <form action="{{ route('analyste.dossier.set.analyse') }}" method="post">
                         @csrf
                         <input type="hidden" value="{{ $item['id'] }}" name="dossier_id">
                         <input type="hidden" id="sequence" name="sequence">
@@ -291,67 +262,7 @@
     </div>
 
 
-    <div class="modal fade" id="editModal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Editer</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('analyste.entreprise.set.engagement') }}" method="post">
-                        <input type="hidden" name="engagement_id" id="engagement_id">
-                        <input type="hidden" name="entreprise_id" value="{{ $item->entreprise['id'] }}">
-                        @csrf
-                            <div class="">
-                                <div>
-                                    <label for="">Banque</label>
-                                    <select required name="banque_id" id="banque_id" class="form-control">
-                                        <option value="">Selectionner la banque</option>
-                                        @foreach ($banques as $item)
-                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mt-1">
-                                    <fieldset>
-                                        <legend>Enagagements en cours</legend>
-                                        <div class="mt-1">
-                                            <label for="">Montant</label>
-                                            <input required value="0" type="number" class="form-control" name="encours_montant">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Impayé</label>
-                                            <input required value="0" type="number" class="form-control" name="encours_impaye">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Date de validité</label>
-                                            <input required value="0" type="date" class="form-control" name="encours_dt_validite">
-                                        </div>
-                                    </fieldset>
-                                    <fieldset>
-                                        <legend>Enagagements en sollicités</legend>
-                                        <div class="mt-1">
-                                            <label for="">Montant</label>
-                                            <input required value="0" type="number" class="form-control" name="sollicite_montant">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Date de validité</label>
-                                            <input required value="0" type="date" class="form-control" name="sollicite_dt_validite">
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
 
 
@@ -377,10 +288,7 @@
             $('#sequence').val(seq)
         })
 
-        $('.btn-edit').click(function(){
-            var id = $(this).data('engagement_id')
-            $('#engagement_id').val(id)
-        })
+
     </script>
 
 @endsection
@@ -400,6 +308,7 @@
                 <form action="{{ route('analyste.instruction.critere.reponse') }}" method="post">
                     @csrf
                     <input type="hidden" id="_dossier_id" name="dossier_id">
+                    <input type="hidden" id="_programme_id" name="programme_id">
                     <input type="hidden" id="id" name="critere_id">
                     <div class="mt-2">
                         <label id="name" for=""></label>
@@ -421,9 +330,12 @@
     var url = "{{ route('analyste.instruction.critere.choices') }}"
     var name = $(this).data('name')
     var dossier_id = $(this).data('dossier_id')
+    var prg_id = $(this).data('programme_id')
+    console.log(prg_id)
     var id = $(this).data('id')
     $('#name').text(name)
     $('#_dossier_id').val(dossier_id)
+    $('#_programme_id').val(prg_id)
     $('#id').val(id)
 
     $.ajax({
@@ -444,26 +356,24 @@
        // contentType: false
     } );
 })
-//var url = "{{ route('analyste.instruction.dsf') }}"
-
-$( '#form_' ).submit( function( e ) {
-    var _url = "http://localhost:8080/dossier"
-    var dossier_id = $('#dossier_id').val()
-    var token = $('#token').val()
-    console.log(dossier_id)
-    $.ajax( {
-    url: _url,
-    type: 'POST',
-    data: new FormData( this ),
-    success:function(data){
-        console.log(data)
-        window.location.replace('/analyste/dossiers/'+token)
-    },
-    processData: false,
-    contentType: false
-    } );
-    e.preventDefault();
-} );
 </script>
+
+<style>
+    .table-notation th{
+        border: var(--bs-border-width) var(--bs-border-style) #555 !important;
+        font-weight: 900;
+    }
+
+    .table-notation td{
+        border: var(--bs-border-width) var(--bs-border-style) #888 !important;
+        font-weight: normal;
+    }
+
+    th.vertical-align{
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+</style>
 
 @endsection
