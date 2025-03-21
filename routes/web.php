@@ -257,6 +257,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
         Route::get('entreprise/engagements/{token}','EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
+        Route::get('grille/analyse/{token}','DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
 
         Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
         Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');

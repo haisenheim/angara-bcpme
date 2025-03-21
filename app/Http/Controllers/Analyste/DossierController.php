@@ -35,6 +35,10 @@ class DossierController extends Controller
         return response()->json($items);
     }
 
+    public function getGrilleAnalyse($token){
+        
+    }
+
     public function setAnalyse(){
         $sequence = request('sequence');
         $content = request('content');
@@ -60,7 +64,7 @@ class DossierController extends Controller
 
     }
 
-   
+
 
     public function loadDsf(Request $request){
 

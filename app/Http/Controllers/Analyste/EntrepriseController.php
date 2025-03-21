@@ -132,6 +132,8 @@ class EntrepriseController extends Controller
 
 
 
+
+
     public function setAnalyse(){
         $data = request()->except('_token');
         //dd($data);

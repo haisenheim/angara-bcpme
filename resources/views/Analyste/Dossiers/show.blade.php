@@ -19,17 +19,10 @@
     </button>
     <ul class="dropdown-menu analyse">
         <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements',$item->entreprise->token) }}">Etat des engagement de l'entreprise</a></li>
-        <li><a data-sequence="1" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Brèves données générales actualisées sur l'emprunteur</a></li>
-        <li><a data-sequence="2" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse critique d'ensemble</a></li>
-        <li><a data-sequence="3" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse financière de l'emprunteur</a></li>
-        <li><a data-sequence="4" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Appuis financiers et non-financiers proposés</a></li>
-        <li><a data-sequence="5" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse du risque et de la capacité de remboursement de l'emprunteur</a></li>
-        <li><a data-sequence="6" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Rentabilité de la relation pour l’établissement</a></li>
-        <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations de l’Analyste Financier</a></li>
+        <li><a class="dropdown-item" href="{{ route('analyste.dossier.get.grille.analyse',$item->token) }}">Grille d'analyse critique</a></li>
     </ul>
 </div>
 @endsection
-
 
 @section('content')
     <div>
