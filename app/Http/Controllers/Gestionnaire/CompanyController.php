@@ -14,6 +14,7 @@ use App\Models\EntrepriseAppui;
 use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
+use App\Models\Instruction\Critere as InstructionCritere;
 use App\Models\Person;
 use App\Models\Programme;
 use App\Models\Question;
@@ -138,7 +139,7 @@ class CompanyController extends ExtendedController
         $reponses = $item->reponses;
         $groups = $reponses->groupBy('critere_id');
         $groups = $groups->map(function($v,$k){
-            $critere = Critere::find($k);
+            $critere = InstructionCritere::find($k);
             return ['critere'=>$critere,
              'items'=>$v->groupBy('sous_critere_id')
                         ->map(function($m,$n){
