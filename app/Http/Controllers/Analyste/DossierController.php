@@ -36,7 +36,8 @@ class DossierController extends Controller
     }
 
     public function getGrilleAnalyse($token){
-        
+        $item = Dossier::where('token',$token)->first();
+        return view('Analyste/Dossiers/analyse_critique',compact('item'));
     }
 
     public function setAnalyse(){
