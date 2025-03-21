@@ -41,7 +41,7 @@
                         @csrf
                         <input type="hidden" id="arr_id" name="arrondissement_id">
                         <fieldset>
-                            <legend>Infos de la cooperative</legend>
+                            <legend>Infos de l'organisation</legend>
                             <div class="d-flex gap-2 flex-grow">
                                 <div class=" w-50">
                                     <label for="">NOM</label>
@@ -81,7 +81,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <legend>Infos de connexion du compte utilisateur de la cooperative</legend>
+                            <legend>Infos de connexion du compte utilisateur</legend>
                             <div class="d-flex gap-2 flex-grow">
                                 <div class=" w-75">
                                     <label for="">NOM DE L'UTILISATEUR</label>
