@@ -5,8 +5,8 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Cooperatives</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Liste des cooperatives</li>
+       <li class="breadcrumb-item"><a href="#">Organisations intermediaires</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Liste des Organisations</li>
     </ol>
  </nav>
 @endsection
@@ -16,8 +16,8 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Cooperatives</h5>
-        <p class="lead">Liste de toutes les cooperatives</p>
+        <h5 class="page-title mb-0 mt-2">Organisations intermediaires</h5>
+        <p class="lead">Liste de toutes les organisations</p>
     </div>
 @endsection
 
@@ -31,7 +31,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle cooperative</h5>
+                    <h5 class="modal-title">Nouvelle Organisation</h5>
                     <div style="float: right">
                         <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
                     </div>
