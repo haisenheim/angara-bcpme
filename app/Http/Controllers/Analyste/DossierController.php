@@ -41,6 +41,7 @@ class DossierController extends Controller
     }
 
     public function setAnalyse(){
+        //dd(request()->all());
         $sequence = request('sequence');
         $content = request('content');
         $dossier_id = request('dossier_id');
@@ -60,7 +61,9 @@ class DossierController extends Controller
         if($sequence==7)
             $data = ['conclusions_analyste'=>$content];
 
-        Dossier::where('id',$dossier_id)->update($data);
+        //dd($data);
+
+        Dossier::updateOrCreate(['id'=>$dossier_id],$data);
         return redirect()->back();
 
     }

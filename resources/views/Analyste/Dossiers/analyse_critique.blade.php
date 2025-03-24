@@ -37,33 +37,33 @@
                 </div>
                 <div class="card-body table-responsive">
                     <div id="" class="" role="tabpanel" aria-labelledby="profile-tab">
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">1. INFORMATIONS GENERALES</h4>
-                            <p class="lh-base"><?= $item['donneesGenerales'] ?></p>
+                        <div class="mt-1 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">1. INFORMATIONS GENERALES</h4>
+                            <p class="lh-base"><?= $item['donnees_generales'] ?></p>
                         </div>
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">2. ANALYSE D'ENSEMBLE</h4>
-                            <p class="lh-base"><?= $item['analyseEnsemble'] ?></p>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">2. ANALYSE D'ENSEMBLE</h4>
+                            <p class="lh-base"><?= $item['analyse_ensemble'] ?></p>
                         </div>
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">3. ANALYSE FINANCIERE</h4>
-                            <p class="lh-base"><?= $item['analyseFinanciere'] ?></p>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">3. ANALYSE FINANCIERE</h4>
+                            <p class="lh-base"><?= $item['analyse_financiere'] ?></p>
                         </div>
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">4. APPUIS FINANCIERS ET NON FINANCIERS</h4>
                             <p class="lh-base"><?= $item['appuis'] ?></p>
                         </div>
                         <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
-                            <p class="lh-base"><?= $item['analyseRisque'] ?></p>
+                            <h4 class="fs-5">5. ANALYSE DU RISQUE ET DE LA CAPACITE DE REMBOURSEMENT</h4>
+                            <p class="lh-base"><?= $item['analyse_risque'] ?></p>
                         </div>
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
-                            <p class="lh-base"><?= $item['analyseRentabilite'] ?></p>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">6. RENTABILITE DE LA RELATION POUR L'ETABILISSEMENT</h4>
+                            <p class="lh-base"><?= $item['analyse_rentabilite'] ?></p>
                         </div>
-                        <div class="mt-2 border rounded rounded-2 p-2">
-                            <h4 class="fs-6">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h4>
-                            <p class="lh-base"><?= $item['conclusionsAnalyste'] ?></p>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h3 class="fs-5">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h3>
+                            <p class="lh-base"><?= $item['conclusions_analyste'] ?></p>
                         </div>
                     </div>
                 </div>
@@ -123,5 +123,6 @@
     </script>
 
 @endsection
+
 
 
