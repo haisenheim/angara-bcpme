@@ -189,16 +189,11 @@ class DossierController extends Controller
     public function show($token){
 
         $item = Dossier::where('token',$token)->first();
-       // $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$item->id);
-        //dd(json_decode($resp->body(),true));
-        //$resp = json_decode($resp->body(),true);
         $engagements = Engagement::where('parent_id',0)->get();
-       // $engagements = EngagementResource::collection($engagements);
         $data = [];
         foreach($engagements as $eng){
             $data[] = $this->parse($eng,1);
         }
-        //dd($data);
 
         $engagements = $data;
 
