@@ -217,14 +217,9 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     <ul class="mainnav__menu nav flex-column">
        <li class="nav-item">
            <a href="{{ route('gestionnaire.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Organisations intermédiaires</span>
+               <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
            </a>
        </li>
-       <li class="nav-item">
-            <a href="{{ route('gestionnaire.wallets.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Wallets</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a href="{{ route('gestionnaire.requests.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-bell fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Appels de fonds</span>

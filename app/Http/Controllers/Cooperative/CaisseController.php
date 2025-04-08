@@ -1,14 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Ca;
+namespace App\Http\Controllers\Cooperative;
 
 use App\Http\Controllers\ExtendedController;
+use App\Models\Structuration\Agent;
+use App\Models\Structuration\AgentOperateur;
+use App\Models\Structuration\AgentOperateurRecharge;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
-class WalletController extends ExtendedController
+class CaisseController extends ExtendedController
 {
     /**
      * Display a listing of the resource.
@@ -18,13 +25,20 @@ class WalletController extends ExtendedController
     public function index()
     {
         //
-        $cooperatives = Cooperative::where('agence_id',auth()->user()->agence_id)->get();
-        $operateurs = Operateur::where('active',1)->get();
-        $ids = $cooperatives->pluck('id');
-        //dd($ids);
-        $items = Wallet::whereIn('cooperative_id',$ids)->get();
-        return view('Ca.Wallets.index')->with(compact('cooperatives','items','operateurs'));
+        $items = Caisse::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        return view('Cooperative/Wallets/caisses')->with(compact('items'));
     }
+
+
+    public function getWallet()
+    {
+        //
+        $items = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        return view('Cooperative//wallets')->with(compact('items'));
+    }
+
+
+
 
 
     /**
@@ -43,14 +57,8 @@ class WalletController extends ExtendedController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        $data = $request->all();
-        $data['user_id'] = auth()->user()->id;
-        $data['token'] = sha1(time());
-        Wallet::create($data);
-        return back();
-    }
+
+
 
     /**
      * Display the specified resource.
@@ -60,8 +68,8 @@ class WalletController extends ExtendedController
      */
 	public function show($token)
 	{
-		$item = Cooperative::where('token',$token)->first();
-		return view('Ca.Cooperatives.show')->with(compact('item'));
+
 	}
+
 
 }

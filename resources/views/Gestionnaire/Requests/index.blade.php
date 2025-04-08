@@ -25,8 +25,9 @@
                 <thead>
                     <tr>
                         <th>DATE</th>
-                        <th>COOPERATIVE</th>
-                        <th>OPERATEUR</th>
+                        <th>EXPEDITEUR</th>
+                        <th>CAISSE</th>
+                        <th>WALLET</th>
                         <th>MONTANT</th>
                         <th>STATUS</th>
                         <th></th>
@@ -36,8 +37,9 @@
                     @foreach ($items as $item)
                        <tr>
                             <td>{{ $item->created_at->format('d/m/Y à H:i') }}</td>
-                            <td><img src="{{ $item->cooperative?->photo }}" width="20" alt=""> {{ $item->operateur?->name }}</td>
-                            <td><img src="{{ $item->operateur?->photo }}" width="20" alt="">{{ $item->operateur?->name }}</td>
+                            <td>{{ $item->cooperative?->name }}</td>
+                            <td>{{ $item->caisse?->name }}</td>
+                            <td><img src="{{ $item->wallet?->operateur?->photo }}" width="20" alt=""> {{ $item->wallet?->name }}</td>
                             <td>{{ number_format($item->montant,0,',','.') }}</td>
                             <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
                             <td>
@@ -48,8 +50,8 @@
                                     <span class="vr"></span>
                                     </button>
                                     <ul class="dropdown-menu analyse">
-                                        <li><a class="dropdown-item" id="v-btn" data-token="{{ $item->token }}" data-bs-toggle="modal" data-bs-target="#validateModal"  href="#">Approuver</a></li>
-                                        <li><a class="dropdown-item" id="c-btn" data-token="{{ $item->token }}" data-bs-toggle="modal" data-bs-target="#cancelModal"  href="#">Rejeter</a></li>
+                                        <li><a class="dropdown-item v-btn"  data-token="{{ $item->token }}" data-bs-toggle="modal" data-bs-target="#validateModal"  href="#">Approuver</a></li>
+                                        <li><a class="dropdown-item c-btn"  data-token="{{ $item->token }}" data-bs-toggle="modal" data-bs-target="#cancelModal"  href="#">Rejeter</a></li>
                                     </ul>
                                 </div>
                                 @endif
@@ -107,11 +109,12 @@
     </div>
 
     <script>
-        $('#v-btn').click(function(){
+        $('.v-btn').click(function(){
             var token = $(this).data('token');
             $('#v-token').val(token);
+            console.log(token);
         })
-        $('#c-btn').click(function(){
+        $('.c-btn').click(function(){
             var token = $(this).data('token');
             $('#c-token').val(token);
         })

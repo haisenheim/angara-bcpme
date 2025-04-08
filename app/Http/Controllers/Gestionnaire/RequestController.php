@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\ExtendedController;
-use App\Models\Structuration\CooperativeOperateur;
+use App\Models\Structuration\Caisse;
+use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Request as StructurationRequest;
 use Exception;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class RequestController extends ExtendedController
     public function valider(){
         $token = request()->token;
         $item = StructurationRequest::where('token',$token)->first();
+        //dd(request()->all());
         if($item){
             try{
                 //Appel a l'api de l'operateur
@@ -33,12 +35,22 @@ class RequestController extends ExtendedController
                 Session::flash('error','Une erreur est survenue lors de l\'echange avec l\'operateur de paiement!');
                 return back();
             }
+
             $item->validated_at = new \DateTime();
             $item->validated_by = auth()->user()->id;
-            $wallet = CooperativeOperateur::find($item->wallet_id);
-            $wallet->montant = $wallet->montant + $item->montant;
             $item->save();
-            $wallet->save();
+            if($item->wallet_id){
+                $wallet = Wallet::find($item->wallet_id);
+                $wallet->montant = $wallet->montant + $item->montant;
+                $wallet->save();
+            }else{
+                if($item->caisse_id){
+                    $caisse = Caisse::find($item->caisse_id);
+                    $caisse->montant = $caisse->montant + $item->montant;
+                    $caisse->save();
+                }
+            }
+
             Session::flash('success','Requete approuvée avec succès!');
             return back();
         }
@@ -70,7 +82,7 @@ class RequestController extends ExtendedController
     public function create()
     {
         //
-        //$items = CooperativeOperateur::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        //$items = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->get();
         //return view('Gestionnaire/Requests/create')->with(compact('items'));
     }
 

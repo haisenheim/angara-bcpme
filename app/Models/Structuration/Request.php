@@ -19,6 +19,16 @@ class Request extends Model
         return $this->belongsTo('App\Models\Structuration\Operateur');
     }
 
+    public function wallet()
+    {
+        return $this->belongsTo('App\Models\Structuration\Wallet','wallet_id');
+    }
+
+    public function caisse()
+    {
+        return $this->belongsTo('App\Models\Structuration\Caisse');
+    }
+
     public function getStatusAttribute(){
         $data = [
             'name'=>'en attente',

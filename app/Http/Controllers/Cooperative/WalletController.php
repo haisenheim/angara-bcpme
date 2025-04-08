@@ -6,8 +6,9 @@ use App\Http\Controllers\ExtendedController;
 use App\Models\Structuration\Agent;
 use App\Models\Structuration\AgentOperateur;
 use App\Models\Structuration\AgentOperateurRecharge;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
-use App\Models\Structuration\CooperativeOperateur;
+use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use Exception;
 use Illuminate\Http\Request;
@@ -29,6 +30,16 @@ class WalletController extends ExtendedController
         $agents = Agent::where('cooperative_id',auth()->user()->cooperative_id)->get();
         $items = AgentOperateur::where('cooperative_id',auth()->user()->cooperative_id)->get();
         return view('Cooperative/Wallets/index')->with(compact('agents','items','operateurs'));
+    }
+
+    public function getCaisses(){
+        $items = Caisse::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        return view('Cooperative/Wallets/caisses')->with(compact('items'));
+    }
+
+    public function getMyWallets(){
+        $items = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        return view('Cooperative/Wallets/mine')->with(compact('items'));
     }
 
 
@@ -72,7 +83,7 @@ class WalletController extends ExtendedController
         //$data = $request->all();
         $wallet = AgentOperateur::where('token',$request->token)->first();
         if($wallet){
-            $pf = CooperativeOperateur::where('cooperative_id',auth()->user()->cooperative_id)->where('operateur_id',$wallet->operateur_id)->where('montant','>=',$request->montant)->first();
+            $pf = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->where('operateur_id',$wallet->operateur_id)->where('montant','>=',$request->montant)->first();
             if($pf){
                 DB::beginTransaction();
                 try{

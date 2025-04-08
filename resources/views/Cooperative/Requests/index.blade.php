@@ -36,7 +36,8 @@
                 <thead>
                     <tr>
                         <th>DATE</th>
-                        <th>OPERATEUR</th>
+                        <th>WALLET</th>
+                        <th>CAISSE</th>
                         <th>MONTANT</th>
                         <th>STATUS</th>
                     </tr>
@@ -45,7 +46,8 @@
                     @foreach ($items as $item)
                        <tr>
                             <td>{{ $item->created_at->format('d/m/Y à H:i') }}</td>
-                            <td>{{ $item->operateur?->name }}</td>
+                            <td>{{ $item->wallet?->name }}</td>
+                            <td>{{ $item->caisse?->name }}</td>
                             <td>{{ number_format($item->montant,0,',','.') }}</td>
                             <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
                         </tr>

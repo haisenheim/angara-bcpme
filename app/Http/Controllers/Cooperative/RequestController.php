@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Cooperative;
 
 use App\Http\Controllers\ExtendedController;
 use App\Models\Structuration\Agent;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
-use App\Models\Structuration\CooperativeOperateur;
+use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use App\Models\Structuration\Request as StructurationRequest;
 use Illuminate\Http\Request;
@@ -34,8 +35,9 @@ class RequestController extends ExtendedController
     public function create()
     {
         //
-        $items = CooperativeOperateur::where('cooperative_id',auth()->user()->cooperative_id)->get();
-        return view('Cooperative/Requests/create')->with(compact('items'));
+        $items = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->where('active',1)->get();
+        $caisses = Caisse::where('cooperative_id',auth()->user()->cooperative_id)->where('active',1)->get();
+        return view('Cooperative/Requests/create')->with(compact('items','caisses'));
     }
 
     /**
@@ -46,9 +48,9 @@ class RequestController extends ExtendedController
      */
     public function store(Request $request)
     {
-        $data = $request->except('token');
-        $wallet = CooperativeOperateur::where('token',$request->token)->first();
-        if($wallet){
+        $data = $request->all();
+        if($data['wallet_id']){
+            $wallet = Wallet::where('token',$data['wallet_id'])->first();
             if($wallet->cooperative_id == auth()->user()->cooperative_id){
                 $data['cooperative_id'] = $wallet->cooperative_id;
                 $data['token'] = sha1(time().$wallet->id);
@@ -56,6 +58,23 @@ class RequestController extends ExtendedController
                 $data['operateur_id'] = $wallet->operateur_id;
                 $data['saison_id'] = $this->_saison->id;
                 $data['wallet_id'] = $wallet->id;
+                $data['agence_id'] = $wallet->cooperative->agence_id;
+                $data['representation_id'] = $wallet->cooperative->representation_id;
+                StructurationRequest::create($data);
+                Session::flash('success','Requete envoyée avec succès!');
+                return redirect(route('cooperative.requests.index'));
+            }
+        }
+
+        if($data['caisse_id']){
+            $wallet = Caisse::where('token',$data['caisse_id'])->first();
+            if($wallet->cooperative_id == auth()->user()->cooperative_id){
+                $data['cooperative_id'] = $wallet->cooperative_id;
+                $data['token'] = sha1(time().$wallet->id);
+                $data['user_id'] = auth()->user()->id;
+                $data['operateur_id'] = 0;
+                $data['saison_id'] = $this->_saison->id;
+                $data['caisse_id'] = $wallet->id;
                 $data['agence_id'] = $wallet->cooperative->agence_id;
                 $data['representation_id'] = $wallet->cooperative->representation_id;
                 StructurationRequest::create($data);

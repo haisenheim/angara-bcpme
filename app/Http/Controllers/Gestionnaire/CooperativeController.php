@@ -8,7 +8,10 @@ use App\Models\Arrondissement;
 use App\Models\Domaine;
 use App\Models\Entreprise;
 use App\Models\Region;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
+use App\Models\Structuration\Wallet;
+use App\Models\Structuration\Operateur;
 use App\Models\Taille;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -43,6 +46,22 @@ class CooperativeController extends ExtendedController
     public function create()
     {
         //
+    }
+
+    public function addCaisse(Request $request){
+        $data = $request->all();
+        $data['user_id'] = auth()->user()->id;
+        $data['token'] = sha1(time());
+        Caisse::create($data);
+        return back();
+    }
+
+    public function addWallet(Request $request){
+        $data = $request->all();
+        $data['user_id'] = auth()->user()->id;
+        $data['token'] = sha1(time());
+        Wallet::create($data);
+        return back();
     }
 
     /**
@@ -107,7 +126,9 @@ class CooperativeController extends ExtendedController
 	public function show($token)
 	{
 		$item = Cooperative::where('token',$token)->first();
-		return view('Gestionnaire/Cooperatives/show')->with(compact('item'));
+       // dd($item->caisses);
+        $operateurs = Operateur::all();
+		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs'));
 	}
 
 

@@ -29,11 +29,20 @@
                 @csrf
                 <div class="">
                     <div class="">
-                        <label>Opérateur de mobile</label>
-                        <select required name="token" class="form-control">
-                            <option value="">Selectionner un opérateur mobile ...</option>
+                        <label>Wallet</label>
+                        <select name="wallet_id" class="form-control">
+                            <option value="0">Selectionner un wallet ...</option>
                             @foreach($items as $item)
-                                <option value="{{ $item->token}}"> {{$item->operateur?->name}}</option>
+                                <option value="{{ $item->token}}">{{$item->name}} - {{$item->operateur?->name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mt-4">
+                        <label>Caisse</label>
+                        <select name="caisse_id" class="form-control">
+                            <option value="0">Selectionner une caisse ...</option>
+                            @foreach($caisses as $item)
+                                <option value="{{ $item->token}}"> {{$item->name}}</option>
                             @endforeach
                         </select>
                     </div>

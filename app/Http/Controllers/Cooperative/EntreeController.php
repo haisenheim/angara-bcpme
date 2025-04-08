@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Cooperative;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntreeResource;
 use App\Models\Structuration\Agent;
-use App\Models\Structuration\AgentOperateur;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
 use App\Models\Structuration\Entrepot;
@@ -13,6 +13,7 @@ use App\Models\Structuration\EntrepotGamme;
 use App\Models\Structuration\Exploitant;
 use App\Models\Structuration\Gamme;
 use App\Models\Structuration\Paiement;
+use App\Models\Structuration\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -101,7 +102,10 @@ class EntreeController extends ExtendedController
 	public function show($token)
 	{
         $item = Entree::where('token',$token)->first();
-        return view('Cooperative.Entrees.show',compact('item'));
+        $caisses = Caisse::where('cooperative_id',auth()->user()->cooperative_id)->where('active',1)->get();
+        $wallets = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->where('active',1)->get();
+        //dd($wallets);
+        return view('Cooperative.Entrees.show',compact('item','caisses','wallets'));
 	}
 
     public function getPaiements(){
@@ -109,22 +113,45 @@ class EntreeController extends ExtendedController
         return view('Cooperative.Entrees.paiements',compact('items'));
     }
 
-    public function addPaiement(){
+    public function addPaiement(Request $request){
         $item = Entree::find(request()->entree_id);
-        $cop = Cooperative::find(auth()->user()->cooperative_id);
-        $wallet = AgentOperateur::find(request()->wallet_id);
-        $wallet->montant = $wallet->montant - request()->montant;
-        $wallet->save();
-        Paiement::create([
+        //$cop = Cooperative::find(auth()->user()->cooperative_id);
+        $data = [
             'entree_id'=>$item->id,
-            'wallet_id'=>request()->wallet_id,
             'montant'=>request()->montant,
             'cooperative_id'=>auth()->user()->cooperative_id,
-            'agent_id'=>$item->id,
             'exploitant_id'=>$item->exploitant_id,
+            'mode_paiement_id'=>$request->mode_paiement_id,
+            'user_id'=>auth()->user()->id,
+        ];
+        if($request->wallet_id){
+            $wallet = Wallet::find(request()->wallet_id);
+            $data['wallet_id'] = $request->wallet_id;
+            $data['phone'] = $request->phone;
+            $wallet->montant = $wallet->montant - request()->montant;
+            if($wallet->montant>=0){
+                $wallet->save();
+                Paiement::create($data);
+            }else{
+                Session::flash('error','Solde du wallet insuffisant pour effectuer ce paiement!');
+                return back();
+            }
+        }else{
+            if($request->caisse_id){
+                $caisse = Caisse::find(request()->caisse_id);
+                $data['caisse_id'] = $request->caisse_id;
+                $caisse->montant = $caisse->montant - request()->montant;
+                if($caisse->montant>=0){
+                    $caisse->save();
+                    Paiement::create($data);
+                }else{
+                    Session::flash('error','Solde de la caisse insuffisant pour effectuer ce paiement!');
+                    return back();
+                }
 
+            }
+        }
 
-        ]);
         Session::flash('success','Paiement effectué avec succès!');
         return back();
     }

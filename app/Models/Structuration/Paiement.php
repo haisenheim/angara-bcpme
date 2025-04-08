@@ -20,9 +20,24 @@ class Paiement extends Model
         return $this->belongsTo('App\Models\Structuration\Agent');
     }
 
+    public function compte()
+    {
+        return $this->belongsTo('App\Models\Structuration\AgentOperateur','agent_wallet_id');
+    }
+
+    public function mode()
+    {
+        return $this->belongsTo('App\Models\Structuration\ModePaiement','mode_paiement_id');
+    }
+
     public function wallet()
     {
-        return $this->belongsTo('App\Models\Structuration\AgentOperateur','wallet_id');
+        return $this->belongsTo('App\Models\Structuration\Wallet','wallet_id');
+    }
+
+    public function caisse()
+    {
+        return $this->belongsTo('App\Models\Structuration\Caisse','caisse_id');
     }
 
     public function exploitant()

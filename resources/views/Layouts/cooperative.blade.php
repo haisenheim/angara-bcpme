@@ -202,22 +202,31 @@
                 <span class="nav-label mininav-content ms-1">Tous les appels de fonds</span>
             </a>
         </li>
-
         <li class="nav-item">
-            <a href="{{ route('cooperative.recharges') }}" class="nav-link mininav-toggle {{ $active==8?'active':'' }}"><i class="pli-calculator fs-3 me-2"></i>
+            <a href="{{ route('cooperative.my.wallets') }}" class="nav-link mininav-toggle {{ $active==8?'active':'' }}"><i class="pli-wallet fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Mes Wallets</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('cooperative.caisses.index') }}" class="nav-link mininav-toggle {{ $active==9?'active':'' }}"><i class="pli-atm fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Mes Caisses</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('cooperative.recharges') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-calculator fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Recharges wallets agents</span>
             </a>
         </li>
 
         <li class="nav-item">
-            <a href="{{ route('cooperative.wallets.index') }}" class="nav-link mininav-toggle {{ $active==9?'active':'' }}"><i class="pli-wallet-2 fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Wallets des agents</span>
+            <a href="#" class="nav-link mininav-toggle {{ $active==12?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
             </a>
         </li>
 
         <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
+            <a href="{{ route('cooperative.wallets.index') }}" class="nav-link mininav-toggle {{ $active==11?'active':'' }}"><i class="pli-wallet-2 fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Wallets des agents</span>
             </a>
         </li>
 

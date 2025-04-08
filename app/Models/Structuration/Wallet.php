@@ -4,7 +4,7 @@ namespace App\Models\Structuration;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CooperativeOperateur extends Model
+class Wallet extends Model
 {
     //
     protected $guarded = [];
@@ -21,18 +21,14 @@ class CooperativeOperateur extends Model
     }
 
     public function getStatusAttribute(){
-        $data['color'] = 'warning';
+        $data['color'] = 'danger';
         $data['code'] = 0;
-        $data['name'] = 'en attente';
-        if($this->cancelled_at){
-            $data['color'] = 'danger';
-            $data['code'] = -1;
-            $data['name'] = 'annulée';
-        }
-        if($this->validated_at){
+        $data['name'] = 'bloqué';
+
+        if($this->active){
             $data['color'] = 'success';
             $data['code'] = 1;
-            $data['name'] = 'validée';
+            $data['name'] = 'actif';
         }
 
         return $data;

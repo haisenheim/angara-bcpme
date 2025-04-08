@@ -233,6 +233,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::resource('cooperatives','CooperativeController');
         Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
+        Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
 
         Route::resource('members','MemberController');
         Route::get('member/data','MemberController@fetchAll')->name('members.all');
@@ -381,12 +382,15 @@ Route::namespace('App\Http\Controllers\Cooperative')
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');
 
         Route::resource('wallets','WalletController');
+        Route::get('caisses','WalletController@getCaisses')->name('caisses.index');
+        Route::get('my_wallets','WalletController@getMyWallets')->name('my.wallets');
         Route::post('wallet/recharge','WalletController@recharger')->name('wallet.recharge');
         Route::get('recharges','WalletController@getRecharges')->name('recharges');
         Route::get('wallet/disable/{token}','WalletController@disable')->name('wallet.disable');
         Route::get('wallet/enable/{token}','WalletController@enable')->name('wallet.enable');
         Route::get('kpi/agents/solde','KpiController@getAgentSolde')->name('kpi.agents.solde');
     });
+
 
 Route::namespace('App\Http\Controllers\Program')
     ->prefix('program')
@@ -395,9 +399,6 @@ Route::namespace('App\Http\Controllers\Program')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
         Route::get('entreprises','CompanyController@index')->name('entreprises.index')->middleware('permission:entreprises.list');
-        //Route::resource('entreprises','CompanyController')->middleware();
-        //Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
-        //Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 
@@ -434,7 +435,7 @@ Route::namespace('App\Http\Controllers\Program')
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
-    });
+});
 
 
 
