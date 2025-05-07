@@ -91,6 +91,10 @@ class Entreprise extends Model
         return $this->belongsTo('App\Models\Quartier');
     }
 
+    public function producteur(){
+        return $this->belongsTo('App\Models\Structuration\Exploitant','producteur_id'); //autres produits
+    }
+
     public function getTpersoAttribute(){
         if($this->personnel_mixte){
             return 'mixte';

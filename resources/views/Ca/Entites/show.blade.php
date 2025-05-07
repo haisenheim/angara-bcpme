@@ -1,11 +1,11 @@
-@extends('Layouts.gestionnaire')
+@extends('Layouts.ca')
 
 @section('title', 'Accueil')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entreprises</a></li>
+       <li class="breadcrumb-item"><a href="#">Entités individuelles</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $item->name }}</li>
     </ol>
  </nav>
@@ -17,15 +17,8 @@
        <span class="vr"></span>
     </button>
     <ul class="dropdown-menu">
-        <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
-        <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#">Ajouter une pièce </a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
-        <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}">Editer des information de l'entreprise</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
     </ul>
  </div>
 @endsection
@@ -39,7 +32,7 @@
             @endif
 
         </div>
-        <p class="lead">Dossier de l'entreprise</p>
+        <p class="lead">Fiche signalitique de l'entité individuelle</p>
     </div>
 @endsection
 
@@ -51,7 +44,7 @@
                 <table class="table table-striped">
                     <tbody>
                         <tr>
-                            <td>Designation</td>
+                            <td>Désignation</td>
                             <th>{{ $item->name }}</th>
                         </tr>
                         <tr>
@@ -71,7 +64,7 @@
                             <th>{{ $item->mm_phone }}</th>
                         </tr>
                         <tr>
-                            <td>Type d'entreprise </td>
+                            <td>Type d'entité </td>
                             <th>{{ $item->taille }}</th>
                         </tr>
                         <tr>
@@ -108,11 +101,11 @@
                         </tr>
                         <tr>
                             <td>Nombre d'employés permanents</td>
-                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }} </th>
+                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }}</th>
                         </tr>
                         <tr>
                             <td>Nombre d'employés saisonniers</td>
-                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }} </th>
+                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }}</th>
                         </tr>
                     </tbody>
                 </table>
@@ -379,7 +372,6 @@
                                 @endforeach
                              </div>
                        </div>
-
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">
                                 <thead>
@@ -394,19 +386,12 @@
                                 <tbody>
                                     @foreach($item->dossiers as $dossier)
                                         <tr>
-                                            <th><a href="{{ route('gestionnaire.programmes.show',$dossier->programme?->token) }}">{{ $dossier->programme?->name }}</a></th>
+                                            <th><a href="{{ route('ca.programmes.show',$dossier->programme?->token) }}">{{ $dossier->programme?->name }}</a></th>
                                             <td>{{ $dossier->programme?->signataire }}</td>
                                             <td>{{ number_format($dossier->programme?->budget,0,',','.') }} XAF</td>
                                             <td>{{ \Carbon\Carbon::parse($dossier->programme?->dt_sig_conv)->format('d/m/Y') }}</td>
                                             <td>
-                                                <div>
-                                                    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false"><i class="demo-psi-list-view"></i></button>
-                                                    <ul class="dropdown-menu">
-                                                        <li><a class="dropdown-item" href="{{ route('gestionnaire.dossiers.show',$dossier->token) }}">Afficher le dossier</a></li>
-                                                        <li><a class="dropdown-item" href="{{ route('gestionnaire.programmes.show',$dossier->programme?->token) }}">Afficher le programme</a></li>
 
-                                                    </ul>
-                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -449,9 +434,10 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.programme.save') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('ca.entite.programme.save') }}" method="post">
                         @csrf
                         <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                        <input type="hidden" name="gestionnaire_id" value="{{ $item->user_id }}">
                             <div class="">
                                 <div class="form-group">
                                     <label for="">Programme</label>
@@ -481,76 +467,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addAppuiModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Ajouter un appui</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.appui.save') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
-                            <div class="">
-                                <div class="form-group">
-                                    <label for="">Programme</label>
-                                    <select required  name="appui_id" id="appui_id" class="form-control cmp">
-                                        <option value="0">Selectionner un appui ...</option>
-                                        @foreach($appuis as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }} ({{ $it->financier?'financier':'non financier' }})</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
-
-    <div class="modal fade" id="addElementModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Ajouter un Element constitutif</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.element.save') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
-                            <div class="">
-                                <div class="form-group">
-                                    <label for="">Pièce</label>
-                                    <select required  name="type_id" class="form-control cmp">
-                                        <option value="0">Selectionner un type de pièce  ...</option>
-                                        @foreach($elements as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mt-3">
-                                    <label for="">FICHIER</label>
-                                    <input type="file" name="fichier" class="form-control">
-                                </div>
-                            </div>
-                        <div class="mt-5 d-grid">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <style>
         .form-group{

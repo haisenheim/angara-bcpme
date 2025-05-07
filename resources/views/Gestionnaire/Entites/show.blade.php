@@ -5,7 +5,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entreprises</a></li>
+       <li class="breadcrumb-item"><a href="#">Entités individuelles</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $item->name }}</li>
     </ol>
  </nav>
@@ -19,13 +19,13 @@
     <ul class="dropdown-menu">
         <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
         <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#">Ajouter une pièce </a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
-        <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
+        <li><a class="dropdown-item" href="#">Editer un engagement de l'entité</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}">Editer des information de l'entreprise</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entites.edit',$item->token) }}">Editer des information de l'entité</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entité</a></li>
     </ul>
  </div>
 @endsection
@@ -39,7 +39,7 @@
             @endif
 
         </div>
-        <p class="lead">Dossier de l'entreprise</p>
+        <p class="lead">Fiche signalitique de l'entité individuelle</p>
     </div>
 @endsection
 
@@ -51,7 +51,7 @@
                 <table class="table table-striped">
                     <tbody>
                         <tr>
-                            <td>Designation</td>
+                            <td>Désignation</td>
                             <th>{{ $item->name }}</th>
                         </tr>
                         <tr>
@@ -71,7 +71,7 @@
                             <th>{{ $item->mm_phone }}</th>
                         </tr>
                         <tr>
-                            <td>Type d'entreprise </td>
+                            <td>Type d'entité </td>
                             <th>{{ $item->taille }}</th>
                         </tr>
                         <tr>
@@ -108,11 +108,11 @@
                         </tr>
                         <tr>
                             <td>Nombre d'employés permanents</td>
-                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }} </th>
+                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }}</th>
                         </tr>
                         <tr>
                             <td>Nombre d'employés saisonniers</td>
-                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }} </th>
+                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }}</th>
                         </tr>
                     </tbody>
                 </table>
@@ -194,6 +194,9 @@
                        </li>
                        <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
@@ -379,7 +382,9 @@
                                 @endforeach
                              </div>
                        </div>
-
+                       <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                            <h5>ETAT DES ENGAGEMENTS</h5>
+                       </div>
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">
                                 <thead>
@@ -449,7 +454,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.programme.save') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entite.programme.save') }}" method="post">
                         @csrf
                         <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
                             <div class="">
@@ -491,7 +496,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.appui.save') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entite.appui.save') }}" method="post">
                         @csrf
                         <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
                             <div class="">
@@ -525,7 +530,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.element.save') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entite.element.save') }}" method="post">
                         @csrf
                         <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
                             <div class="">

@@ -167,12 +167,12 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">DOSSIERS</h6>
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">INTERMEDIATION</h6>
     <ul class="mainnav__menu nav flex-column">
 
         <li class="nav-item">
             <a href="{{ route('ca.dossiers.index') }}" class="nav-link mininav-toggle {{ $active==201?'active':'' }}"><i class="pli-folder fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Instruction</span>
+                <span class="nav-label mininav-content ms-1">INSTRUCTION</span>
             </a>
         </li>
         <li class="nav-item">
@@ -193,14 +193,24 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">ENTITES</h6>
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
     <ul class="mainnav__menu nav flex-column">
        <li class="nav-item">
            <a href="{{ route('ca.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
                <span class="nav-label mininav-content ms-1">Entreprises</span>
            </a>
        </li>
-       <li class="nav-item">
+        <li class="nav-item">
+           <a href="{{ route('ca.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
+               <span class="nav-label mininav-content ms-1">Organisations intermed.</span>
+           </a>
+       </li>
+        <li class="nav-item">
+            <a href="{{ route('ca.entites.index') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-home-2 fs-2 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Entités individuelles</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('ca.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-phone-2 fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Prospects</span>
             </a>
@@ -215,16 +225,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
 <div class="mainnav__categoriy py-3">
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
     <ul class="mainnav__menu nav flex-column">
-       <li class="nav-item">
-           <a href="{{ route('ca.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Coopératives</span>
-           </a>
-       </li>
-       <li class="nav-item">
-            <a href="{{ route('ca.wallets.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Wallets de Coopératives</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a href="{{ route('ca.requests.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-bell fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Appels de fonds</span>

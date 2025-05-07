@@ -11,6 +11,19 @@
  </nav>
 @endsection
 
+@section('actions')
+<div class="btn-group">
+    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+       Actions
+       <span class="vr"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
+    </ul>
+ </div>
+@endsection
+
 
 @section('page-header')
     <div>
@@ -89,12 +102,12 @@
                             <th>{{ number_format($item->total_actif,0,',','.') }} XAF</th>
                         </tr>
                         <tr>
-                            <td>Nombre d'employés</td>
-                            <th>{{ number_format($item->nb_personnel,0,',','.') }} XAF</th>
+                            <td>Nombre d'employés permanents</td>
+                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }}</th>
                         </tr>
                         <tr>
-                            <td>Type d'employés</td>
-                            <th>{{ $item->tperso }}</th>
+                            <td>Nombre d'employés saisonniers</td>
+                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }}</th>
                         </tr>
                     </tbody>
                 </table>
@@ -176,9 +189,6 @@
                        </li>
                        <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
@@ -361,9 +371,7 @@
                                 @endforeach
                              </div>
                        </div>
-                       <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>ETAT DES ENGAGEMENTS</h5>
-                       </div>
+
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">
                                 <thead>
@@ -388,7 +396,6 @@
                                                     <ul class="dropdown-menu">
                                                         <li><a class="dropdown-item" href="{{ route('ca.dossiers.show',$dossier->token) }}">Afficher le dossier</a></li>
                                                         <li><a class="dropdown-item" href="{{ route('ca.programmes.show',$dossier->programme?->token) }}">Afficher le programme</a></li>
-
                                                     </ul>
                                                 </div>
                                             </td>
@@ -399,6 +406,48 @@
                        </div>
                     </div>
                  </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addProgModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Affectation à un programme</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('ca.entreprise.programme.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                        <input type="hidden" name="gestionnaire_id" value="{{ $item->user_id }}">
+                            <div class="">
+                                <div class="form-group">
+                                    <label for="">Programme</label>
+                                    <select required  name="programme_id" id="programme_id" class="form-control cmp">
+                                        <option value="0">Selectionner un programme ...</option>
+                                        @foreach($programmes as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="">Analyste financier</label>
+                                    <select required  name="analyste_id" id="analyste_id" class="form-control cmp">
+                                        <option value="0">Selectionner un analyste ...</option>
+                                        @foreach($analystes as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}-{{ $it->agence?->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

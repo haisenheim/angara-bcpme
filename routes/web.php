@@ -184,7 +184,9 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('dashboard','DashboardController@index')->name('dashboard');
 
         Route::resource('entreprises','CompanyController');
+        Route::resource('entites','EntiteController');
         Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
+        Route::post('entite/save','EntiteController@save')->name('entites.save');
 
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
@@ -198,6 +200,26 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
+        Route::get('entreprise/engagements/{token}','CompanyController@getEngagementReport')->name('entreprise.get.engagements');
+
+        //entites individuelles
+
+        Route::post('entite/programme','EntiteController@saveProgramme')->name('entite.programme.save');
+        Route::post('entite/appui','EntiteController@saveAppui')->name('entite.appui.save');
+        Route::post('entite/element','EntiteController@addElement')->name('entite.element.save');
+        Route::get('entite/tiers/physique/{token}','EntiteController@createTiersPhysique')->name('entite.physique.create');
+        Route::post('entite/tiers/physique','EntiteController@saveTiersPhysique')->name('entite.physique.save');
+
+        Route::get('entite/tiers/morale/{token}','EntiteController@createTiersMorale')->name('entite.morale.create');
+        Route::post('entite/tiers/morale','EntiteController@saveTiersMorale')->name('entite.morale.save');
+
+        Route::get('entite/questionnaire/{token}','EntiteController@createQuestionnaire')->name('entite.questionnaire');
+        Route::post('entite/questionnaire','EntiteController@saveQuestionnaire')->name('entite.questionnaire.save');
+        Route::get('entities/data','EntiteController@fetchAll')->name('entites.all');
+
+        Route::get('entite/member/{token}','EntiteController@createFromMember')->name('entite.member.create');
+        Route::post('entite/member','EntiteController@storeFromMember')->name('entite.member.store');
+        //
 
         Route::resource('dossiers','DossierController');
 
@@ -308,6 +330,16 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('entreprises','CompanyController@index')->name('entreprises.index');
         Route::get('entreprises/{token}','CompanyController@show')->name('entreprises.show');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+        Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
+        Route::get('entreprise/engagements/{token}','CompanyController@getEngagementReport')->name('entreprise.get.engagements');
+        //entites individuelles
+        Route::get('entites','EntiteController@index')->name('entites.index');
+        Route::get('entites/{token}','EntiteController@show')->name('entites.show');
+        Route::post('entite/programme','EntiteController@saveProgramme')->name('entite.programme.save');
+        Route::get('entities/data','EntiteController@fetchAll')->name('entites.all');
+        //
+
+
         Route::resource('dossiers','DossierController');
         Route::get('programmes','ProgrammeController@index')->name('programmes.index');
         Route::get('programmes/{token}','ProgrammeController@show')->name('programmes.show');

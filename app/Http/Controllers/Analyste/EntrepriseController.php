@@ -4,13 +4,11 @@ namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banque;
-use App\Models\Dossier;
 use App\Models\Entreprise;
 use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Session;
 
 class EntrepriseController extends Controller
 {

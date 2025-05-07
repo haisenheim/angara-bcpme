@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
-use App\Models\Banque;
-use App\Models\Critere;
 use App\Models\Dossier;
 use App\Models\ElementConstitutif;
 use App\Models\Entreprise;
@@ -16,20 +14,18 @@ use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
 use App\Models\Instruction\Critere as InstructionCritere;
-use App\Models\Instruction\Engagement;
-use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
 use App\Models\Programme;
-use App\Models\Question;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Service;
+use App\Models\Structuration\Exploitant;
 use App\Models\Tier;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
-class CompanyController extends ExtendedController
+class EntiteController extends ExtendedController
 {
     /**
      * Display a listing of the resource.
@@ -37,27 +33,17 @@ class CompanyController extends ExtendedController
     public function index()
     {
         //
-        return view('/Gestionnaire/Companies/index');
-    }
-
-    public function getProspects()
-    {
-        //
-        return view('/Gestionnaire/Companies/prospects');
+        return view('Gestionnaire/Entites/index');
     }
 
 
     public function fetchAll(){
-        $items = Entreprise::orderBy('created_at','DESC')->where('prospect',0)->where('user_id',auth()->user()->id)->get();
+        $items = Entreprise::orderBy('created_at','DESC')->where('prospect',0)->where('individual',1)->where('user_id',auth()->user()->id)->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
     }
 
-    public function fetchProspects(){
-        $items = Entreprise::where('prospect',1)->get();
-        $items = EntrepriseListResource::collection($items);
-        return response()->json($items);
-    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -66,7 +52,15 @@ class CompanyController extends ExtendedController
     {
         //
 
-        return view('/Gestionnaire/Companies/create');
+        return view('Gestionnaire/Entites/create');
+    }
+
+
+    public function createFromMember($token)
+    {
+        //
+        $item = Exploitant::where('token',$token)->first();
+        return view('Gestionnaire/Entites/create_from_member',compact('item'));
     }
 
     /**
@@ -79,7 +73,7 @@ class CompanyController extends ExtendedController
         $anfs = explode(',',$request->appuisnf);
         $afs = explode(',',$request->appuisf);
         $produits = explode(',',$request->autres);
-        $type_personnel = $request->type_personnel;
+        //$type_personnel = $request->type_personnel;
         $data['token'] = sha1(time().rand(0,99));
         $ar = Arrondissement::find($data['arrondissement_id']);
         $data['departement_id'] = $ar->departement_id;
@@ -87,7 +81,8 @@ class CompanyController extends ExtendedController
         $data['user_id'] = auth()->user()->id;
         $data['agence_id'] = auth()->user()->agence_id;
         $data['representation_id'] = auth()->user()->representation_id;
-        $data['personnel_'.$type_personnel] = 1;
+        //$data['personnel_'.$type_personnel] = 1;
+        $data['individual'] = 1;
         $entreprise = Entreprise::create($data);
         foreach($afs as $a){
             EntrepriseAppui::create([
@@ -108,7 +103,7 @@ class CompanyController extends ExtendedController
             ]);
         }
         //dd($data);
-        return redirect(route('gestionnaire.entreprises.index'));
+        return redirect(route('gestionnaire.entites.index'));
     }
 
     public function save(Request $request)
@@ -125,71 +120,7 @@ class CompanyController extends ExtendedController
         //dd($data);
         Session::flash('success','Enregistrement effectué avec succès!');
         //return back();
-        return redirect(route('gestionnaire.entreprises.index'));
-    }
-
-    private function parse($eng,$id){
-
-        $data = [
-            'id'=>$eng->id,
-            'name'=>$eng->name,
-            'montant'=>$eng->montant??0,
-            'encours_montant'=>$eng->encours_montant??0,
-            'encours_impaye'=>$eng->encours_impaye??0,
-            'sollicite_montant'=>$eng->sollicite_montant??0,
-            'variation'=>$eng->variation,
-            'parent_id'=>$eng->parent_id,
-            'is_title'=>$eng->is_title,
-            'is_leaf'=>$eng->is_leaf,
-            'niveau'=>$eng->niveau,
-        ];
-        if($data['is_leaf']){
-            $elts = EngagementEntreprise::where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
-            //dd($elts);
-            $data['encours_montant'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_montant;
-            },0);
-            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
-                return $carry + $item->sollicite_montant;
-            },0);
-            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_impaye;
-            },0);
-            $data['elts'] = $elts;
-            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
-
-        }else{
-            $data['children'] = $eng->children->map(function($child)use($id){
-                return $this->parse($child,$id);
-            });
-            foreach($data['children'] as $child){
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-                $data['variation'] += $child['variation'];
-            }
-        }
-        return $data;
-    }
-
-    public function getEngagementReport($token){
-        $entreprise = Entreprise::where('token',$token)->first();
-        if($entreprise){
-            $engagements = Engagement::where('parent_id',0)->get();
-             $data = [];
-             foreach($engagements as $eng){
-                 $data[] = $this->parse($eng,$entreprise->id);
-             }
-             //dd($data);
-
-            $engagements = $data;
-            $banques = Banque::all();
-            //$engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
-            return view('Gestionnaire.Companies.engagement_report',compact('engagements','entreprise','banques'));
-        }else{
-            return back();
-        }
-
+        return redirect(route('gestionnaire.entites.index'));
     }
 
     /**
@@ -224,7 +155,7 @@ class CompanyController extends ExtendedController
         $programmes = Programme::all();
         $appuis = Service::all();
         $elements = ElementConstitutif::where('active',1)->get();
-        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis','elements'));
+        return view('/Gestionnaire/Entites/show',compact('item','mr','programmes','analystes','appuis','elements'));
 
     }
 
@@ -290,7 +221,7 @@ class CompanyController extends ExtendedController
         if(!$item){
             return back();
         }
-        return view('/Gestionnaire/Companies/tiers_physique',compact('item'));
+        return view('/Gestionnaire/Entites/tiers_physique',compact('item'));
     }
 
     public function createTiersMorale(string $token)
@@ -301,7 +232,7 @@ class CompanyController extends ExtendedController
             return back();
         }
         $formes = Forme::all();
-        return view('/Gestionnaire/Companies/tiers_morale',compact('item','formes'));
+        return view('/Gestionnaire/Entites/tiers_morale',compact('item','formes'));
     }
 
     public function saveTiersPhysique(Request $request)
@@ -328,7 +259,7 @@ class CompanyController extends ExtendedController
         );
 
         Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.entreprises.show',$token));
+        return redirect(route('gestionnaire.entites.show',$token));
     }
 
     public function saveTiersMorale(Request $request)
@@ -360,7 +291,7 @@ class CompanyController extends ExtendedController
 
 
         Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.entreprises.show',$token));
+        return redirect(route('gestionnaire.entites.show',$token));
     }
 
 
@@ -372,7 +303,7 @@ class CompanyController extends ExtendedController
             return back();
         }
         $criteres = QuestionSousCritere::all();
-        return view('/Gestionnaire/Companies/questionnaire',compact('item','criteres'));
+        return view('/Gestionnaire/Entites/questionnaire',compact('item','criteres'));
     }
 
     public function saveQuestionnaire(Request $request)
@@ -398,7 +329,7 @@ class CompanyController extends ExtendedController
         $item = Entreprise::where('token',$token)->first();
         if($item){
             $formes = Forme::all();
-            return view('Gestionnaire.Companies.edit',compact('item','formes'));
+            return view('Gestionnaire.Entites.edit',compact('item','formes'));
         }
         return back();
     }
