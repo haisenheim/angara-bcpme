@@ -33,8 +33,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                    <span class="nav-label mininav-content ms-1">Tableau de bord</span>
                </a>
            </li>
-
-
         <!-- Link with submenu -->
          <li class="nav-item has-sub">
             <a href="#" class="mininav-toggle nav-link {{ ($active>200&&$active<300)?'active':'' }}"><i class="pli-folders fs-5 me-2"></i>
@@ -59,8 +57,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
             <!-- END : Dashboard submenu list -->
         </li>
         <!-- END : Link with submenu -->
-
-
         </ul>
     </div>
 

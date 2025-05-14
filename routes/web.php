@@ -256,6 +256,11 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::resource('cooperatives','CooperativeController');
         Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
         Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
+        Route::get('cooperative/entrees/{token}','CooperativeController@getEntree')->name('cooperative.entrees.show');
+        Route::get('cooperative/entrepots/{token}','CooperativeController@getEntrepot')->name('cooperative.entrepots.show');
+
+        Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
+        Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
 
         Route::resource('members','MemberController');
         Route::get('member/data','MemberController@fetchAll')->name('members.all');

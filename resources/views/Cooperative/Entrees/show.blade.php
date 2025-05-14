@@ -122,7 +122,7 @@
                             <div class="mt-3">
                                 <label for="">CAISSE</label>
                                 <select disabled required name="caisse_id" id="caisse_id" class="form-control">
-                                    <option value="">Selectionner un wallet ...</option>
+                                    <option value="">Selectionner une caisse ...</option>
                                     @foreach($caisses as $mbr)
                                         <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
                                     @endforeach

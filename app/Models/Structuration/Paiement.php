@@ -64,4 +64,9 @@ class Paiement extends Model
     {
         return $this->belongsTo('App\Models\Structuration\Saison');
     }
+
+    public function user()
+    {
+        return $this->belongsTo('App\Models\User');
+    }
 }

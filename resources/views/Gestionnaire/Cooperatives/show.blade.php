@@ -90,10 +90,13 @@
                         <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">ENTREES EN STOCK</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">CAISSES</button>
+                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">PAIEMENTS</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">WALLETS</button>
+                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">CAISSES</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">WALLETS</button>
                     </li>
                 </ul>
 
@@ -137,9 +140,9 @@
                         </table>
                    </div>
                    <div id="_tab2" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
-                    <div class="container d-flex gap-4">
+                    <div class="container flex-wrap d-flex gap-4">
                         @foreach ($item->agents as $agent)
-                        <div class="card mb-3 w-250px">
+                        <div class="card bg-light mb-3 w-250px">
                             <div class="card-body">
                                <!-- Profile picture and short information -->
                                <div class="text-center position-relative hv-outline-parent hv-grow-parent">
@@ -200,9 +203,84 @@
                         </table>
                     </div>
                     <div id="_tab4" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
-
+                        <div>
+                            <div>
+                                <button data-bs-toggle="modal" data-bs-target="#exportEntreesModal" class="btn btn-sm btn-light p-1"><i class="pli-file-excel text-success"></i> Exporter</button>
+                            </div>
+                            <table id="entreesTable" class="table table-sm table-bordered">
+                                <thead>
+                                    <tr class="fs-6 fw-bolder border">
+                                        <th>DATE</th>
+                                        <th>NUMERO</th>
+                                        <th>ENTREPOT</th>
+                                        <th>QUANTITE</th>
+                                        <th>PRIX UNITAIRE</th>
+                                        <th>TOTAL</th>
+                                        <th>MONTANT PAYE</th>
+                                        <th>RESTE</th>
+                                        <th>PRODUCTEUR</th>
+                                        <th>AGENT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($entrees as $e)
+                                    <tr class="fs-6 border">
+                                        <td>{{ $e->created_at->format('d/m/Y H:i')}}</td>
+                                        <td><a class="btn-link link-danger" href="{{ route('gestionnaire.cooperative.entrees.show',$e->token) }}">{{$e->name}}</a></td>
+                                        <td><a class="btn-link link-dark" href="{{ route('gestionnaire.cooperative.entrepots.show',$e->entrepot->token) }}">{{ $e->entrepot?->name}}</a></td>
+                                        <td>{{ number_format($e->quantity,0,',','.')}}kg</td>
+                                        <td>{{number_format($e->pu,0,',','.')}}</td>
+                                        <td>{{ number_format($e->pu*$e->quantity,0,',','.')}}</td>
+                                        <td>{{ number_format($e->versements,0,',','.')}}</td>
+                                        <td>{{ number_format($e->reste,0,',','.')}}</td>
+                                        <td><a class="btn-link link-danger" href="{{ route('gestionnaire.members.show',$e->exploitant->token) }}">{{ $e->exploitant?->name}}</a></td>
+                                        <td>{{ $e->agent?->name}}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div id="_tab5" class="tab-pane fade " role="tabpanel" aria-labelledby="home-tab">
+                    <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
+                        <div>
+                            <button data-bs-toggle="modal" data-bs-target="#exportPaiementsModal" class="btn btn-sm btn-light p-1"><i class="pli-file-excel text-success"></i> Exporter</button>
+                        </div>
+                    <table id="paiementsTable" class="table table-sm table-bordered">
+                            <thead>
+                                <tr class="fs-6 fw-bolder border">
+                                    <th>DATE</th>
+                                    <th>MONTANT</th>
+                                    <th>MODE DE PAIEMENT</th>
+                                    <th>SOURCE</th>
+                                    <th>CIBLE</th>
+                                    <th>BENEFICIARE</th>
+                                    <th>PAYEUR</th>
+                                    <th>STOCK</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($paiements as $p)
+                                <tr class="border fs-6">
+                                    <td>{{$p->created_at->format('d/m/Y H:i')}}</td>
+                                    <td>{{ number_format($p->montant,0,',','.')}}</td>
+                                    <td>{{ $p->mode?$p->mode->name:'-' }}</td>
+                                    @if($p->caisse)
+                                    <td>{{ $p->caisse->name  }}</td>
+                                    @elseif($p->wallet)
+                                    <td>{{$p->wallet->name}}</td>
+                                    @else
+                                    <td>-</td>
+                                    @endif
+                                    <td>{{$p->phone}}</td>
+                                    <td>{{$p->exploitant?->name}}</td>
+                                    <td>{{$p->user?$p->user->name:'-'}}</td>
+                                    <td><a class="link-danger btn-link" href="{{ route('gestionnaire.cooperative.entrees.show',$p->entree->token) }}">{{$p->entree->name}}</a></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="_tab6" class="tab-pane fade " role="tabpanel" aria-labelledby="home-tab">
                         <table class="table table-sm">
                             <thead>
                                 <tr>
@@ -224,7 +302,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
+                    <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
                         <table class="table table-sm table-striped">
                             <thead>
                                 <tr>
@@ -252,7 +330,38 @@
              </div>
         </div>
     </div>
+    <div class="modal fade" id="caisseModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouvelle caisse</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.cooperative.caisse.add') }}" method="post">
+                        @csrf
+                        <div class="d-flex gap-2 flex-grow mt-3">
+                            <input type="hidden" value="{{$item->id}}" name="cooperative_id">
+                            <div class=" w-30">
+                                <label for="">LIBELLE</label>
+                                <input required type="text" name="name" placeholder="LIBELLE" class="form-control">
+                            </div>
+                            <div class="w-30">
+                                <label for="">Montant initial</label>
+                                <input required type="number" name="montant" placeholder="Montant initial" class="form-control">
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                            </div>
+                        </div>
 
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="walletModal">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -294,30 +403,61 @@
         </div>
     </div>
 
-    <div class="modal fade" id="caisseModal">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="exportPaiementsModal">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle caisse</h5>
+                    <h5 class="modal-title">Exporter l'historique des paiements</h5>
                     <div style="float: right">
                         <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.cooperative.caisse.add') }}" method="post">
+                    <form action="{{ route('gestionnaire.cooperative.paiements.export') }}" method="post">
                         @csrf
-                        <div class="d-flex gap-2 flex-grow mt-3">
+                        <div class="">
                             <input type="hidden" value="{{$item->id}}" name="cooperative_id">
-                            <div class=" w-30">
-                                <label for="">LIBELLE</label>
-                                <input required type="text" name="name" placeholder="LIBELLE" class="form-control">
+                            <fieldset>
+                                <legend>Periode</legend>
+                                <div class="d-flex gap-2">
+                                    <div class="flex-fill">
+                                    <label for="">DEBUT</label>
+                                    <input required type="date" name="from"  class="form-control">
+                                </div>
+                                <div class="flex-fill">
+                                    <label for="">FIN</label>
+                                    <input required type="date" name="to"  class="form-control">
+                                </div>
+                                </div>
+                            </fieldset>
+                            <div class="mt-3">
+                                <label for="">Mode de paiement</label>
+                                <select required id="mode" class="form-control"  name="mode_id">
+                                    <option value="">Tout mode de paiement</option>
+                                    <option value="1">CAISSE</option>
+                                    <option value="2">WALLET</option>
+                                </select>
                             </div>
-                            <div class="w-30">
-                                <label for="">Montant initial</label>
-                                <input required type="number" name="montant" placeholder="Montant initial" class="form-control">
+                            <div class="mt-3">
+                                <label for="">CAISSE</label>
+                                <select name="caisse_id" id="caisse_id" class="form-control">
+                                    <option value="0">Toutes les caisses ...</option>
+                                    @foreach($item->caisses as $mbr)
+                                        <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="mt-4">
-                                <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                                <label for="">WALLET</label>
+                                <select name="wallet_id" id="wallet_id" class="form-control">
+                                    <option value="0">Tous les wallets ...</option>
+                                    @foreach($item->wallets as $mbr)
+                                        <option value="{{ $mbr->id }}">{{ $mbr->name }}-{{ $mbr->operateur?->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn-success btn btn-sm p-1">EXPORTER</button>
                             </div>
                         </div>
 
@@ -326,4 +466,161 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="exportEntreesModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Exporter l'historique des entrées en stock</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('gestionnaire.cooperative.entrees.export') }}" method="post">
+                        @csrf
+                        <div class="">
+                            <input type="hidden" value="{{$item->id}}" name="cooperative_id">
+                            <fieldset>
+                                <legend>Période</legend>
+                                <div class="d-flex gap-2">
+                                    <div class="flex-fill">
+                                    <label for="">DEBUT</label>
+                                    <input required type="date" name="from"  class="form-control">
+                                </div>
+                                <div class="flex-fill">
+                                    <label for="">FIN</label>
+                                    <input required type="date" name="to"  class="form-control">
+                                </div>
+                                </div>
+                            </fieldset>
+
+                            <div class="mt-3">
+                                <label for="">CAISSE</label>
+                                <select name="entrepot_id" class="form-control">
+                                    <option value="0">Tous les entrepots ...</option>
+                                    @foreach($item->entrepots as $mbr)
+                                        <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn-success btn btn-sm p-1">EXPORTER</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="{{ asset('DataTables/datatables.min.js') }}"></script>
+<script>
+    let tps = new DataTable('#paiementsTable');
+
+    let tes = new DataTable('#entreesTable');
+</script>
+<script>
+        $('#mode').change(function(){
+            var id = $('#mode').val();
+            if(id == 1){
+                $('#wallet_id').prop('disabled',true);
+                $('#caisse_id').prop('disabled',false);
+                $('#phone').prop('disabled',true);
+            }
+
+            if(id == 2){
+                $('#wallet_id').prop('disabled',false);
+                $('#phone').prop('disabled',false);
+                $('#caisse_id').prop('disabled',true);
+            }
+        })
+    </script>
+<script>
+   /*  var table = new DataTable('#tab',{
+        dom: 'Bfrtip',
+        buttons: [
+            'excel',
+            {
+                text:'Imprimer',
+                extend:'print',
+                title:'LISTE DES ARTICLES',
+                message:'Ceci est la liste de tous les articles ',
+                exportOptions: {
+                    columns: function (idx, data, node) {
+                        //console.log(node.cellIndex)
+                        if (node.innerText == "actions"){
+                            return false;
+                        }
+                        return true;
+                    }
+                }
+            },
+            'pdf',
+            'csv',
+        ]
+    });
+    function displayArticles(items) {
+        $("#tab_articles").empty();
+
+        items.forEach(function(item) {
+            if(item.active){
+                var li = `<li><a class="dropdown-item" href="/user/article/disable/${item.token}">Retirer des ventes</a></li>`
+            }else{
+                var li = `<li><a class="dropdown-item" href="/user/article/enable/${item.token}">Remettre en vente</a></li>`
+            }
+            var nr =`<tr>
+                <td>${item.name}</td>
+                <td>${item.pu}</td>
+                <td>${item.quantity}</td>
+                <td>${item.category.name}</td>
+                <td>${item.seuilmin}</td>
+                <td><span class='badge bg-${item.status.color}'>${item.status.name}</span></td>
+                <td>
+                    <div class="btn-group">
+                             <button class="btn btn-light btn-xs dropdown-toggle hstack gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                actions
+                                <span class="vr"></span>
+                             </button>
+                             <ul class="dropdown-menu" style="">
+                                <li><a data-bs-toggle="modal" data-bs-target="#quantityModal" data-token=${item.token} data-quantity=${item.quantity} class="dropdown-item btn-qty" href="#">Corriger le stock</a></li>
+                                ${li}
+                             </ul>
+                          </div>
+                </td>
+                </tr>`;
+            table.row.add($(nr)).draw()
+        });
+    }
+    $(document).ready(function(){
+        $.ajax({
+            url:"",
+            type:'get',
+            dataType:'json',
+            success:function(data){
+                console.log(data);
+                localStorage.setItem("articles", JSON.stringify(data));
+                //var articles = JSON.parse(localStorage.getItem("articles")) || [];
+                displayArticles(data);
+                $('.btn-qty').click(function(){
+                    var token = $(this).data('token')
+                    var qty = $(this).data('quantity')
+                    $('#quantity').val(qty);
+                    $('#token').val(token);
+                })
+
+            },
+            error:function(err){
+
+            }
+        });
+    }); */
+</script>
+
+<style>
+    label{
+        font-size: 11px;
+        font-weight: 700;
+    }
+</style>
 @endsection
