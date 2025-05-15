@@ -622,5 +622,6 @@
         font-size: 11px;
         font-weight: 700;
     }
+
 </style>
 @endsection

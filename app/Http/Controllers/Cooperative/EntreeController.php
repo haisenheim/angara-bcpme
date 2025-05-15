@@ -123,6 +123,7 @@ class EntreeController extends ExtendedController
             'exploitant_id'=>$item->exploitant_id,
             'mode_paiement_id'=>$request->mode_paiement_id,
             'user_id'=>auth()->user()->id,
+            'saison_id'=>$this->_saison->id,
         ];
         if($request->wallet_id){
             $wallet = Wallet::find(request()->wallet_id);
