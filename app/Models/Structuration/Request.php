@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Request extends Model
 {
     protected $guarded = [];
-    protected $table = 'paiements_requests_cooperatives';
 
     public function cooperative()
     {

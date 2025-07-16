@@ -14,6 +14,7 @@
 
 @section('page-header')
     <div>
+        <input type="hidden" value="{{$item->token}}" id="token">
         <h5 class="page-title mb-0 mt-2">{{ $item->name }}</h5>
         <p class="lead">Données de la copérative</p>
     </div>
@@ -65,6 +66,10 @@
                             <th>{{ $item->arrondissement?->name }} / {{ $item->departement?->name }}/{{ $item->region?->name }}</th>
                         </tr>
                         <tr>
+                            <td>Secteur</td>
+                            <th>{{ $item->secteur?->name }}</th>
+                        </tr>
+                        <tr>
                             <td>STOCK</td>
                             <th>{{ number_format(347.974,2,',','.') }} tonnes</th>
                         </tr>
@@ -78,7 +83,10 @@
                 <!-- Nav tabs -->
                 <ul class="nav nav-underline nav-component border-bottom" role="tablist">
                    <li class="nav-item" role="presentation">
-                      <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">MEMBRES</button>
+                      <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_tab_req" type="button" role="tab" aria-controls="tabreq" aria-selected="true">APPELS DE FONDS</button>
+                   </li>
+                  <li class="nav-item" role="presentation">
+                      <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">MEMBRES</button>
                    </li>
                    <li class="nav-item" role="presentation">
                       <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">AGENTS</button>
@@ -103,7 +111,46 @@
 
                 <!-- Tabs content -->
                 <div class="tab-content">
-                   <div id="_tab1" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+                    <div id="_tab_req" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
+                        <table id="requestsTable" class="table table-sm">
+                            <thead>
+                                <tr class="fs-6 fw-bolder border">
+                                    <th>DATE</th>
+                                    <th>CAISSE</th>
+                                    <th>WALLET</th>
+                                    <th>MONTANT</th>
+                                    <th>STATUS</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($data['requests'] as $it)
+                                <tr class="fs-6 border">
+                                        <td class="border">{{ $it->created_at->format('d/m/Y à H:i') }}</td>
+                                        <td>{{ $it->caisse?->name }}</td>
+                                        <td><img src="{{ $it->wallet?->operateur?->photo }}" width="20" alt=""> {{ $it->wallet?->name }}</td>
+                                        <td>{{ number_format($it->montant,0,',','.') }}</td>
+                                        <td><span class="badge bg-{{ $it->status['color'] }}">{{ $it->status['name'] }}</span></td>
+                                        <td class="border">
+                                            @if(!$it->cancelled_at && !$it->validated_at)
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2 fs-6 p-1" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Actions
+                                                <span class="vr"></span>
+                                                </button>
+                                                <ul class="dropdown-menu analyse">
+                                                    <li><a class="dropdown-item v-btn"  data-token="{{ $it->token }}" data-bs-toggle="modal" data-bs-target="#validateModal"  href="#">Approuver</a></li>
+                                                    <li><a class="dropdown-item c-btn"  data-token="{{ $it->token }}" data-bs-toggle="modal" data-bs-target="#cancelModal"  href="#">Rejeter</a></li>
+                                                </ul>
+                                            </div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                   <div id="_tab1" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
                         <table class="table table-sm table-striped table-bordered">
                             <thead>
                                 <tr>
@@ -116,7 +163,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($item->exploitants as $meb)
+                                @foreach($data['membres'] as $meb)
                                     <tr>
                                         <td>{{ $meb->last_name }}</td>
                                         <td>{{ $meb->first_name }}</td>
@@ -130,7 +177,7 @@
                                                 <span class="vr"></span>
                                                 </button>
                                                 <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="{{ route('gestionnaire.members.show',$meb->token) }}">Afficher</a></li>
+                                                <li><a class="dropdown-item" href="{{ route('gestionnaire.members.show',['token'=>$meb->token,'tenant_id'=>$item->token]) }}">Afficher</a></li>
                                                 </ul>
                                             </div>
                                         </td>
@@ -141,7 +188,7 @@
                    </div>
                    <div id="_tab2" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
                     <div class="container flex-wrap d-flex gap-4">
-                        @foreach ($item->agents as $agent)
+                        @foreach ($data['agents'] as $agent)
                         <div class="card bg-light mb-3 w-250px">
                             <div class="card-body">
                                <!-- Profile picture and short information -->
@@ -190,7 +237,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($item->entrepots as $ent)
+                                @foreach($data['entrepots'] as $ent)
                                     <tr>
                                         <td><a href="{{ route('gestionnaire.entrepots.show',$ent->token) }}">{{ $ent->name }}</a></td>
                                         <td>{{ number_format($ent->stock,0,',','.') }}</td>
@@ -223,7 +270,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($entrees as $e)
+                                    @foreach($data['entrees'] as $e)
                                     <tr class="fs-6 border">
                                         <td>{{ $e->created_at->format('d/m/Y H:i')}}</td>
                                         <td><a class="btn-link link-danger" href="{{ route('gestionnaire.cooperative.entrees.show',$e->token) }}">{{$e->name}}</a></td>
@@ -259,7 +306,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($paiements as $p)
+                                @foreach($data['paiements'] as $p)
                                 <tr class="border fs-6">
                                     <td>{{$p->created_at->format('d/m/Y H:i')}}</td>
                                     <td>{{ number_format($p->montant,0,',','.')}}</td>
@@ -285,15 +332,17 @@
                             <thead>
                                 <tr>
                                     <th>LIBELLE</th>
-                                    <th>Solde</th>
-                                    <th>Statut</th>
+                                    <th>ENTREPOT</th>
+                                    <th>SOLDE</th>
+                                    <th>STATUT</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($item->caisses as $caisse)
+                                @foreach ($data['caisses'] as $caisse)
                                     <tr>
                                         <td>{{ $caisse->name }}</td>
+                                        <td>{{ $caisse->entrepot?->name }}</td>
                                         <td>{{ number_format($caisse->montant,0,',','.') }}</td>
                                         <td><span class="badge bg-{{ $caisse->status['color'] }}">{{ $caisse->status['name'] }}</span></td>
                                         <td></td>
@@ -307,6 +356,7 @@
                             <thead>
                                 <tr>
                                     <th>NUMERO</th>
+                                    <th>ENTREPOT</th>
                                     <th>OPERATEUR</th>
                                     <th>SOLDE</th>
                                     <th>STATUS</th>
@@ -314,9 +364,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($item->wallets as $wlt)
+                                @foreach ($data['wallets'] as $wlt)
                                     <tr>
                                         <td>{{ $wlt->name }}</td>
+                                        <td>{{ $caisse->entrepot?->name }}</td>
                                         <td>{{ $wlt->operateur->name }}</td>
                                         <td>{{ number_format($wlt->montant,0,',','.') }}</td>
                                         <td><span class="badge bg-{{ $wlt->status['color'] }}">{{ $wlt->status['name'] }}</span></td>
@@ -348,6 +399,15 @@
                                 <label for="">LIBELLE</label>
                                 <input required type="text" name="name" placeholder="LIBELLE" class="form-control">
                             </div>
+                            <div class="flex-fill">
+                                <label for="">ENTREPOT</label>
+                                <select required class="form-control" name="entrepot_id" id="">
+                                    <option value="">Selectionner un entrepot ...</option>
+                                    @foreach ($data['entrepots'] as $op)
+                                        <option value="{{ $op->id }}">{{ $op->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="w-30">
                                 <label for="">Montant initial</label>
                                 <input required type="number" name="montant" placeholder="Montant initial" class="form-control">
@@ -377,10 +437,19 @@
                         <div class="d-flex gap-2 flex-grow mt-3">
                             <input type="hidden" value="{{$item->id}}" name="cooperative_id">
                             <div class="flex-fill">
-                                <label for="">Operateur</label>
+                                <label for="">TYPE / OPERATEUR</label>
                                 <select required class="form-control" name="operateur_id" id="">
                                     <option value="">Selectionner un operateur ...</option>
                                     @foreach ($operateurs as $op)
+                                        <option value="{{ $op->id }}">{{ $op->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="flex-fill">
+                                <label for="">ENTREPOT</label>
+                                <select required class="form-control" name="entrepot_id" id="">
+                                    <option value="">Selectionner un entrepot ...</option>
+                                    @foreach ($data['entrepots'] as $op)
                                         <option value="{{ $op->id }}">{{ $op->name }}</option>
                                     @endforeach
                                 </select>
@@ -416,7 +485,7 @@
                     <form action="{{ route('gestionnaire.cooperative.paiements.export') }}" method="post">
                         @csrf
                         <div class="">
-                            <input type="hidden" value="{{$item->id}}" name="cooperative_id">
+                            <input type="hidden" value="{{$item->token}}" name="token">
                             <fieldset>
                                 <legend>Periode</legend>
                                 <div class="d-flex gap-2">
@@ -442,7 +511,7 @@
                                 <label for="">CAISSE</label>
                                 <select name="caisse_id" id="caisse_id" class="form-control">
                                     <option value="0">Toutes les caisses ...</option>
-                                    @foreach($item->caisses as $mbr)
+                                    @foreach($data['caisses'] as $mbr)
                                         <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
                                     @endforeach
                                 </select>
@@ -451,7 +520,7 @@
                                 <label for="">WALLET</label>
                                 <select name="wallet_id" id="wallet_id" class="form-control">
                                     <option value="0">Tous les wallets ...</option>
-                                    @foreach($item->wallets as $mbr)
+                                    @foreach($data['wallets'] as $mbr)
                                         <option value="{{ $mbr->id }}">{{ $mbr->name }}-{{ $mbr->operateur?->name }}</option>
                                     @endforeach
                                 </select>
@@ -480,7 +549,7 @@
                     <form action="{{ route('gestionnaire.cooperative.entrees.export') }}" method="post">
                         @csrf
                         <div class="">
-                            <input type="hidden" value="{{$item->id}}" name="cooperative_id">
+                           <input type="hidden" value="{{$item->token}}" name="token">
                             <fieldset>
                                 <legend>Période</legend>
                                 <div class="d-flex gap-2">
@@ -496,10 +565,10 @@
                             </fieldset>
 
                             <div class="mt-3">
-                                <label for="">CAISSE</label>
+                                <label for="">ENTREPOT</label>
                                 <select name="entrepot_id" class="form-control">
                                     <option value="0">Tous les entrepots ...</option>
-                                    @foreach($item->entrepots as $mbr)
+                                    @foreach($data['entrepots'] as $mbr)
                                         <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
                                     @endforeach
                                 </select>
@@ -513,12 +582,60 @@
                 </div>
             </div>
         </div>
+</div>
+    <div class="modal fade" id="validateModal">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Confirmation !</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.request.validate') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="token" id="v-token" value="">
+                        <input type="hidden" name="tenant_id" value="{{ $item->token}}">
+                        <p>Attention cette operation est irreversible</p>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-success btn-sm btn">Approuver</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cancelModal">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Confirmation !</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.request.cancel') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="token" id="c-token" value="">
+                        <input type="hidden" name="tenant_id" value="{{ $item->token}}">
+                        <p>Attention cette operation est irreversible</p>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-danger btn-sm btn">Rejeter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 <script src="{{ asset('DataTables/datatables.min.js') }}"></script>
 <script>
     let tps = new DataTable('#paiementsTable');
 
     let tes = new DataTable('#entreesTable');
+     let treq = new DataTable('#requestsTable');
 </script>
 <script>
         $('#mode').change(function(){
@@ -534,6 +651,18 @@
                 $('#phone').prop('disabled',false);
                 $('#caisse_id').prop('disabled',true);
             }
+        })
+
+    </script>
+    <script>
+        $('li>a.v-btn').click(function(){
+            var token = $(this).data('token');
+            $('#v-token').val(token);
+            console.log(token);
+        })
+        $('li>a.c-btn').click(function(){
+            var token = $(this).data('token');
+            $('#c-token').val(token);
         })
     </script>
 <script>

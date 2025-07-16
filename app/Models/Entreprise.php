@@ -9,6 +9,7 @@ class Entreprise extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    protected $connection = 'central_app_mysql';
 
     public function tiers(){
         return $this->hasMany('App\Models\Tier','entreprise_id');
@@ -92,7 +93,7 @@ class Entreprise extends Model
     }
 
     public function producteur(){
-        return $this->belongsTo('App\Models\Structuration\Exploitant','producteur_id'); //autres produits
+        return $this->belongsTo('App\Models\Structuration\Membre','producteur_id'); //autres produits
     }
 
     public function getTpersoAttribute(){

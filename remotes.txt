@@ -1,0 +1,8 @@
+demo	haisen@angara-finance.net:/var/www/repositories/angara/demos/main.git (fetch)
+demo	haisen@angara-finance.net:/var/www/repositories/angara/demos/main.git (push)
+keka	haisen@pft-keka.com:/var/www/repositories/angara.git (fetch)
+keka	haisen@pft-keka.com:/var/www/repositories/angara.git (push)
+origin	https://github.com/haisenheim/angara.git (fetch)
+origin	https://github.com/haisenheim/angara.git (push)
+programmes	haisen@angara-finance.net:/var/www/repositories/angara/programmes/all.git (fetch)
+programmes	haisen@angara-finance.net:/var/www/repositories/angara/programmes/all.git (push)

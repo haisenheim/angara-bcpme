@@ -86,9 +86,85 @@ Route::get('questions',function(){
     return 'ok';
 });
 
-Route::get('/', function () {
-    return redirect(route('login'));
-});
+
+
+
+foreach (config('tenancy.central_domains') as $domain) {
+    Route::domain($domain)->group(function () {
+        // your actual routes
+        Route::get('/', function () {
+            return redirect(route('login'));
+        });
+
+
+        Route::namespace('App\Http\Controllers\Admin')
+        ->prefix('admin')
+        ->middleware(['auth','admin'])
+        ->name('admin.')
+        ->group(function(){
+            Route::resource('entreprises','CompanyController');
+            Route::resource('entites','EntiteController');
+            Route::resource('cooperatives','CooperativeController');
+            Route::resource('secteurs','SecteurController');
+            Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+
+            Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
+            Route::post('programme/user/permissions','ProgrammeController@saveUserPermissions')->name('programme.user.permissions.save');
+            Route::post('programme/poste','ProgrammeController@savePoste')->name('programme.poste.save');
+            Route::post('programme/user','ProgrammeController@saveUser')->name('programme.user.save');
+
+            Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
+            Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
+
+            Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
+            Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
+
+            Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
+            Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
+
+            Route::resource('dossiers','DossierController');
+
+            Route::resource('programmes','ProgrammeController');
+            Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
+            Route::post('programme/appui','ProgrammeController@saveAppui')->name('programme.appui.save');
+            Route::post('programme/produit','ProgrammeController@saveProduit')->name('programme.produit.save');
+            Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
+            Route::post('programme/save','ProgrammeController@save')->name('programmes.save');
+
+            Route::resource('users','UserController');
+            Route::get('territoire','TerritoireController@index')->name('territoire');
+            Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+            Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+            Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+            Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+
+
+            //Route::resource('entreprises','EntrepriseController');
+            Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
+            Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
+            Route::post('engagement','EntrepriseController@setEngagement')->name('entreprise.set.engagement');
+
+            Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
+
+            Route::get('dashboard','DashboardController@index')->name('dashboard');
+            Route::resource('users','UserController');
+            Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
+            Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
+
+            Route::resource('operateurs','OperateurController');
+
+            Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
+
+            Route::post('instruction/dossier/dsf','InstructionController@loadDsf')->name('instruction.dsf');
+            Route::get('instruction/dossier/create','InstructionController@createDossier')->name('instruction.dossier.create');
+            Route::get('instruction/dossier/{id}','InstructionController@getDossier')->name('instruction.dossier');
+            Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
+            Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
+            Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
+
+        });
+    });
+}
 
 
 
@@ -118,6 +194,9 @@ Route::namespace('App\Http\Controllers\Admin')
     ->name('admin.')
     ->group(function(){
         Route::resource('entreprises','CompanyController');
+        Route::resource('entites','EntiteController');
+        Route::resource('cooperatives','CooperativeController');
+        Route::resource('secteurs','SecteurController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
 
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
@@ -183,6 +262,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
 
+        Route::resource('secteurs','SecteurController');
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');
         Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
@@ -262,15 +342,19 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
         Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
 
-        Route::resource('members','MemberController');
+        Route::get('members/show','MemberController@show')->name('members.show');
+        Route::get('members/verger','MemberController@getVerger')->name('members.verger.show');
+        //Route::resource('members','MemberController');
         Route::get('member/data','MemberController@fetchAll')->name('members.all');
 
+        Route::get('request//{request_id}','RequestController@getByTenant')->name('request.get');
         Route::resource('entrepots','EntrepotController');
         Route::resource('requests','RequestController');
         Route::post('request/validate','RequestController@valider')->name('request.validate');
         Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
 
     });
+
 
 
 Route::namespace('App\Http\Controllers\Analyste')
@@ -429,6 +513,7 @@ Route::namespace('App\Http\Controllers\Cooperative')
     });
 
 
+
 Route::namespace('App\Http\Controllers\Program')
     ->prefix('program')
     ->middleware(['auth','program'])
@@ -473,6 +558,50 @@ Route::namespace('App\Http\Controllers\Program')
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
 });
+
+Route::namespace('App\Http\Controllers\Sectoriel')
+    ->prefix('sectoriel')
+    ->middleware(['auth','sectoriel'])
+    ->name('sectoriel.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+
+        Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
+
+        //entites individuelles
+        Route::get('members','MemberController@show')->name('members.show');
+        Route::post('members/verger','MemberController@addVerger')->name('members.verger.add');
+        Route::get('members/verger','MemberController@getVerger')->name('members.verger.show');
+
+        Route::post('members/verger/campagne','MemberController@addCampagneVerger')->name('verger.campagne.add');
+        Route::post('members/verger/travail','MemberController@addTravailCampagne')->name('campagne.travail.add');
+        Route::post('members/verger/traitement','MemberController@addTraitementCampagne')->name('campagne.traitement.add');
+        Route::post('members/verger/rendement','MemberController@setRendementCampagne')->name('campagne.rendement');
+        Route::post('members/verger/visite','MemberController@addVisiteCampagne')->name('campagne.visite.add');
+
+        Route::resource('wallets','WalletController');
+        Route::resource('caisses','CaisseController');
+        Route::resource('requests','RequestController');
+        Route::resource('programmes','ProgrammeController');
+        Route::resource('users','UserController');
+        Route::get('territoire','TerritoireController@index')->name('territoire');
+
+
+        Route::resource('villages','VillageController');
+
+        Route::resource('cooperatives','CooperativeController');
+        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
+        Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
+        Route::get('cooperative/entrees/{token}','CooperativeController@getEntree')->name('cooperative.entrees.show');
+        Route::get('cooperative/entrepot','CooperativeController@getEntrepot')->name('entrepots.show');
+
+        Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
+        Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
+
+
+
+});
+
 
 
 

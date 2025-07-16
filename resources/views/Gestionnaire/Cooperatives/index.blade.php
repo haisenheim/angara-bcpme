@@ -66,6 +66,15 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="flex-fill">
+                                    <label for="">SECTEUR COOPERATIF</label>
+                                    <select required class="form-control" name="secteur_id" id="">
+                                        <option value="">Choisir ...</option>
+                                        @foreach ($secteurs as $secteur)
+                                            <option value="{{ $secteur->id }}">{{ $secteur->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="">
                                     <div style="max-width: 200px" class="form-group">
                                         <select id="arrondissement_id" name="arrondissement_id" class="easyui-combotree form-control" style="max-width:200px;"

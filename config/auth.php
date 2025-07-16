@@ -42,6 +42,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'tenant' => [
+            'driver' => 'session',
+            'provider' => 'tenants',
+        ],
         'api' => [
             'driver' => 'jwt',
             'provider' => 'users',
@@ -73,6 +77,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'tenant' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\Structuration\User::class),
         ],
         'agents' => [
             'driver' => 'eloquent',

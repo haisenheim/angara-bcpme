@@ -22,18 +22,20 @@ class Entree extends Model
 
     public function agent()
     {
-        return $this->belongsTo('App\Models\Structuration\Agent');
+        return $this->belongsTo('App\Models\User','agent_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo('App\Models\User','user_id');
     }
 
     public function exploitant()
     {
-        return $this->belongsTo('App\Models\Structuration\Exploitant');
+        return $this->belongsTo('App\Models\Structuration\Membre','exploitant_id');
     }
 
-    public function cooperative()
-    {
-        return $this->belongsTo('App\Models\Structuration\Cooperative');
-    }
+
 
     public function agence()
     {

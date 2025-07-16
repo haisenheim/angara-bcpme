@@ -9,18 +9,22 @@ use App\Http\Resources\CooperativeListResource;
 use App\Models\Arrondissement;
 use App\Models\Domaine;
 use App\Models\Entreprise;
-use App\Models\Region;
+use App\Models\Secteur;
 use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
 use App\Models\Structuration\Entrepot;
+use App\Models\Structuration\Membre;
 use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use App\Models\Structuration\Paiement;
-use App\Models\Taille;
-use App\Models\User;
+use App\Models\Structuration\Request as StructurationRequest;
+use App\Models\Structuration\User;
+use App\Models\Tenant;
+use App\Models\User as ModelsUser;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class CooperativeController extends ExtendedController
 {
@@ -34,12 +38,13 @@ class CooperativeController extends ExtendedController
         //
         $cooperatives = Cooperative::where('gestionnaire_id',auth()->user()->id);
         $domaines = Domaine::all();
-        return view('/Gestionnaire/Cooperatives/index')->with(compact('cooperatives','domaines'));
+        $secteurs = Secteur::where('agence_id',auth()->user()->agence_id)->get();
+        return view('Gestionnaire/Cooperatives/index')->with(compact('cooperatives','domaines','secteurs'));
     }
 
 
     public function fetchAll(){
-        $items = Cooperative::where('user_id',auth()->user()->id)->get();
+        $items = Tenant::where('user_id',auth()->user()->id)->get();
         $items = CooperativeListResource::collection($items);
         return response()->json($items);
     }
@@ -55,18 +60,31 @@ class CooperativeController extends ExtendedController
     }
 
     public function addCaisse(Request $request){
-        $data = $request->all();
+        $data['name'] = $request->name;
+        $data['montant'] = $request->montant;
         $data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        Caisse::create($data);
+        $data['entrepot_id'] = $request->entrepot_id;
+        $tenant = Tenant::find($request->cooperative_id);
+        $tenant->run(function()use($data){
+            Caisse::create($data);
+        });
+        tenancy()->initialize($tenant);
         return back();
     }
 
     public function addWallet(Request $request){
-        $data = $request->all();
+        $data['name'] = $request->name;
+        $data['montant'] = $request->montant;
+        $data['operateur_id'] = $request->operateur_id;
+        $data['entrepot_id'] = $request->entrepot_id;
         $data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        Wallet::create($data);
+        $tenant = Tenant::find($request->cooperative_id);
+        $tenant->run(function()use($data){
+            Wallet::create($data);
+        });
+        tenancy()->initialize($tenant);
         return back();
     }
 
@@ -78,8 +96,6 @@ class CooperativeController extends ExtendedController
      */
     public function store(Request $request)
     {
-        //$data = $request->except('_token','appuisnf','appuisf','autres','type_personnel');
-        //dd($request->all());
         $ent['name'] = $request->name;
         $ent['token'] = sha1(time().rand(0,99));
         $ar = Arrondissement::find($request->arrondissement_id);
@@ -91,58 +107,93 @@ class CooperativeController extends ExtendedController
         $ent['representation_id'] = auth()->user()->representation_id;
         $entreprise = Entreprise::create($ent);
 
-        $data = $request->all();
-        $coop = new Cooperative();
-        $coop->name = $data['name'];
-        //$coop->email = $data['m-email'];
-        $coop->phone = $data['phone'];
-        $coop->token = sha1(time());
-        $coop->address = $data['address'];
-       // $coop->immatriculation = $data['immatriculation'];
-        $coop->region_id = $ar->region_id;
-        $coop->departement_id = $ar->departement_id;
-        $coop->arrondissement_id = $ar->id;
-        $coop->entreprise_id = $entreprise->id;
-        $coop->domaine_id = $data['domaine_id'];
-        $coop->agence_id = auth()->user()->agence_id;
-        $coop->user_id = auth()->user()->id;
-        $coop->representation_id = auth()->user()->representation_id;
+        $data_ = $request->only('name','phone','address','domaine_id');
+
+
+        $data_['token'] = sha1(time().auth()->user()->id);
+        $data_['region_id'] = $ar->region_id;
+        $data_['departement_id'] = $ar->departement_id;
+        $data_['arrondissement_id'] = $ar->id;
+        $data_['entreprise_id'] = $entreprise->id;
+        $data_['agence_id'] = auth()->user()->agence_id;
+        $data_['user_id'] = auth()->user()->id;
+        $data_['representation_id'] = auth()->user()->representation_id;
         $photo = request()->photo;
         if($photo){
-            $coop->photo_uri = $this->entityImgCreate($photo,'cooperatives',$coop->token);
+            $data_['photo_uri'] = $this->entityImgCreate($photo,'cooperatives',$data_['token']);
         }
-        $coop->save();
-        $user = new User();
-        $user->role_id = 21;
-        $user->name = $data['username'];
-        $user->email = $data['email'];
-        $user->password = bcrypt($data['password']);
-        $user->token = sha1(time());
-        $user->cooperative_id = $coop->id;
-        $user->save();
+        $tenant = Tenant::create($data_);
+        $tenantSlug = Str::slug($tenant->name, '-');
+        $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('tenancy.central_domains')[0]]);
+
+        $data['name'] = $request->username;
+        $data['email'] = $request->email;
+        $data['password'] = bcrypt($request->password);
+        //$data['role_id'] = 1;
+        //$data['token'] = sha1(time().rand(1,999));
+        $tenant->run(function()use($data){
+            $user = new User();
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            $user->password = $data['password'];
+            $user->role_id = 1;
+            $user->token = sha1(time().rand(1,999));
+            $user->save();
+        });
+        tenancy()->initialize($tenant);
         return back();
     }
 
     public function exportPaiements(Request $request){
+
+        $item = Tenant::where('token',$request->token)->first();
+        $data = $item->run(function()use($request,$item){
         $from = $request->from;
         $to = $request->to;
         $mode = $request->mode_id;
         $caisse_id = $request->caisse_id;
         $wallet_id = $request->wallet_id;
-        $cooperative = Cooperative::find($request->cooperative_id);
-        $paiements = Paiement::orderBy('created_at','DESC')->where('cooperative_id',$cooperative->id)->where('saison_id',$this->_saison->id)->whereBetween('created_at',[$from,$to])->get();
-        $title = $cooperative->name . "_historique_paiements_" .  " ". $from."_". $to;
-        return Excel::download(new PaiementExport($paiements,$cooperative,$from,$to),$title.'.xlsx');
+        $paiements = Paiement::orderBy('created_at','DESC')
+                        ->where('saison_id',$this->_saison->id)
+                        ->whereBetween('created_at',[$from,$to])
+                        ->get();
+
+        if($caisse_id){
+            $paiements = $paiements->where('caisse_id',$caisse_id);
+        }
+        if($wallet_id){
+            $paiements = $paiements->where('wallet_id',$wallet_id);
+        }
+        $title = $item->name . "_historique_paiements_" .  " ". $from."_". $to;
+            return [
+                'paiements'=>$paiements,
+                'title'=>$title,
+            ];
+        });
+        tenancy()->initialize($item);
+        return Excel::download(new PaiementExport($data['paiements'],$item,$request->from,$request->to),$data['title'].'.xlsx');
     }
 
     public function exportEntrees(Request $request){
-        $from = $request->from;
-        $to = $request->to;
-        $entreprot_id = $request->entrepot_id;
-        $cooperative = Cooperative::find($request->cooperative_id);
-        $items = Entree::orderBy('created_at','DESC')->where('cooperative_id',$cooperative->id)->where('saison_id',$this->_saison->id)->whereBetween('created_at',[$from,$to])->get();
-        $title = $cooperative->name . "_historique_entrees_en_stock_" .  " ". $from."_". $to;
-        return Excel::download(new EntreeExport($items,$cooperative,$from,$to),$title.'.xlsx');
+        $item = Tenant::where('token',$request->token)->first();
+        $data = $item->run(function()use($request,$item){
+            $from = $request->from;
+            $to = $request->to;
+            $entrepot_id = $request->entrepot_id;
+            //$cooperative = Cooperative::find($request->cooperative_id);
+            $items = Entree::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->whereBetween('created_at',[$from,$to])->get();
+            if($entrepot_id){
+                $items = $items->where('entrepot_id',$entrepot_id);
+            }
+            $title = $item->name . "_historique_entrees_en_stock_" .  " ". $from."_". $to;
+            return [
+                'items'=>$items,
+                'title'=>$title,
+            ];
+        });
+        tenancy()->initialize($item);
+        return Excel::download(new EntreeExport($data['items'],$item,$request->from,$request->to),$data['title'].'.xlsx');
+
     }
 
     public function getEntree($token){
@@ -164,12 +215,32 @@ class CooperativeController extends ExtendedController
      */
 	public function show($token)
 	{
-		$item = Cooperative::where('token',$token)->first();
+		$item = Tenant::where('token',$token)->first();
        // dd($item->caisses);
-       $paiements = Paiement::orderBy('created_at','DESC')->where('cooperative_id',$item->id)->where('saison_id',$this->_saison->id)->get();
-       $entrees = Entree::orderBy('created_at','DESC')->where('cooperative_id',$item->id)->where('saison_id',$this->_saison->id)->get();
+
+       $data = $item->run(function(){
+            $paiements = Paiement::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
+            $entrees = Entree::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
+            $membres = Membre::all();
+            $entrepots = Entrepot::all();
+            $agents = User::where('role_id',2)->get();
+            $caisses = Caisse::all();
+            $wallets = Wallet::all();
+            $requests = StructurationRequest::orderBy('created_at','DESC')->get();
+            return [
+                'paiements'=>$paiements,
+                'entrees'=>$entrees,
+                'membres'=>$membres,
+                'entrepots'=>$entrepots,
+                'agents'=>$agents,
+                'caisses'=>$caisses,
+                'wallets'=>$wallets,
+                'requests'=>$requests,
+            ];
+        });
+        tenancy()->initialize($item);
         $operateurs = Operateur::all();
-		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','paiements','entrees'));
+		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data'));
 	}
 
 

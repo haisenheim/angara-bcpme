@@ -13,7 +13,7 @@ class Part extends Model
 
     public function exploitant()
     {
-        return $this->belongsTo('App\Models\Structuration\Exploitant');
+        return $this->belongsTo('App\Models\Structuration\Membre');
     }
 
     public function saison()

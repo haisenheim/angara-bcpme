@@ -8,16 +8,18 @@ class Wallet extends Model
 {
     //
     protected $guarded = [];
-    protected $table = 'operateur_mobiles_cooperatives';
+    //protected $table = 'operateur_mobiles_cooperatives';
 
-    public function cooperative()
-    {
-        return $this->belongsTo('App\Models\Structuration\Cooperative');
-    }
+
 
     public function operateur()
     {
-        return $this->belongsTo('App\Models\Structuration\Operateur');
+        return $this->belongsTo('App\Models\Structuration\Operateur','type_id');
+    }
+
+    public function entrepot()
+    {
+        return $this->belongsTo('App\Models\Structuration\Entrepot');
     }
 
     public function getStatusAttribute(){

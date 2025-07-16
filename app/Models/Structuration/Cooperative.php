@@ -54,7 +54,7 @@ class Cooperative extends Model
 
 
     public function exploitants(){
-        return $this->hasMany('App\Models\Structuration\Exploitant','cooperative_id');
+        return $this->hasMany('App\Models\Structuration\Membre','cooperative_id');
     }
 
     public function agents(){

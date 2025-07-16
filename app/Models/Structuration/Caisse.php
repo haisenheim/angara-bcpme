@@ -8,11 +8,15 @@ class Caisse extends Model
 {
     //
     protected $guarded = [];
-    protected $table = 'structuration_caisses';
 
     public function cooperative()
     {
         return $this->belongsTo('App\Models\Structuration\Cooperative');
+    }
+
+    public function entrepot()
+    {
+        return $this->belongsTo('App\Models\Structuration\Entrepot');
     }
 
 

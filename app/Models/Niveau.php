@@ -7,4 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class Niveau extends Model
 {
     //
+    protected $connection = 'central_app_mysql';
 }

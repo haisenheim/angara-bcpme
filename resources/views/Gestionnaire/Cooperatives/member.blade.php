@@ -5,32 +5,28 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">EFFECTIFS</a></li>
+       <li class="breadcrumb-item"><a href="#">MEMBRES</a></li>
        <li class="breadcrumb-item active" aria-current="page">{{ $item->name }}</li>
     </ol>
  </nav>
 @endsection
 
 @section('actions')
-    <div class="btn-group">
-        <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-        Actions
-        <span class="vr"></span>
-        </button>
-        <ul class="dropdown-menu analyse">
-            @if(!$item->entite)
-                <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.member.create',$item->token) }}">Générer l'entité individuelle</a></li>
-            @else
-                <li><a class="dropdown-item" href="{{ route('gestionnaire.entites.show',$item->entite->token) }}">Afficher l'entité individuelle</a></li>
-            @endif
-        </ul>
-    </div>
+<div class="btn-group">
+    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+       Actions
+       <span class="vr"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" data-bs-target="#addVergerModal" data-bs-toggle="modal" href="#">Associer un champ</a></li>
+    </ul>
+ </div>
 @endsection
 
 
 @section('content')
-    <div class="d-flex gap-2">
-       <div class="w-300px">
+    <div class="row">
+       <div class="col-md-3 col-sm-12">
         <div class="card text-bg-light mb-3">
             <div class="card-body">
                <!-- Profile picture and short information -->
@@ -99,10 +95,10 @@
             </fieldset>
          </div>
        </div>
-       <div class="flex-fill">
+       <div class="col-md-9 col-sm-12 ps-2">
             <div class="">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body table-responsive">
                         <h6 class="card-title border-bottom pb-2"> <i class="pli-pie-chart-3 fs-3"></i>  PRODUCTION DE LA SAISON</h6>
                         <table class="table table-sm table-bordered table-striped">
                             <thead>
@@ -135,7 +131,7 @@
                         <h6 class="border-bottom pb-1">Details des versements</h6>
                         <table class="table table-sm table-bordered table-striped table-hover">
                             <thead>
-                                <tr>
+                                <tr class="border-bottom border-3 border-black">
                                     <th>DATE</th>
                                     <th>MODE PAIEMENT</th>
                                     <th>MONTANT</th>
@@ -158,9 +154,99 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="card-footer">
+                        <h6 class="border-bottom pb-1 mt-3">VERGER</h6>
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr class="border-bottom border-3 border-black">
+                                    <th>LIBELLE</th>
+                                    <th>SUPERFICIE</th>
+                                    <th>ANNEE DE CULTURE / AGE</th>
+                                    <th>NOMBRE DE PIEDS/HA</th>
+                                    <th>VILLAGE</th>
+                                    <th>TYPE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($item->vergers as $vg)
+                                    <tr>
+                                        <td><a class="btn-link text-danger fw-bold" href="{{ route('gestionnaire.members.verger.show',["token"=>$vg->token,"tenant_id"=>$tenant_id]) }}">{{$vg->name}}</a></td>
+                                        <td>{{ $vg->size}}</td>
+                                        <td>{{ $vg->annee }} / {{ $vg->age }}an(s)</td>
+                                        <td>{{ $vg->nbph }}</td>
+                                        <td>{{ $vg->village?->name}}</td>
+                                        <td>-</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
        </div>
+    </div>
+
+    <div class="modal fade" id="addVergerModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouveau champ</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('sectoriel.members.verger.add') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="member_id" value="{{ $item->id }}">
+                        <input type="hidden" name="tenant_id" value="{{ $tenant_id }}">
+                            <div class="">
+                                <div class="mt-3">
+                                    <label for="">LIBELLE</label>
+                                    <input type="text" required class="form-control" name="name" placeholder="Exemple: Champ angara 1">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">SUPERFICIE EN ha</label>
+                                    <input type="text" required class="form-control" name="size" placeholder="Exemple: 1.5">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">ANNEE DE CULTURE</label>
+                                    <input type="number" required class="form-control" name="annee" placeholder="Exemple: 2006">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">NOMBRE DE PIEDS / ha</label>
+                                    <input type="text" required class="form-control" name="nbph" placeholder="Exemple: 920">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">VILLAGE</label>
+                                    <select required  name="village_id" class="form-control cmp">
+                                        <option>Selectionner un village  ...</option>
+                                        @foreach($villages as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">LOCALISATION GPS</label>
+                                    <input type="text" required class="form-control" name="localisation" >
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">PHOTO</label>
+                                    <input type="file" name="photo" class="form-control">
+                                </div>
+                            </div>
+                        <div class="mt-5 d-grid">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
 @endsection

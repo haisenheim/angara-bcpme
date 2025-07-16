@@ -6,6 +6,7 @@ use App\Http\Controllers\ExtendedController;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 
 class WalletController extends ExtendedController
@@ -45,10 +46,16 @@ class WalletController extends ExtendedController
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-        $data['user_id'] = auth()->user()->id;
+        $data['name'] = $request->name;
+        $data['montant'] = $request->montant;
+        $data['type_id'] = $request->operateur_id;
+        //$data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        Wallet::create($data);
+        $tenant = Tenant::find($request->cooperative_id);
+        $tenant->run(function()use($data){
+            Wallet::create($data);
+        });
+        tenancy()->initialize($tenant);
         return back();
     }
 
