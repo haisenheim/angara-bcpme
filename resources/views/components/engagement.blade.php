@@ -1,18 +1,18 @@
-<?php $data = json_decode($eng,true) ?>
-<tr class="fw-{{ $data['niveau'] }} fs-{{ $data['isLeaf']?'leaf':'title' }}">
+<?php $data = json_decode($eng,true);  ?>
+<tr class="fw-{{ $data['niveau'] }} fs-{{ $data['is_leaf']?'leaf':'title' }}">
     <td>{{ $data['name'] }}</td>
-    <td>{{ $data['encoursMontant'] }}</td>
-    <td>{{ $data['encoursImpaye'] }}</td>
-    <td>{{ \Carbon\Carbon::parse($data['encoursDtValidite'])->format('d/m/Y') }}</td>
-    <td>{{ $data['solliciteMontant'] }}</td>
-    <td>{{ \Carbon\Carbon::parse($data['solliciteDtValidite'])->format('d/m/Y') }}</td>
-    <td>{{ $data['variation'] }}</td>
-    <td>{{ $data['totalMontant'] }}</td>
+    <td>{{ $data['encours_montant'] }}</td>
+    <td>{{ $data['encours_impaye'] }}</td>
+    <td>-</td>
+    <td>{{ $data['sollicite_montant'] }}</td>
+    <td>-</td>
+    <th>{{ $data['variation'] }}</th>
+    <td></td>
     <td></td>
     <td>
-        @if($data['isLeaf'])
+        @if($data['is_leaf'])
             <div class="btn-group">
-                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-0 fs-6" data-bs-toggle="dropdown" aria-expanded="false">
                 Actions
                 <span class="vr"></span>
                 </button>

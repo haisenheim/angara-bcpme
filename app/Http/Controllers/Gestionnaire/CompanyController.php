@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
+use App\Models\Banque;
 use App\Models\Critere;
 use App\Models\Dossier;
 use App\Models\ElementConstitutif;
@@ -14,6 +15,9 @@ use App\Models\EntrepriseAppui;
 use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
+use App\Models\Instruction\Critere as InstructionCritere;
+use App\Models\Instruction\Engagement;
+use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
 use App\Models\Programme;
 use App\Models\Question;
@@ -124,6 +128,70 @@ class CompanyController extends ExtendedController
         return redirect(route('gestionnaire.entreprises.index'));
     }
 
+    private function parse($eng,$id){
+
+        $data = [
+            'id'=>$eng->id,
+            'name'=>$eng->name,
+            'montant'=>$eng->montant??0,
+            'encours_montant'=>$eng->encours_montant??0,
+            'encours_impaye'=>$eng->encours_impaye??0,
+            'sollicite_montant'=>$eng->sollicite_montant??0,
+            'variation'=>$eng->variation,
+            'parent_id'=>$eng->parent_id,
+            'is_title'=>$eng->is_title,
+            'is_leaf'=>$eng->is_leaf,
+            'niveau'=>$eng->niveau,
+        ];
+        if($data['is_leaf']){
+            $elts = EngagementEntreprise::where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
+            //dd($elts);
+            $data['encours_montant'] = $elts->reduce(function($carry,$item){
+                return $carry + $item->encours_montant;
+            },0);
+            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
+                return $carry + $item->sollicite_montant;
+            },0);
+            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
+                return $carry + $item->encours_impaye;
+            },0);
+            $data['elts'] = $elts;
+            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
+
+        }else{
+            $data['children'] = $eng->children->map(function($child)use($id){
+                return $this->parse($child,$id);
+            });
+            foreach($data['children'] as $child){
+                $data['encours_montant'] += $child['encours_montant'];
+                $data['sollicite_montant'] += $child['sollicite_montant'];
+                $data['encours_impaye'] += $child['encours_impaye'];
+                $data['variation'] += $child['variation'];
+            }
+        }
+        return $data;
+    }
+
+    public function getEngagementReport($token){
+        $entreprise = Entreprise::where('token',$token)->first();
+        if($entreprise){
+            $engagements = Engagement::where('parent_id',0)->get();
+             $data = [];
+             foreach($engagements as $eng){
+                 $data[] = $this->parse($eng,$entreprise->id);
+             }
+             //dd($data);
+
+            $engagements = $data;
+            $banques = Banque::all();
+            //$engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
+            return view('Gestionnaire.Companies.engagement_report',compact('engagements','entreprise','banques'));
+        }else{
+            return back();
+        }
+
+    }
+
     /**
      * Display the specified resource.
      */
@@ -138,7 +206,7 @@ class CompanyController extends ExtendedController
         $reponses = $item->reponses;
         $groups = $reponses->groupBy('critere_id');
         $groups = $groups->map(function($v,$k){
-            $critere = Critere::find($k);
+            $critere = InstructionCritere::find($k);
             return ['critere'=>$critere,
              'items'=>$v->groupBy('sous_critere_id')
                         ->map(function($m,$n){

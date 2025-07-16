@@ -8,8 +8,9 @@ class Operateur extends Model
 {
     //
     protected $guarded = [];
-    protected $table = 'operateur_mobiles';
     public $timestamps = false;
+    protected $table = 'operateur_mobiles';
+    protected $connection = 'central_app_mysql';
 
     protected $appends = ['photo'];
 

@@ -35,6 +35,7 @@
                             <th>Role</th>
                             <th>Agence</th>
                             <th>Direction</th>
+                            <th>Secteur</th>
                             <td>Statut</td>
                             <td>
 
@@ -50,6 +51,7 @@
                                 <th>{{ $item->role?->name }}</th>
                                 <td>{{ $item->agence?$item->agence->name:'-'  }}</td>
                                 <td>{{ $item->representation?->name  }}</td>
+                                <td>{{ $item->secteur?->name  }}</td>
                                 <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
                                 <td>
                                     <div class="btn-group">
@@ -120,6 +122,15 @@
                                     <select required name="representation_id" id="ville_id" class="form-control">
                                         <option value="0">Selectionner une agence</option>
                                         @foreach($representations as $item)
+                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">Secteur cooperatif</label>
+                                    <select required name="secteur_id" id="secteur_id" class="form-control">
+                                        <option value="0">Selectionner un secteur</option>
+                                        @foreach($secteurs as $item)
                                             <option value="{{ $item->id }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>

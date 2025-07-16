@@ -6,8 +6,6 @@
         <strong><span class="badge bg-white text-dark fs-6">Administrateur</span></strong>
     </div> --}}
     <div class="header__content-end">
-
-
                   <!-- Notification Dropdown -->
                   <div class="dropdown">
 
@@ -206,7 +204,6 @@
 ?>
      <!-- Navigation Category -->
      <div class="mainnav__categoriy py-3">
-
         <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
                <a href="{{ route('admin.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}">
@@ -243,22 +240,38 @@
             <!-- END : Dashboard submenu list -->
         </li>
         <!-- END : Link with submenu -->
+        </ul>
+    </div>
+    <!-- END : Navigation Category -->
 
-           <li class="nav-item">
-                <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}">
-                    {{-- <i class="pli-affiliate fs-2 me-2"></i> --}}
-                    <span  class="icon-nav" class="icon-nav"><img src="{{ asset('img/new/navigation/programmes.svg')}}" alt=""></span>
-                    <span class="nav-label mininav-content ms-1">PROGRAMMES</span>
-                </a>
-            </li>
-
-
-
+    <div class="mainnav__categoriy py-3">
+        <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
+        <ul class="mainnav__menu nav flex-column">
             <li class="nav-item">
                 <a href="{{ route('admin.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
                     {{-- <i class="pli-bank fs-2 me-2"></i> --}}
                     <span class="icon-nav"><img src="{{ asset('img/new/navigation/enterprises.svg')}}" alt=""></span>
                     <span class="nav-label mininav-content ms-1">ENTREPRISES</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.entites.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
+                    {{-- <i class="pli-bank fs-2 me-2"></i> --}}
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/enterprises.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">ENTITES INDIV.</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/programmes.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">ORGANISAT. INTERM.</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}">
+                    {{-- <i class="pli-affiliate fs-2 me-2"></i> --}}
+                    <span  class="icon-nav" class="icon-nav"><img src="{{ asset('img/new/navigation/programmes.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">PROGRAMMES</span>
                 </a>
             </li>
 
@@ -269,15 +282,28 @@
                     <span class="nav-label mininav-content ms-1">PROSPECTS</span>
                 </a>
             </li>
+        </ul>
+    </div>
 
-
+         <!-- Navigation Category -->
+    <div class="mainnav__categoriy py-3">
+        <h6 class="mainnav__caption mt-0 px-3 fw-bold">RESEAU</h6>
+        <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
-            <a href="{{ route('admin.users.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}">
-                {{-- <i class="pli-conference fs-2 me-2"></i> --}}
-                <span class="icon-nav"><img src="{{ asset('img/new/navigation/utilisateurs.svg')}}" alt=""></span>
-                <span class="nav-label mininav-content ms-1">Utilisateurs</span>
-            </a>
-        </li>
+                <a href="{{ route('admin.users.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}">
+                    {{-- <i class="pli-conference fs-2 me-2"></i> --}}
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/utilisateurs.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">Utilisateurs</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==7?'active':'' }}">
+                    {{-- <i class="pli-conference fs-2 me-2"></i> --}}
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/territoire.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
+                </a>
+            </li>
 
          <!-- Link with submenu -->
          <li class="nav-item has-sub">
@@ -296,8 +322,6 @@
              <!-- END : Dashboard submenu list -->
          </li>
          <!-- END : Link with submenu -->
-
-
             <!-- Link with submenu -->
             <li class="nav-item has-sub">
                 <a href="#" class="mininav-toggle nav-link {{ ($active>800&&$active<900)?'active':'' }}">

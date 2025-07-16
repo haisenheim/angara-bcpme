@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Village extends Model
 {
     use HasFactory;
+    protected $connection = 'central_app_mysql';
+    protected $guarded = [];
 }

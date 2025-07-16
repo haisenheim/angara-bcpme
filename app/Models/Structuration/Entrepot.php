@@ -15,6 +15,11 @@ class Entrepot extends Model
         return $this->hasMany('App\Models\Structuration\EntrepotGamme','entrepot_id');
     }
 
+    public function entrees()
+    {
+        return $this->hasMany('App\Models\Structuration\Entree','entrepot_id');
+    }
+
     public function arrondissement()
     {
         return $this->belongsTo('App\Models\Arrondissement');
@@ -34,10 +39,6 @@ class Entrepot extends Model
         return $this->belongsTo('App\Models\Client');
     }
 
-    public function cooperative()
-    {
-        return $this->belongsTo('App\Models\Cooperative');
-    }
 
     public function getStockAttribute(){
         $stocks = $this->stocks;

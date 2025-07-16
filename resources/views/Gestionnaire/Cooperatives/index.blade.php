@@ -5,8 +5,8 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Cooperatives</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Liste des cooperatives</li>
+       <li class="breadcrumb-item"><a href="#">Organisations intermediaires</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Liste des Organisations</li>
     </ol>
  </nav>
 @endsection
@@ -16,8 +16,8 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Cooperatives</h5>
-        <p class="lead">Liste de toutes les cooperatives</p>
+        <h5 class="page-title mb-0 mt-2">Organisations intermediaires</h5>
+        <p class="lead">Liste de toutes les organisations</p>
     </div>
 @endsection
 
@@ -31,7 +31,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle cooperative</h5>
+                    <h5 class="modal-title">Nouvelle Organisation</h5>
                     <div style="float: right">
                         <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
                     </div>
@@ -41,7 +41,7 @@
                         @csrf
                         <input type="hidden" id="arr_id" name="arrondissement_id">
                         <fieldset>
-                            <legend>Infos de la cooperative</legend>
+                            <legend>Infos de l'organisation</legend>
                             <div class="d-flex gap-2 flex-grow">
                                 <div class=" w-50">
                                     <label for="">NOM</label>
@@ -66,6 +66,15 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="flex-fill">
+                                    <label for="">SECTEUR COOPERATIF</label>
+                                    <select required class="form-control" name="secteur_id" id="">
+                                        <option value="">Choisir ...</option>
+                                        @foreach ($secteurs as $secteur)
+                                            <option value="{{ $secteur->id }}">{{ $secteur->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="">
                                     <div style="max-width: 200px" class="form-group">
                                         <select id="arrondissement_id" name="arrondissement_id" class="easyui-combotree form-control" style="max-width:200px;"
@@ -81,7 +90,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <legend>Infos de connexion du compte utilisateur de la cooperative</legend>
+                            <legend>Infos de connexion du compte utilisateur</legend>
                             <div class="d-flex gap-2 flex-grow">
                                 <div class=" w-75">
                                     <label for="">NOM DE L'UTILISATEUR</label>

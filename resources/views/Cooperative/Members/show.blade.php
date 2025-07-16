@@ -133,16 +133,22 @@
                             <thead>
                                 <tr>
                                     <th>DATE</th>
-                                    <th>PAIEMENT</th>
+                                    <th>MODE PAIEMENT</th>
                                     <th>MONTANT</th>
+                                    <th>CAISSE</th>
+                                    <th>WALLET</th>
+                                    <th>NUMERO CIBLE</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($item->paiements as $pp)
+                                @foreach($item->paiements->reverse() as $pp)
                                     <tr>
                                         <td>{{ $pp->created_at->format('d/m/Y H:i') }}</td>
-                                        <td>{{ $pp->name }}</td>
+                                        <td>{{ $pp->mode?->name }}</td>
                                         <th>{{ number_format($pp->montant,0,',','.') }} FCFA</th>
+                                        <td>{{ $pp->caisse?->name }}</td>
+                                        <td>{{ $pp->wallet?->name }}</td>
+                                        <td>{{ $pp->phone }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

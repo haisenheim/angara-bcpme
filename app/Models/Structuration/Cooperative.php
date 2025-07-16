@@ -36,11 +36,15 @@ class Cooperative extends Model
     }
 
     public function wallets(){
-        return $this->hasMany('App\Models\Structuration\CooperativeOperateur','cooperative_id');
+        return $this->hasMany('App\Models\Structuration\Wallet','cooperative_id');
+    }
+
+    public function caisses(){
+        return $this->hasMany('App\Models\Structuration\Caisse','cooperative_id');
     }
 
     public function paiements(){
-        return $this->hasMany('App\Models\Paiement','cooperative_id');
+        return $this->hasMany('App\Models\Structuration\Paiement','cooperative_id');
     }
 
     public function entrepots(){
@@ -50,7 +54,7 @@ class Cooperative extends Model
 
 
     public function exploitants(){
-        return $this->hasMany('App\Models\Structuration\Exploitant','cooperative_id');
+        return $this->hasMany('App\Models\Structuration\Membre','cooperative_id');
     }
 
     public function agents(){

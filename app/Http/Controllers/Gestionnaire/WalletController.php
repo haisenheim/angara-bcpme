@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\ExtendedController;
 use App\Models\Structuration\Cooperative;
-use App\Models\Structuration\CooperativeOperateur;
+use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 
 class WalletController extends ExtendedController
@@ -22,7 +23,7 @@ class WalletController extends ExtendedController
         $operateurs = Operateur::where('active',1)->get();
         $ids = $cooperatives->pluck('id');
         //dd($ids);
-        $items = CooperativeOperateur::whereIn('cooperative_id',$ids)->get();
+        $items = Wallet::whereIn('cooperative_id',$ids)->get();
         return view('/Gestionnaire/Wallets/index')->with(compact('cooperatives','items','operateurs'));
     }
 
@@ -45,10 +46,16 @@ class WalletController extends ExtendedController
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-        $data['user_id'] = auth()->user()->id;
+        $data['name'] = $request->name;
+        $data['montant'] = $request->montant;
+        $data['type_id'] = $request->operateur_id;
+        //$data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        CooperativeOperateur::create($data);
+        $tenant = Tenant::find($request->cooperative_id);
+        $tenant->run(function()use($data){
+            Wallet::create($data);
+        });
+        tenancy()->initialize($tenant);
         return back();
     }
 

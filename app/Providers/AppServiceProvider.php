@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Broadcasting\AngaraNotificationChannel;
+use Illuminate\Notifications\Channels\DatabaseChannel as IlluminateDatabaseChannel;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,5 +22,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+
+        $this->app->instance(IlluminateDatabaseChannel::class, new AngaraNotificationChannel());
     }
 }

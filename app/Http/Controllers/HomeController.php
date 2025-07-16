@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agence;
 use App\Models\Representation;
+use App\Models\Secteur;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +15,9 @@ class HomeController extends ExtendedController
     //
     public function index(){
         $user = auth()->user();
-       // dd(auth()->user());
+        //auth()->logout();
+       //return redirect('/login');
+      // dd(auth()->user());
         if($user){
             $ux = User::find($user->id);
             Session::put('user',$ux);
@@ -72,6 +75,13 @@ class HomeController extends ExtendedController
 
            if($role_id == 19){
             return redirect('/program/dashboard');
+           }
+
+           if($role_id == 20){
+            $secteur = Secteur::find($user->secteur_id);
+            Session::put('secteur',$secteur);
+            //dd($secteur);
+            return redirect('/sectoriel/dashboard');
            }
 
            if($role_id == 21){

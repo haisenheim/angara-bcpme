@@ -30,15 +30,13 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
         <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
                <a href="{{ route('analyste.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-3 me-2"></i>
-                   <span class="nav-label mininav-content ms-1">Tableau de board</span>
+                   <span class="nav-label mininav-content ms-1">Tableau de bord</span>
                </a>
            </li>
-
-
         <!-- Link with submenu -->
          <li class="nav-item has-sub">
             <a href="#" class="mininav-toggle nav-link {{ ($active>200&&$active<300)?'active':'' }}"><i class="pli-folders fs-5 me-2"></i>
-                <span class="nav-label ms-1">DOSSIERS</span>
+                <span class="nav-label ms-1">INTERMEDIATION</span>
             </a>
             <!-- Settings submenu list -->
             <ul class="mininav-content nav collapse">
@@ -59,8 +57,14 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
             <!-- END : Dashboard submenu list -->
         </li>
         <!-- END : Link with submenu -->
+        </ul>
+    </div>
 
-           <li class="nav-item">
+    <div class="mainnav__categoriy py-3">
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
+    <ul class="mainnav__menu nav flex-column">
+
+    <li class="nav-item">
                 <a href="{{ route('analyste.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-affiliate fs-2 me-2"></i>
                     <span class="nav-label mininav-content ms-1">PROGRAMMES</span>
                 </a>
@@ -79,9 +83,9 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                     <span class="nav-label mininav-content ms-1">PROSPECTS</span>
                 </a>
             </li>
-
-
-
+    </ul>
+</div>
+<div class="mainnav__categoriy py-3 mb-4">
             <!-- Link with submenu -->
             <li class="nav-item has-sub">
                 <a href="#" class="mininav-toggle nav-link {{ ($active>800&&$active<900)?'active':'' }}"><i class="demo-pli-gears fs-5 me-2"></i>

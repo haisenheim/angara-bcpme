@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Ca;
 
 use App\Http\Controllers\ExtendedController;
-use App\Models\Structuration\CooperativeOperateur;
+use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Request as StructurationRequest;
 use Exception;
 use Illuminate\Http\Request;
@@ -35,7 +35,7 @@ class RequestController extends ExtendedController
             }
             $item->validated_at = new \DateTime();
             $item->validated_by = auth()->user()->id;
-            $wallet = CooperativeOperateur::find($item->wallet_id);
+            $wallet = Wallet::find($item->wallet_id);
             $wallet->montant = $wallet->montant + $item->montant;
             $item->save();
             $wallet->save();
@@ -70,7 +70,7 @@ class RequestController extends ExtendedController
     public function create()
     {
         //
-        //$items = CooperativeOperateur::where('cooperative_id',auth()->user()->cooperative_id)->get();
+        //$items = Wallet::where('cooperative_id',auth()->user()->cooperative_id)->get();
         //return view('Ca/Requests/create')->with(compact('items'));
     }
 

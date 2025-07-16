@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agence;
-use App\Models\CaisseUser;
-use App\Models\Departement;
 use App\Models\Representation;
 use App\Models\Role;
+use App\Models\Secteur;
 use App\Models\User;
 use App\Models\Ville;
 use Illuminate\Http\Request;
@@ -27,7 +26,8 @@ class UserController extends Controller
         $roles = Role::where('metier',1)->get();
         $representations = Representation::all();
         $agences = Agence::all();
-        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences'));
+        $secteurs = Secteur::all();
+        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences','secteurs'));
     }
 
 
@@ -65,6 +65,7 @@ class UserController extends Controller
         $user->role_id = request()->role_id;
         $user->phone = request()->phone;
         $user->email = request()->email;
+        $user->secteur_id = $request->secteur_id;
         $user->agence_id = request()->agence_id;
         $user->representation_id = request()->representation_id;
         $user->save();

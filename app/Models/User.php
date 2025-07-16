@@ -13,6 +13,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
+   // protected $connection = 'central_app_mysql';
 
     protected $fillable = [
         'name',
@@ -57,6 +58,10 @@ class User extends Authenticatable
 
     public function cooperative(){
         return $this->belongsTo('App\Models\Structuration\Cooperative');
+    }
+
+    public function secteur(){
+        return $this->belongsTo('App\Models\Secteur');
     }
 
 

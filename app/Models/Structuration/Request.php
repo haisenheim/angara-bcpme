@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Request extends Model
 {
     protected $guarded = [];
-    protected $table = 'paiements_requests_cooperatives';
 
     public function cooperative()
     {
@@ -17,6 +16,16 @@ class Request extends Model
     public function operateur()
     {
         return $this->belongsTo('App\Models\Structuration\Operateur');
+    }
+
+    public function wallet()
+    {
+        return $this->belongsTo('App\Models\Structuration\Wallet','wallet_id');
+    }
+
+    public function caisse()
+    {
+        return $this->belongsTo('App\Models\Structuration\Caisse');
     }
 
     public function getStatusAttribute(){

@@ -25,6 +25,7 @@
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}">Editer des information de l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
     </ul>
  </div>
 @endsection
@@ -106,12 +107,12 @@
                             <th>{{ number_format($item->total_actif,0,',','.') }} XAF</th>
                         </tr>
                         <tr>
-                            <td>Nombre d'employés</td>
-                            <th>{{ number_format($item->nb_personnel,0,',','.') }} XAF</th>
+                            <td>Nombre d'employés permanents</td>
+                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }} </th>
                         </tr>
                         <tr>
-                            <td>Type d'employés</td>
-                            <th>{{ $item->tperso }}</th>
+                            <td>Nombre d'employés saisonniers</td>
+                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }} </th>
                         </tr>
                     </tbody>
                 </table>
@@ -193,9 +194,6 @@
                        </li>
                        <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
@@ -381,9 +379,7 @@
                                 @endforeach
                              </div>
                        </div>
-                       <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>ETAT DES ENGAGEMENTS</h5>
-                       </div>
+
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">
                                 <thead>
