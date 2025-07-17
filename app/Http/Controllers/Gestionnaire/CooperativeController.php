@@ -227,6 +227,7 @@ class CooperativeController extends ExtendedController
             $caisses = Caisse::all();
             $wallets = Wallet::all();
             $requests = StructurationRequest::orderBy('created_at','DESC')->get();
+            $users = User::all();
             return [
                 'paiements'=>$paiements,
                 'entrees'=>$entrees,
@@ -236,6 +237,7 @@ class CooperativeController extends ExtendedController
                 'caisses'=>$caisses,
                 'wallets'=>$wallets,
                 'requests'=>$requests,
+                'users'=>$users,
             ];
         });
         tenancy()->initialize($item);

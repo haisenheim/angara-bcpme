@@ -73,6 +73,10 @@
                             <td>STOCK</td>
                             <th>{{ number_format(347.974,2,',','.') }} tonnes</th>
                         </tr>
+                        <tr>
+                            <td>Lien</td>
+                            <th><a target="_blank" href="https://{{ $item->domains[0]->domain }}">{{ $item->domains[0]->domain }}</a></th>
+                        </tr>
                     </tbody>
                 </table>
                 <p><a href="{{ route('gestionnaire.entreprises.show',$item->entreprise?->token) }}">Cliquer ici pour voir son dossier d'entreprise</a></p>
@@ -105,6 +109,9 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">WALLETS</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab8" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">COMPTES UTILISATEURS</button>
                     </li>
                 </ul>
 
@@ -372,6 +379,30 @@
                                         <td>{{ number_format($wlt->montant,0,',','.') }}</td>
                                         <td><span class="badge bg-{{ $wlt->status['color'] }}">{{ $wlt->status['name'] }}</span></td>
                                         <td></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="_tab8" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
+                        <table class="table table-sm table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>NOM</th>
+                                    <th>EMAIL</th>
+                                    <th>ROLE</th>
+                                    <th>ENTREPOT</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($data['users'] as $usr)
+                                    <tr>
+                                        <td>{{ $usr->name }}</td>
+                                        <td>{{ $usr->email }}</td>
+                                        <td>{{ $usr->role?->name }}</td>
+                                        <td>{{ $usr->entrepot?->name }}</td>
+                                        <td><span class="badge bg-{{ $usr->status['color'] }}">{{ $usr->status['name'] }}</span></td>
                                     </tr>
                                 @endforeach
                             </tbody>
