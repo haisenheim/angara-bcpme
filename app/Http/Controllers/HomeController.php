@@ -85,7 +85,7 @@ class HomeController extends ExtendedController
            }
 
            if($role_id == 21){
-            return redirect('/cooperative/dashboard');
+            return redirect('/structuration/gestionnaire/dashboard');
            }
 
 

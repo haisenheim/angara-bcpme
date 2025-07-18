@@ -7,9 +7,11 @@ use App\Exports\Gestionnaire\Cooperatives\PaiementExport;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\CooperativeListResource;
 use App\Models\Arrondissement;
+use App\Models\Banque;
 use App\Models\Domaine;
 use App\Models\Entreprise;
 use App\Models\Secteur;
+use App\Models\Structuration\BanqueCooperative;
 use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
@@ -207,6 +209,16 @@ class CooperativeController extends ExtendedController
         return view('Gestionnaire.Cooperatives.entrepot',compact('item','entrees'));
     }
 
+    public function addCompte(){
+        $data['name'] = request()->name;
+        $data['montant'] = request()->montant;
+        $data['token'] = sha1(time());
+        $data['banque_id'] = request()->banque_id;
+        $data['tenant_id'] = request()->tenant_id;
+        BanqueCooperative::create($data);
+        return back();
+    }
+
     /**
      * Display the specified resource.
      *
@@ -242,7 +254,9 @@ class CooperativeController extends ExtendedController
         });
         tenancy()->initialize($item);
         $operateurs = Operateur::all();
-		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data'));
+        $banques = Banque::all();
+        $comptes = BanqueCooperative::where('tenant_id',$item->id)->get();
+		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data','banques','comptes'));
 	}
 
 

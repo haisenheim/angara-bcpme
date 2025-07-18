@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Gestionnaire;
+namespace App\Http\Controllers\Structuration\Banquier;
 
 use App\Http\Controllers\ExtendedController;
 use App\Models\Banque;
@@ -23,15 +23,30 @@ class RequestController extends ExtendedController
     public function index()
     {
         //
-        $items = StructurationRequest::orderBy('created_at','DESC')->where('agence_id',auth()->user()->agence_id)->get();
-        return view('Gestionnaire/Requests/index')->with(compact('items'));
+        $requests = collect();
+        $comptes = BanqueCooperative::where('banque_id', auth()->user()->banque_id)->get();
+        foreach ($comptes as $compte) {
+            $tenant = Tenant::where('id', $compte->tenant_id)->first();
+            $tenant->run(function () use ($requests,$compte) {
+                $items = StructurationRequest::where('source_id', $compte->id)
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
+                foreach ($items as $item) {
+                    $requests->push($item);
+                }
+                   // $requests = $requests->merge($items);
+
+            });
+            tenancy()->initialize($tenant);
+        }
+        return view('Structuration/Banquier/Requests/index')->with(compact('requests'));
     }
 
     public function valider(){
         $token = request()->token;
         //dd(request()->all());
-        $compte = BanqueCooperative::find(request()->compte_id);
-        $tenant = Tenant::where('token',request()->tenant_id)->first();
+        $compte = BanqueCooperative::where('token',request()->compte_id)->first();
+        $tenant = $compte->tenant;
         $data = $tenant->run(function()use($token,$compte){
                 $item = StructurationRequest::where('token',$token)->first();
                 //dd(request()->all());
@@ -43,27 +58,27 @@ class RequestController extends ExtendedController
                         //return back();
                     }
 
-                    $item->validated_at = new \DateTime();
-                    $item->validated_by = auth()->user()->id;
+                    $item->treated_at = new \DateTime();
+                    $item->treated_by = auth()->user()->id;
                     if($compte){
                         $item->source_id = $compte->id;
                         $item->banque_id = $compte->banque_id;
                     }
                     $item->save();
                     if($item->wallet_id){
-                        //$wallet = Wallet::find($item->wallet_id);
-                        //$wallet->montant = $wallet->montant + $item->montant;
-                        //$wallet->save();
+                        $wallet = Wallet::find($item->wallet_id);
+                        $wallet->montant = $wallet->montant + $item->montant;
+                        $wallet->save();
                     }else{
                         if($item->caisse_id){
-                            //$caisse = Caisse::find($item->caisse_id);
-                            //$caisse->montant = $caisse->montant + $item->montant;
-                            //$caisse->save();
+                            $caisse = Caisse::find($item->caisse_id);
+                            $caisse->montant = $caisse->montant + $item->montant;
+                            $caisse->save();
                         }
                     }
                 }
         });
-        Session::flash('success','Requete approuvée avec succès!');
+        Session::flash('success','Requete traitée avec succès!');
         tenancy()->initialize($tenant);
        // Session::flash('error','Echec lors de l\'approbation de la requete!');
         return back();

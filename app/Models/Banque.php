@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Banque extends Model
 {
     use HasFactory;
+    protected $connection = 'central_app_mysql';
 }

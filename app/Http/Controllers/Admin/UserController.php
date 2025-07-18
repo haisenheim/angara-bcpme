@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agence;
+use App\Models\Banque;
 use App\Models\Representation;
 use App\Models\Role;
 use App\Models\Secteur;
@@ -27,7 +28,8 @@ class UserController extends Controller
         $representations = Representation::all();
         $agences = Agence::all();
         $secteurs = Secteur::all();
-        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences','secteurs'));
+        $banques = Banque::all();
+        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences','secteurs','banques'));
     }
 
 
@@ -68,6 +70,7 @@ class UserController extends Controller
         $user->secteur_id = $request->secteur_id;
         $user->agence_id = request()->agence_id;
         $user->representation_id = request()->representation_id;
+        $user->banque_id = request()->banque_id;
         $user->save();
         return back();
     }

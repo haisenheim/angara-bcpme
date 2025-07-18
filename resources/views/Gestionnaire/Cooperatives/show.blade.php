@@ -29,6 +29,7 @@
     <ul class="dropdown-menu">
         <li><a class="dropdown-item" data-bs-target="#caisseModal" data-bs-toggle="modal" href="#">Créer une caisse</a></li>
         <li><a class="dropdown-item" data-bs-target="#walletModal" data-bs-toggle="modal" href="#">Créer un wallet</a></li>
+        <li><a class="dropdown-item" data-bs-target="#compteModal" data-bs-toggle="modal" href="#">Associer un compte bancaire</a></li>
     </ul>
  </div>
 @endsection
@@ -112,6 +113,9 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab8" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">COMPTES UTILISATEURS</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab9" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">COMPTES BANCAIRES</button>
                     </li>
                 </ul>
 
@@ -408,6 +412,28 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="_tab9" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
+                        <table class="table table-sm table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>NUMERO DE COMPTE</th>
+                                    <th>BANQUE</th>
+                                    <th>SOLDE</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($comptes as $usr)
+                                    <tr>
+                                        <td>{{ $usr->name }}</td>
+                                        <td>{{ $usr->banque?->name }}</td>
+                                        <td>{{ number_format($usr->montant,0,',','.') }}</td>
+                                        <td></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
              </div>
         </div>
@@ -567,6 +593,49 @@
         </div>
     </div>
 
+        <div class="modal fade" id="compteModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Associer un compte bancaire</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('gestionnaire.cooperative.comptes.add') }}" method="post">
+                        @csrf
+                        <div class="">
+                            <input type="hidden" name="tenant_id" value="{{$item->id}}" name="token">
+
+                            <div class="mt-3">
+                                <label for="">BANQUE</label>
+                                <select required name="banque_id" id="banque_id" class="form-control">
+                                    <option >Selectionner une banque ...</option>
+                                    @foreach($banques as $mbr)
+                                        <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mt-3">
+                                <label for="">NUMERO DE COMPTE</label>
+                                <input required type="text" name="name" placeholder="Numero de compte" class="form-control">
+                            </div>
+                            <div class="mt-3">
+                                <label for="">Solde initial</label>
+                                <input required type="number" name="montant" placeholder="Solde initial" class="form-control">
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn-success btn btn-sm p-1">EXPORTER</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="exportEntreesModal">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -624,11 +693,22 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.request.validate') }}" method="post">
+                    <form action="{{ route('gestionnaire.request.validate') }}" method="post">
                         @csrf
                         <input type="hidden" name="token" id="v-token" value="">
                         <input type="hidden" name="tenant_id" value="{{ $item->token}}">
-                        <p>Attention cette operation est irreversible</p>
+                        <h5>Attention cette operation est irreversible</h5>
+                        <p class="fs-6">Voulez-vous vraiment approuver cette demande ?</p>
+                        <p class="fs-6">Cette action validera la demande et l'enregistrera dans le systeeme.</p>
+                        <div class="mt-3">
+                            <label for="">Choix du compte</label>
+                            <select name="compte_id" id="compte_id" required class="form-control">
+                                <option value="">Veuillez selectionner un compte ...</option>
+                                @foreach($comptes as $mbr)
+                                    <option value="{{ $mbr->id }}">{{ $mbr->name }} - {{ $mbr->banque?->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-success btn-sm btn">Approuver</button>
                         </div>
@@ -696,86 +776,6 @@
             $('#c-token').val(token);
         })
     </script>
-<script>
-   /*  var table = new DataTable('#tab',{
-        dom: 'Bfrtip',
-        buttons: [
-            'excel',
-            {
-                text:'Imprimer',
-                extend:'print',
-                title:'LISTE DES ARTICLES',
-                message:'Ceci est la liste de tous les articles ',
-                exportOptions: {
-                    columns: function (idx, data, node) {
-                        //console.log(node.cellIndex)
-                        if (node.innerText == "actions"){
-                            return false;
-                        }
-                        return true;
-                    }
-                }
-            },
-            'pdf',
-            'csv',
-        ]
-    });
-    function displayArticles(items) {
-        $("#tab_articles").empty();
-
-        items.forEach(function(item) {
-            if(item.active){
-                var li = `<li><a class="dropdown-item" href="/user/article/disable/${item.token}">Retirer des ventes</a></li>`
-            }else{
-                var li = `<li><a class="dropdown-item" href="/user/article/enable/${item.token}">Remettre en vente</a></li>`
-            }
-            var nr =`<tr>
-                <td>${item.name}</td>
-                <td>${item.pu}</td>
-                <td>${item.quantity}</td>
-                <td>${item.category.name}</td>
-                <td>${item.seuilmin}</td>
-                <td><span class='badge bg-${item.status.color}'>${item.status.name}</span></td>
-                <td>
-                    <div class="btn-group">
-                             <button class="btn btn-light btn-xs dropdown-toggle hstack gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                actions
-                                <span class="vr"></span>
-                             </button>
-                             <ul class="dropdown-menu" style="">
-                                <li><a data-bs-toggle="modal" data-bs-target="#quantityModal" data-token=${item.token} data-quantity=${item.quantity} class="dropdown-item btn-qty" href="#">Corriger le stock</a></li>
-                                ${li}
-                             </ul>
-                          </div>
-                </td>
-                </tr>`;
-            table.row.add($(nr)).draw()
-        });
-    }
-    $(document).ready(function(){
-        $.ajax({
-            url:"",
-            type:'get',
-            dataType:'json',
-            success:function(data){
-                console.log(data);
-                localStorage.setItem("articles", JSON.stringify(data));
-                //var articles = JSON.parse(localStorage.getItem("articles")) || [];
-                displayArticles(data);
-                $('.btn-qty').click(function(){
-                    var token = $(this).data('token')
-                    var qty = $(this).data('quantity')
-                    $('#quantity').val(qty);
-                    $('#token').val(token);
-                })
-
-            },
-            error:function(err){
-
-            }
-        });
-    }); */
-</script>
 
 <style>
     label{

@@ -28,6 +28,15 @@ class Request extends Model
         return $this->belongsTo('App\Models\Structuration\Caisse');
     }
 
+    public function compte()
+    {
+        return $this->belongsTo('App\Models\Structuration\BanqueCooperative','source_id');
+    }
+    public function banque()
+    {
+        return $this->belongsTo('App\Models\Banque');
+    }
+
     public function getStatusAttribute(){
         $data = [
             'name'=>'en attente',
@@ -45,11 +54,21 @@ class Request extends Model
 
         if($this->validated_at){
             $data = [
-                'name'=>'approuvée',
-                'code'=>-1,
+                'name'=>'approuvée et non traitée',
+                'code'=>1,
                 'color'=>'success'
             ];
         }
+
+        if($this->treated_at){
+            $data = [
+                'name'=>'traitée',
+                'code'=>2,
+                'color'=>'dark'
+            ];
+        }
+
+
 
         return $data;
 

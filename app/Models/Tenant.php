@@ -71,6 +71,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->belongsTo('App\Models\Arrondissement');
     }
 
-
+    public function comptes()
+    {
+        return $this->hasMany('App\Models\Structuration\BanqueCooperative','tenant_id');
+    }
 
 }

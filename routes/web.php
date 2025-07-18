@@ -338,7 +338,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
         Route::get('cooperative/entrees/{token}','CooperativeController@getEntree')->name('cooperative.entrees.show');
         Route::get('cooperative/entrepots/{token}','CooperativeController@getEntrepot')->name('cooperative.entrepots.show');
-
+        Route::post('cooperative/comptes','CooperativeController@addCompte')->name('cooperative.comptes.add');
         Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
         Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
 
@@ -602,6 +602,18 @@ Route::namespace('App\Http\Controllers\Sectoriel')
 
 });
 
+
+Route::namespace('App\Http\Controllers\Structuration\Banquier')
+    ->prefix('structuration/gestionnaire')
+    ->middleware(['auth','structuration.gestionnaire'])
+    ->name('structuration_gestionnaire.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::resource('requests','RequestController');
+        Route::resource('comptes','CompteController');
+        Route::post('request/validate','RequestController@valider')->name('request.validate');
+        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
+    });
 
 
 

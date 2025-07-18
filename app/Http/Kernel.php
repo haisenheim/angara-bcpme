@@ -88,11 +88,13 @@ class Kernel extends HttpKernel
         'cooperative'=> \App\Http\Middleware\Cooperative::class,
         'program'=> \App\Http\Middleware\Program::class,
         'sectoriel'=> \App\Http\Middleware\Sectoriel::class,
+        'structuration.gestionnaire'=> \App\Http\Middleware\StructurationGestionnaire::class,
 
         //tenant
         'tenant.admin'=> \App\Http\Middleware\Tenant\Admin::class,
         'tenant.agent'=> \App\Http\Middleware\Tenant\Agent::class,
         'tenant.rstock'=> \App\Http\Middleware\Tenant\Rstock::class,
         'tenant.payeur'=> \App\Http\Middleware\Tenant\Payeur::class,
+
     ];
 }

@@ -64,6 +64,10 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Secteur');
     }
 
+    public function banque(){
+        return $this->belongsTo('App\Models\Banque');
+    }
+
 
     public function getStatusAttribute(){
         $data = [

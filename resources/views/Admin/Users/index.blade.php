@@ -4,7 +4,7 @@
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Cogelo</a></li>
+       <li class="breadcrumb-item"><a href="#">Angara</a></li>
        <li class="breadcrumb-item"><a href="#">Utilisateurs</a></li>
        <li class="breadcrumb-item active" aria-current="page">Liste des comptes utilisateurs</li>
     </ol>
@@ -25,7 +25,7 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <div style="max-height: 50vh; overflow: scroll;">
+            <div style="max-height: 70vh; overflow: scroll;">
                 <table  class="table table-hover table-striped table-sm">
                     <thead>
                         <tr>
@@ -36,6 +36,7 @@
                             <th>Agence</th>
                             <th>Direction</th>
                             <th>Secteur</th>
+                            <th>Banque</th>
                             <td>Statut</td>
                             <td>
 
@@ -52,6 +53,7 @@
                                 <td>{{ $item->agence?$item->agence->name:'-'  }}</td>
                                 <td>{{ $item->representation?->name  }}</td>
                                 <td>{{ $item->secteur?->name  }}</td>
+                                <td>{{ $item->banque?->name }}</td>
                                 <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
                                 <td>
                                     <div class="btn-group">
@@ -83,7 +85,7 @@
         </div>
     </div>
     <div class="modal fade" id="addModal">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header justify-content-between">
                     <h5 class="modal-title">Nouveau compte utilisateur</h5>
@@ -95,58 +97,80 @@
                     <form enctype="multipart/form-data" action="{{ route('admin.users.store') }}" method="post">
                         @csrf
                             <div class="">
-                                <div class="">
-                                    <label for="">NOM</label>
-                                    <input required type="text" name="name" placeholder="Saisir l'intitule de la saison" class="form-control">
-                                </div>
-                                <div class="mt-2">
-                                    <label for="">ROLE</label>
-                                    <select name="role_id" required id="" class="form-control">
-                                        <option value="">Role ...</option>
-                                        @foreach($roles as $role)
-                                            <option value="{{ $role->id }}">{{ $role->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mt-3">
-                                    <label for="">Agence</label>
-                                    <select required name="agence_id" id="ville_id" class="form-control">
-                                        <option value="0">Selectionner une agence</option>
-                                        @foreach($agences as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label for="">NOM</label>
+                                        <input required type="text" name="name" placeholder="Saisir l'intitule de la saison" class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="">Telephone</label>
+                                        <input required type="text" name="phone" class="form-control">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="">ROLE</label>
+                                        <select name="role_id" required id="" class="form-control">
+                                            <option value="">Role ...</option>
+                                            @foreach($roles as $role)
+                                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="mt-3">
-                                    <label for="">Direction</label>
-                                    <select required name="representation_id" id="ville_id" class="form-control">
-                                        <option value="0">Selectionner une agence</option>
-                                        @foreach($representations as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <fieldset>
+                                        <legend>Affectation</legend>
+                                        <div class="row">
+                                            <div class="col-md-2">
+                                                <label for="">Agence</label>
+                                                <select required name="agence_id" id="ville_id" class="form-control">
+                                                    <option value="0">Selectionner une agence</option>
+                                                    @foreach($agences as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="">Direction</label>
+                                                <select required name="representation_id" id="ville_id" class="form-control">
+                                                    <option value="0">Selectionner une agence</option>
+                                                    @foreach($representations as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="">Secteur cooperatif</label>
+                                                <select required name="secteur_id" id="secteur_id" class="form-control">
+                                                    <option value="0">Selectionner un secteur</option>
+                                                    @foreach($secteurs as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="">Banque</label>
+                                                <select required name="banque_id" id="banque_id" class="form-control">
+                                                    <option value="0">Selectionner une banque</option>
+                                                    @foreach($banques as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
-                                <div class="mt-3">
-                                    <label for="">Secteur cooperatif</label>
-                                    <select required name="secteur_id" id="secteur_id" class="form-control">
-                                        <option value="0">Selectionner un secteur</option>
-                                        @foreach($secteurs as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mt-2">
-                                    <label for="">Telephone</label>
-                                    <input required type="text" name="phone" class="form-control">
-                                </div>
-                                <div class="mt-2">
-                                    <label for="">Email de connexion</label>
-                                    <input required type="email" name="email" class="form-control">
-                                </div>
-                                <div class="mt-2">
-                                    <label for="">Mot de passe</label>
-                                    <input required type="password" name="password" class="form-control">
-                                </div>
+                                <fieldset>
+                                    <legend>Identifiants</legend>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="">Email de connexion</label>
+                                            <input required type="email" name="email" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="">Mot de passe</label>
+                                            <input required type="password" name="password" class="form-control">
+                                        </div>
+                                </fieldset>
                             </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
