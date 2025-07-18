@@ -38,7 +38,7 @@
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $compte->tenant?->name }}</td>
                                 <td class="p-2"><a class="btn-link" href="{{ route('structuration_gestionnaire.comptes.show', $compte->token) }}">{{ $compte->name }}</a></td>
-                                <td>{{ number_format($compte->solde, 0,',','.') }}</td>
+                                <td>{{ number_format($compte->montant, 0,',','.') }}</td>
                                 <td></td>
                             </tr>
                         @endforeach

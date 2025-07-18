@@ -27,7 +27,7 @@
                         <h5 class="card-title">Informations du compte</h5>
                         <p class="card-text">Cooperative: {{ $item->tenant?->name }}</p>
                         <p class="card-text">Numero: {{ $item->name }}</p>
-                        <p class="card-text">Solde: {{ number_format($item->solde, 0,',','.') }}</p>
+                        <p class="card-text">Solde: {{ number_format($item->montant, 0,',','.') }}</p>
                     </div>
                 </div>
             </div>

@@ -626,7 +626,7 @@
                                 <input required type="number" name="montant" placeholder="Solde initial" class="form-control">
                             </div>
                             <div class="mt-4">
-                                <button type="submit" class="btn-success btn btn-sm p-1">EXPORTER</button>
+                                <button type="submit" class="btn-success btn btn-sm p-1">ENREGISTRER</button>
                             </div>
                         </div>
 

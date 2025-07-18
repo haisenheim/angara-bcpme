@@ -63,19 +63,27 @@ class RequestController extends ExtendedController
                     if($compte){
                         $item->source_id = $compte->id;
                         $item->banque_id = $compte->banque_id;
-                    }
-                    $item->save();
-                    if($item->wallet_id){
-                        $wallet = Wallet::find($item->wallet_id);
-                        $wallet->montant = $wallet->montant + $item->montant;
-                        $wallet->save();
-                    }else{
-                        if($item->caisse_id){
-                            $caisse = Caisse::find($item->caisse_id);
-                            $caisse->montant = $caisse->montant + $item->montant;
-                            $caisse->save();
+                        $compte->montant = $compte->montant - $item->montant;
+                        $compte->save();
+                        if($compte->montant >= $item->montant){
+                            $item->save();
+                            if($item->wallet_id){
+                                $wallet = Wallet::find($item->wallet_id);
+                                $wallet->montant = $wallet->montant + $item->montant;
+                                $wallet->save();
+                            }else{
+                                if($item->caisse_id){
+                                    $caisse = Caisse::find($item->caisse_id);
+                                    $caisse->montant = $caisse->montant + $item->montant;
+                                    $caisse->save();
+                                }
+                            }
+                        }else{
+                            Session::flash('error','Solde du compte insuffisant! Cette requete ne peut pas être traitée!');
+                            return back();
                         }
                     }
+
                 }
         });
         Session::flash('success','Requete traitée avec succès!');
