@@ -363,7 +363,7 @@
                         </table>
                     </div>
                     <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="home-tab">
-                        <table class="table table-sm table-striped">
+                        <table class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>NUMERO</th>
@@ -382,7 +382,21 @@
                                         <td>{{ $wlt->operateur->name }}</td>
                                         <td>{{ number_format($wlt->montant,0,',','.') }}</td>
                                         <td><span class="badge bg-{{ $wlt->status['color'] }}">{{ $wlt->status['name'] }}</span></td>
-                                        <td></td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Actions
+                                                <span class="vr"></span>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    @if ($wlt->active)
+                                                        <li><a class="dropdown-item" href="{{ route('gestionnaire.wallet.disable',['tenant_id'=>$item->token,'wallet_id'=>$wlt->token]) }}" >Verrouiller</a></li>
+                                                    @else
+                                                        <li><a class="dropdown-item" href="{{ route('gestionnaire.wallet.enable',['tenant_id'=>$item->token,'wallet_id'=>$wlt->token]) }}" >Debloquer</a></li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -491,9 +505,9 @@
                 <div class="modal-body">
                     <form enctype="multipart/form-data" action="{{ route('gestionnaire.wallets.store') }}" method="post">
                         @csrf
-                        <div class="d-flex gap-2 flex-grow mt-3">
-                            <input type="hidden" value="{{$item->id}}" name="cooperative_id">
-                            <div class="flex-fill">
+                        <input type="hidden" value="{{$item->id}}" name="cooperative_id">
+                        <div class="row mt-3">
+                            <div class="col-md-4">
                                 <label for="">TYPE / OPERATEUR</label>
                                 <select required class="form-control" name="operateur_id" id="">
                                     <option value="">Selectionner un operateur ...</option>
@@ -502,7 +516,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="flex-fill">
+                            <div class="col-md-5">
                                 <label for="">ENTREPOT</label>
                                 <select required class="form-control" name="entrepot_id" id="">
                                     <option value="">Selectionner un entrepot ...</option>
@@ -511,14 +525,21 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class=" w-30">
-                                <label for="">Montant initial</label>
+                            <div class="col-md-3">
+                                <label for="">Solde initial</label>
                                 <input required type="number" name="montant" placeholder="Montant initial" class="form-control">
                             </div>
-                            <div class=" w-30">
+                            <div class="col-md-4 mt-3">
                                 <label for="">LIBELLE / TEL</label>
                                 <input required type="text" name="name" placeholder="LIBELLE" class="form-control">
                             </div>
+                            <div class="col-md-4 mt-3">
+                                <label for="">CLE D'API</label>
+                                <input required type="text" name="api_key" placeholder="Saisir la cle d'api" class="form-control">
+                            </div>
+                            <div class="col-md-4 mt-3">
+                                <label for="">CLE SECRETE</label>
+                                <input required type="password" name="api_secret" placeholder="Saisir la cle secrete" class="form-control">
                         </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>

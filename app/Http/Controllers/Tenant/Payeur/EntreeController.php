@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant\Payeur;
 
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntreeResource;
+use App\Jobs\ProcessPaymentJob;
 use App\Models\Structuration\Agent;
 use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Entree;
@@ -14,6 +15,7 @@ use App\Models\Structuration\Membre;
 use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Wallet;
 use App\Models\User;
+use Faker\Provider\ar_EG\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -129,7 +131,8 @@ class EntreeController extends ExtendedController
             $wallet->montant = $wallet->montant - request()->montant;
             if($wallet->montant>=0){
                 $wallet->save();
-                Paiement::create($data);
+                $paiement = Paiement::create($data);
+                ProcessPaymentJob::dispatch($paiement,tenant());
             }else{
                 Session::flash('error','Solde du wallet insuffisant pour effectuer ce paiement!');
                 return back();

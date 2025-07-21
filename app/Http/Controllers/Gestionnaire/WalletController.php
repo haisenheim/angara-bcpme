@@ -38,6 +38,30 @@ class WalletController extends ExtendedController
         //
     }
 
+    public function enable(Request $request)
+    {
+        $tenant = Tenant::where('token',$request->tenant_id)->first();
+        $tenant->run(function() use ($request) {
+            $wallet = Wallet::where('token',$request->wallet_id)->first();
+            $wallet->active = 1;
+            $wallet->save();
+        });
+        tenancy()->initialize($tenant);
+        return back()->with('success','Le wallet a été activé avec succès');
+    }
+
+    public function disable(Request $request)
+    {
+        $tenant = Tenant::where('token',$request->tenant_id)->first();
+        $tenant->run(function() use ($request) {
+            $wallet = Wallet::where('token',$request->wallet_id)->first();
+            $wallet->active = 0;
+            $wallet->save();
+        });
+        tenancy()->initialize($tenant);
+        return back()->with('success','Le wallet a été désactivé avec succès');
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -49,7 +73,11 @@ class WalletController extends ExtendedController
         $data['name'] = $request->name;
         $data['montant'] = $request->montant;
         $data['type_id'] = $request->operateur_id;
+        $data['entrepot_id'] = $request->entrepot_id;
+        $data['api_key'] = $request->api_key;
+        $data['api_secret'] = $request->api_secret;
         //$data['user_id'] = auth()->user()->id;
+
         $data['token'] = sha1(time());
         $tenant = Tenant::find($request->cooperative_id);
         $tenant->run(function()use($data){

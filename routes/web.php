@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Util\PayementController;
 use App\Imports\ApmeImport;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +97,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             return redirect(route('login'));
         });
 
+        Route::post('/paiement/callback/{token}', [PayementController::class, 'handleCallback'])->name('util.paiement.callback');
 
         Route::namespace('App\Http\Controllers\Admin')
         ->prefix('admin')
@@ -332,6 +334,8 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
         Route::resource('wallets','WalletController');
+        Route::get('wallet/enable','WalletController@enable')->name('wallet.enable');
+        Route::get('wallet/disable','WalletController@disable')->name('wallet.disable');
 
         Route::resource('cooperatives','CooperativeController');
         Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
