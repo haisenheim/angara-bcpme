@@ -69,4 +69,37 @@ class Paiement extends Model
     {
         return $this->belongsTo('App\Models\User');
     }
+
+    public function getStatusAttribute()
+    {
+        if($this->caisse_id){
+            return [
+                'name'=>'validé',
+                'class'=>'badge bg-success',
+                'code'=>1
+            ];
+        }else{
+            $data = [
+                'name'=>'en attente',
+                'class'=>'badge bg-warning',
+                'code'=>0
+            ];
+            if($this->accepted_at){
+                $data = [
+                    'name'=>'validé',
+                    'class'=>'badge bg-success',
+                    'code'=>1
+                ];
+            }
+            if($this->rejected_at){
+                $data = [
+                    'name'=>'rejeté',
+                    'class'=>'badge bg-danger',
+                    'code'=>-1
+                ];
+            }
+            return $data;
+        }
+
+    }
 }

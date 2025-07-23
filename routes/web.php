@@ -97,7 +97,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             return redirect(route('login'));
         });
 
-        Route::post('/paiement/callback/{token}', [PayementController::class, 'handleCallback'])->name('util.paiement.callback');
+        Route::get('/payment/callback/{token}', [PayementController::class, 'handleCallback'])->name('util.paiement.callback');
 
         Route::namespace('App\Http\Controllers\Admin')
         ->prefix('admin')

@@ -74,8 +74,8 @@
                         <th>MONTANT</th>
                         <th>CAISSE</th>
                         <th>WALLET</th>
-                        <th>NUMERO CIBLE</th>
-                        <th></th>
+                        <th>COMPTE CIBLE</th>
+                        <th>STATUT</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,8 +86,10 @@
                             <td>{{ number_format($p->montant,0,',','.') }}</td>
                             <td>{{ $p->caisse?->name }}</td>
                             <td>{{ $p->wallet?->name }}</td>
-                            <td>{{$p->phone}}</td>
-                            <td></td>
+                            <td>{{$p->compte}}</td>
+                            <td>
+                                <span class="badge {{ $p->status['class']}}">{{ $p->status['name'] }}</span>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

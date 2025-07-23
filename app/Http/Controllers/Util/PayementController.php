@@ -17,23 +17,21 @@ class PayementController extends Controller
        /* if (!$this->isValidSignature($data)) {
             return response()->json(['error' => 'Invalid signature'], 403);
         } */
+       //dd($data);
         $tenant = Tenant::where('token', $token)->firstOrFail();
         $tenant->run(function() use ($data) {
             $payment = Paiement::where('token', $data['reference'])->firstOrFail();
-            if ($data['status'] !== 'ACCEPTED') {
-                // Gérer le cas d'échec du paiement
-                //return response()->json(['error' => 'Payment failed'], 400);
+            if ($data['status'] == 'ACCEPTED') {
                 $payment->accepted_at = new \DateTime();
             }
             if ($data['status'] === 'REJECTED') {
                 $payment->rejected_at = new \DateTime();
             }
             $payment->save();
-            // Logique de traitement du paiement
-            // Par exemple, vous pouvez mettre à jour le statut du paiement dans la base de données
         });
+
         tenancy()->initialize($tenant);
-       
+
 
         //event(new PaymentCompleted($payment));
 

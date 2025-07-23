@@ -15,6 +15,7 @@ use App\Models\Structuration\Membre;
 use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Wallet;
 use App\Models\User;
+use App\Services\PaymentService;
 use Faker\Provider\ar_EG\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -123,6 +124,7 @@ class EntreeController extends ExtendedController
             'mode_paiement_id'=>$request->mode_paiement_id,
             'user_id'=>auth()->user()->id,
             'saison_id'=>$this->_saison->id,
+            'token'=>sha1(time().auth()->user()->id),
         ];
         if($request->wallet_id){
             $wallet = Wallet::find(request()->wallet_id);
@@ -132,7 +134,9 @@ class EntreeController extends ExtendedController
             if($wallet->montant>=0){
                 $wallet->save();
                 $paiement = Paiement::create($data);
-                ProcessPaymentJob::dispatch($paiement,tenant());
+                //ProcessPaymentJob::dispatch($paiement,tenant());
+                $ps = new PaymentService(tenant());
+                $ps->processPayment($paiement);
             }else{
                 Session::flash('error','Solde du wallet insuffisant pour effectuer ce paiement!');
                 return back();

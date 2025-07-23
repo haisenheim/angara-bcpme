@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Structuration\Paiement;
 use App\Models\Tenant;
+use App\Services\PaymentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,7 +33,12 @@ class ProcessPaymentJob implements ShouldQueue
         $this->tenant = $tenant;  // Récupère le tenant courant
     }
 
-    public function handle()
+    public function handle(){
+        $ps = new PaymentService($this->tenant);
+        $ps->processPayment($this->payment);
+    }
+
+    public function handle__()
     {
         tenancy()->initialize($this->tenant->getTenantKey());
 
@@ -44,11 +50,7 @@ class ProcessPaymentJob implements ShouldQueue
         "reason"=> "Paiement pour le service X",
         "x-intent"=>"transfer"
         ];
-        Http::withBasicAuth(
-            [
-                'username' => $this->tenant->api_key,
-                'password' => $this->tenant->api_secret
-            ])->withHeaders(
+        Http::withBasicAuth($this->tenant->api_key,$this->tenant->api_secret)->withHeaders(
             [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json'
