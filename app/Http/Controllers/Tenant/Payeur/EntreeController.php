@@ -129,7 +129,7 @@ class EntreeController extends ExtendedController
         if($request->wallet_id){
             $wallet = Wallet::find(request()->wallet_id);
             $data['wallet_id'] = $request->wallet_id;
-            $data['phone'] = $request->phone;
+            $data['compte'] = $request->compte;
             $wallet->montant = $wallet->montant - request()->montant;
             if($wallet->montant>=0){
                 $wallet->save();

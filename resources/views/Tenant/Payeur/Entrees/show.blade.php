@@ -74,7 +74,7 @@
                         <th>MONTANT</th>
                         <th>CAISSE</th>
                         <th>WALLET</th>
-                        <th>NUMERO CIBLE</th>
+                        <th>COMPTE CIBLE</th>
                         <th>STATUT</th>
                     </tr>
                 </thead>
@@ -140,7 +140,7 @@
                                 </select>
                             </div>
                             <div class="mt-3">
-                                <label for="">NUMERO TELEPHONE CIBLE</label>
+                                <label for="">COMPTE</label>
                                 <input disabled required type="text" id="phone" name="phone" class="form-control">
                             </div>
                             <div class="mt-3">
