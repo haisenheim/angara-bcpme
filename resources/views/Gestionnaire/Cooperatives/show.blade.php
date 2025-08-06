@@ -310,7 +310,7 @@
                                     <th>MONTANT</th>
                                     <th>MODE DE PAIEMENT</th>
                                     <th>SOURCE</th>
-                                    <th>CIBLE</th>
+                                    <th>COMPTE CIBLE</th>
                                     <th>BENEFICIARE</th>
                                     <th>PAYEUR</th>
                                     <th>STOCK</th>
@@ -329,7 +329,7 @@
                                     @else
                                     <td>-</td>
                                     @endif
-                                    <td>{{$p->phone}}</td>
+                                    <td>{{$p->compte}}</td>
                                     <td>{{$p->exploitant?->name}}</td>
                                     <td>{{$p->user?$p->user->name:'-'}}</td>
                                     <td><a class="link-danger btn-link" href="{{ route('gestionnaire.cooperative.entrees.show',$p->entree->token) }}">{{$p->entree->name}}</a></td>
@@ -540,6 +540,7 @@
                             <div class="col-md-4 mt-3">
                                 <label for="">CLE SECRETE</label>
                                 <input required type="password" name="api_secret" placeholder="Saisir la cle secrete" class="form-control">
+                            </div>
                         </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
@@ -615,47 +616,48 @@
     </div>
 
         <div class="modal fade" id="compteModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Associer un compte bancaire</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('gestionnaire.cooperative.comptes.add') }}" method="post">
-                        @csrf
-                        <div class="">
-                            <input type="hidden" name="tenant_id" value="{{$item->id}}" name="token">
-
-                            <div class="mt-3">
-                                <label for="">BANQUE</label>
-                                <select required name="banque_id" id="banque_id" class="form-control">
-                                    <option >Selectionner une banque ...</option>
-                                    @foreach($banques as $mbr)
-                                        <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="mt-3">
-                                <label for="">NUMERO DE COMPTE</label>
-                                <input required type="text" name="name" placeholder="Numero de compte" class="form-control">
-                            </div>
-                            <div class="mt-3">
-                                <label for="">Solde initial</label>
-                                <input required type="number" name="montant" placeholder="Solde initial" class="form-control">
-                            </div>
-                            <div class="mt-4">
-                                <button type="submit" class="btn-success btn btn-sm p-1">ENREGISTRER</button>
-                            </div>
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header justify-content-between">
+                        <h5 class="modal-title">Associer un compte bancaire</h5>
+                        <div style="float: right">
+                            <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
                         </div>
+                    </div>
+                    <div class="modal-body">
+                        <form action="{{ route('gestionnaire.cooperative.comptes.add') }}" method="post">
+                            @csrf
+                            <div class="">
+                                <input type="hidden" name="tenant_id" value="{{$item->id}}" name="token">
 
-                    </form>
+                                <div class="mt-3">
+                                    <label for="">BANQUE</label>
+                                    <select required name="banque_id" id="banque_id" class="form-control">
+                                        <option >Selectionner une banque ...</option>
+                                        @foreach($banques as $mbr)
+                                            <option value="{{ $mbr->id }}">{{ $mbr->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">NUMERO DE COMPTE</label>
+                                    <input required type="text" name="name" placeholder="Numero de compte" class="form-control">
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">Solde initial</label>
+                                    <input required type="number" name="montant" placeholder="Solde initial" class="form-control">
+                                </div>
+                                <div class="mt-4">
+                                    <button type="submit" class="btn-success btn btn-sm p-1">ENREGISTRER</button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
 
     <div class="modal fade" id="exportEntreesModal">
         <div class="modal-dialog">

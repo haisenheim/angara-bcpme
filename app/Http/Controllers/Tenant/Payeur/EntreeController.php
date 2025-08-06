@@ -19,6 +19,7 @@ use App\Services\PaymentService;
 use Faker\Provider\ar_EG\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EntreeController extends ExtendedController
 {
@@ -125,6 +126,7 @@ class EntreeController extends ExtendedController
             'user_id'=>auth()->user()->id,
             'saison_id'=>$this->_saison->id,
             'token'=>sha1(time().auth()->user()->id),
+            'name'=>str_pad($item->id.date('ymdhi').auth()->user()->id,'0',STR_PAD_LEFT),
         ];
         if($request->wallet_id){
             $wallet = Wallet::find(request()->wallet_id);
@@ -148,7 +150,11 @@ class EntreeController extends ExtendedController
                 $caisse->montant = $caisse->montant - request()->montant;
                 if($caisse->montant>=0){
                     $caisse->save();
-                    Paiement::create($data);
+                    $paiement = Paiement::create($data);
+                    $duplicata = 0;
+                    $tenant = tenant();
+                    $pdf = Pdf::loadView('Tenant.Pdf.recu', compact('paiement','tenant','duplicata'));
+                    return $pdf->stream('recu-paiement-'.$paiement->token.'.pdf');
                 }else{
                     Session::flash('error','Solde de la caisse insuffisant pour effectuer ce paiement!');
                     return back();
