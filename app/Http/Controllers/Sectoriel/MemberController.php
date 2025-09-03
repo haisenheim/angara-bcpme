@@ -141,7 +141,7 @@ class MemberController extends ExtendedController
         return back();
     }
 
-        public function addVisiteCampagne(Request $request){
+    public function addVisiteCampagne(Request $request){
         $data = request()->except('tenant_id');
         $tenant_id = request()->tenant_id;
         $tenant = Tenant::where('token',$tenant_id)->first();
