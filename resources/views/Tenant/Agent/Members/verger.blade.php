@@ -227,7 +227,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('sectoriel.verger.campagne.add') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('agent.verger.campagne.add') }}" method="post">
                         @csrf
                         <input type="hidden" name="verger_id" value="{{ $item->id }}">
                         <div class="mt-3">
@@ -270,7 +270,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('sectoriel.campagne.rendement') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('agent.campagne.rendement') }}" method="post">
                         @csrf
                         <input type="hidden" class="campagne_id" name="campagne_id" value="0">
 
@@ -297,7 +297,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('sectoriel.campagne.visite.add') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('agent.campagne.visite.add') }}" method="post">
                         @csrf
                         <input type="hidden" class="campagne_id" name="campagne_id" value="0">
                         <div class="">
@@ -339,7 +339,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('sectoriel.campagne.travail.add') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('agent.campagne.travail.add') }}" method="post">
                         @csrf
                         <input type="hidden" class="campagne_id" name="campagne_id" value="0">
                         <div class="">
@@ -389,7 +389,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('sectoriel.campagne.traitement.add') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('agent.campagne.traitement.add') }}" method="post">
                         @csrf
                         <input type="hidden" class="campagne_id" name="campagne_id" value="0">
                         <div class="">
