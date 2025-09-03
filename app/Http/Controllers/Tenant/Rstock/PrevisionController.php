@@ -122,7 +122,7 @@ class PrevisionController extends ExtendedController
         $data['agent_id'] = $item->agent_id;
         $data['exploitant_id'] = $item->membre_id;
         $data['name'] = str_pad($coop->id.date('ymdhi').$data['exploitant_id'],'0',STR_PAD_LEFT);
-        $data['montant'] = $item->pu * $data['quantity'];
+        $data['montant'] = $data['pu'] * $data['quantity'];
         Entree::create($data);
         $stock = EntrepotGamme::where('entrepot_id',$data['entrepot_id'])->where('gamme_id',$data['gamme_id'])->first();
         if(!$stock){
