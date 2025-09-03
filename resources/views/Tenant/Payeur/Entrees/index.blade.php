@@ -10,17 +10,7 @@
     </ol>
  </nav>
 @endsection
-@section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-    Actions
-    <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
-        <li><a class="dropdown-item"  href="{{ route('payeur.entrees.create') }}">Faire une entrée en stock</a></li>
-    </ul>
-</div>
-@endsection
+
 
 @section('page-header')
     <div>

@@ -49,6 +49,7 @@
                         { field: "montant",headerName:'Montant total' },
                         {field:"versements"},
                         {field:"reste"},
+                        {field:"mode",headerName:'Mode de paiement'},
                         { field: "token",hide:true},
             ];
 

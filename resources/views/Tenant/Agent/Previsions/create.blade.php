@@ -47,6 +47,14 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="w-20">
+                        <label>MODE DE PAIEMENT</label>
+                        <select required name="mode" class="form-control">
+                            <option value="">Mode de paiement...</option>
+                            <option value="ESPECES">ESPECES</option>
+                            <option value="DIGITAL">DIGITAL</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="d-flex gap-2 mt-4">

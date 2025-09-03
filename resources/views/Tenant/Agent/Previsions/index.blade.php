@@ -47,6 +47,7 @@
                         { field: "producteur" },
                         { field: "pu" ,headerName:'Prix unitaire'},
                         { field: "montant",headerName:'Montant total' },
+                        { field: "mode" ,headerName:'Mode de paiement' },
                         { field: "token",hide:true},
             ];
 

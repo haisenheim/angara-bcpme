@@ -29,6 +29,7 @@ class EntreeResource extends JsonResource
             'quantity'=>$this->quantity,
             'versements'=>number_format($this->versements,0,',','.'),
             'reste'=>number_format($this->reste,0,',','.'),
+            'mode'=>$this->mode,
         ];
     }
 }

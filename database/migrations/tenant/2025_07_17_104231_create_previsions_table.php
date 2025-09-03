@@ -24,6 +24,7 @@ return new class extends Migration
             $table->date('day')->nullable();
             $table->double('pu', null, 0)->default(0);
             $table->double('montant', null, 0)->nullable()->default(0);
+            $table->string('mode', 20)->nullable()->default('ESPECES');
             $table->integer('user_id')->default(0);
             $table->integer('saison_id')->default(0);
             $table->dateTime('validated_at')->nullable();
