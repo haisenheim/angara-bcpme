@@ -216,6 +216,7 @@ class MemberController extends ExtendedController
 
     public function addVerger(Request $request){
 
+    $data = $request->except('photo');
     $tenant = tenant();
     $data['user_id'] = auth()->user()->id;
     $photo = $request->photo;
