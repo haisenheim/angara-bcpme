@@ -181,12 +181,7 @@
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">Paiements</h6>
     <ul class="mainnav__menu nav flex-column">
 
-    
-       <li class="nav-item">
-            <a href="{{ route('payeur.requests.index') }}" class="nav-link mininav-toggle {{ $active==7?'active':'' }}"><i class="pli-coins-3 fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Tous les appels de fonds</span>
-            </a>
-        </li>
+
         <li class="nav-item">
             <a href="{{ route('payeur.my.wallets') }}" class="nav-link mininav-toggle {{ $active==8?'active':'' }}"><i class="pli-wallet fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Mes Wallets</span>
@@ -197,21 +192,10 @@
                 <span class="nav-label mininav-content ms-1">Mes Caisses</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="{{ route('payeur.recharges') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-calculator fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Recharges wallets agents</span>
-            </a>
-        </li>
 
         <li class="nav-item">
             <a href="#" class="nav-link mininav-toggle {{ $active==12?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a href="{{ route('payeur.wallets.index') }}" class="nav-link mininav-toggle {{ $active==11?'active':'' }}"><i class="pli-wallet-2 fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Wallets des agents</span>
             </a>
         </li>
 
@@ -230,12 +214,6 @@
         <li class="nav-item">
             <a href="{{ route('payeur.agents.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-worker fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Agents de terrain</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a href="{{ route('payeur.entrepots.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-server fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Entrepots</span>
             </a>
         </li>
 
