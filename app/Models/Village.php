@@ -10,4 +10,8 @@ class Village extends Model
     use HasFactory;
     protected $connection = 'central_app_mysql';
     protected $guarded = [];
+
+    public function arrondissement(){
+        return $this->belongsTo(Arrondissement::class);
+    }
 }
