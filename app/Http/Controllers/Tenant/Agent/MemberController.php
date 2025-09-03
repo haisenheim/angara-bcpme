@@ -142,25 +142,22 @@ class MemberController extends ExtendedController
         $tenant_id = request()->tenant_id;
         $tenant = Tenant::where('token',$tenant_id)->first();
         $data['user_id'] = auth()->user()->id;
-        $tenant->run(function()use($data,){
-            $verger = Verger::find($data['verger_id']);
-            $item = new Campagne();
-            $item->ombrage = $data['ombrage'];
-            $item->observations = $data['observations'];
-            $item->etat = $data['etat'];
-            $item->morts = $data['morts'];
-            $item->replantations = $data['replantations'];
-            $item->membre_id = $verger->membre_id;
-            $item->saison_id = $this->_saison->id;
-            $item->token = sha1(time());
-            $item->user_id = $data['user_id'];
-            $item->verger_id = $data['verger_id'];
+        $verger = Verger::find($data['verger_id']);
+        $item = new Campagne();
+        $item->ombrage = $data['ombrage'];
+        $item->observations = $data['observations'];
+        $item->etat = $data['etat'];
+        $item->morts = $data['morts'];
+        $item->replantations = $data['replantations'];
+        $item->membre_id = $verger->membre_id;
+        $item->saison_id = $this->_saison->id;
+        $item->token = sha1(time());
+        $item->user_id = $data['user_id'];
+        $item->verger_id = $data['verger_id'];
 
-            $item->save();
-        });
-    tenancy()->initialize($tenant);
-    Session::flash('success','Enregistrement effectue avec succes');
-    return back();
+        $item->save();
+        Session::flash('success','Enregistrement effectue avec succes');
+        return back();
 
     }
 
