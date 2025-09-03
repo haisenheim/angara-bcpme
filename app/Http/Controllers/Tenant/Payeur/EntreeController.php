@@ -105,8 +105,8 @@ class EntreeController extends ExtendedController
 	public function show($token)
 	{
         $item = Entree::where('token',$token)->first();
-        $caisses = Caisse::where('active',1)->get();
-        $wallets = Wallet::where('active',1)->get();
+        $caisses = Caisse::where('active',1)->where('entrepot_id',auth()->user()->entrepot_id)->get();
+        $wallets = Wallet::where('active',1)->where('entrepot_id',auth()->user()->entrepot_id)->get();
         //dd($wallets);
         return view('Tenant/Payeur.Entrees.show',compact('item','caisses','wallets'));
 	}
