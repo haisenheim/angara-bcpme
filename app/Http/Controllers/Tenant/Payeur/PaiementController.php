@@ -17,8 +17,8 @@ class PaiementController extends Controller
     public function index()
     {
         //
-        $items = Paiement::orderBy('created_at','DESC')->where('cooperative_id',auth()->user()->cooperative_id)->get();
-        return view('/Cooperative/Paiements/index')->with(compact('items'));
+        $items = Paiement::orderBy('created_at','DESC')->where('user_id',auth()->user()->id)->get();
+        return view('Tenant/Payeur/Paiements/index')->with(compact('items'));
     }
 
 

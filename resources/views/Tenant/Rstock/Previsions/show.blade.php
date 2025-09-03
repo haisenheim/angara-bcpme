@@ -122,7 +122,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div>
+                            <div class="mt-3">
                                 <label for="">PRIX UNITAIRE/KG</label>
                                 <input type="number" name="pu" class="form-control" value="{{ $item->pu }}">
                             </div>

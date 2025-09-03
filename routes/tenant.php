@@ -172,6 +172,7 @@ Route::middleware([
         Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
         Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
         Route::get('paiements','EntreeController@getPaiements')->name('paiements');
+        Route::resource('reglements','PaiementController');
 
         Route::resource('sorties','SortieController');
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');
