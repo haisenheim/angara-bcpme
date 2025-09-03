@@ -56,6 +56,7 @@
                             <p><span>Date de collecte :</span><span class="fw-bold"> {{ $item->created_at->format('d/m/Y') }}</span></p>
                             <p><span>Quantite :</span><span class="fw-bold"> {{ $item->quantity }} Kg</span></p>
                             <p><span>Prix unitaire :</span><span class="fw-bold"> {{ $item->pu }}</span></p>
+                             <p><span>Gamme :</span><span class="fw-bold"> {{ $item->gamme?->name }}</span></p>
                             <p><span>Total :</span><span class="fw-bold"> {{ number_format($item->montant,0,',','.') }}</span></p>
                             <p><span>Entrepot :</span><span class="fw-bold"> {{ $item->entrepot?->name }} </span></p>
                         </div>

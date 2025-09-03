@@ -11,6 +11,7 @@ class Departement extends Model
 
     protected $guarded = [];
     public $timestamps = false;
+    protected $connection = 'central_app_mysql';
 
     public function agences(){
         return $this->hasMany('App\Models\Agence');

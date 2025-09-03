@@ -18,7 +18,7 @@
         <span class="vr"></span>
         </button>
         <ul class="dropdown-menu analyse">
-            <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addModal" href="#">Ajouter un identifiant externe</a></li>
+            <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addVergerModal" href="#">Declarer un verger</a></li>
         </ul>
     </div>
 @endsection
@@ -97,67 +97,114 @@
        </div>
        <div class="flex-fill">
             <div class="">
+                <!-- Tabview for Production and Versements -->
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="card-title border-bottom pb-2"> <i class="pli-pie-chart-3 fs-3"></i>  PRODUCTION DE LA SAISON</h6>
-                        <table class="table table-sm table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>DATE</th>
-                                    <th>GAMME</th>
-                                    <th>QUANTITE</th>
-                                    <th>PRIX UNITAIRE</th>
-                                    <th>MONTANT</th>
-                                    <th>VERSEMENT</th>
-                                    <th>RESTE</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($item->stocks as $part)
-                                    <tr>
-                                        <td>{{ $part->created_at->format('d/m/Y') }}</td>
-                                        <td>{{ $part->gamme->name }}</td>
-                                        <td>{{ number_format($part->quantity) }}kg</td>
-                                        <td>{{ number_format($part->pu,0,',','.') }}</td>
-                                        <td>{{ number_format($part->montant,0,',','.') }}</td>
-                                        <td>{{ number_format($part->versements,0,',','.') }}</td>
-                                        <td>{{ number_format($part->reste,0,',','.') }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="card-footer">
-                        <h6 class="border-bottom pb-1">Details des versements</h6>
-                        <table class="table table-sm table-bordered table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>DATE</th>
-                                    <th>MODE PAIEMENT</th>
-                                    <th>MONTANT</th>
-                                    <th>CAISSE</th>
-                                    <th>WALLET</th>
-                                    <th>NUMERO CIBLE</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($item->paiements->reverse() as $pp)
-                                    <tr>
-                                        <td>{{ $pp->created_at->format('d/m/Y H:i') }}</td>
-                                        <td>{{ $pp->mode?->name }}</td>
-                                        <th>{{ number_format($pp->montant,0,',','.') }} FCFA</th>
-                                        <td>{{ $pp->caisse?->name }}</td>
-                                        <td>{{ $pp->wallet?->name }}</td>
-                                        <td>{{ $pp->phone }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        <ul class="nav nav-tabs mb-3" id="prodTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="prod-tab" data-bs-toggle="tab" data-bs-target="#prod" type="button" role="tab" aria-controls="prod" aria-selected="true">
+                                    <i class="pli-pie-chart-3 fs-3"></i> PRODUCTION DE LA SAISON
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="versement-tab" data-bs-toggle="tab" data-bs-target="#versement" type="button" role="tab" aria-controls="versement" aria-selected="false">
+                                    <i class="pli-wallet-2 fs-3"></i> DETAILS DES VERSEMENTS
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="vergers-tab" data-bs-toggle="tab" data-bs-target="#vergers" type="button" role="tab" aria-controls="vergers" aria-selected="false">
+                                    <i class="pli-leaf fs-3"></i> VERGERS
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="prodTabContent">
+                            <div class="tab-pane fade show active" id="prod" role="tabpanel" aria-labelledby="prod-tab">
+                                <table class="table table-sm table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>DATE</th>
+                                            <th>GAMME</th>
+                                            <th>QUANTITE</th>
+                                            <th>PRIX UNITAIRE</th>
+                                            <th>MONTANT</th>
+                                            <th>VERSEMENT</th>
+                                            <th>RESTE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($item->stocks as $part)
+                                            <tr>
+                                                <td>{{ $part->created_at->format('d/m/Y') }}</td>
+                                                <td>{{ $part->gamme->name }}</td>
+                                                <td>{{ number_format($part->quantity) }}kg</td>
+                                                <td>{{ number_format($part->pu,0,',','.') }}</td>
+                                                <td>{{ number_format($part->montant,0,',','.') }}</td>
+                                                <td>{{ number_format($part->versements,0,',','.') }}</td>
+                                                <td>{{ number_format($part->reste,0,',','.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="tab-pane fade" id="versement" role="tabpanel" aria-labelledby="versement-tab">
+                                <table class="table table-sm table-bordered table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>DATE</th>
+                                            <th>MODE PAIEMENT</th>
+                                            <th>MONTANT</th>
+                                            <th>CAISSE</th>
+                                            <th>WALLET</th>
+                                            <th>NUMERO CIBLE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($item->paiements->reverse() as $pp)
+                                            <tr>
+                                                <td>{{ $pp->created_at->format('d/m/Y H:i') }}</td>
+                                                <td>{{ $pp->mode?->name }}</td>
+                                                <th>{{ number_format($pp->montant,0,',','.') }} FCFA</th>
+                                                <td>{{ $pp->caisse?->name }}</td>
+                                                <td>{{ $pp->wallet?->name }}</td>
+                                                <td>{{ $pp->phone }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="tab-pane fade" id="vergers" role="tabpanel" aria-labelledby="vergers-tab">
+                                <table class="table table-bordered table-striped table-hover">
+                                    <thead>
+                                        <tr class="border-bottom border-3 border-black">
+                                            <th>LIBELLE</th>
+                                            <th>SUPERFICIE</th>
+                                            <th>ANNEE DE CULTURE / AGE</th>
+                                            <th>NOMBRE DE PIEDS/HA</th>
+                                            <th>VILLAGE</th>
+                                            <th>TYPE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($item->vergers as $vg)
+                                            <tr>
+                                                <td><a class="btn-link text-danger fw-bold" href="{{ route('agent.members.verger.show',["token"=>$vg->token]) }}">{{$vg->name}}</a></td>
+                                                <td>{{ $vg->size}}</td>
+                                                <td>{{ $vg->annee }} / {{ $vg->age }}an(s)</td>
+                                                <td>{{ $vg->nbph }}</td>
+                                                <td>{{ $vg->village?->name}}</td>
+                                                <td>-</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div
+                        </div>
                     </div>
                 </div>
-            </div>
        </div>
     </div>
+
+
 
     <div class="modal fade" id="addModal">
         <div class="modal-dialog">
@@ -190,6 +237,67 @@
                                 </div>
                             </div>
                         <div class="mt-2">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="modal fade" id="addVergerModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouveau champ</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('agent.members.verger.add') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="member_id" value="{{ $item->id }}">
+                            <div class="">
+                                <div class="mt-3">
+                                    <label for="">LIBELLE</label>
+                                    <input type="text" required class="form-control" name="name" placeholder="Exemple: Champ angara 1">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">SUPERFICIE EN ha</label>
+                                    <input type="text" required class="form-control" name="size" placeholder="Exemple: 1.5">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">ANNEE DE CULTURE</label>
+                                    <input type="number" required class="form-control" name="annee" placeholder="Exemple: 2006">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">NOMBRE DE PIEDS / ha</label>
+                                    <input type="text" required class="form-control" name="nbph" placeholder="Exemple: 920">
+                                </div>
+
+                                <div class="mt-3">
+                                    <label for="">VILLAGE</label>
+                                    <select required  name="village_id" class="form-control cmp">
+                                        <option>Selectionner un village  ...</option>
+                                        @foreach($villages as $it)
+                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">LOCALISATION GPS</label>
+                                    <input type="text" required class="form-control" name="localisation" >
+                                </div>
+                                <div class="mt-3">
+                                    <label for="">PHOTO</label>
+                                    <input type="file" name="photo" class="form-control">
+                                </div>
+                            </div>
+                        <div class="mt-5 d-grid">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
                         </div>
                     </form>

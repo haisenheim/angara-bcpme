@@ -4,14 +4,9 @@ namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\Structuration\CampagneResource;
-use App\Models\Niveau;
 use App\Models\Structuration\Campagne;
-use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
-use App\Models\Structuration\Exploitant;
-use App\Models\Structuration\ExploitantPlateforme;
 use App\Models\Structuration\Membre;
-use App\Models\Structuration\Plateforme;
 use App\Models\Structuration\ProduitPhytoSanitaire;
 use App\Models\Structuration\TypeTravailVerger;
 use App\Models\Structuration\Verger;
@@ -85,7 +80,7 @@ class MemberController extends ExtendedController
 		return view('Gestionnaire/Cooperatives/member')->with(compact('item','parts','villages','tenant_id'));
 	}
 
-        public function getVerger()
+    public function getVerger()
 	{
         $token=request()->token;
         $tenant_id = request()->tenant_id;

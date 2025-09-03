@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Sectoriel;
 
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\Structuration\CampagneResource;
+use App\Models\Instruction\Scoring\Individual\Dossier;
 use App\Models\Niveau;
 use App\Models\Structuration\Campagne;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
-use App\Models\Structuration\Exploitant;
-use App\Models\Structuration\ExploitantPlateforme;
 use App\Models\Structuration\Membre;
-use App\Models\Structuration\Plateforme;
 use App\Models\Structuration\ProduitPhytoSanitaire;
 use App\Models\Structuration\TraitementVerger;
 use App\Models\Structuration\TravailVerger;
@@ -217,7 +215,7 @@ class MemberController extends ExtendedController
         $tenant = Tenant::where('token',$tenant_id)->first();
         $data['user_id'] = auth()->user()->id;
         $photo = $request->photo;
-        $tenant->run(function()use($data,$photo){
+        $verger = $tenant->run(function()use($data,$photo){
             $village = Village::find($data['village_id']);
             $item = new Verger();
             $item->name = $data['name'];
@@ -235,8 +233,26 @@ class MemberController extends ExtendedController
                 $item->photo_uri = $this->entityImgCreate($photo,'vergers',$item->token);
             }
             $item->save();
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'producteur' => $item->membre?->name,
+                'cooperative_id' => $item->cooperative_id,
+            ];
         });
     tenancy()->initialize($tenant);
+
+    $dossier = Dossier::create([
+        'name' => $data['name']. ' - ' . $verger['producteur'],
+        'promoteur' => $verger['producteur'],
+        'superficie_ha' => $data['size'],
+        'producteur_id' => $data['member_id'],
+        'cooperative_id' => $tenant->id,
+        'localisation' => $data['localisation'],
+        'annee' => $data['annee'],
+        'exploitation_id' => $verger['id'],
+        'token' => sha1(time()),
+    ]);
 
     return back();
 

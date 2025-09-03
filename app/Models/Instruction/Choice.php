@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Choice extends Model
 {
     use HasFactory;
-    protected $guarded = [];
+    protected $guarded = [];// Specify the table name if different
 
 }

@@ -6,6 +6,10 @@ use App\Broadcasting\AngaraNotificationChannel;
 use Illuminate\Notifications\Channels\DatabaseChannel as IlluminateDatabaseChannel;
 use Illuminate\Support\ServiceProvider;
 
+use Illuminate\Support\Facades\Storage;
+use League\Flysystem\Filesystem;
+use Masbug\Flysystem\GoogleDriveAdapter;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
         //
 
         $this->app->instance(IlluminateDatabaseChannel::class, new AngaraNotificationChannel());
+
+        Storage::extend('google', function ($app, $config) {
+            $adapter = new GoogleDriveAdapter($config);
+            return new Filesystem($adapter);
+        });
     }
 }

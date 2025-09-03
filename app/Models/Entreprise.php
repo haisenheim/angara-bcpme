@@ -19,6 +19,10 @@ class Entreprise extends Model
         return $this->hasMany('App\Models\QuestionAnswer','entreprise_id');
     }
 
+    public function answers(){
+        return $this->hasMany('App\Models\Instruction\Scoring\Individual\DossierChoice','dossier_id');
+    }
+
     public function dossiers(){
         return $this->hasMany('App\Models\Dossier','entreprise_id');
     }

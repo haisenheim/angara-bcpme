@@ -18,7 +18,7 @@
        <span class="vr"></span>
     </button>
     <ul class="dropdown-menu">
-        <li><a class="dropdown-item" data-bs-target="#addVergerModal" data-bs-toggle="modal" href="#">Associer un champ</a></li>
+        
     </ul>
  </div>
 @endsection

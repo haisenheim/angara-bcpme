@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Models\Arrondissement;
+use App\Models\Departement;
+use App\Models\Instruction\Scoring\Individual\Choice;
+use App\Models\Instruction\Scoring\Individual\DossierChoice;
+use App\Models\Niveau;
+use App\Models\Region;
+use App\Models\Structuration\Membre;
+use App\Models\Village;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -26,6 +34,113 @@ Route::middleware([
     //dd(tenant('name'));
     Route::get('/', function () {
             return redirect(route('login'));
+    });
+
+    Route::get('/critere/choices',function(){
+        $critere_id = request()->query('id');
+        $choices = \App\Models\Instruction\Scoring\Individual\Choice::where('critere_id',$critere_id)->get();
+        return response()->json($choices->map(function ($choice) {
+                return [
+                    'id' => $choice->id,
+                    'name' => $choice->name,
+                ];
+            })
+        );
+    })->name('scoring.critere.choices');
+
+    Route::post('/critere/reponse',function(){
+        $data = request()->all();
+        //dd($data);
+        $dossier_id = request()->entreprise_id;
+        $choice_id = request()->choice_id;
+        $choice = Choice::find($choice_id);
+        //dd($choice);
+
+        DossierChoice::updateOrCreate(
+            [
+                'dossier_id' => $dossier_id,
+                'critere_id' => $choice->critere_id,
+            ],
+            [
+                'choice_id' => $choice_id,
+                'donnee_collectee'=>$choice->name,
+                'score'=>$choice->valeur,
+                'score_pondere'=>($choice->valeur * $choice->critere->poids)/100
+            ]
+        );
+
+        return redirect()->back();
+    })->name('scoring.critere.reponse');
+
+    Route::get('/producteur',function () {
+        $items = Membre::all();
+        $niveaux = Niveau::all();
+        $niveaux = $niveaux->map(function ($niveau) {
+            return [
+                'id' => $niveau->id,
+                'name' => $niveau->name,
+            ];
+        });
+        return response()->json([
+            'producteurs' => $items->map(function ($item) {
+                return [
+                'nom' => $item->last_name,
+                'prenom' => $item->first_name,
+                'email' => $item->email,
+                'telephone' => $item->phone,
+                'situation_matrimoniale' => $item->situation_matrimoniale,
+                'date_naissance' => $item->dtn,
+                'lieu_naissance' => $item->lieu,
+                'sexe' => $item->male?'Homme':'Femme',
+                'niveau_etude' => $item->niveau?->name,
+                'numero_cni'=> $item->cni,
+                'date_expiration_cni' => $item->dt_expiration_cni,
+                'numero_compte' => $item->compte,
+                'nombre_enfants' => $item->nb_enfants,
+                'arrondissement' => $item->arrondissement?->name,
+                'departement' => $item->departement?->name,
+                'region' => $item->region?->name,
+                'date_adhesion' => $item->date_adhesion,
+                'village' => $item->village?->name,
+            ];
+            }),
+            'niveaux'=> $niveaux,
+            'villages'=>Village::all()->map(function ($village) {
+                return [
+                    'id' => $village->id,
+                    'name' => $village->name,
+                ];
+            }),
+            'sexe' => [
+                'Homme' => 'Homme',
+                'Femme' => 'Femme',
+            ],
+            'arrondissements' => Arrondissement::all()->map(function ($arrondissement) {
+                return [
+                    'id' => $arrondissement->id,
+                    'name' => $arrondissement->name,
+                ];
+            }),
+            'departements' => Departement::all()->map(function ($dep) {
+                return [
+                    'id' => $dep->id,
+                    'name' => $dep->name,
+                ];
+            }),
+            'regions' => Region::all()->map(function ($reg) {
+                return [
+                    'id' => $reg->id,
+                    'name' => $reg->name,
+                ];
+            }),
+
+            'situations' => [
+                'celibataire' => 'Célibataire',
+                'marie' => 'Marié(e)',
+                'divorce' => 'Divorcé(e)',
+                'veuf' => 'Veuf(ve)',
+            ],
+        ]);
     });
 
     Route::post('/connect','App\Http\Controllers\Tenant\AuthController@login')->name('connect');
@@ -83,6 +198,17 @@ Route::middleware([
             Route::get('prevsion/data','PrevisionController@fetchAll')->name('previsions.all');
             Route::resource('entrepots','EntrepotController');
             Route::resource('villages','VillageController');
+
+           // Route::get('members','MemberController@show')->name('members.show');
+            Route::post('member/verger','MemberController@addVerger')->name('members.verger.add');
+            Route::get('member/verger','MemberController@getVerger')->name('members.verger.show');
+            Route::get('verger/grille/{token}','MemberController@editScoring')->name('verger.edit.scoring');
+
+            Route::post('member/verger/campagne','MemberController@addCampagneVerger')->name('verger.campagne.add');
+            Route::post('member/verger/travail','MemberController@addTravailCampagne')->name('campagne.travail.add');
+            Route::post('member/verger/traitement','MemberController@addTraitementCampagne')->name('campagne.traitement.add');
+            Route::post('member/verger/rendement','MemberController@setRendementCampagne')->name('campagne.rendement');
+            Route::post('member/verger/visite','MemberController@addVisiteCampagne')->name('campagne.visite.add');
     });
 
     Route::namespace('App\Http\Controllers\Tenant\Rstock')
