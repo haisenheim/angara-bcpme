@@ -238,12 +238,12 @@ class MemberController extends ExtendedController
     }
     $item->save();
     $data = [];
-    $data['producteur_id'] = $data['member_id'];
+    $data['producteur_id'] = $item->membre_id;
     $data['name'] = $item->name. ' - ' . $item->membre?->name;
     $data['cooperative_id'] = $tenant->id;
     $data['exploitation_id'] = $item->id;
     $data['token'] = sha1(time().rand(0,99));
-    $village = Village::find($data['village_id']);
+    //$village = Village::find($data['village_id']);
     $ar = $village->arrondissement;
     $data['departement_id'] = $ar->departement_id;
     $data['region_id'] = $ar->departement->region_id;
@@ -256,7 +256,7 @@ class MemberController extends ExtendedController
     $data['taille'] = 'TRES PETITE';
     $data['caractere'] = 'informel';
     $data['forme_id'] = 7;
-    $data['village_id'] = $data['village_id'];
+    $data['village_id'] = $item->village_id;
     $entreprise = Entreprise::create($data);
 
    /* $dossier = Dossier::create([
