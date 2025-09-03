@@ -252,7 +252,7 @@ class MemberController extends ExtendedController
     $data['representation_id'] = tenant()->representation_id;
     $data['individual'] = 1;
     $data['manager'] = $item->membre?->name;
-    $data['promoteur_name'] = $item->membre?->name;
+    //$data['promoteur_name'] = $item->membre?->name;
     $data['taille'] = 'TRES PETITE';
     $data['caractere'] = 'informel';
     $data['forme_id'] = 7;
