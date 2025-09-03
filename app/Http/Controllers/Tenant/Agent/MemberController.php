@@ -241,7 +241,7 @@ class MemberController extends ExtendedController
     $data['producteur_id'] = $item->membre_id;
     $data['name'] = $item->name. ' - ' . $item->membre?->name;
     $data['cooperative_id'] = $tenant->id;
-    $data['exploitation_id'] = $item->id;
+    $data['verger_id'] = $item->id;
     $data['token'] = sha1(time().rand(0,99));
     //$village = Village::find($data['village_id']);
     $ar = $village->arrondissement;
