@@ -168,7 +168,7 @@
                                                         @foreach($cmp['traitements'] as $trv)
                                                             <tr>
                                                                 <td>{{$trv['date']}}</td>
-                                                                <td>{{$trv['produit']}}</td>
+                                                                <td>{{$trv->produit?->name}}</td>
                                                                 <td>{{$trv['dosage']}}</td>
                                                                 <td class="fs-6">{{$trv['description']}}</td>
                                                             </tr>
