@@ -216,7 +216,11 @@
                 <span class="nav-label mininav-content ms-1">Mes Caisses</span>
             </a>
         </li>
-
+        <li class="nav-item">
+            <a href="{{ route('admin.recharges') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-calculator fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Recharges wallets agents</span>
+            </a>
+        </li>
 
         <li class="nav-item">
             <a href="#" class="nav-link mininav-toggle {{ $active==12?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
@@ -224,7 +228,11 @@
             </a>
         </li>
 
-
+        <li class="nav-item">
+            <a href="{{ route('admin.wallets.index') }}" class="nav-link mininav-toggle {{ $active==11?'active':'' }}"><i class="pli-wallet-2 fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Wallets des agents</span>
+            </a>
+        </li>
 
     </ul>
 </div>
@@ -240,7 +248,7 @@
 
         <li class="nav-item">
             <a href="{{ route('admin.agents.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-worker fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Producteurs relais</span>
+                <span class="nav-label mininav-content ms-1">Agents de terrain</span>
             </a>
         </li>
 
