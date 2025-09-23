@@ -216,10 +216,10 @@
                 <span class="nav-label mininav-content ms-1">Mes Caisses</span>
             </a>
         </li>
-        
+
 
         <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==18?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
+            <a href="{{ route('admin.paiements.index') }}" class="nav-link mininav-toggle {{ $active==18?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
             </a>
         </li>

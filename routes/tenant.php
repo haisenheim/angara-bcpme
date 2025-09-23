@@ -167,6 +167,7 @@ Route::middleware([
         Route::resource('mouvements','MouvementController');
         Route::resource('requests','RequestController');
         Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
+        Route::resource('paiements','PaiementController');
 
         Route::resource('entrees','EntreeController');
         Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
