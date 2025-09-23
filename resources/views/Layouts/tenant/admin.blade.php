@@ -216,7 +216,7 @@
                 <span class="nav-label mininav-content ms-1">Mes Caisses</span>
             </a>
         </li>
-
+        
 
         <li class="nav-item">
             <a href="#" class="nav-link mininav-toggle {{ $active==18?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
