@@ -53,8 +53,8 @@ return [
          * Tenant database names are created like this:
          * prefix + tenant_id + suffix.
          */
-        'prefix' => 'angara_',
-        'suffix' => '_db',
+        'prefix' => env('TENANCY_PREFIX','angara_'),
+        'suffix' => env('TENANCY_SUFFIX','_db'),
 
         /**
          * TenantDatabaseManagers are classes that handle the creation & deletion of tenant databases.
