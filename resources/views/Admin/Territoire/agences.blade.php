@@ -43,10 +43,10 @@
                                     Actions
                                     <span class="vr"></span>
                                 </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('admin.agences.show',$item->id) }}"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a></li>
+                                </ul>
                             </div>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('admin.agences.show',$item->id) }}"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a></li>
-                            </ul>
                         </td>
                     </tr>
                 @endforeach
