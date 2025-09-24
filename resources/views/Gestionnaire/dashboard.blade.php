@@ -221,7 +221,9 @@
         // Chart.js configuration
         Chart.defaults.font.family = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
         Chart.defaults.color = '#858796';
-
+        @php
+            $dossiers = \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->get();
+        @endphp
         // Dossiers Status Pie Chart
         const ctx1 = document.getElementById("dossiersStatusChart").getContext('2d');
         const dossiersStatusChart = new Chart(ctx1, {
@@ -230,10 +232,18 @@
                 labels: ['En cours', 'En attente', 'Terminés', 'Rejetés'],
                 datasets: [{
                     data: [
-                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'en_cours')->count() }},
-                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'en_attente')->count() }},
-                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'termine')->count() }},
-                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'rejete')->count() }}
+                        $dossiers->filter(function($dossier){
+                            return $dossier->status['code'] == 1;
+                        })->count(),
+                        $dossiers->filter(function($dossier){
+                            return $dossier->status['code'] == 0;
+                        })->count(),
+                        $dossiers->filter(function($dossier){
+                            return $dossier->status['code'] == 2;
+                        })->count(),
+                        $dossiers->filter(function($dossier){
+                            return $dossier->status['code'] == 3;
+                        })->count(),
                     ],
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b'],
                     hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#e02d1b'],

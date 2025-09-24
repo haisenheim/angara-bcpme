@@ -63,6 +63,24 @@ class Dossier extends Model
         }
     }
 
+    public function getStatusAttribute()
+    {
+        $indicateurs = $this->indicateurs;
+        $reponses = $this->reponses;
+        if($indicateurs->count() > 0){
+            return [
+                'status' => true,
+                'name' => "En cours d'instruction",
+                'code' => 1,
+            ];
+        }
+        return [
+            'status' => false,
+            'name' => 'En attente d\'instruction',
+            'code' => 0,
+        ];
+    }
+
     // Accessor pour 'note'
     public function getNoteAttribute()
     {
