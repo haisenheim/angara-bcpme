@@ -75,7 +75,7 @@
                                 <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                     Dossiers en cours</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-dossiers">
-                                    {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', '!=', 'termine')->count() }}
+                                    {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->count() }}
                                 </div>
                             </div>
                             <div class="col-auto">
