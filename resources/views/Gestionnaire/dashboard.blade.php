@@ -75,7 +75,7 @@
                                 <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                     Dossiers en cours</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-dossiers">
-                                    {{ \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)->where('statut', '!=', 'termine')->count() }}
+                                    {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', '!=', 'termine')->count() }}
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -182,7 +182,7 @@
                     <div class="card-body">
                         <div class="list-group list-group-flush">
                             @php
-                                $recentDossiers = \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)
+                                $recentDossiers = \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)
                                     ->with(['entreprise', 'programme'])
                                     ->orderBy('updated_at', 'desc')
                                     ->limit(5)
@@ -230,10 +230,10 @@
                 labels: ['En cours', 'En attente', 'Terminés', 'Rejetés'],
                 datasets: [{
                     data: [
-                        {{ \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)->where('statut', 'en_cours')->count() }},
-                        {{ \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)->where('statut', 'en_attente')->count() }},
-                        {{ \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)->where('statut', 'termine')->count() }},
-                        {{ \App\Models\Dossier::where('gestionnaire_id', auth()->user()->id)->where('statut', 'rejete')->count() }}
+                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'en_cours')->count() }},
+                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'en_attente')->count() }},
+                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'termine')->count() }},
+                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->where('statut', 'rejete')->count() }}
                     ],
                     backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#e74a3b'],
                     hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#e02d1b'],
