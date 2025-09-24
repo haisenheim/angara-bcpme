@@ -14,4 +14,12 @@ class Village extends Model
     public function arrondissement(){
         return $this->belongsTo(Arrondissement::class);
     }
+
+    public function departement(){
+        return $this->belongsTo(Departement::class);
+    }
+
+    public function region(){
+        return $this->belongsTo(Region::class);
+    }
 }
