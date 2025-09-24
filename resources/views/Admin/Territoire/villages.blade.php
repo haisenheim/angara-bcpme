@@ -31,7 +31,7 @@
                         <th>Arrondissement</th>
                         <th>Departement</th>
                         <th>Region</th>
-                        <th>Actions</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,11 +43,7 @@
                             <td>{{ $item->region?$item->region->name:'-' }}</td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
-                                    Importer DSF</button>
-                                    <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Actions
-                                    <span class="vr"></span>
+                                    <button type="button" class="btn btn-xs btn-light dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{{ route('admin.villages.show',$item->id) }}"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a></li>
