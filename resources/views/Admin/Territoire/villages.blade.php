@@ -9,9 +9,7 @@
        <li class="breadcrumb-item active" aria-current="page">Liste des localites</li>
     </ol>
  </nav>
- <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/default/easyui.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/icon.css') }}">
-<script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
+
 @endsection
 
 @section('page-header')
@@ -26,7 +24,7 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <table class="table table-sm">
+            <table class="table table-sm table-bordered table-striped">
                 <thead>
                     <tr>
                         <th>Village</th>
@@ -44,8 +42,18 @@
                             <td>{{ $item->departement?$item->departement->name:'-' }}</td>
                             <td>{{ $item->region?$item->region->name:'-' }}</td>
                             <td>
-                                <a href="{{ route('admin.villages.show',$item->id) }}" class="btn btn-primary btn-sm"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a>
-                                <a href="{{ route('admin.villages.edit',$item->id) }}" class="btn btn-warning btn-sm"><i class="demo-pli-edit me-2 fs-5"></i> Modifier</a>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
+                                    Importer DSF</button>
+                                    <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Actions
+                                    <span class="vr"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.villages.show',$item->id) }}"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.villages.edit',$item->id) }}"><i class="demo-pli-edit me-2 fs-5"></i> Modifier</a></li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
