@@ -317,6 +317,9 @@
                  <li class="nav-item">
                      <a href="{{ route('admin.territoire') }}" class="nav-link {{ $active==701?'active':'' }}">Organisation administrative</a>
                  </li>
+                 <li class="nav-item">
+                     <a href="{{ route('admin.villages.index') }}" class="nav-link {{ $active==702?'active':'' }}">Organisation du territoire</a>
+                 </li>
 
              </ul>
              <!-- END : Dashboard submenu list -->

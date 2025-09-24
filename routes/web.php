@@ -135,6 +135,9 @@ foreach (config('tenancy.central_domains') as $domain) {
 
             Route::resource('users','UserController');
             Route::get('territoire','TerritoireController@index')->name('territoire');
+            Route::get('villages','TerritoireController@getVillages')->name('villages.index');
+            Route::get('villages/{id}','TerritoireController@getVillage')->name('villages.show');
+            Route::get('villages/{id}/edit','TerritoireController@getVillageEdit')->name('villages.edit');
             Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
             Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
             Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
