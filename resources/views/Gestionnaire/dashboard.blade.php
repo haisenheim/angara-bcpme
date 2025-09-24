@@ -94,7 +94,7 @@
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     Prospects</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-prospects">
-                                    {{ \App\Models\Entreprise::where('user_id', auth()->user()->id)->where('statut', 'prospect')->count() }}
+                                    {{ \App\Models\Entreprise::where('user_id', auth()->user()->id)->where('prospect', 1)->count() }}
                                 </div>
                             </div>
                             <div class="col-auto">
