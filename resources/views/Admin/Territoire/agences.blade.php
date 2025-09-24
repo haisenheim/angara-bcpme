@@ -28,7 +28,7 @@
                     <tr>
                         <th>Nom</th>
                         <th>Direction</th>
-                        <th>Actions</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,7 +38,7 @@
                             <td>{{ $item->representation?$item->representation->name:'-' }}</td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-light dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button type="button" class="btn btn-sm pt-1 pb-1 btn-light dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
                                         Actions
                                         <span class="vr"></span>
                                     </button>

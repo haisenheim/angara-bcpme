@@ -43,7 +43,7 @@
                             <td>{{ $item->region?$item->region->name:'-' }}</td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-light dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button type="button" class="btn btn-xs pt-1 pb-1 btn-light dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="{{ route('admin.villages.show',$item->id) }}"><i class="demo-pli-eye me-2 fs-5"></i> Voir</a></li>
