@@ -104,6 +104,7 @@ class CooperativeController extends ExtendedController
         $ent['departement_id'] = $ar->departement_id;
         $ent['region_id'] = $ar->departement->region_id;
         $ent['user_id'] = auth()->user()->id;
+        $ent['gestionnaire_id'] = auth()->user()->id;
         $ent['taille'] = 'COOPERATIVE';
         $ent['agence_id'] = auth()->user()->agence_id;
         $ent['representation_id'] = auth()->user()->representation_id;

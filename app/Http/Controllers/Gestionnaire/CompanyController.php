@@ -48,7 +48,7 @@ class CompanyController extends ExtendedController
 
 
     public function fetchAll(){
-        $items = Entreprise::orderBy('created_at','DESC')->where('prospect',0)->where('user_id',auth()->user()->id)->get();
+        $items = Entreprise::orderBy('created_at','DESC')->where('prospect',0)->where('user_id',auth()->user()->id)->orWhere('gestionnaire_id',auth()->user()->id)->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
     }
@@ -85,6 +85,7 @@ class CompanyController extends ExtendedController
         $data['departement_id'] = $ar->departement_id;
         $data['region_id'] = $ar->departement->region_id;
         $data['user_id'] = auth()->user()->id;
+        $data['gestionnaire_id'] = auth()->user()->id;
         $data['agence_id'] = auth()->user()->agence_id;
         $data['representation_id'] = auth()->user()->representation_id;
         $data['personnel_'.$type_personnel] = 1;

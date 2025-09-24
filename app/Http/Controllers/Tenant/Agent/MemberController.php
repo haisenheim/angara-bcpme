@@ -273,7 +273,8 @@ class MemberController extends ExtendedController
     $ar = $village->arrondissement;
     $data['departement_id'] = $ar->departement_id;
     $data['region_id'] = $ar->departement->region_id;
-    $data['user_id'] = auth()->user()->id;
+    $data['user_id'] = $tenant->user_id;
+    $data['gestionnaire_id'] = $tenant->user_id;
     $data['agence_id'] = tenant()->agence_id;
     $data['representation_id'] = tenant()->representation_id;
     $data['individual'] = 1;
