@@ -318,7 +318,10 @@
                      <a href="{{ route('admin.territoire') }}" class="nav-link {{ $active==701?'active':'' }}">Organisation administrative</a>
                  </li>
                  <li class="nav-item">
-                     <a href="{{ route('admin.villages.index') }}" class="nav-link {{ $active==702?'active':'' }}">Organisation du territoire</a>
+                     <a href="{{ route('admin.agences.index') }}" class="nav-link {{ $active==702?'active':'' }}">Agences</a>
+                 </li>
+                 <li class="nav-item">
+                     <a href="{{ route('admin.villages.index') }}" class="nav-link {{ $active==703?'active':'' }}">Villages</a>
                  </li>
 
              </ul>

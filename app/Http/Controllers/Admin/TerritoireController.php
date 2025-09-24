@@ -46,16 +46,16 @@ class TerritoireController extends Controller
 
     public function getAgences(){
         $items = Agence::all();
-        return view('/Admin/Terroitoire/agences')->with(compact('items'));
+        return view('Admin/Terroitoire/agences')->with(compact('items'));
     }
 
     public function getQuartiers(){
         $items = Quartier::all();
-        return view('/Admin/Terroitoire/quartiers')->with(compact('items'));
+        return view('Admin/Terroitoire/quartiers')->with(compact('items'));
     }
 
     public function getVillages(){
         $items = Village::all();
-        return view('/Admin/Terroitoire/villages')->with(compact('items'));
+        return view('Admin/Terroitoire/villages')->with(compact('items'));
     }
 }
