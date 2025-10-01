@@ -75,6 +75,15 @@ class MemberController extends ExtendedController
      */
 	public function show($token)
 	{
+
+        $items = Membre::all();
+        foreach($items as $item){
+            $item->token = sha1(time().$item->id);
+            $item->save();
+        }
+
+        dd('ok');
+
 		$item = Membre::where('token',$token)->first();
         $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         $paiements = Paiement::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
