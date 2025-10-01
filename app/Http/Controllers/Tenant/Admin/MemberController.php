@@ -23,13 +23,7 @@ class MemberController extends ExtendedController
     public function index()
     {
         //
-        $items = Membre::all();
-        foreach($items as $item){
-            $item->token = sha1(time().$item->id);
-            $item->save();
-        }
-
-        dd('ok');
+        
         $items = Membre::where('tenant_id',tenant()->id)->get();
         $coop = tenant();
         $villages = Village::where('arrondissement_id',$coop->arrondissement_id)->get();
