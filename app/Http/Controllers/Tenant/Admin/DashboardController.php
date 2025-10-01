@@ -17,10 +17,10 @@ class DashboardController extends ExtendedController
     public function index()
 	{
         $user = User::find(auth()->user()->id);
-        $entrepots = Entrepot::all();
-        $exploitants = Membre::all();
+        $entrepots = Entrepot::where('tenant_id',tenant()->id)->get();
+        $exploitants = Membre::where('tenant_id',tenant()->id)->get();
         $agents = User::where('role_id',2)->get();
-        $wallets = Wallet::all();
+        $wallets = Wallet::where('tenant_id',tenant()->id)->get();
         //$calendrier = Calendrier::where('cooperative_id',auth()->user()->cooperative_id)->where('saison_id',$this->_saison->id)->first();
 		return view('Tenant/Admin/dashboard',compact('user','entrepots','agents','exploitants','wallets'));
 	}
