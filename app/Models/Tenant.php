@@ -30,7 +30,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'active',
             'token',
             'departement_id',
-            'photo_uri'
+            'photo_uri',
+            'union_id',
+            'is_union'
         ];
     }
 
@@ -55,6 +57,14 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         return $this->belongsTo('App\Models\Entreprise');
     }
+    public function parent()
+    {
+        return $this->belongsTo('App\Models\Tenant','union_id');
+    }
+    public function children()
+    {
+        return $this->hasMany('App\Models\Tenant','union_id');
+    }
 
     public function region()
     {
@@ -74,6 +84,31 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public function comptes()
     {
         return $this->hasMany('App\Models\Structuration\BanqueCooperative','tenant_id');
+    }
+
+    public function entrepots()
+    {
+        return $this->hasMany('App\Models\Structuration\Entrepot','tenant_id');
+    }
+
+    public function membres()
+    {
+        return $this->hasMany('App\Models\Structuration\Membre','tenant_id');
+    }
+
+    public function caisses()
+    {
+        return $this->hasMany('App\Models\Structuration\Caisse','tenant_id');
+    }
+
+    public function wallets()
+    {
+        return $this->hasMany('App\Models\Structuration\Wallet','tenant_id');
+    }
+
+    public function requests()
+    {
+        return $this->hasMany('App\Models\Structuration\Request','tenant_id');
     }
 
 }

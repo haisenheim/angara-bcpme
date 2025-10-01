@@ -1,61 +1,99 @@
-@extends('../Layouts.tenant.payeur')
+@extends('Layouts.tenant.payeur')
 
 @section('title', 'Accueil')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Paiements</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Historique de tous les reglements</li>
+       <li class="breadcrumb-item"><a href="#">Paiements des producteurs</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Liste des paiements de la saison</li>
     </ol>
  </nav>
 @endsection
 
-
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Historique des reglements</h5>
-        <p class="lead">Historique de tous les reglements de la banque </p>
+        <h5 class="page-title mb-0 mt-2">Historique des paiements</h5>
+        <p class="lead">Liste de tous les paiements</p>
     </div>
 @endsection
 
 @section('content')
     <div class="card">
         <div class="card-body">
-            <table class="table table-sm table-bordered">
-                <thead>
-                    <tr>
-                        <th>DATE</th>
-                        <th>DATE DE PAIEMENT</th>
-                        <th>BANQUE</th>
-                        <th>ACHETEUR</th>
-                        <th>FACTURE</th>
-                        <th>QUANTITE</th>
-                        <th>TOTAL FACTURE</th>
-                        <th>MONTANT</th>
-                        <th>COMPTE</th>
-                        <th>JUSTIFICATIF</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($items as $p)
-                    <tr>
-                        <td>{{ $p->created_at->format('d/m/Y H:i')  }}</td>
-                        <td>{{ \Carbon\Carbon::parse($p->day)->format('d/m/Y')  }}</td>
-                        <td>{{ $p->banque->name  }}</td>
-                        <td>{{ $p->item->client->name }}</td>
-                        <td><a href="{{ route('payeur.invoices.show',$p->item->token) }}">{{ $p->order->name }}</a></td>
-
-                        <th>{{ $p->item->quantity }} tonnes</th>
-                        <th>{{ number_format($p->item->total,0,',','.') }} FCFA</th>
-                        <th>{{ number_format($p->montant,0,',','.') }} FCFA</th>
-                        <td>{{ $p->compte }}</td>
-                        <td><a href="{{ $p->justificatif }}">cliquer ici</a></td>
-
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div id="myGrid" style="height: 400px"></div>
         </div>
     </div>
+    <script src="{{ asset('js/jquery.min.js') }}"></script>
+    <script src="{{ asset('js/ag-grid-community.min.js') }}"></script>
+    <script>
+            const columnDefs = [
+                        { field: "date" },
+                        { field: "montant" },
+                        { field: "mode" },
+                        { field: "caisse" },
+                        { field: "wallet" },
+                        { field: "compte" },
+                        { field: "user",headerName:"Payeur" },
+                        { field: "exploitant",headerName:'Beneficiaire' },
+                        { field: "token",hide:true},
+            ];
+
+            let gridApi;
+
+            const gridOptions = {
+            theme: agGrid.themeBalham.withParams({
+                headerBackgroundColor: "var(--bs-primary)",
+                headerHeight: '30px',
+                headerTextColor: '#fff',
+            }),
+            rowData: null,
+            columnDefs: columnDefs,
+            defaultColDef: {
+                filter: true,
+            },
+            autoSizeStrategy: {
+                type: 'fitGridWidth',
+                defaultMinWidth: 100,
+                columnLimits: [
+                    {
+                        colId: 'name',
+                        minWidth: 150
+                    }
+                ]
+            },
+            pagination: true,
+            paginationPageSize: 200,
+            paginationPageSizeSelector: [100, 200, 1000],
+            rowSelection: {
+                mode: 'singleRow',
+                checkboxes: false,
+                enableClickSelection: true,
+            },
+        };
+
+        function rowSelected(e){
+            console.log(e.data)
+            //window.location.href = "entrees/"+e.data.token
+        }
+
+        function onFilterTextBoxChanged() {
+            gridApi.setGridOption(
+                "quickFilterText",
+                document.getElementById("header-search-input").value,
+            );
+        }
+
+            // setup the grid after the page has finished loading
+            document.addEventListener("DOMContentLoaded", function () {
+                const gridDiv = document.querySelector("#myGrid");
+                gridApi = agGrid.createGrid(gridDiv, gridOptions);
+                gridApi.addEventListener('rowSelected',rowSelected)
+
+                fetch("{{ route('payeur.paiements.all') }}")
+                    .then((response) => response.json())
+                    .then((data) => gridApi.setGridOption("rowData", data));
+
+            });
+    </script>
 @endsection

@@ -30,6 +30,7 @@ return new class extends Migration
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
             $table->integer('user_id')->default(0);
+            $table->integer('user_group_id')->default(0);
             $table->boolean('active')->default(false);
             $table->string('token', 100)->nullable();
         });

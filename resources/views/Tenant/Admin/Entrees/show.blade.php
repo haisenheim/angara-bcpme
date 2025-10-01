@@ -37,18 +37,14 @@
                     <legend>Producteur</legend>
                     <img src="{{ $item->exploitant->photo }}" class="rounded-circle" width="100" alt="">
                     <p><span class="fs-4">{{ $item->exploitant->name }}</span></p>
-                    <p><span class="fs-5">{{ $item->exploitant->age }} ans</span></p>
                     <p><span class="fs-5">Village : {{ $item->exploitant->village?->name }}</span></p>
                 </fieldset>
-                <div class="">
-                    <fieldset>
-                        <legend>Agent</legend>
+                <fieldset>
+                        <legend>Producteur relai</legend>
                         <img src="{{ $item->agent->photo }}" class="rounded-circle" width="100" height="100" alt="">
                         <p><span class="fs-4">{{ $item->agent->name }}</span></p>
-                        <p><span class="fs-5">{{ $item->exploitant->age }} ans</span></p>
-                        <p>TEL:<span class="fs-5">{{ $item->exploitant->phone }}</span></p>
-                    </fieldset>
-                </div>
+                        <p>TEL:<span class="fs-5">{{ $item->agent->phone }}</span></p>
+                </fieldset>
                 <div>
                     <fieldset>
                         <legend>Details</legend>
@@ -86,7 +82,7 @@
                             <td>{{ number_format($p->montant,0,',','.') }}</td>
                             <td>{{ $p->caisse?->name }}</td>
                             <td>{{ $p->wallet?->name }}</td>
-                            <td>{{$p->compte}}</td>
+                            <td>{{$p->compte }}</td>
                             <td>
                                 <span class="badge {{ $p->status['class']}}">{{ $p->status['name'] }}</span>
                             </td>
@@ -113,6 +109,7 @@
                     <form enctype="multipart/form-data" action="{{ route('admin.entree.paiement') }}" method="post">
                         @csrf
                         <input type="hidden" id="id" name="entree_id" value="{{ $item->id }}">
+                        <input type="hidden" name="tenant_id" value="{{ $tenant_id }}">
                         <div>
                             <div>
                                 <select required id="mode" class="form-control"  name="mode_paiement_id">

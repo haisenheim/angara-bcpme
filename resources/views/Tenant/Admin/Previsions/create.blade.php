@@ -5,8 +5,8 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entrées de stocks</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Nouvelle entrée en stock</li>
+       <li class="breadcrumb-item"><a href="#">Prévisions de stocks</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Nouvelle prévision de stock</li>
     </ol>
  </nav>
 @endsection
@@ -14,23 +14,23 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Nouvelle Entrée en stock</h5>
-        <p class="lead">Saisie d'une nouvelle entrée en stock </p>
+        <h5 class="page-title mb-0 mt-2">Nouvelle Prévision de stock</h5>
+        <p class="lead">Saisie d'une nouvelle prévision de stock </p>
     </div>
 @endsection
 
 @section('content')
     <div class="card form-md">
         <div class="card-header">
-            <h4 class="text-primary text-center">Saisie d'une entrée en stock</h4>
+            <h4 class="text-primary text-center">Saisie d'une prévision de stock</h4>
         </div>
         <div class="card-body">
-            <form method="post" action="{{route('admin.entrees.store')}}">
+            <form method="post" action="{{route('admin.previsions.store')}}">
                 @csrf
                 <div class="d-flex gap-2">
                     <div class="w-25">
                         <label>AGENT</label>
-                        <select required name="agent_id" class="form-control">
+                        <select required name="agent_id" class="form-select">
                             <option value="">Selectionner un agent ...</option>
                             @foreach($agents as $agent)
                                 <option value="{{ $agent->id}}">{{$agent->name}}</option>
@@ -39,7 +39,7 @@
                     </div>
                     <div class="w-50">
                         <label>MEMBRE</label>
-                        <select required name="exploitant_id" class="form-control">
+                        <select required name="membre_id" class="form-select">
                             <option value="">Selectionner un membre ...</option>
                             @foreach($exploitants as $item)
                                 <option value="{{ $item->id}}">{{$item->name}}</option>
@@ -48,7 +48,7 @@
                     </div>
                     <div class="w-30">
                         <label>ENTREPROT</label>
-                        <select required name="entrepot_id" class="form-control">
+                        <select required name="entrepot_id" class="form-select">
                             <option value="">Selectionner l'entrepot de stockage ...</option>
                             @foreach($entrepots as $item)
                                 <option value="{{ $item->id}}">{{$item->name}}</option>
@@ -60,7 +60,7 @@
                 <div class="d-flex gap-2 mt-4">
                     <div class="w-30">
                         <label>GAMME</label>
-                        <select required name="gamme_id" class="form-control">
+                        <select required name="gamme_id" class="form-select">
                             <option value="">Selectionner une gamme ...</option>
                             @foreach($gammes as $item)
                                 <option value="{{ $item->id}}">{{$item->name}}</option>
@@ -74,6 +74,14 @@
                     <div class="w-30">
                         <label>PRIX UNITAIRE</label>
                         <input type="number" placeholder="Saisir le prix au KG..." class="form-control" required name="pu" />
+                    </div>
+                    <div class="w-full">
+                        <label>MODE DE PAIEMENT</label>
+                        <select required name="mode" class="form-select">
+                            <option value="">Mode de paiement...</option>
+                            <option value="ESPECES">ESPECES</option>
+                            <option value="DIGITAL">DIGITAL</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mt-4">

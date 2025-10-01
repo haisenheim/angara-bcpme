@@ -76,14 +76,15 @@ class EntreeController extends ExtendedController
         $data['name'] = str_pad($coop->id.date('ymdhi').$data['exploitant_id'],'0',STR_PAD_LEFT);
         $data['montant'] = $data['pu'] * $data['quantity'];
         Entree::create($data);
-        $stock = EntrepotGamme::where('entrepot_id',$data['entrepot_id'])->where('gamme_id',$data['gamme_id'])->first();
+        $stock = EntrepotGamme::where('entrepot_id',$data['entrepot_id'])->where('gamme_id',$data['gamme_id'])->where('tenant_id',$coop->id)->where('saison_id',$this->_saison->id)->first();
         if(!$stock){
             $stock = EntrepotGamme::create([
                 'entrepot_id'=>$data['entrepot_id'],
                 'gamme_id'=>$data['gamme_id'],
                 'agence_id'=>$coop->agence_id,
                 'representation_id'=>$coop->representation_id,
-
+                'tenant_id'=>$coop->id,
+                'saison_id'=>$this->_saison->id,
             ]);
         }
         $stock->quantity = $stock->quantity + $data['quantity'];

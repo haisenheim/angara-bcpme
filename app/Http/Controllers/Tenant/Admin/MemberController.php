@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Tenant\Admin;
 
 use App\Http\Controllers\ExtendedController;
 use App\Models\Niveau;
-use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entree;
-use App\Models\Structuration\ExploitantPlateforme;
 use App\Models\Structuration\Membre;
 use App\Models\Structuration\MembrePlateforme;
+use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Plateforme;
 use App\Models\Village;
 use Illuminate\Http\Request;
@@ -24,16 +23,12 @@ class MemberController extends ExtendedController
     public function index()
     {
         //
-        $items = Membre::all();
+        $items = Membre::where('tenant_id',tenant()->id)->get();
         $coop = tenant();
         $villages = Village::where('arrondissement_id',$coop->arrondissement_id)->get();
         $niveaux = Niveau::all();
         return view('Tenant/Admin/Members/index')->with(compact('villages','items','niveaux'));
     }
-
-
-
-
 
 
     /**
@@ -63,6 +58,7 @@ class MemberController extends ExtendedController
         $data['arrondissement_id'] = $coop->arrondissement_id;
         $data['departement_id'] = $coop->departement_id;
         $data['region_id'] = $coop->region_id;
+        $data['tenant_id'] = $coop->id;
         if($request->photo){
             $data['photo_uri'] = $this->entityImgCreate($request->photo,'members',$data['token']);
         }
@@ -81,9 +77,11 @@ class MemberController extends ExtendedController
 	{
 		$item = Membre::where('token',$token)->first();
         $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $paiements = Paiement::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $villages = Village::where('arrondissement_id',tenant()->arrondissement_id)->get();
         //$pps = PaiementPart::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         $plateformes = Plateforme::all();
-		return view('Tenant/Admin/Members/show')->with(compact('item','parts','plateformes'));
+		return view('Tenant/Admin/Members/show')->with(compact('item','parts','paiements','plateformes','villages'));
 	}
 
     public function addKey(Request $request){

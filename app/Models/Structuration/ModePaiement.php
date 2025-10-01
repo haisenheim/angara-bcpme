@@ -9,5 +9,5 @@ class ModePaiement extends Model
     //
     protected $guarded = [];
     protected $table = 'structuration_modes_paiements';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 }

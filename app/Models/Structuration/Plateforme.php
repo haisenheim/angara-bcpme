@@ -8,7 +8,7 @@ class Plateforme extends Model
 {
     //
     protected $guarded = [];
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
 
 }

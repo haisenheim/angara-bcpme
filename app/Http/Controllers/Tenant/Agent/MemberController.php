@@ -12,6 +12,7 @@ use App\Models\Structuration\Campagne;
 use App\Models\Structuration\Entree;
 use App\Models\Structuration\Membre;
 use App\Models\Structuration\MembrePlateforme;
+use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Plateforme;
 use App\Models\Structuration\ProduitPhytoSanitaire;
 use App\Models\Structuration\TraitementVerger;
@@ -34,7 +35,7 @@ class MemberController extends ExtendedController
     public function index()
     {
         //
-        $items = Membre::all();
+        $items = Membre::where('tenant_id',tenant()->id)->get();
         $coop = tenant();
         $villages = Village::where('arrondissement_id',$coop->arrondissement_id)->get();
         $niveaux = Niveau::all();
@@ -114,6 +115,7 @@ class MemberController extends ExtendedController
         $data['arrondissement_id'] = $coop->arrondissement_id;
         $data['departement_id'] = $coop->departement_id;
         $data['region_id'] = $coop->region_id;
+        $data['tenant_id'] = $coop->id;
         if($request->photo){
             $data['photo_uri'] = $this->entityImgCreate($request->photo,'members',$data['token']);
         }
@@ -259,6 +261,7 @@ class MemberController extends ExtendedController
     $item->region_id = $village->region_id;
     $item->localisation = $data['localisation'];
     $item->village_id = $data['village_id'];
+    $item->tenant_id = $tenant->id;
     if($photo){
         $item->photo_uri = $this->entityImgCreate($photo,'vergers',$item->token);
     }
@@ -286,17 +289,7 @@ class MemberController extends ExtendedController
     $data['village_id'] = $item->village_id;
     $entreprise = Entreprise::create($data);
 
-   /* $dossier = Dossier::create([
-        'name' => $data['name']. ' - ' . $verger['producteur'],
-        'promoteur' => $verger['producteur'],
-        'superficie_ha' => $data['size'],
-        'producteur_id' => $data['member_id'],
-        'cooperative_id' => $tenant->id,
-        'localisation' => $data['localisation'],
-        'annee' => $data['annee'],
-        'exploitation_id' => $verger['id'],
-        'token' => sha1(time()),
-    ]); */
+
 
     return back();
 
@@ -312,10 +305,11 @@ class MemberController extends ExtendedController
 	{
 		$item = Membre::where('token',$token)->first();
         $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $paiements = Paiement::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         $villages = Village::where('arrondissement_id',tenant()->arrondissement_id)->get();
         //$pps = PaiementPart::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         $plateformes = Plateforme::all();
-		return view('Tenant/Agent/Members/show')->with(compact('item','parts','plateformes','villages'));
+		return view('Tenant/Agent/Members/show')->with(compact('item','parts','paiements','plateformes','villages'));
 	}
 
     public function addKey(Request $request){

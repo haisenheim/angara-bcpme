@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PaiementResource;
 use App\Models\Structuration\Paiement;
 use App\User;
 use Illuminate\Http\Request;
@@ -19,6 +20,13 @@ class PaiementController extends Controller
         //
         $items = Paiement::orderBy('created_at','DESC')->get();
         return view('Tenant/Admin/Paiements/index')->with(compact('items'));
+    }
+
+    public function fetchAll(){
+        $items = Paiement::orderBy('created_at','DESC')->get();
+        $items = PaiementResource::collection($items);
+        //dd($items);
+        return response()->json($items);
     }
 
 

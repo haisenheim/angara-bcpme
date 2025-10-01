@@ -10,7 +10,7 @@ class Operateur extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $table = 'operateur_mobiles';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
     protected $appends = ['photo'];
 

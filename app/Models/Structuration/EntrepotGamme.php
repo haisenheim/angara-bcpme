@@ -9,6 +9,7 @@ class EntrepotGamme extends Model
     //
     protected $guarded = [];
     protected $table = 'entrepots_gammes';
+    protected $connection = 'structuration_app_mysql';
     public $timestamps = false;
 
     public function entrepot()

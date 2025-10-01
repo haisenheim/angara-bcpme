@@ -7,6 +7,7 @@ use App\Http\Resources\Structuration\CampagneResource;
 use App\Models\Structuration\Campagne;
 use App\Models\Structuration\Entree;
 use App\Models\Structuration\Membre;
+use App\Models\Structuration\Paiement;
 use App\Models\Structuration\ProduitPhytoSanitaire;
 use App\Models\Structuration\TypeTravailVerger;
 use App\Models\Structuration\Verger;
@@ -66,18 +67,19 @@ class MemberController extends ExtendedController
         $tenant_id = request()->tenant_id;
         $tenant = Tenant::where('token',$tenant_id)->first();
         $villages = Village::where('arrondissement_id',$tenant->arrondissement_id)->get();
-        $data = $tenant->run(function()use($token){
-            $item = Membre::where('token',$token)->first();
-            $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $item = Membre::where('token',$token)->first();
+        $data = $tenant->run(function()use($item){
+
+            $entrees = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->orderBy('created_at','DESC')->get();
+            $paiements = Paiement::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->orderBy('created_at','DESC')->get();
             return [
-                'item'=>$item,
-                'parts'=>$parts,
+                'entrees'=>$entrees,
+                'paiements'=>$paiements
             ];
         });
         tenancy()->initialize($tenant);
-        $item = $data['item'];
-        $parts = $data['parts'];
-		return view('Gestionnaire/Cooperatives/member')->with(compact('item','parts','villages','tenant_id'));
+
+		return view('Gestionnaire/Cooperatives/member')->with(compact('item','data','villages','tenant_id'));
 	}
 
     public function getVerger()

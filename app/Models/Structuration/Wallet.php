@@ -9,7 +9,7 @@ class Wallet extends Model
     //
     protected $guarded = [];
     //protected $table = 'operateur_mobiles_cooperatives';
-
+    protected $connection = 'structuration_app_mysql';
 
 
     public function operateur()

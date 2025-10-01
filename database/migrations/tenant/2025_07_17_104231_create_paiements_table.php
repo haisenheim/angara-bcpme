@@ -22,9 +22,11 @@ return new class extends Migration
             $table->integer('caisse_id')->default(0);
             $table->integer('wallet_id')->default(0);
             $table->double('montant', null, 0)->default(0);
-            $table->string('phone', 30)->nullable();
+            $table->string('compte', 30)->nullable();
             $table->boolean('active')->default(true);
             $table->integer('user_id')->default(0);
+            $table->integer('user_group_id')->default(0);
+            $table->integer('tenant_id')->default(0);
             $table->text('token')->nullable();
             $table->integer('saison_id')->default(0);
             $table->dateTime('created_at')->nullable();

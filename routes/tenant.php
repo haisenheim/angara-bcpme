@@ -166,14 +166,23 @@ Route::middleware([
         Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
         Route::resource('mouvements','MouvementController');
         Route::resource('requests','RequestController');
-        Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
+        //Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
         Route::resource('paiements','PaiementController');
-
+        Route::get('transfert/data','TransfertController@fetchAll')->name('transferts.all');
+        Route::get('transfert/target/{token}','TransfertController@fetchSourceEntrepot')->name('transfert.source');
         Route::resource('entrees','EntreeController');
+        Route::get('entrees/{token}/{tenant_id}','EntreeController@show')->name('entrees.show.tenant');
+        Route::resource('transferts','TransfertController');
         Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
         Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
         Route::get('paiements','EntreeController@getPaiements')->name('paiements');
         Route::resource('reglements','PaiementController');
+        Route::get('reglement/data','PaiementController@fetchAll')->name('reglements.all');
+        Route::resource('cooperatives','TenantController');
+        Route::post('cooperative/entrepot','TenantController@addEntrepot')->name('cooperative.entrepot');
+        Route::get('cooperative/entrepot/{token}','TenantController@showEntrepot')->name('cooperative.entrepot.show');
+        Route::get('cooperative/membres/{id}','TenantController@getMembres')->name('cooperative.membres');
+        Route::post('cooperative/membre','TenantController@addMembre')->name('cooperative.membre');
 
         Route::resource('sorties','SortieController');
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');
@@ -220,6 +229,7 @@ Route::middleware([
         ->group(function(){
             Route::get('dashboard','DashboardController@index')->name('dashboard');
             Route::resource('entrees','EntreeController');
+            Route::get('entrees/{token}/{tenant_id}','EntreeController@show')->name('entrees.show.tenant');
             Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
 
             Route::resource('sorties','SortieController');
@@ -245,7 +255,6 @@ Route::middleware([
             Route::post('member/key','MemberController@addKey')->name('member.add.key');
             Route::resource('entrepots','EntrepotController');
             Route::resource('villages','VillageController');
-            Route::resource('entrepots','EntrepotController');
             Route::resource('agents','AgentController');
             Route::resource('previsions','PrevisionController');
             Route::get('prevsion/data','PrevisionController@fetchAll')->name('previsions.all');
@@ -257,9 +266,12 @@ Route::middleware([
             //Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
 
             Route::resource('entrees','EntreeController');
+            Route::get('entrees/{token}/{tenant_id}','EntreeController@show')->name('entrees.show.tenant');
             Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
             Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
-            Route::get('paiements','EntreeController@getPaiements')->name('paiements');
+            Route::get('entree/paiements','EntreeController@getPaiements')->name('entree.paiements');
+            Route::resource('paiements','PaiementController');
+            Route::get('paiement/data','PaiementController@fetchAll')->name('paiements.all');
 
             Route::resource('sorties','SortieController');
             Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');

@@ -9,7 +9,7 @@ class Saison extends Model
     //
     protected $guarded = [];
     public $timestamps = false;
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
     protected $dates = ['start','end'];
 
 

@@ -8,6 +8,7 @@ use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class WalletController extends ExtendedController
 {
@@ -73,17 +74,15 @@ class WalletController extends ExtendedController
         $data['name'] = $request->name;
         $data['montant'] = $request->montant;
         $data['type_id'] = $request->operateur_id;
-        $data['entrepot_id'] = $request->entrepot_id;
+        $data['entrepot_id'] = $request->entrepot_id??0;
         $data['api_key'] = $request->api_key;
         $data['api_secret'] = $request->api_secret;
+        $data['tenant_id'] = $request->cooperative_id;
         //$data['user_id'] = auth()->user()->id;
 
         $data['token'] = sha1(time());
-        $tenant = Tenant::find($request->cooperative_id);
-        $tenant->run(function()use($data){
-            Wallet::create($data);
-        });
-        tenancy()->initialize($tenant);
+        Wallet::create($data);
+        Session::flash('success','Wallet créé avec succès!');
         return back();
     }
 

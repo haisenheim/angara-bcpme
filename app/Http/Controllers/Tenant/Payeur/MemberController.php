@@ -9,6 +9,7 @@ use App\Models\Structuration\Entree;
 use App\Models\Structuration\ExploitantPlateforme;
 use App\Models\Structuration\Membre;
 use App\Models\Structuration\MembrePlateforme;
+use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Plateforme;
 use App\Models\Village;
 use Illuminate\Http\Request;
@@ -81,9 +82,11 @@ class MemberController extends ExtendedController
 	{
 		$item = Membre::where('token',$token)->first();
         $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $paiements = Paiement::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
+        $villages = Village::where('arrondissement_id',tenant()->arrondissement_id)->get();
         //$pps = PaiementPart::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         $plateformes = Plateforme::all();
-		return view('Tenant/Payeur/Members/show')->with(compact('item','parts','plateformes'));
+		return view('Tenant/Payeur/Members/show')->with(compact('item','plateformes','paiements','villages','parts'));
 	}
 
     public function addKey(Request $request){

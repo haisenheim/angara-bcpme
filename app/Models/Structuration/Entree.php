@@ -58,8 +58,11 @@ class Entree extends Model
     }
 
     public function getVersementsAttribute(){
+
         return $this->paiements->reduce(function($c,$item){
             return $c + $item->montant;
+
+           // return $c + ($item->tenant_id?$item->montant:0);
         });
     }
 

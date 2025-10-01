@@ -21,10 +21,12 @@ use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Request as StructurationRequest;
+use App\Models\Structuration\Transfert;
 use App\Models\Structuration\User;
 use App\Models\Tenant;
 use App\Models\User as ModelsUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 
@@ -38,10 +40,10 @@ class CooperativeController extends ExtendedController
     public function index()
     {
         //
-        $cooperatives = Cooperative::where('gestionnaire_id',auth()->user()->id);
+        $unions = Tenant::where('is_union',true)->get();
         $domaines = Domaine::all();
         $secteurs = Secteur::where('agence_id',auth()->user()->agence_id)->get();
-        return view('Gestionnaire/Cooperatives/index')->with(compact('cooperatives','domaines','secteurs'));
+        return view('Gestionnaire/Cooperatives/index')->with(compact('domaines','secteurs','unions'));
     }
 
 
@@ -66,27 +68,26 @@ class CooperativeController extends ExtendedController
         $data['montant'] = $request->montant;
         $data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        $data['entrepot_id'] = $request->entrepot_id;
-        $tenant = Tenant::find($request->cooperative_id);
-        $tenant->run(function()use($data){
-            Caisse::create($data);
-        });
-        tenancy()->initialize($tenant);
+        $data['entrepot_id'] = $request->entrepot_id??0;
+        $data['tenant_id'] = $request->cooperative_id;
+        Caisse::create($data);
+        Session::flash('success','Caisse créé avec succès!');
         return back();
     }
 
     public function addWallet(Request $request){
+       // dd($request->all());
         $data['name'] = $request->name;
         $data['montant'] = $request->montant;
         $data['operateur_id'] = $request->operateur_id;
-        $data['entrepot_id'] = $request->entrepot_id;
+        $data['entrepot_id'] = $request->entrepot_id??0;
+        $data['api_key'] = $request->api_key;
+        $data['api_secret'] = $request->api_secret;
         $data['user_id'] = auth()->user()->id;
         $data['token'] = sha1(time());
-        $tenant = Tenant::find($request->cooperative_id);
-        $tenant->run(function()use($data){
-            Wallet::create($data);
-        });
-        tenancy()->initialize($tenant);
+        $data['tenant_id'] = $request->cooperative_id;
+        Wallet::create($data);
+        Session::flash('success','Wallet créé avec succès!');
         return back();
     }
 
@@ -110,10 +111,13 @@ class CooperativeController extends ExtendedController
         $ent['representation_id'] = auth()->user()->representation_id;
         $entreprise = Entreprise::create($ent);
 
-        $data_ = $request->only('name','phone','address','domaine_id');
+        $data_ = $request->only('name','phone','address','domaine_id','is_union');
 
 
         $data_['token'] = sha1(time().auth()->user()->id);
+        $data_['is_union'] = is_null($request->is_union) ? false : true;
+        $data_['union_id'] = $request->union_id??0;
+        $data_['secteur_id'] = $request->secteur_id??0;
         $data_['region_id'] = $ar->region_id;
         $data_['departement_id'] = $ar->departement_id;
         $data_['arrondissement_id'] = $ar->id;
@@ -129,21 +133,24 @@ class CooperativeController extends ExtendedController
         $tenantSlug = Str::slug($tenant->name, '-');
         $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('tenancy.central_domains')[0]]);
 
-        $data['name'] = $request->username;
-        $data['email'] = $request->email;
-        $data['password'] = bcrypt($request->password);
-        //$data['role_id'] = 1;
-        //$data['token'] = sha1(time().rand(1,999));
-        $tenant->run(function()use($data){
-            $user = new User();
-            $user->name = $data['name'];
-            $user->email = $data['email'];
-            $user->password = $data['password'];
-            $user->role_id = 1;
-            $user->token = sha1(time().rand(1,999));
-            $user->save();
-        });
-        tenancy()->initialize($tenant);
+        if($request->username){
+            $data['name'] = $request->username;
+            $data['email'] = $request->email;
+            $data['password'] = bcrypt($request->password);
+            //$data['role_id'] = 1;
+            //$data['token'] = sha1(time().rand(1,999));
+            $tenant->run(function()use($data){
+                $user = new User();
+                $user->name = $data['name'];
+                $user->email = $data['email'];
+                $user->password = $data['password'];
+                $user->role_id = 1;
+                $user->token = sha1(time().rand(1,999));
+                $user->save();
+            });
+            tenancy()->initialize($tenant);
+        }
+        Session::flash('success','Organisation intérimaire créée avec succès!');
         return back();
     }
 
@@ -211,6 +218,7 @@ class CooperativeController extends ExtendedController
     }
 
     public function addCompte(){
+        dd(request()->all());
         $data['name'] = request()->name;
         $data['montant'] = request()->montant;
         $data['token'] = sha1(time());
@@ -229,35 +237,60 @@ class CooperativeController extends ExtendedController
 	public function show($token)
 	{
 		$item = Tenant::where('token',$token)->first();
+        $transferts = Transfert::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->whereIn('source_id',$item->entrepots->pluck('id'))->orWhereIn('target_id',$item->entrepots->pluck('id'))->get();
+        $domaines = Domaine::all();
+        $secteurs = Secteur::where('agence_id',auth()->user()->agence_id)->get();
+        $operateurs = Operateur::all();
+        $banques = Banque::all();
+        $comptes = BanqueCooperative::where('banque_id',auth()->user()->banque_id)->get();
        // dd($item->caisses);
+       if($item->is_union){
+
+        $data = $item->run(function(){
+            $paiements = Paiement::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
+            $entrees = Entree::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
+            $agents = User::where('role_id',2)->get();
+            $users = User::all();
+            return [
+                'agents'=>$agents,
+                'users'=>$users,
+                'paiements'=>$paiements,
+                'entrees'=>$entrees,
+            ];
+        });
+        return view('Gestionnaire/Cooperatives/union')->with(compact('item','domaines','secteurs','data','operateurs','banques','transferts'));
+       }else{
+       //$requests = StructurationRequest::orderBy('created_at','DESC')->where('tenant_id',$item->id)->get();
+       //$membres = Membre::where('tenant_id',$item->id)->get();
+       //$entrepots = Entrepot::where('tenant_id',$item->id)->get();
+       //$caisses = Caisse::where('tenant_id',$item->id)->get();
+       //$wallets = Wallet::where('tenant_id',$item->id)->get();
 
        $data = $item->run(function(){
             $paiements = Paiement::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
             $entrees = Entree::orderBy('created_at','DESC')->where('saison_id',$this->_saison->id)->get();
-            $membres = Membre::all();
-            $entrepots = Entrepot::all();
+            //$membres = Membre::all();
+            //$entrepots = Entrepot::all();
             $agents = User::where('role_id',2)->get();
-            $caisses = Caisse::all();
-            $wallets = Wallet::all();
-            $requests = StructurationRequest::orderBy('created_at','DESC')->get();
+            //$caisses = Caisse::all();
+            //$wallets = Wallet::all();
+            //$requests = StructurationRequest::orderBy('created_at','DESC')->get();
             $users = User::all();
             return [
                 'paiements'=>$paiements,
                 'entrees'=>$entrees,
-                'membres'=>$membres,
-                'entrepots'=>$entrepots,
                 'agents'=>$agents,
-                'caisses'=>$caisses,
-                'wallets'=>$wallets,
-                'requests'=>$requests,
                 'users'=>$users,
             ];
         });
         tenancy()->initialize($item);
-        $operateurs = Operateur::all();
-        $banques = Banque::all();
-        $comptes = BanqueCooperative::where('tenant_id',$item->id)->get();
-		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data','banques','comptes'));
+        //$data['requests'] = $requests;
+        //$data['membres'] = $membres;
+        //$data['entrepots'] = $entrepots;
+        //$data['caisses'] = $caisses;
+        //$data['wallets'] = $wallets;
+		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data','banques','comptes','transferts'));
+       }
 	}
 
 

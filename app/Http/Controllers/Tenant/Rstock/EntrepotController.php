@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant\Rstock;
 use App\Http\Controllers\Controller;
 use App\Models\Structuration\Cooperative;
 use App\Models\Structuration\Entrepot;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -18,8 +19,17 @@ class EntrepotController extends Controller
     public function index()
     {
         //
-        $items = Entrepot::all();
-        return view('Tenant/Rstock/Entrepots/index')->with(compact('items'));
+        $tenant = tenant();
+        if($tenant->is_union){
+            $tenants = $tenant->children;
+            $ids = $tenants->pluck('id');
+            $items = Entrepot::whereIn('tenent_id',$ids)->get();
+            return view('Tenant/Rstock/Entrepots/index')->with(compact('items'));
+        }else{
+            Session::flash('error','Vous n\'avez pas les permissions pour accéder à la liste des entrepots');
+            return redirect()->back();
+
+        }
     }
 
 
@@ -45,23 +55,7 @@ class EntrepotController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-        $cp = tenant();
-        $entreprot = Entrepot::create(
-            [
-                'name'=>$data['name'],
-                'latitude'=>$data['latitude'],
-                'longitude'=>$data['longitude'],
-                'region_id'=>$cp->region_id,
-                'departement_id'=>$cp->departement_id,
-                'arrondissement_id'=>$cp->arrondissement_id,
-                'agence_id'=>$cp->agence_id,
-                'representation_id'=>$cp->representation_id,
-                'token'=>sha1(time()),
-            ]
-        );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return back();
+        
     }
 
     /**

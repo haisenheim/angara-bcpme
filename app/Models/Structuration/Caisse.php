@@ -8,6 +8,7 @@ class Caisse extends Model
 {
     //
     protected $guarded = [];
+    protected $connection = 'structuration_app_mysql';
 
     public function cooperative()
     {

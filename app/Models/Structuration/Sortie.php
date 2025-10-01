@@ -9,7 +9,8 @@ class Sortie extends Model
     //
     protected $guarded = [];
     //protected $table ='mouvements';
-
+    protected $connection = 'structuration_app_mysql';
+    
     public function gamme()
     {
         return $this->belongsTo('App\Models\Structuration\Gamme');

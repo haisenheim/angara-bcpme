@@ -50,6 +50,7 @@
                         {field:"versements"},
                         {field:"reste"},
                         { field: "token",hide:true},
+                        { field: "tenant",hide:true},
             ];
 
             let gridApi;
@@ -87,7 +88,11 @@
 
         function rowSelected(e){
             console.log(e.data)
-            window.location.href = "entrees/"+e.data.token
+            if(e.data.tenant!=null){
+                window.location.href = "entrees/"+e.data.token+"/"+e.data.tenant.id
+            }else{
+                window.location.href = "entrees/"+e.data.token+"/0"
+            }
         }
 
         function onFilterTextBoxChanged() {

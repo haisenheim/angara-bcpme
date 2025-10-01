@@ -1,4 +1,4 @@
-@extends('...Layouts.tenant.admin')
+@extends('Layouts.tenant.admin')
 
 @section('title', 'Accueil')
 @section('breadcrumb')
@@ -101,7 +101,7 @@
                                 </div>
                                 <div class="mt-3">
                                     <label for="">ENTREPOT</label>
-                                    <select required name="entrepot_id" id="ville_id" class="form-control">
+                                    <select {{tenant()->is_union ? '' : 'required'}}  name="entrepot_id" id="ville_id" class="form-control">
                                         <option value="0">Selectionner une entrepot</option>
                                         @foreach($entrepots as $item)
                                             <option value="{{ $item->id }}">{{ $item->name }}</option>

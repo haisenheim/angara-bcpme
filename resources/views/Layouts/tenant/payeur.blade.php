@@ -194,7 +194,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==12?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
+            <a href="{{ route('payeur.paiements.index') }}" class="nav-link mininav-toggle {{ $active==12?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
             </a>
         </li>

@@ -11,7 +11,7 @@ class TypeTravailVerger extends Model
 
     protected $guarded = [];
     protected $table = 'structuration_types_travaux_vergers';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
-    
+
 }

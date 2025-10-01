@@ -11,7 +11,7 @@ class Role extends Model
 
     protected $guarded = [];
     protected $table = 'structuration_roles';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
     public function users(){
         return $this->hasMany(User::class);

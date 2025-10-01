@@ -114,6 +114,7 @@
                     <form enctype="multipart/form-data" action="{{ route('payeur.entree.paiement') }}" method="post">
                         @csrf
                         <input type="hidden" id="id" name="entree_id" value="{{ $item->id }}">
+                        <input type="hidden" name="tenant_id" value="{{ $tenant_id }}">
                         <div>
                             <div>
                                 <select required id="mode" class="form-control"  name="mode_paiement_id">

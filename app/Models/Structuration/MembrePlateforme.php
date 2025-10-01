@@ -8,8 +8,9 @@ class MembrePlateforme extends Model
 {
     //
     protected $guarded = [];
-    protected $table = 'membres_plateformes';
+    protected $table = 'producteurs_plateformes';
     public $timestamps = false;
+    protected $connection = 'structuration_app_mysql';
 
     public function exploitant()
     {

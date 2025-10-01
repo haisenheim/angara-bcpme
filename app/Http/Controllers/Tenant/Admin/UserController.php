@@ -21,7 +21,7 @@ class UserController extends Controller
         //
         $items = User::all();
         $roles = Role::all();
-        $entrepots = Entrepot::all();
+        $entrepots = Entrepot::where('tenant_id',tenant()->id)->get();
         return view('Tenant/Admin/Users/index')->with(compact('items','roles','entrepots'));
     }
 

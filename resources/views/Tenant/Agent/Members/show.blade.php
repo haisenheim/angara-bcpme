@@ -132,7 +132,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($item->stocks as $part)
+                                        @foreach($parts as $part)
                                             <tr>
                                                 <td>{{ $part->created_at->format('d/m/Y') }}</td>
                                                 <td>{{ $part->gamme->name }}</td>
@@ -159,7 +159,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($item->paiements->reverse() as $pp)
+                                        @foreach($paiements as $pp)
                                             <tr>
                                                 <td>{{ $pp->created_at->format('d/m/Y H:i') }}</td>
                                                 <td>{{ $pp->mode?->name }}</td>

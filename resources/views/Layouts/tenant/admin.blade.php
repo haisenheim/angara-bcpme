@@ -163,7 +163,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="{{ route('admin.sorties.create') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-maximize fs-3 me-2"></i>
+            <a href="#" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-maximize fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Nouvelle sortie de stock</span>
             </a>
         </li>
@@ -179,6 +179,20 @@
                 <span class="nav-label mininav-content ms-1">Historique des sorties</span>
             </a>
         </li>
+        @if(tenant()->is_union)
+            <li class="nav-item">
+                <a href="{{ route('admin.transferts.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-truck fs-3 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">Transferts de stocks</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-conference fs-3 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">Cooperatives</span>
+                </a>
+            </li>
+        @endif
+
 
         <li class="nav-item">
             <a href="{{ route('admin.previsions.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-calendar fs-3 me-2"></i>
@@ -219,7 +233,7 @@
 
 
         <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==18?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
+            <a href="{{ route('admin.reglements.index') }}" class="nav-link mininav-toggle {{ $active==18?'active':'' }}"><i class="pli-coins fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Paiements producteurs</span>
             </a>
         </li>

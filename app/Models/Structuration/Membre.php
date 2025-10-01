@@ -10,6 +10,8 @@ class Membre extends Model
     //
     protected $guarded = [];
     protected $dates = ['dtn','cni_expiration'];
+    protected $table = 'producteurs';
+    protected $connection = 'structuration_app_mysql';
 
     public function getAgeAttribute()
     {
@@ -19,6 +21,11 @@ class Membre extends Model
     public function village()
     {
         return $this->belongsTo('App\Models\Village','village_id');
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo('App\Models\Tenant','tenant_id');
     }
 
     public function entite()

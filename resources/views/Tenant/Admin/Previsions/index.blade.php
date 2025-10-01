@@ -47,8 +47,6 @@
                         { field: "producteur" },
                         { field: "pu" ,headerName:'Prix unitaire'},
                         { field: "montant",headerName:'Montant total' },
-                        {field:"versements"},
-                        {field:"reste"},
                         {field:"mode",headerName:'Mode de paiement'},
                         { field: "token",hide:true},
             ];
@@ -88,7 +86,7 @@
 
         function rowSelected(e){
             console.log(e.data)
-            window.location.href = "entrees/"+e.data.token
+            window.location.href = "previsions/"+e.data.token
         }
 
         function onFilterTextBoxChanged() {

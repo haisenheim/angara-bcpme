@@ -37,20 +37,33 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="w-50">
-                        <label>MEMBRE</label>
-                        <select required name="exploitant_id" class="form-control">
-                            <option value="">Selectionner un membre ...</option>
-                            @foreach($exploitants as $item)
+
+
+                    @if(tenant()->is_union)
+                    <div class="w-30">
+                        <label>COOPERATIVE</label>
+                        <select required name="tenant_id" class="form-control">
+                            <option value="">Selectionner une cooperative ...</option>
+                            @foreach($children as $item)
+                                <option value="{{ $item->id}}">{{$item->name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                    <div class="w-flex-fill">
+                        <label>ENTREPROT</label>
+                        <select required name="entrepot_id" class="form-control">
+                            <option value="">Selectionner l'entrepot de stockage ...</option>
+                            @foreach($entrepots as $item)
                                 <option value="{{ $item->id}}">{{$item->name}}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="w-30">
-                        <label>ENTREPROT</label>
-                        <select required name="entrepot_id" class="form-control">
-                            <option value="">Selectionner l'entrepot de stockage ...</option>
-                            @foreach($entrepots as $item)
+                        <label>MEMBRE</label>
+                        <select required name="exploitant_id" class="form-control">
+                            <option value="">Selectionner un membre ...</option>
+                            @foreach($exploitants as $item)
                                 <option value="{{ $item->id}}">{{$item->name}}</option>
                             @endforeach
                         </select>
@@ -82,4 +95,23 @@
             </form>
         </div>
     </div>
+    <script>
+        $(document).ready(function(){
+            $('select[name="tenant_id"]').change(function(){
+                var tenant_id = $(this).val();
+                $.get('{{ route('admin.transfert.source',['token'=>':token']) }}'.replace(':token',tenant_id), function(data) {
+                   // $('select[name="entrepot_id"]').html('<option value="">Selectionner l\'entrepot source ...</option>');
+                    data.forEach(function(item) {
+                        $('select[name="entrepot_id"]').append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                });
+                $.get('{{ route('admin.cooperative.membres',['id'=>':token']) }}'.replace(':token',tenant_id), function(data) {
+                    $('select[name="exploitant_id"]').html('<option value="">Selectionner l\'entrepot source ...</option>');
+                    data.forEach(function(item) {
+                        $('select[name="exploitant_id"]').append('<option value="' + item.id + '">' + item.name + '</option>');
+                    });
+                });
+            });
+        });
+    </script>
 @endsection

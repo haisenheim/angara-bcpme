@@ -18,7 +18,7 @@ class EntrepotController extends Controller
     public function index()
     {
         //
-        $items = Entrepot::all();
+        $items = Entrepot::where('tenant_id',tenant()->id)->get();
         return view('Tenant/Admin/Entrepots/index')->with(compact('items'));
     }
 
@@ -57,6 +57,7 @@ class EntrepotController extends Controller
                 'arrondissement_id'=>$cp->arrondissement_id,
                 'agence_id'=>$cp->agence_id,
                 'representation_id'=>$cp->representation_id,
+                'tenant_id'=>$cp->id,
                 'token'=>sha1(time()),
             ]
         );

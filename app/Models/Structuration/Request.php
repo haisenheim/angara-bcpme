@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Request extends Model
 {
     protected $guarded = [];
+    protected $connection = 'structuration_app_mysql';
 
-    public function cooperative()
+    public function tenant()
     {
-        return $this->belongsTo('App\Models\Structuration\Cooperative');
+        return $this->belongsTo('App\Models\Tenant');
     }
 
     public function operateur()

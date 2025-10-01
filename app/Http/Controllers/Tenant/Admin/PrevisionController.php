@@ -51,10 +51,10 @@ class PrevisionController extends ExtendedController
 
         $coop = tenant();
         $agents = User::where('role_id',2)->get();
-        $entrepots = Entrepot::all();
+        $entrepots = Entrepot::where('tenant_id',$coop->id)->get();
         $gammes = Gamme::where('domaine_id',$coop->domaine_id)->get();
-        $exploitants = Membre::all();
-        return view('Tenant/Admin.Entrees.create',compact('agents','entrepots','gammes','exploitants'));
+        $exploitants = Membre::where('tenant_id',$coop->id)->get();
+        return view('Tenant/Admin.Previsions.create',compact('agents','entrepots','gammes','exploitants'));
     }
 
     /**
@@ -72,25 +72,13 @@ class PrevisionController extends ExtendedController
         $data['representation_id'] = $coop->representation_id;
 
         $data['saison_id'] = $this->_saison->id;
-        $data['domaine_id'] = $coop->domaine_id;
+       // $data['domaine_id'] = $coop->domaine_id;
         $data['user_id'] = auth()->user()->id;
-        $data['name'] = str_pad($coop->id.date('ymdhi').$data['exploitant_id'],'0',STR_PAD_LEFT);
+        $data['name'] = str_pad($coop->id.date('ymdhi').$data['membre_id'],'0',STR_PAD_LEFT);
         $data['montant'] = $data['pu'] * $data['quantity'];
-        Entree::create($data);
-        $stock = EntrepotGamme::where('entrepot_id',$data['entrepot_id'])->where('gamme_id',$data['gamme_id'])->first();
-        if(!$stock){
-            $stock = EntrepotGamme::create([
-                'entrepot_id'=>$data['entrepot_id'],
-                'gamme_id'=>$data['gamme_id'],
-                'agence_id'=>$coop->agence_id,
-                'representation_id'=>$coop->representation_id,
-
-            ]);
-        }
-        $stock->quantity = $stock->quantity + $data['quantity'];
-        $stock->save();
+        Prevision::create($data);
         Session::flash('success','Enregistrement créé avec succès!');
-        return redirect(route('admin.entrees.index'));
+        return redirect(route('admin.previsions.index'));
     }
 
     /**

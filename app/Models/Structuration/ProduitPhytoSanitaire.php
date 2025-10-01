@@ -11,7 +11,7 @@ class ProduitPhytoSanitaire extends Model
 
     protected $guarded = [];
     protected $table = 'structuration_produits_phytosanitaires';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
     public function type(){
         return $this->belongsTo('App\Models\Structuration\TypeProduitPhyto','type_id');

@@ -11,7 +11,7 @@ class TypeVerger extends Model
 
     protected $guarded = [];
     protected $table = 'structuration_types_vergers';
-    protected $connection = 'central_app_mysql';
+    protected $connection = 'structuration_app_mysql';
 
     public function produits(){
         return $this->hasMany('App\Models\Structuration\ProduitPhytosanitaire');

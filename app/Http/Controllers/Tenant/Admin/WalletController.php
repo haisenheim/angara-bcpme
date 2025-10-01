@@ -25,19 +25,15 @@ class WalletController extends ExtendedController
     {
         //
 
-        $operateurs = Operateur::where('active',1)->get();
-        $agents = Agent::all();
-        $items = AgentOperateur::all();
-        return view('Tenant/Admin/Wallets/index')->with(compact('agents','items','operateurs'));
     }
 
     public function getCaisses(){
-        $items = Caisse::all();
+        $items = Caisse::where('tenant_id',tenant()->id)->get();
         return view('Tenant/Admin/Wallets/caisses')->with(compact('items'));
     }
 
     public function getMyWallets(){
-        $items = Wallet::all();
+        $items = Wallet::where('tenant_id',tenant()->id)->get();
         return view('Tenant/Admin/Wallets/mine')->with(compact('items'));
     }
 

@@ -56,10 +56,32 @@
                                     <input required type="text" name="phone" placeholder="Numero de telephone de la cooperative" class="form-control">
                                 </div>
                             </div>
+                            <div class="row mt-4">
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <input type="checkbox" class="" name="is_union" id="is_union">
+                                        <label class="form-check-label" for="is_union">Est une union</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="">APPARTIENT A UNE UNION</label>
+                                    <select class="form-select" name="union_id" id="union_id">
+                                        <option value="">Choisir ...</option>
+                                        @foreach ($unions as $union)
+                                            <option value="{{ $union->id }}">{{ $union->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="">Adresse physique</label>
+                                    <input required type="text" name="address" placeholder="Adresse physque de la cooperative" class="form-control">
+                                </div>
+                            </div>
                             <div class="d-flex gap-2 flex-grow mt-3">
                                 <div class="flex-fill">
                                     <label for="">FILIERE</label>
-                                    <select required class="form-control" name="domaine_id" id="">
+                                    <select required class="form-select" name="domaine_id" id="">
                                         <option value="">Choisir ...</option>
                                         @foreach ($domaines as $domaine)
                                             <option value="{{ $domaine->id }}">{{ $domaine->name }}</option>
@@ -68,7 +90,7 @@
                                 </div>
                                 <div class="flex-fill">
                                     <label for="">SECTEUR COOPERATIF</label>
-                                    <select required class="form-control" name="secteur_id" id="">
+                                    <select required class="form-select" name="secteur_id" id="">
                                         <option value="">Choisir ...</option>
                                         @foreach ($secteurs as $secteur)
                                             <option value="{{ $secteur->id }}">{{ $secteur->name }}</option>
@@ -82,11 +104,6 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class=" w-30">
-                                    <label for="">Adresse physique</label>
-                                    <input required type="text" name="address" placeholder="Adresse physque de la cooperative" class="form-control">
-                                </div>
-
                             </div>
                         </fieldset>
                         <fieldset>
@@ -124,12 +141,22 @@
 <script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
 
 <script>
+    $('#is_union').change(function(){
+        if($(this).is(':checked')){
+            $('#union_id').prop('disabled',true);
+        }else{
+            $('#union_id').prop('disabled',false);
+        }
+    });
             const columnDefs = [
                         { field: "name", minWidth: 100,headerName:'Designation',filter:true},
                         { field: "commune" },
                         { field: "departement" },
                         { field: "region" },
                         { field: "filiere" },
+                        { field: "secteur", minWidth: 100,headerName:'Secteur cooperatif',filter:true},
+                        { field: "union", minWidth: 100,headerName:'Union',filter:true},
+                        { field: "is_union", minWidth: 100,headerName:'Est une union?',filter:true},
                         { field: "token",hide:true},
 
 

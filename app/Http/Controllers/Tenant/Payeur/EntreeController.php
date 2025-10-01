@@ -14,6 +14,7 @@ use App\Models\Structuration\Gamme;
 use App\Models\Structuration\Membre;
 use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Wallet;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\PaymentService;
 use Faker\Provider\ar_EG\Payment;
@@ -35,7 +36,44 @@ class EntreeController extends ExtendedController
     }
 
     public function fetchAll(){
-        $items = Entree::orderBy('created_at','DESC')->where('entrepot_id',auth()->user()->entrepot_id)->get();
+
+        if(tenant()->is_union){
+            $tenants = Tenant::where('union_id',tenant()->id)->get();
+            $items = collect();
+            foreach($tenants as $tenant){
+                $items = $items->merge($this->fetchAllByTenant($tenant->id));
+            }
+            //$items = EntreeResource::collection($items);
+            return response()->json($items);
+        }else{
+            $items = Entree::orderBy('created_at','DESC')->get();
+            $items = EntreeResource::collection($items);
+            return response()->json($items);
+        }
+    }
+
+    public function fetchAllByTenant($tenant_id){
+        $tenant = Tenant::find($tenant_id);
+       $items = $tenant->run(function(){
+            return Entree::orderBy('created_at','DESC')->get();
+        });
+        if($tenant_id!=tenant()->id){
+            $items = $items->map(function($item)use($tenant){
+                $item->tenant = $tenant;
+                return $item;
+            });
+        }
+        $items = EntreeResource::collection($items);
+
+        return $items;
+    }
+
+    public function fetchAll_(){
+        if(auth()->user()->entrepot_id){
+            $items = Entree::orderBy('created_at','DESC')->where('entrepot_id',auth()->user()->entrepot_id)->get();
+        }else{
+            $items = Entree::orderBy('created_at','DESC')->get();
+        }
         $items = EntreeResource::collection($items);
         return response()->json($items);
     }
@@ -102,7 +140,7 @@ class EntreeController extends ExtendedController
      * @param  \App\Models\Projet  $projet
      * @return \Illuminate\Http\Response
      */
-	public function show($token)
+	public function show_($token)
 	{
         $item = Entree::where('token',$token)->first();
         $caisses = Caisse::where('active',1)->where('entrepot_id',auth()->user()->entrepot_id)->get();
@@ -111,12 +149,93 @@ class EntreeController extends ExtendedController
         return view('Tenant/Payeur.Entrees.show',compact('item','caisses','wallets'));
 	}
 
+
     public function getPaiements(){
         $items = Paiement::orderBy('created_at','DESC')->get();
         return view('Tenant/Payeur.Entrees.paiements',compact('items'));
     }
 
+    public function show($token,$tenant_id=0)
+	{
+        if($tenant_id){
+            $tenant = Tenant::find($tenant_id);
+            $item = $tenant->run(function()use($token){
+                return Entree::where('token',$token)->first();
+            });
+        }else{
+            $item = Entree::where('token',$token)->first();
+        }
+       // $item = Entree::where('token',$token)->first();
+        $caisses = Caisse::where('active',1)->where('tenant_id',tenant()->id)->get();
+        $wallets = Wallet::where('active',1)->where('tenant_id',tenant()->id)->get();
+        //dd($wallets);
+        return view('Tenant/Payeur.Entrees.show',compact('item','caisses','wallets','tenant_id'));
+	}
+
+
     public function addPaiement(Request $request){
+        if($request->tenant_id){
+            $tenant = Tenant::find($request->tenant_id);
+           $item = $tenant->run(function(){
+                return Entree::find(request()->entree_id);
+            });
+        }else{
+            $item = Entree::find(request()->entree_id);
+        }
+
+       // $item = Entree::find(request()->entree_id);
+
+        $data = [
+            'entree_id'=>$item->id,
+            'montant'=>request()->montant,
+            'exploitant_id'=>$item->exploitant_id,
+            'mode_paiement_id'=>$request->mode_paiement_id,
+            'user_id'=>auth()->user()->id,
+            'saison_id'=>$this->_saison->id,
+            'token'=>sha1(time().auth()->user()->id),
+            'tenant_id'=>$request->tenant_id??0,
+        ];
+        if($request->wallet_id){
+            $wallet = Wallet::find(request()->wallet_id);
+            $data['wallet_id'] = $request->wallet_id;
+            $data['compte'] = $request->phone;
+            $wallet->montant = $wallet->montant - request()->montant;
+            if($wallet->montant>=0){
+                $wallet->save();
+                $paiement = Paiement::create($data);
+               // ProcessPaymentJob::dispatch($paiement, tenant());
+                $ps = new PaymentService(tenant());
+                $ps->processPayment($paiement);
+
+            }else{
+                Session::flash('error','Solde du wallet insuffisant pour effectuer ce paiement!');
+                return back();
+            }
+        }else{
+            if($request->caisse_id){
+                $caisse = Caisse::find(request()->caisse_id);
+                $data['caisse_id'] = $request->caisse_id;
+                $caisse->montant = $caisse->montant - request()->montant;
+                if($caisse->montant>=0){
+                    $caisse->save();
+                    $paiement = Paiement::create($data);
+                    $duplicata = 0;
+                    $tenant = tenant();
+                    $pdf = Pdf::loadView('Tenant.Pdf.recu', compact('paiement','tenant','duplicata'));
+                    return $pdf->stream('recu-paiement-'.$paiement->token.'.pdf');
+                }else{
+                    Session::flash('error','Solde de la caisse insuffisant pour effectuer ce paiement!');
+                    return back();
+                }
+
+            }
+        }
+
+        Session::flash('success','Paiement effectué avec succès!');
+        return back();
+    }
+
+    public function addPaiement_(Request $request){
         $item = Entree::find(request()->entree_id);
         $data = [
             'entree_id'=>$item->id,

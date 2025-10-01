@@ -27,6 +27,9 @@ class CooperativeListResource extends JsonResource
             'email'=>$this->email,
             'phone'=>$this->phone,
             'filiere'=>$this->domaine?->name,
+            'secteur'=>$this->secteur?->name,
+            'union'=>$this->parent?->name,
+            'is_union'=>$this->is_union?'OUI':'NON',
             'token'=>$this->token,
         ];
     }

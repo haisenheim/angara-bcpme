@@ -37,6 +37,8 @@ return new class extends Migration
             $table->integer('region_id')->default(0);
             $table->integer('departement_id')->default(0);
             $table->integer('arrondissement_id')->default(0);
+            $table->integer('user_id')->default(0);
+            $table->integer('user_group_id')->default(0);
             $table->string('token')->nullable();
         });
     }

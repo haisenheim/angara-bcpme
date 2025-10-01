@@ -26,7 +26,7 @@ class WalletController extends ExtendedController
         //
 
         $operateurs = Operateur::where('active',1)->get();
-        $items = AgentOperateur::where('entrepot_id',auth()->user()->entrepot_id)->get();
+        $items = Wallet::where('entrepot_id',auth()->user()->entrepot_id)->get();
         //dd($items);
         return view('Tenant/Payeur/Wallets/index')->with(compact('items','operateurs'));
     }

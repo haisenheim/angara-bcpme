@@ -24,6 +24,7 @@ return new class extends Migration
             $table->boolean('active')->default(true);
             $table->integer('type_id')->default(0);
             $table->integer('user_id')->default(0);
+            $table->integer('user_group_id')->default(0);
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
         });
