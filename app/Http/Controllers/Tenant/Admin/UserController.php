@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Structuration\Caisse;
 use App\Models\Structuration\Entrepot;
 use App\Models\Structuration\Role;
 use App\Models\Structuration\User;
@@ -22,7 +23,8 @@ class UserController extends Controller
         $items = User::all();
         $roles = Role::all();
         $entrepots = Entrepot::where('tenant_id',tenant()->id)->get();
-        return view('Tenant/Admin/Users/index')->with(compact('items','roles','entrepots'));
+        $caisses = Caisse::where('tenant_id',tenant()->id)->get();
+        return view('Tenant/Admin/Users/index')->with(compact('items','roles','entrepots','caisses'));
     }
 
 
@@ -59,6 +61,11 @@ class UserController extends Controller
         $user->email = request()->email;
         $user->entrepot_id = request()->entrepot_id;
         $user->save();
+        if(request()->caisse_id){
+            $caisse = Caisse::find(request()->caisse_id);
+            $caisse->caissier_id = $user->id;
+            $caisse->save();
+        }
         return back();
     }
 

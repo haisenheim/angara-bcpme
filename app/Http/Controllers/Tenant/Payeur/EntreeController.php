@@ -166,7 +166,7 @@ class EntreeController extends ExtendedController
             $item = Entree::where('token',$token)->first();
         }
        // $item = Entree::where('token',$token)->first();
-        $caisses = Caisse::where('active',1)->where('tenant_id',tenant()->id)->get();
+        $caisses = Caisse::where('active',1)->where('tenant_id',tenant()->id)->where('caissier_id',auth()->user()->id)->get();
         $wallets = Wallet::where('active',1)->where('tenant_id',tenant()->id)->get();
         //dd($wallets);
         return view('Tenant/Payeur.Entrees.show',compact('item','caisses','wallets','tenant_id'));

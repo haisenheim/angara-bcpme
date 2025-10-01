@@ -42,6 +42,10 @@ class User extends Authenticatable
         return $this->belongsTo('App\Models\Structuration\Entrepot');
     }
 
+    public function caisse(){
+        return $this->hasOne('App\Models\Structuration\Caisse','caissier_id');
+    }
+
     public function getStatusAttribute(){
         $data = [
             'name'=>'verrouillé',

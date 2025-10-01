@@ -34,6 +34,7 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Entrepot</th>
+                            <th>Caisse</th>
                             <td>Statut</td>
                             <td>
 
@@ -48,6 +49,7 @@
                                 <td>{{ $item->email }}</td>
                                 <th>{{ $item->role?->name }}</th>
                                 <td>{{ $item->entrepot?->name  }}</td>
+                                <td>{{ $item->caisse?->name  }}</td>
                                 <td><span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span></td>
                                 <td>
                                     <div class="btn-group">
@@ -99,15 +101,24 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="mt-3">
-                                    <label for="">ENTREPOT</label>
-                                    <select {{tenant()->is_union ? '' : 'required'}}  name="entrepot_id" id="ville_id" class="form-control">
-                                        <option value="0">Selectionner une entrepot</option>
-                                        @foreach($entrepots as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                    <div class="mt-3">
+                                        <label for="">ENTREPOT</label>
+                                        <select {{tenant()->is_union ? '' : 'required'}}  name="entrepot_id" id="ville_id" class="form-control">
+                                            <option value="0">Selectionner une entrepot</option>
+                                            @foreach($entrepots as $item)
+                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="">CAISSE</label>
+                                        <select {{tenant()->is_union ? '' : 'required'}}  name="caisse_id" id="ville_id" class="form-control">
+                                            <option value="0">Selectionner une caisse</option>
+                                            @foreach($caisses as $item)
+                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 <div class="mt-2">
                                     <label for="">Telephone</label>
                                     <input required type="text" name="phone" class="form-control">
