@@ -31,6 +31,7 @@
             <li><a class="dropdown-item" data-bs-target="#caisseModal" data-bs-toggle="modal" href="#">Créer une caisse</a></li>
             <li><a class="dropdown-item" data-bs-target="#walletModal" data-bs-toggle="modal" href="#">Créer un wallet</a></li>
             <li><a class="dropdown-item" data-bs-target="#compteModal" data-bs-toggle="modal" href="#">Associer un compte bancaire</a></li>
+            <li><a class="dropdown-item" data-bs-target="#userModal" data-bs-toggle="modal" href="#">Créer un utilisateur</a></li>
         @endif
     </ul>
  </div>
@@ -553,6 +554,73 @@
                                 <input required type="password" name="api_secret" placeholder="Saisir la cle secrete" class="form-control">
                             </div>
                         </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="userModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-between">
+                    <h5 class="modal-title">Nouvel utilisateur</h5>
+                    <div style="float: right">
+                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.cooperative.users.store') }}" method="post">
+                        @csrf
+                        <input type="hidden" value="{{$item->id}}" name="tenant_id">
+                            <div class="">
+                                <div class="">
+                                    <label for="">NOM</label>
+                                    <input required type="text" name="name" placeholder="Saisir l'intitule de la saison" class="form-control">
+                                </div>
+                                <div class="mt-2">
+                                    <label for="">ROLE</label>
+                                    <select name="role_id" required id="" class="form-control">
+                                        <option value="">Role ...</option>
+                                        @foreach($roles as $role)
+                                            <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                    <div class="mt-3">
+                                        <label for="">ENTREPOT</label>
+                                        <select  name="entrepot_id" id="ville_id" class="form-control">
+                                            <option value="0">Selectionner une entrepot</option>
+                                            @foreach($item->entrepots as $it)
+                                                <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="">CAISSE</label>
+                                        <select  name="caisse_id" id="ville_id" class="form-control">
+                                            <option value="0">Selectionner une caisse</option>
+                                            @foreach($item->caisses as $it)
+                                                <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                <div class="mt-2">
+                                    <label for="">Telephone</label>
+                                    <input required type="text" name="phone" class="form-control">
+                                </div>
+                                <div class="mt-2">
+                                    <label for="">Email de connexion</label>
+                                    <input required type="email" name="email" class="form-control">
+                                </div>
+                                <div class="mt-2">
+                                    <label for="">Mot de passe</label>
+                                    <input required type="password" name="password" class="form-control">
+                                </div>
+                            </div>
                         <div class="mt-5">
                             <button type="submit" class="btn-primary btn">ENREGISTRER</button>
                         </div>

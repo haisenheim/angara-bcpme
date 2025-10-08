@@ -361,7 +361,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::resource('requests','RequestController');
         Route::post('request/validate','RequestController@valider')->name('request.validate');
         Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
-
+        Route::post('cooperative/users','CooperativeController@addUser')->name('cooperative.users.store');
     });
 
 

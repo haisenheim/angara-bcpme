@@ -21,6 +21,7 @@ use App\Models\Structuration\Wallet;
 use App\Models\Structuration\Operateur;
 use App\Models\Structuration\Paiement;
 use App\Models\Structuration\Request as StructurationRequest;
+use App\Models\Structuration\Role;
 use App\Models\Structuration\Transfert;
 use App\Models\Structuration\User;
 use App\Models\Tenant;
@@ -228,6 +229,30 @@ class CooperativeController extends ExtendedController
         return back();
     }
 
+    public function addUser(Request $request){
+        $data = $request->except('tenant_id');
+        $tenant = Tenant::find($request->tenant_id);
+        $tenant->run(function()use($data){
+            $user = new User();
+            $user->name = $data['name'];
+            $user->token = sha1(date('Yhmdsi'). auth()->user()->id);
+            $user->password = bcrypt($data['password']);
+            $user->role_id = $data['role_id'];
+            $user->phone = $data['phone'];
+            $user->email = $data['email'];
+            $user->entrepot_id = $data['entrepot_id']??0;
+            $user->save();
+            if(request()->caisse_id){
+                $caisse = Caisse::find(request()->caisse_id);
+                $caisse->caissier_id = $user->id;
+                $caisse->save();
+            }
+        });
+        tenancy()->initialize($tenant);
+        Session::flash('success','Utilisateur créé avec succès!');
+        return back();
+    }
+
     /**
      * Display the specified resource.
      *
@@ -243,6 +268,7 @@ class CooperativeController extends ExtendedController
         $operateurs = Operateur::all();
         $banques = Banque::all();
         $comptes = BanqueCooperative::where('banque_id',auth()->user()->banque_id)->get();
+        $roles = Role::all();
        // dd($item->caisses);
        if($item->is_union){
 
@@ -258,7 +284,7 @@ class CooperativeController extends ExtendedController
                 'entrees'=>$entrees,
             ];
         });
-        return view('Gestionnaire/Cooperatives/union')->with(compact('item','domaines','secteurs','data','operateurs','banques','transferts'));
+        return view('Gestionnaire/Cooperatives/union')->with(compact('item','domaines','secteurs','data','operateurs','banques','transferts','roles'));
        }else{
        //$requests = StructurationRequest::orderBy('created_at','DESC')->where('tenant_id',$item->id)->get();
        //$membres = Membre::where('tenant_id',$item->id)->get();
@@ -289,7 +315,7 @@ class CooperativeController extends ExtendedController
         //$data['entrepots'] = $entrepots;
         //$data['caisses'] = $caisses;
         //$data['wallets'] = $wallets;
-		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data','banques','comptes','transferts'));
+		return view('Gestionnaire/Cooperatives/show')->with(compact('item','operateurs','data','banques','comptes','transferts','roles'));
        }
 	}
 
