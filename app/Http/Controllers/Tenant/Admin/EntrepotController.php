@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Structuration\Cooperative;
+use App\Models\Structuration\Entree;
 use App\Models\Structuration\Entrepot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -74,7 +75,8 @@ class EntrepotController extends Controller
 	public function show($token)
 	{
 		$item = Entrepot::where('token',$token)->first();
-		return view('/Tenant/Admin/Entrepots/show')->with(compact('item'));
+        $entrees = Entree::orderBy('created_at','DESC')->where('entrepot_id',$item->id)->get();
+		return view('/Tenant/Admin/Entrepots/show')->with(compact('item','entrees'));
 	}
 
 
