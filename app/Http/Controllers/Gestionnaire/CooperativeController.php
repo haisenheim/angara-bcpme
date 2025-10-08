@@ -219,13 +219,14 @@ class CooperativeController extends ExtendedController
     }
 
     public function addCompte(){
-        dd(request()->all());
+        //dd(request()->all());
         $data['name'] = request()->name;
         $data['montant'] = request()->montant;
         $data['token'] = sha1(time());
         $data['banque_id'] = request()->banque_id;
         $data['tenant_id'] = request()->tenant_id;
         BanqueCooperative::create($data);
+        Session::flash('success','Compte créé avec succès!');
         return back();
     }
 
