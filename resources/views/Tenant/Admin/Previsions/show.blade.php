@@ -10,22 +10,10 @@
     </ol>
  </nav>
 @endsection
-@section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-    Actions
-    <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
-        <li><a class="dropdown-item"  data-bs-toggle="modal" data-bs-target="#addModal"  href="#">Enregistrer un paiement</a></li>
-    </ul>
-</div>
-@endsection
 
 @section('page-header')
     <div>
         <h5 class="page-title mb-0 mt-2 text-center">Prévision de stock &numero; {{ $item->name }}</h5>
-
     </div>
 @endsection
 

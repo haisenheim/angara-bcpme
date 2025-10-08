@@ -16,7 +16,7 @@ class EntrepotController extends Controller
     public function index()
     {
         //
-        $items = Entrepot::all();
+        $items = Entrepot::where('tenant_id',tenant()->id)->get();
         return view('Tenant/Agent/Entrepots/index')->with(compact('items'));
     }
 
