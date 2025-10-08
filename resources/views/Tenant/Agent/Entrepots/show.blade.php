@@ -40,7 +40,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($item->entrees->reverse() as $it)
+                            @foreach($entrees as $it)
                                 <tr>
                                     <td>{{ $it->created_at->format('d/m/Y H:i')}}</td>
                                     <td>{{ number_format($it->quantity,0,',','.') }}</td>
