@@ -70,7 +70,7 @@ class CooperativeController extends ExtendedController
     public function show($token)
     {
         $item = Tenant::where('token', $token)->firstOrFail();
-        $item->load(['domaine', 'region', 'departement', 'arrondissement', 'entreprise', 'wallets', 'caisses', 'entrepots', 'exploitants']);
+        $item->load(['domaine', 'region', 'departement', 'arrondissement', 'entreprise', 'wallets', 'caisses', 'entrepots', 'membres']);
 
         return view('Admin/Cooperatives/show', compact('item'));
     }
@@ -152,7 +152,7 @@ class CooperativeController extends ExtendedController
         $coop = Tenant::where('token', $token)->firstOrFail();
 
         $stats = [
-            'total_membres' => $coop->exploitants()->count(),
+            'total_membres' => $coop->membres()->count(),
             'total_entrepots' => $coop->entrepots()->count(),
             'total_caisses' => $coop->caisses()->count(),
             'total_wallets' => $coop->wallets()->count(),
