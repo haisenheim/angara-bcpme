@@ -10,6 +10,7 @@ use App\Models\Entreprise;
 use App\Models\Region;
 use App\Models\Structuration\Cooperative;
 use App\Models\Taille;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -30,7 +31,7 @@ class CooperativeController extends ExtendedController
 
 
     public function fetchAll(){
-        $items = Cooperative::where('agence_id',auth()->user()->agence_id)->get();
+        $items = Tenant::where('agence_id',auth()->user()->agence_id)->get();
         $items = CooperativeListResource::collection($items);
         return response()->json($items);
     }
