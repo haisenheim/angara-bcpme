@@ -196,65 +196,52 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
     <ul class="mainnav__menu nav flex-column">
        <li class="nav-item">
-           <a href="{{ route('ca.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
+           <a href="{{ route('ca.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==401?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
                <span class="nav-label mininav-content ms-1">Entreprises</span>
            </a>
        </li>
-        <li class="nav-item">
-           <a href="{{ route('ca.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Organisations intermed.</span>
+       <li class="nav-item">
+           <a href="{{ route('ca.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
+               <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
            </a>
        </li>
-        <li class="nav-item">
-            <a href="{{ route('ca.entites.index') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-home-2 fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Entités individuelles</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('ca.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-phone-2 fs-2 me-2"></i>
+       <li class="nav-item">
+           <a href="{{ route('ca.entites.index') }}" class="nav-link mininav-toggle {{ $active==403?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
+               <span class="nav-label mininav-content ms-1">Entités individuelles</span>
+           </a>
+       </li>
+       <li class="nav-item">
+            <a href="{{ route('ca.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==404?'active':'' }}"><i class="pli-phone-2 fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Prospects</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('ca.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-affiliate fs-2 me-2"></i>
+            <a href="{{ route('ca.programmes.index') }}" class="nav-link mininav-toggle {{ $active==405?'active':'' }}"><i class="pli-affiliate fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">programmes</span>
             </a>
         </li>
+
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
     <ul class="mainnav__menu nav flex-column">
         <li class="nav-item">
-            <a href="{{ route('ca.requests.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-bell fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Appels de fonds</span>
+            <a href="{{ route('ca.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
             </a>
         </li>
-
     </ul>
 </div>
 
 <div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">SYSTEME</h6>
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">Systeme</h6>
     <ul class="mainnav__menu nav flex-column">
-        <li class="nav-item">
-            <a href="{{ route('ca.users.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-conference fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Comptes utilisateurs</span>
-            </a>
-        </li>
 
-        <li class="nav-item has-sub">
-            <a href="#" class="mininav-toggle nav-link {{ ($active>800&&$active<900)?'active':'' }}"><i class="demo-pli-gears fs-5 me-2"></i>
-                <span class="nav-label ms-1">Parametres</span>
+        <li class="nav-item">
+            <a href="{{ route('ca.users.index') }}" class="nav-link mininav-toggle {{ $active==11?'active':'' }}"><i class="pli-conference fs-3 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Utilisateurs</span>
             </a>
-            <!-- Settings submenu list -->
-            <ul class="mininav-content nav collapse">
-                <li class="nav-item">
-                    <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
-                    <a href="#" class="nav-link {{ $active==801?'active':'' }}">Banques</a>
-                </li>
-            </ul>
-            <!-- END : Dashboard submenu list -->
         </li>
     </ul>
 </div>
