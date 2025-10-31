@@ -223,16 +223,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
 
     </ul>
 </div>
-<div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
-    <ul class="mainnav__menu nav flex-column">
-        <li class="nav-item">
-            <a href="{{ route('ca.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
-            </a>
-        </li>
-    </ul>
-</div>
+
 
 <div class="mainnav__categoriy py-3">
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">Systeme</h6>
