@@ -45,7 +45,6 @@
                         <th>Arrondissement</th>
                             <th>Département</th>
                             <th>Région</th>
-                            <th>Membres</th>
                             <th>Actions</th>
                     </tr>
                 </thead>
@@ -118,13 +117,11 @@
                             </div>
                         </td>
                         <td>${item.phone || '-'}</td>
-                        <td>${item.domaine?.name || '-'}</td>
-                        <td>${item.arrondissement?.name || '-'}</td>
-                        <td>${item.departement?.name || '-'}</td>
-                        <td>${item.region?.name || '-'}</td>
-                        <td>
-                            <span class="badge bg-info">${item.membres_count || 0}</span>
-                        </td>
+                        <td>${item.filiere || '-'}</td>
+                        <td>${item.commune || '-'}</td>
+                        <td>${item.departement || '-'}</td>
+                        <td>${item.region || '-'}</td>
+
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <a href="/admin/cooperatives/${item.token}" class="btn btn-sm btn-outline-primary" title="Voir">
