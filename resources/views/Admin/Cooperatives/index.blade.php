@@ -123,17 +123,32 @@
                         <td>${item.region || '-'}</td>
 
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="/admin/cooperatives/${item.token}" class="btn btn-sm btn-outline-primary" title="Voir">
-                                    <i class="demo-psi-eye"></i>
-                                </a>
-                                <a href="/admin/cooperatives/${item.token}/edit" class="btn btn-sm btn-outline-info" title="Modifier">
-                                    <i class="demo-psi-pen-5"></i>
-                                </a>
-                                <button onclick="deleteCooperative('${item.token}', '${item.name}')"
-                                        class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                    <i class="demo-psi-trash"></i>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                        id="dropdownMenuButton${index}" data-bs-toggle="dropdown"
+                                        aria-expanded="false" title="Actions">
+                                    <i class="demo-psi-dot-vertical"></i>
                                 </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton${index}">
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/cooperatives/${item.token}" title="Voir">
+                                            <i class="demo-psi-eye me-2"></i> Voir les détails
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/cooperatives/${item.token}/edit" title="Modifier">
+                                            <i class="demo-psi-pen-5 me-2"></i> Modifier
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#"
+                                           onclick="deleteCooperative('${item.token}', '${item.name}'); return false;"
+                                           title="Supprimer">
+                                            <i class="demo-psi-trash me-2"></i> Supprimer
+                                        </a>
+                                    </li>
+                                </ul>
                             </div>
                         </td>
                     </tr>
