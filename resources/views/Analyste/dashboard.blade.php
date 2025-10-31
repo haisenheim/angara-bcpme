@@ -56,7 +56,7 @@
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     En attente d'analyse</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="pending-analysis">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'en_attente')->count() }}
+                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -75,8 +75,8 @@
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     Analyses complétées</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="completed-analysis">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'termine')->count() }}
-                                </div>
+                                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->count() }}
+                                    </div>
                             </div>
                             <div class="col-auto">
                                 <i class="demo-psi-check fs-1 text-gray-300"></i>
@@ -109,11 +109,10 @@
         <!-- Alert Cards for Urgent Items -->
         @php
             $urgentDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                ->where('statut', 'en_attente')
+
                 ->where('created_at', '<=', now()->subDays(3))
                 ->count();
             $inProgressDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                ->where('statut', 'en_cours')
                 ->count();
         @endphp
 
@@ -214,7 +213,6 @@
                                     <tr>
                                         <th>Entreprise</th>
                                         <th>Programme</th>
-                                        <th>Statut</th>
                                         <th>Date</th>
                                         <th>Action</th>
                                     </tr>
@@ -341,7 +339,7 @@
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <span class="small">En attente</span>
                                 <span class="badge bg-warning rounded-pill">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'en_attente')->count() }}
+                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
                                 </span>
                             </div>
                         </div>
@@ -396,10 +394,10 @@
                 labels: ['En cours', 'En attente', 'Terminés', 'Rejetés'],
                 datasets: [{
                     data: [
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'en_cours')->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'en_attente')->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'termine')->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'rejete')->count() }}
+                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
+                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
+                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
+                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
                     ],
                     backgroundColor: ['#4e73df', '#f6c23e', '#1cc88a', '#e74a3b'],
                     hoverBackgroundColor: ['#2e59d9', '#dda20a', '#17a673', '#e02d1b'],
@@ -451,7 +449,7 @@
                     data: [
                         @for($i = 5; $i >= 0; $i--)
                             {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                                ->where('statut', 'termine')
+
                                 ->whereMonth('updated_at', now()->subMonths($i)->month)
                                 ->whereYear('updated_at', now()->subMonths($i)->year)
                                 ->count() }},

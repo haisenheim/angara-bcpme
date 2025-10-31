@@ -24,13 +24,18 @@ class DashboardController extends Controller
     {
         $agenceId = auth()->user()->agence_id;
 
+        // Get dossiers with indicateurs (en cours)
+        $dossiersEnCours = Dossier::where('agence_id', $agenceId)
+            ->whereHas('indicateurs')
+            ->count();
+
         $stats = [
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
-            'dossiers_en_cours' => Dossier::where('agence_id', $agenceId)->where('statut', 'en_cours')->count(),
+            'dossiers_en_cours' => $dossiersEnCours,
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
             'total_cooperatives' => Cooperative::where('agence_id', $agenceId)->count(),
             'total_users' => User::where('agence_id', $agenceId)->where('active', 1)->count(),
-            'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('statut', 'prospect')->count(),
+            'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('prospect', 1)->count(),
         ];
 
         return response()->json($stats);
@@ -112,13 +117,15 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(function($dossier) {
+                $status = $dossier->status;
                 return [
                     'id' => $dossier->id,
                     'token' => $dossier->token,
                     'entreprise_name' => $dossier->entreprise->name ?? 'N/A',
                     'programme_name' => $dossier->programme->name ?? 'N/A',
                     'gestionnaire_name' => $dossier->gestionnaire->name ?? 'Non assigné',
-                    'statut' => $dossier->statut ?? 'en_attente',
+                    'statut' => $status['code'],
+                    'statut_name' => $status['name'],
                     'updated_at' => $dossier->updated_at->diffForHumans(),
                 ];
             });
@@ -141,11 +148,11 @@ class DashboardController extends Controller
                 ->whereMonth('created_at', now()->month)
                 ->count(),
             'completed_dossiers' => Dossier::where('agence_id', $agenceId)
-                ->where('statut', 'termine')
+                ->whereHas('indicateurs')
                 ->whereMonth('updated_at', now()->month)
                 ->count(),
             'active_prospects' => Entreprise::where('agence_id', $agenceId)
-                ->where('statut', 'prospect')
+                ->where('prospect', 1)
                 ->count(),
         ];
 
@@ -159,14 +166,19 @@ class DashboardController extends Controller
     {
         $agenceId = auth()->user()->agence_id;
 
+        // Dossiers without indicateurs are "en attente"
+        $pendingDossiers = Dossier::where('agence_id', $agenceId)
+            ->whereDoesntHave('indicateurs')
+            ->count();
+
+        $oldPending = Dossier::where('agence_id', $agenceId)
+            ->whereDoesntHave('indicateurs')
+            ->where('created_at', '<=', now()->subDays(7))
+            ->count();
+
         $alerts = [
-            'pending_dossiers' => Dossier::where('agence_id', $agenceId)
-                ->where('statut', 'en_attente')
-                ->count(),
-            'old_pending' => Dossier::where('agence_id', $agenceId)
-                ->where('statut', 'en_attente')
-                ->where('created_at', '<=', now()->subDays(7))
-                ->count(),
+            'pending_dossiers' => $pendingDossiers,
+            'old_pending' => $oldPending,
             'inactive_users' => User::where('agence_id', $agenceId)
                 ->where('active', 0)
                 ->count(),

@@ -23,12 +23,17 @@ class DashboardController extends Controller
     {
         $analysteId = auth()->user()->id;
 
+        // Dossiers with indicateurs are "en cours" or completed
+        $enCours = Dossier::where('analyste_id', $analysteId)->whereHas('indicateurs')->count();
+        // Dossiers without indicateurs are "en attente"
+        $enAttente = Dossier::where('analyste_id', $analysteId)->whereDoesntHave('indicateurs')->count();
+
         $stats = [
             'total_dossiers' => Dossier::where('analyste_id', $analysteId)->count(),
-            'pending_analysis' => Dossier::where('analyste_id', $analysteId)->where('statut', 'en_attente')->count(),
-            'completed_analysis' => Dossier::where('analyste_id', $analysteId)->where('statut', 'termine')->count(),
+            'pending_analysis' => $enAttente,
+            'completed_analysis' => $enCours,
             'total_entreprises' => Entreprise::where('user_id', $analysteId)->count(),
-            'in_progress' => Dossier::where('analyste_id', $analysteId)->where('statut', 'en_cours')->count(),
+            'in_progress' => $enCours,
         ];
 
         return response()->json($stats);
@@ -41,11 +46,18 @@ class DashboardController extends Controller
     {
         $analysteId = auth()->user()->id;
 
+        // Get all dossiers and compute status
+        $dossiers = Dossier::where('analyste_id', $analysteId)->with('indicateurs')->get();
+
         $distribution = [
-            'en_cours' => Dossier::where('analyste_id', $analysteId)->where('statut', 'en_cours')->count(),
-            'en_attente' => Dossier::where('analyste_id', $analysteId)->where('statut', 'en_attente')->count(),
-            'termine' => Dossier::where('analyste_id', $analysteId)->where('statut', 'termine')->count(),
-            'rejete' => Dossier::where('analyste_id', $analysteId)->where('statut', 'rejete')->count(),
+            'en_cours' => $dossiers->filter(function($d) {
+                return $d->indicateurs->count() > 0;
+            })->count(),
+            'en_attente' => $dossiers->filter(function($d) {
+                return $d->indicateurs->count() == 0;
+            })->count(),
+            'termine' => 0, // Will need additional logic to determine completed
+            'rejete' => 0,  // Will need additional logic to determine rejected
         ];
 
         return response()->json($distribution);
@@ -64,8 +76,9 @@ class DashboardController extends Controller
             $date = now()->subMonths($i);
             $months[] = $date->format('M Y');
 
+            // Count dossiers with indicateurs created in this month
             $data[] = Dossier::where('analyste_id', $analysteId)
-                ->where('statut', 'termine')
+                ->whereHas('indicateurs')
                 ->whereMonth('updated_at', $date->month)
                 ->whereYear('updated_at', $date->year)
                 ->count();
@@ -90,12 +103,14 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(function($dossier) {
+                $status = $dossier->status;
                 return [
                     'id' => $dossier->id,
                     'token' => $dossier->token,
                     'entreprise_name' => $dossier->entreprise->name ?? 'N/A',
                     'programme_name' => $dossier->programme->name ?? 'N/A',
-                    'statut' => $dossier->statut ?? 'en_attente',
+                    'statut' => $status['code'],
+                    'statut_name' => $status['name'],
                     'updated_at' => $dossier->updated_at->diffForHumans(),
                 ];
             });
@@ -111,17 +126,17 @@ class DashboardController extends Controller
         $analysteId = auth()->user()->id;
 
         $totalDossiers = Dossier::where('analyste_id', $analysteId)->count();
-        $completedDossiers = Dossier::where('analyste_id', $analysteId)->where('statut', 'termine')->count();
+        $completedDossiers = Dossier::where('analyste_id', $analysteId)->whereHas('indicateurs')->count();
         $completionRate = $totalDossiers > 0 ? round(($completedDossiers / $totalDossiers) * 100) : 0;
 
         $metrics = [
             'completion_rate' => $completionRate,
             'this_month_completed' => Dossier::where('analyste_id', $analysteId)
-                ->where('statut', 'termine')
+                ->whereHas('indicateurs')
                 ->whereMonth('updated_at', now()->month)
                 ->count(),
             'total_analyzed' => $completedDossiers,
-            'pending_count' => Dossier::where('analyste_id', $analysteId)->where('statut', 'en_attente')->count(),
+            'pending_count' => Dossier::where('analyste_id', $analysteId)->whereDoesntHave('indicateurs')->count(),
         ];
 
         return response()->json($metrics);
@@ -134,13 +149,15 @@ class DashboardController extends Controller
     {
         $analysteId = auth()->user()->id;
 
+        // Urgent = pending dossiers older than 3 days
         $urgentDossiers = Dossier::where('analyste_id', $analysteId)
-            ->where('statut', 'en_attente')
+            ->whereDoesntHave('indicateurs')
             ->where('created_at', '<=', now()->subDays(3))
             ->count();
 
+        // In progress = dossiers with indicateurs
         $inProgressDossiers = Dossier::where('analyste_id', $analysteId)
-            ->where('statut', 'en_cours')
+            ->whereHas('indicateurs')
             ->count();
 
         return response()->json([

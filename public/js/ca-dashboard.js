@@ -267,7 +267,7 @@ const CADashboard = {
 
                 data.forEach(dossier => {
                     const statusClass = this.getStatusClass(dossier.statut);
-                    const statusText = this.formatStatus(dossier.statut);
+                    const statusText = this.formatStatus(dossier.statut_name);
 
                     const item = `
                         <div class="list-group-item px-0">
@@ -380,18 +380,19 @@ const CADashboard = {
             });
     },
 
-    getStatusClass(statut) {
+    getStatusClass(statutCode) {
+        // Status codes: 0 = en attente, 1 = en cours
         const statusMap = {
-            'en_cours': 'primary',
-            'en_attente': 'warning',
-            'termine': 'success',
-            'rejete': 'danger'
+            0: 'warning',  // en attente
+            1: 'primary',  // en cours
+            2: 'success',  // termine
+            3: 'danger'    // rejete
         };
-        return statusMap[statut] || 'secondary';
+        return statusMap[statutCode] || 'secondary';
     },
 
-    formatStatus(statut) {
-        return statut ? statut.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'En attente';
+    formatStatus(statutName) {
+        return statutName || 'En attente';
     },
 
     showError(elementId, message) {
