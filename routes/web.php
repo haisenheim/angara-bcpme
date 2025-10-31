@@ -107,7 +107,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             Route::resource('entreprises','CompanyController');
             Route::resource('entites','EntiteController');
             Route::resource('cooperatives','CooperativeController');
-            Route::get('cooperatives/data','CooperativeController@fetchAll')->name('cooperatives.fetchAll');
+            Route::get('tenants/data','CooperativeController@fetchAll')->name('cooperatives.fetchAll');
             Route::get('cooperatives/{token}/stats','CooperativeController@getStats')->name('cooperatives.stats');
             Route::resource('secteurs','SecteurController');
             Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');

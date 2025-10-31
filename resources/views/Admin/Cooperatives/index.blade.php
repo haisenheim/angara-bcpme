@@ -11,11 +11,7 @@
  </nav>
 @endsection
 
-@section('actions')
-    <a href="{{ route('admin.cooperatives.create') }}" class="btn btn-primary btn-sm">
-        <i class="demo-pli-add me-2 fs-5"></i> Nouvelle coopérative
-    </a>
-@endsection
+
 
 @section('page-header')
     <div>
