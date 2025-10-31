@@ -28,13 +28,15 @@ class DashboardController extends Controller
         $dossiersEnCours = Dossier::where('agence_id', $agenceId)
             ->whereHas('indicateurs')
             ->count();
+            $users = User::where('agence_id', $agenceId)->where('active', 1)->get();
 
         $stats = [
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
             'dossiers_en_cours' => $dossiersEnCours,
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
-            'total_cooperatives' => Tenant::where('agence_id', $agenceId)->count(),
-            'total_users' => User::where('agence_id', $agenceId)->where('active', 1)->count(),
+
+            'total_users' => $users->count(),
+            'total_cooperatives' => Tenant::whereIn('gestionnaire_id', $users->pluck('id'))->count(),
             'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('prospect', 1)->count(),
         ];
 
