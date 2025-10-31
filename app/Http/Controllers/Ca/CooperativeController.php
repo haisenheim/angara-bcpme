@@ -24,9 +24,7 @@ class CooperativeController extends ExtendedController
     public function index()
     {
         //
-        $cooperatives = Cooperative::where('agence_id',auth()->user()->agence_id);
-        $domaines = Domaine::all();
-        return view('Ca.Cooperatives.index')->with(compact('cooperatives','domaines'));
+        return view('Ca.Cooperatives.index');
     }
 
 

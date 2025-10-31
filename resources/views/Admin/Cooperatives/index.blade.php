@@ -1,205 +1,199 @@
 @extends('Layouts.admin')
 
-@section('title', 'Accueil')
+@section('title', 'Coopératives')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Cogelo</a></li>
-       <li class="breadcrumb-item"><a href="#">Cooperatives</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Liste des cooperatives</li>
+       <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Angara</a></li>
+       <li class="breadcrumb-item"><a href="#">Coopératives</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Liste des coopératives</li>
     </ol>
  </nav>
 @endsection
+
 @section('actions')
-    <a href="#" data-bs-target="#addModal" data-bs-toggle="modal" class="btn btn-primary btn-sm"><i class="demo-pli-add me-2 fs-5"></i> Ajouter</a>
+    <a href="{{ route('admin.cooperatives.create') }}" class="btn btn-primary btn-sm">
+        <i class="demo-pli-add me-2 fs-5"></i> Nouvelle coopérative
+    </a>
 @endsection
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Cooperatives</h5>
-        <p class="lead">Liste de toutes les cooperatives</p>
+        <h5 class="page-title mb-0 mt-2">Gestion des coopératives</h5>
+        <p class="lead">Liste de toutes les coopératives</p>
     </div>
 @endsection
 
 @section('content')
     <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Liste des coopératives</h6>
+                <div class="d-flex gap-2">
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Rechercher...">
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadCooperatives()">
+                        <i class="demo-psi-refresh-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
-            <table class="table table-sm">
+            <div class="table-responsive">
+                <table class="table table-hover" id="cooperativesTable">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Cooperative</th>
-                        <th>Telephone</th>
+                            <th>Coopérative</th>
+                            <th>Téléphone</th>
+                            <th>Domaine</th>
                         <th>Arrondissement</th>
-                        <th>Departement</th>
-                        <th>Region</th>
-                        <th></th>
+                            <th>Département</th>
+                            <th>Région</th>
+                            <th>Membres</th>
+                            <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach($cooperatives as $item)
+                    <tbody id="cooperativesTableBody">
                         <tr>
-                            <td>{{ $item->id }}</td>
-                            <td><a href="{{ route('admin.cooperatives.show',$item->id) }}">{{ $item->name }}</a></td>
-                            <td>{{ $item->phone }}</td>
-                            <td>{{ $item->arrondissement?$item->arrondissement->name:'-' }}</td>
-                            <td>{{ $item->departement?$item->departement->name:'-' }}</td>
-                            <td>{{ $item->region?$item->region->name:'-' }}</td>
-                            <td></td>
+                            <td colspan="9" class="text-center py-5">
+                                <span class="spinner-border spinner-border-sm" role="status"></span> Chargement des données...
+                            </td>
                         </tr>
-                    @endforeach
                 </tbody>
             </table>
-        </div>
-    </div>
-    <div class="modal fade" id="addModal">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Nouvelle cooperative</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.cooperatives.store') }}" method="post">
-                        @csrf
-                        <fieldset>
-                            <legend>Infos de la cooperative</legend>
-                            <div class="d-flex gap-2 flex-grow">
-                                <div class=" w-75">
-                                    <label for="">NOM</label>
-                                    <input type="text" name="name" placeholder="Saisir le nom de la cooperative" class="form-control">
-                                </div>
-                                <div class="">
-                                    <label for="">Logo/Photo</label>
-                                    <input required type="file" name="photo" class="form-control">
-                                </div>
-                                <div class="">
-                                    <label for="">DATE DE CREATION</label>
-                                    <input type="date" name="dtn" placeholder="Saisir le nom de la cooperative" class="form-control">
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 form-group">
-
-                                <div class="">
-                                    <label for="">Immatriculation</label>
-                                    <input required type="text" name="immatriculation" class="form-control">
-                                </div>
-                                <div>
-                                    <label for="">REGION</label>
-                                    <select required name="region_id" id="region_id" class="form-control">
-                                        <option value="">Selectionner une region</option>
-                                        @foreach($regions as $item)
-                                            <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="">DEPARTEMENT</label>
-                                    <select required name="departement_id" id="departement_id" class="form-control">
-                                        <option value="">Selectionner un departement</option>
-
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="">ARRONDISSEMENT</label>
-                                    <select required name="arrondissement_id" id="arrondissement_id" class="form-control">
-                                        <option value="">Selectionner un arrondissement</option>
-
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 flex-grow">
-                                <div class="form-group w-50">
-                                    <label for="">Adresse</label>
-                                    <input required type="text" name="address" placeholder="Adresse physque de la cooperative" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="">Telephone</label>
-                                    <input required type="text" name="phone" placeholder="Numero de telephone de la cooperative" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="">Email</label>
-                                    <input required type="email" name="m-email" placeholder="Adresse email de contact" class="form-control">
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <legend>Infos de connexion du compte utilisateur de la cooperative</legend>
-                            <div class="d-flex gap-2 flex-grow">
-                                <div class=" w-75">
-                                    <label for="">NOM DE L'UTILISATEUR</label>
-                                    <input required type="text" name="username" placeholder="Saisir le nom de l'utilisateur" class="form-control">
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 flex-grow">
-                                <div class="form-group w-50">
-                                    <label for="">EMAIL DE CONNEXION</label>
-                                    <input required type="email" name="email" placeholder="Saisir l'adresse email de connexion de l'utilisateur" class="form-control">
-                                </div>
-                                <div class="form-group w-50">
-                                    <label for="">MOT DE PASSE</label>
-                                    <input required type="password" name="password" placeholder="Saisir le mot de passe de connexion de l'utilisateur" class="form-control">
-                                </div>
-                            </div>
-                        </fieldset>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
     </div>
 
     <script>
-        $(document).ready(function(){
-            $('#region_id').change(function(){
-                 var _id = $('#region_id').val();
-                $.ajax({
-                    url: "{{ route('util.region.departements') }}",
-                    type:'get',
-                    dataType:'json',
-                    data:{id:_id},
-                    success:function(data){
-                        $('#departement_id').html("<option value=0>Choisir un departement ...</option>");
-                        data.forEach(element => {
-                            $('#departement_id').append(`<option value=${element.id}>${element.name}</option>`);
-                        });
+        let cooperativesData = [];
 
-                    },
-                    error:function(err){
-                        console.log(err)
-                    }
+        // Load cooperatives on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCooperatives();
+        });
+
+        function loadCooperatives() {
+            fetch('{{ route("admin.cooperatives.fetchAll") }}')
+                .then(response => response.json())
+                .then(data => {
+                    cooperativesData = data;
+                    renderCooperatives(data);
+                })
+                .catch(error => {
+                    console.error('Error loading cooperatives:', error);
+                    document.getElementById('cooperativesTableBody').innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <i class="demo-psi-exclamation text-danger fs-1"></i>
+                                <p class="text-danger mt-2">Erreur de chargement des données</p>
+                            </td>
+                        </tr>
+                    `;
                 });
-            })
+        }
 
-            $('#departement_id').change(function(){
-                var _id = $('#departement_id').val();
-                $.ajax({
-                    url:"{{ route('util.departement.arrondissements') }}",
-                    type:'get',
-                    dataType:'json',
-                    data:{id:_id},
-                    success:function(data){
-                        $('#arrondissement_id').html("<option value=0>Choisir un arrondissement ...</option>");
-                        data.forEach(element => {
-                            $('#arrondissement_id').append(`<option value=${element.id}>${element.name}</option>`);
-                        });
+        function renderCooperatives(data) {
+            const tbody = document.getElementById('cooperativesTableBody');
+            tbody.innerHTML = '';
 
-                    },
-                    error:function(err){
-                        console.log(err)
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="demo-psi-file-html text-muted fs-1"></i>
+                            <p class="text-muted mt-2">Aucune coopérative trouvée</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${item.photo || '/img/logo.png'}" alt="${item.name}"
+                                     class="img-xs rounded-circle me-2"
+                                     onerror="this.src='/img/logo.png'">
+                                <strong>${item.name}</strong>
+                            </div>
+                        </td>
+                        <td>${item.phone || '-'}</td>
+                        <td>${item.domaine?.name || '-'}</td>
+                        <td>${item.arrondissement?.name || '-'}</td>
+                        <td>${item.departement?.name || '-'}</td>
+                        <td>${item.region?.name || '-'}</td>
+                        <td>
+                            <span class="badge bg-info">${item.membres_count || 0}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="/admin/cooperatives/${item.token}" class="btn btn-sm btn-outline-primary" title="Voir">
+                                    <i class="demo-psi-eye"></i>
+                                </a>
+                                <a href="/admin/cooperatives/${item.token}/edit" class="btn btn-sm btn-outline-info" title="Modifier">
+                                    <i class="demo-psi-pen-5"></i>
+                                </a>
+                                <button onclick="deleteCooperative('${item.token}', '${item.name}')"
+                                        class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                    <i class="demo-psi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filtered = cooperativesData.filter(item =>
+                    (item.name && item.name.toLowerCase().includes(searchTerm)) ||
+                    (item.phone && item.phone.includes(searchTerm)) ||
+                    (item.arrondissement?.name && item.arrondissement.name.toLowerCase().includes(searchTerm))
+                );
+                renderCooperatives(filtered);
+            });
+        });
+
+        function deleteCooperative(token, name) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer la coopérative "${name}" ?`)) {
+                fetch(`/admin/cooperatives/${token}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
                     }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Coopérative supprimée avec succès!');
+                        loadCooperatives();
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erreur lors de la suppression');
                 });
-            })
-        })
+            }
+        }
     </script>
 
     <style>
-        .form-group{
-            margin-top: 1rem;
+        .img-xs {
+            width: 2rem;
+            height: 2rem;
+            object-fit: cover;
         }
     </style>
 @endsection

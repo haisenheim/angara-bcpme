@@ -1,33 +1,35 @@
 @extends('Layouts.admin')
 
-@section('title', 'Nouvelle coopérative')
+@section('title', 'Modifier coopérative')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Angara</a></li>
        <li class="breadcrumb-item"><a href="{{ route('admin.cooperatives.index') }}">Coopératives</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Nouvelle coopérative</li>
+       <li class="breadcrumb-item"><a href="{{ route('admin.cooperatives.show', $item->token) }}">{{ $item->name }}</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Modifier</li>
     </ol>
  </nav>
 @endsection
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Nouvelle coopérative</h5>
-        <p class="lead">Créer une nouvelle coopérative dans le système</p>
+        <h5 class="page-title mb-0 mt-2">Modifier la coopérative</h5>
+        <p class="lead">{{ $item->name }}</p>
     </div>
 @endsection
 
 @section('content')
     <div class="row">
         <div class="col-lg-10 mx-auto">
-    <div class="card">
+            <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0">Informations de la coopérative</h6>
+                    <h6 class="mb-0">Modifier les informations</h6>
                 </div>
                 <div class="card-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.cooperatives.store') }}" method="post">
+                    <form enctype="multipart/form-data" action="{{ route('admin.cooperatives.update', $item->token) }}" method="post">
                         @csrf
+                        @method('PUT')
 
                         <fieldset class="mb-4">
                             <legend class="h6 border-bottom pb-2">Informations générales</legend>
@@ -37,8 +39,7 @@
                                     <label for="name" class="form-label">Nom de la coopérative <span class="text-danger">*</span></label>
                                     <input type="text" name="name" id="name"
                                            class="form-control @error('name') is-invalid @enderror"
-                                           placeholder="Ex: Coopérative agricole du Nord"
-                                           value="{{ old('name') }}" required>
+                                           value="{{ old('name', $item->name) }}" required>
                                     @error('name')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -47,7 +48,7 @@
                                     <label for="dtn" class="form-label">Date de création</label>
                                     <input type="date" name="dtn" id="dtn"
                                            class="form-control"
-                                           value="{{ old('dtn') }}">
+                                           value="{{ old('dtn', $item->dtn ? $item->dtn->format('Y-m-d') : '') }}">
                                 </div>
                             </div>
 
@@ -58,7 +59,8 @@
                                             class="form-select @error('domaine_id') is-invalid @enderror" required>
                                         <option value="">Sélectionner un domaine</option>
                                         @foreach($domaines as $domaine)
-                                            <option value="{{ $domaine->id }}" {{ old('domaine_id') == $domaine->id ? 'selected' : '' }}>
+                                            <option value="{{ $domaine->id }}"
+                                                    {{ old('domaine_id', $item->domaine_id) == $domaine->id ? 'selected' : '' }}>
                                                 {{ $domaine->name }}
                                             </option>
                                         @endforeach
@@ -72,7 +74,8 @@
                                     <select name="secteur_id" id="secteur_id" class="form-select">
                                         <option value="">Sélectionner un secteur (optionnel)</option>
                                         @foreach($secteurs as $secteur)
-                                            <option value="{{ $secteur->id }}" {{ old('secteur_id') == $secteur->id ? 'selected' : '' }}>
+                                            <option value="{{ $secteur->id }}"
+                                                    {{ old('secteur_id', $item->secteur_id) == $secteur->id ? 'selected' : '' }}>
                                                 {{ $secteur->name }}
                                             </option>
                                         @endforeach
@@ -85,8 +88,7 @@
                                     <label for="phone" class="form-label">Téléphone <span class="text-danger">*</span></label>
                                     <input type="tel" name="phone" id="phone"
                                            class="form-control @error('phone') is-invalid @enderror"
-                                           placeholder="+229 XX XX XX XX"
-                                           value="{{ old('phone') }}" required>
+                                           value="{{ old('phone', $item->phone) }}" required>
                                     @error('phone')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -95,14 +97,14 @@
                                     <label for="email" class="form-label">Email de contact</label>
                                     <input type="email" name="m-email" id="email"
                                            class="form-control"
-                                           placeholder="contact@cooperative.com"
-                                           value="{{ old('m-email') }}">
+                                           value="{{ old('m-email', $item->email) }}">
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="photo" class="form-label">Logo/Photo</label>
+                                    <label for="photo" class="form-label">Logo/Photo (nouveau)</label>
                                     <input type="file" name="photo" id="photo"
                                            class="form-control"
                                            accept="image/*">
+                                    <small class="text-muted">Laisser vide pour conserver l'actuel</small>
                                 </div>
                             </div>
 
@@ -111,8 +113,7 @@
                                     <label for="address" class="form-label">Adresse <span class="text-danger">*</span></label>
                                     <input type="text" name="address" id="address"
                                            class="form-control @error('address') is-invalid @enderror"
-                                           placeholder="Adresse physique de la coopérative"
-                                           value="{{ old('address') }}" required>
+                                           value="{{ old('address', $item->address) }}" required>
                                     @error('address')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -145,7 +146,7 @@
                                             <option value="{{ $arr->id }}"
                                                     data-departement="{{ $arr->departement_id }}"
                                                     data-region="{{ $arr->departement->region_id }}"
-                                                    {{ old('arrondissement_id') == $arr->id ? 'selected' : '' }}>
+                                                    {{ old('arrondissement_id', $item->arrondissement_id) == $arr->id ? 'selected' : '' }}>
                                                 {{ $arr->name }}
                                             </option>
                                         @endforeach
@@ -157,51 +158,12 @@
                             </div>
                         </fieldset>
 
-                        <fieldset class="mb-4">
-                            <legend class="h6 border-bottom pb-2">Compte administrateur de la coopérative</legend>
-
-                            <div class="row mb-3">
-                                <div class="col-md-12">
-                                    <label for="username" class="form-label">Nom de l'utilisateur <span class="text-danger">*</span></label>
-                                    <input type="text" name="username" id="username"
-                                           class="form-control @error('username') is-invalid @enderror"
-                                           placeholder="Ex: Jean Dupont"
-                                           value="{{ old('username') }}" required>
-                                    @error('username')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="user_email" class="form-label">Email de connexion <span class="text-danger">*</span></label>
-                                    <input type="email" name="email" id="user_email"
-                                           class="form-control @error('email') is-invalid @enderror"
-                                           placeholder="utilisateur@cooperative.com"
-                                           value="{{ old('email') }}" required>
-                                    @error('email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="password" class="form-label">Mot de passe <span class="text-danger">*</span></label>
-                                    <input type="password" name="password" id="password"
-                                           class="form-control @error('password') is-invalid @enderror"
-                                           placeholder="Minimum 6 caractères" required>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </fieldset>
-
                         <div class="d-flex justify-content-between align-items-center mt-4">
-                            <a href="{{ route('admin.cooperatives.index') }}" class="btn btn-outline-secondary">
-                                <i class="demo-psi-arrow-left me-2"></i> Retour
+                            <a href="{{ route('admin.cooperatives.show', $item->token) }}" class="btn btn-outline-secondary">
+                                <i class="demo-psi-arrow-left me-2"></i> Annuler
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="demo-psi-check me-2"></i> Enregistrer la coopérative
+                                <i class="demo-psi-check me-2"></i> Mettre à jour
                             </button>
                         </div>
                     </form>
@@ -211,38 +173,7 @@
     </div>
 
     <script>
-        // Auto-populate region and departement when arrondissement is selected
-        document.getElementById('arrondissement_id').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const departementId = selectedOption.getAttribute('data-departement');
-            const regionId = selectedOption.getAttribute('data-region');
-
-            if (departementId) {
-                document.getElementById('departement_id').value = departementId;
-            }
-            if (regionId) {
-                document.getElementById('region_id').value = regionId;
-            }
-        });
-
-        // Load regions dynamically
-        document.addEventListener('DOMContentLoaded', function() {
-            loadRegions();
-        });
-
-        function loadRegions() {
-            fetch('{{ route("util.regions") }}')
-                .then(response => response.json())
-                .then(data => {
-                    const select = document.getElementById('region_id');
-                    data.forEach(region => {
-                        select.innerHTML += `<option value="${region.id}">${region.name}</option>`;
-                    });
-                })
-                .catch(error => console.error('Error loading regions:', error));
-        }
-
-        // Cascade departements based on region
+        // Cascade functionality for location selects
         document.getElementById('region_id').addEventListener('change', function() {
             const regionId = this.value;
             if (!regionId) return;
@@ -260,7 +191,6 @@
                 .catch(error => console.error('Error loading departements:', error));
         });
 
-        // Cascade arrondissements based on departement
         document.getElementById('departement_id').addEventListener('change', function() {
             const departementId = this.value;
             if (!departementId) return;
@@ -272,9 +202,23 @@
                     select.innerHTML = '<option value="">Sélectionner un arrondissement</option>';
                     data.forEach(arr => {
                         select.innerHTML += `<option value="${arr.id}">${arr.name}</option>`;
-                });
-            })
+                    });
+                })
                 .catch(error => console.error('Error loading arrondissements:', error));
+        });
+
+        // Auto-populate region and departement based on selected arrondissement
+        document.getElementById('arrondissement_id').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const departementId = selectedOption.getAttribute('data-departement');
+            const regionId = selectedOption.getAttribute('data-region');
+
+            if (regionId) {
+                document.getElementById('region_id').value = regionId;
+            }
+            if (departementId) {
+                document.getElementById('departement_id').value = departementId;
+            }
         });
     </script>
 
@@ -293,3 +237,4 @@
         }
     </style>
 @endsection
+
