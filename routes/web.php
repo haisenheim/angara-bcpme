@@ -269,6 +269,12 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
 
+        // AJAX Dashboard endpoints
+        Route::get('dashboard/stats','DashboardController@getStats')->name('dashboard.stats');
+        Route::get('dashboard/recent-dossiers','DashboardController@getRecentDossiers')->name('dashboard.recent.dossiers');
+        Route::get('dashboard/dossiers-distribution','DashboardController@getDossiersDistribution')->name('dashboard.dossiers.distribution');
+        Route::get('dashboard/entreprises-data','DashboardController@getEntreprisesData')->name('dashboard.entreprises.data');
+
         Route::resource('secteurs','SecteurController');
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');

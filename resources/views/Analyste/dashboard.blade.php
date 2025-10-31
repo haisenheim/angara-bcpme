@@ -37,7 +37,7 @@
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Dossiers assignés</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-dossiers">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -56,7 +56,7 @@
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                     En attente d'analyse</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="pending-analysis">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -75,8 +75,8 @@
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     Analyses complétées</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="completed-analysis">
-                                        {{ \App\Models\Dossier::where('agence_id', auth()->user()->agence_id)->count() }}
-                                    </div>
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="demo-psi-check fs-1 text-gray-300"></i>
@@ -94,7 +94,7 @@
                                 <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                     Entreprises</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-entreprises">
-                                    {{ \App\Models\Entreprise::where('user_id', auth()->user()->id)->count() }}
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -107,48 +107,33 @@
         </div>
 
         <!-- Alert Cards for Urgent Items -->
-        @php
-            $urgentDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-
-                ->where('created_at', '<=', now()->subDays(3))
-                ->count();
-            $inProgressDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                ->count();
-        @endphp
-
-        @if($urgentDossiers > 0 || $inProgressDossiers > 0)
         <div class="row mb-4">
-            @if($urgentDossiers > 0)
-            <div class="col-xl-6 mb-3">
+            <div class="col-xl-6 mb-3" id="urgent-alert" style="display:none;">
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
                     <div class="d-flex align-items-center">
                         <i class="demo-psi-exclamation-triangle fs-2 me-3"></i>
                         <div>
                             <h5 class="alert-heading mb-1">Attention!</h5>
-                            <p class="mb-0">Vous avez <strong>{{ $urgentDossiers }}</strong> dossier(s) en attente depuis plus de 3 jours.</p>
+                            <p class="mb-0">Vous avez <strong id="urgent-count">0</strong> dossier(s) en attente depuis plus de 3 jours.</p>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
-            @endif
 
-            @if($inProgressDossiers > 0)
-            <div class="col-xl-6 mb-3">
+            <div class="col-xl-6 mb-3" id="in-progress-alert" style="display:none;">
                 <div class="alert alert-info alert-dismissible fade show" role="alert">
                     <div class="d-flex align-items-center">
                         <i class="demo-psi-information fs-2 me-3"></i>
                         <div>
                             <h5 class="alert-heading mb-1">En cours</h5>
-                            <p class="mb-0">{{ $inProgressDossiers }} dossier(s) en cours d'analyse.</p>
+                            <p class="mb-0"><span id="in-progress-count">0</span> dossier(s) en cours d'analyse.</p>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
-            @endif
         </div>
-        @endif
 
         <!-- Charts Row -->
         <div class="row mb-4">
@@ -213,59 +198,17 @@
                                     <tr>
                                         <th>Entreprise</th>
                                         <th>Programme</th>
+                                        <th>Statut</th>
                                         <th>Date</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @php
-                                        $recentDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                                            ->with(['entreprise', 'programme'])
-                                            ->orderBy('updated_at', 'desc')
-                                            ->limit(5)
-                                            ->get();
-                                    @endphp
-
-                                    @forelse($recentDossiers as $dossier)
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <i class="pli-folder text-primary me-2"></i>
-                                                    <strong>{{ $dossier->entreprise->name ?? 'N/A' }}</strong>
-                                                </div>
-                                            </td>
-                                            <td>{{ $dossier->programme->name ?? 'N/A' }}</td>
-                                            <td>
-                                                @php
-                                                    $statusClass = match($dossier->statut ?? 'en_attente') {
-                                                        'en_cours' => 'primary',
-                                                        'en_attente' => 'warning',
-                                                        'termine' => 'success',
-                                                        'rejete' => 'danger',
-                                                        default => 'secondary'
-                                                    };
-                                                @endphp
-                                                <span class="badge bg-{{ $statusClass }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $dossier->statut ?? 'en attente')) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small>{{ $dossier->updated_at->diffForHumans() }}</small>
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('analyste.dossiers.show', $dossier->token ?? '#') }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="demo-psi-eye"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center py-4">
-                                                <i class="pli-folder text-muted fs-1"></i>
-                                                <p class="text-muted mt-2">Aucun dossier récent</p>
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                <tbody id="recent-dossiers-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <span class="spinner-border spinner-border-sm" role="status"></span> Chargement...
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -304,24 +247,16 @@
                         <h6 class="m-0 font-weight-bold text-primary">Métriques de performance</h6>
                     </div>
                     <div class="card-body">
-                        @php
-                            $totalDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count();
-                            $completedDossiers = \App\Models\Dossier::where('analyste_id', auth()->user()->id)->where('statut', 'termine')->count();
-                            $completionRate = $totalDossiers > 0 ? round(($completedDossiers / $totalDossiers) * 100) : 0;
-                            $thisMonthCompleted = \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-                                ->where('statut', 'termine')
-                                ->whereMonth('updated_at', now()->month)
-                                ->count();
-                        @endphp
-
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="small">Taux de complétion</span>
-                                <span class="small font-weight-bold">{{ $completionRate }}%</span>
+                                <span class="small font-weight-bold" id="completion-rate">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </span>
                             </div>
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ $completionRate }}%"
-                                     aria-valuenow="{{ $completionRate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                <div class="progress-bar bg-success" role="progressbar" id="completion-progress" style="width: 0%" 
+                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                         </div>
 
@@ -330,16 +265,20 @@
                         <div class="list-group list-group-flush">
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <span class="small">Ce mois</span>
-                                <span class="badge bg-primary rounded-pill">{{ $thisMonthCompleted }} complétés</span>
+                                <span class="badge bg-primary rounded-pill" id="this-month-completed">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </span>
                             </div>
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <span class="small">Total analysé</span>
-                                <span class="badge bg-success rounded-pill">{{ $completedDossiers }}</span>
+                                <span class="badge bg-success rounded-pill" id="total-analyzed">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </span>
                             </div>
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <span class="small">En attente</span>
-                                <span class="badge bg-warning rounded-pill">
-                                    {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
+                                <span class="badge bg-warning rounded-pill" id="pending-count">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </span>
                             </div>
                         </div>
@@ -352,27 +291,10 @@
                         <h6 class="m-0 font-weight-bold text-primary">Programmes actifs</h6>
                     </div>
                     <div class="card-body">
-                        @php
-                            $programmes = \App\Models\Programme::limit(5)->get();
-                        @endphp
-
-                        <div class="list-group list-group-flush">
-                            @forelse($programmes as $programme)
-                                <div class="list-group-item d-flex align-items-center px-0">
-                                    <div class="flex-shrink-0 me-2">
-                                        <i class="pli-affiliate text-success"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-0 small">{{ $programme->name }}</h6>
-                                        <small class="text-muted">{{ $programme->dossiers_count ?? 0 }} dossiers</small>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="text-center py-3">
-                                    <i class="pli-affiliate text-muted fs-3"></i>
-                                    <p class="text-muted small mt-2">Aucun programme</p>
-                                </div>
-                            @endforelse
+                        <div class="list-group list-group-flush" id="programmes-list">
+                            <div class="text-center py-3">
+                                <span class="spinner-border spinner-border-sm" role="status"></span> Chargement...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -381,191 +303,47 @@
     </div>
 
     <script src="{{ asset('assets/vendors/chart.js/chart.umd.min.js') }}"></script>
-    <script>
-        // Chart.js configuration
-        Chart.defaults.font.family = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
-        Chart.defaults.color = '#858796';
-
-        // Dossiers Distribution Pie Chart
-        const ctx1 = document.getElementById("dossiersDistributionChart").getContext('2d');
-        const dossiersDistributionChart = new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: ['En cours', 'En attente', 'Terminés', 'Rejetés'],
-                datasets: [{
-                    data: [
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }},
-                        {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)->count() }}
-                    ],
-                    backgroundColor: ['#4e73df', '#f6c23e', '#1cc88a', '#e74a3b'],
-                    hoverBackgroundColor: ['#2e59d9', '#dda20a', '#17a673', '#e02d1b'],
-                    hoverBorderColor: "rgba(234, 236, 244, 1)",
-                }],
-            },
-            options: {
-                maintainAspectRatio: false,
-                tooltips: {
-                    backgroundColor: "rgb(255,255,255)",
-                    bodyFontColor: "#858796",
-                    borderColor: '#dddfeb',
-                    borderWidth: 1,
-                    xPadding: 15,
-                    yPadding: 15,
-                    displayColors: false,
-                    caretPadding: 10,
-                },
-                legend: {
-                    display: false
-                },
-                cutoutPercentage: 70,
-            },
-        });
-
-        // Monthly Analysis Line Chart
-        const ctx2 = document.getElementById("monthlyAnalysisChart").getContext('2d');
-        const monthlyAnalysisChart = new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: [
-                    @for($i = 5; $i >= 0; $i--)
-                        "{{ now()->subMonths($i)->format('M Y') }}",
-                    @endfor
-                ],
-                datasets: [{
-                    label: "Analyses complétées",
-                    lineTension: 0.3,
-                    backgroundColor: "rgba(28, 200, 138, 0.05)",
-                    borderColor: "rgba(28, 200, 138, 1)",
-                    pointRadius: 3,
-                    pointBackgroundColor: "rgba(28, 200, 138, 1)",
-                    pointBorderColor: "rgba(28, 200, 138, 1)",
-                    pointHoverRadius: 3,
-                    pointHoverBackgroundColor: "rgba(28, 200, 138, 1)",
-                    pointHoverBorderColor: "rgba(28, 200, 138, 1)",
-                    pointHitRadius: 10,
-                    pointBorderWidth: 2,
-                    data: [
-                        @for($i = 5; $i >= 0; $i--)
-                            {{ \App\Models\Dossier::where('analyste_id', auth()->user()->id)
-
-                                ->whereMonth('updated_at', now()->subMonths($i)->month)
-                                ->whereYear('updated_at', now()->subMonths($i)->year)
-                                ->count() }},
-                        @endfor
-                    ],
-                }],
-            },
-            options: {
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        left: 10,
-                        right: 25,
-                        top: 25,
-                        bottom: 0
-                    }
-                },
-                scales: {
-                    xAxes: [{
-                        time: {
-                            unit: 'date'
-                        },
-                        gridLines: {
-                            display: false,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            maxTicksLimit: 7
-                        }
-                    }],
-                    yAxes: [{
-                        ticks: {
-                            maxTicksLimit: 5,
-                            padding: 10,
-                            beginAtZero: true
-                        },
-                        gridLines: {
-                            color: "rgb(234, 236, 244)",
-                            zeroLineColor: "rgb(234, 236, 244)",
-                            drawBorder: false,
-                            borderDash: [2],
-                            zeroLineBorderDash: [2]
-                        }
-                    }],
-                },
-                legend: {
-                    display: false
-                },
-                tooltips: {
-                    backgroundColor: "rgb(255,255,255)",
-                    bodyFontColor: "#858796",
-                    titleMarginBottom: 10,
-                    titleFontColor: '#6e707e',
-                    titleFontSize: 14,
-                    borderColor: '#dddfeb',
-                    borderWidth: 1,
-                    xPadding: 15,
-                    yPadding: 15,
-                    displayColors: false,
-                    intersect: false,
-                    mode: 'index',
-                    caretPadding: 10,
-                }
-            }
-        });
-
-        // Refresh dashboard function
-        function refreshDashboard() {
-            location.reload();
-        }
-
-        // Auto-refresh every 5 minutes
-        setInterval(function() {
-            // You can implement AJAX refresh here if needed
-        }, 300000);
-    </script>
+    <script src="{{ asset('js/analyste-dashboard.js') }}"></script>
 
     <style>
         .text-bold {
             font-weight: 800;
         }
-
+        
         .border-left-primary {
             border-left: 0.25rem solid #4e73df !important;
         }
-
+        
         .border-left-success {
             border-left: 0.25rem solid #1cc88a !important;
         }
-
+        
         .border-left-info {
             border-left: 0.25rem solid #36b9cc !important;
         }
-
+        
         .border-left-warning {
             border-left: 0.25rem solid #f6c23e !important;
         }
-
+        
         .card {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
         }
-
+        
         .shadow {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
         }
-
+        
         .chart-pie {
             position: relative;
             height: 15rem;
         }
-
+        
         .chart-area {
             position: relative;
             height: 10rem;
         }
-
+        
         @media (max-width: 768px) {
             .chart-pie,
             .chart-area {
@@ -574,3 +352,4 @@
         }
     </style>
 @endsection
+
