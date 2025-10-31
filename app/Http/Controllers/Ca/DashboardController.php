@@ -36,7 +36,7 @@ class DashboardController extends Controller
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
 
             'total_users' => $users->count(),
-            'total_cooperatives' => Tenant::whereIn('gestionnaire_id', $users->pluck('id'))->count(),
+            'total_cooperatives' => Tenant::whereIn('user_id', $users->pluck('id'))->count(),
             'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('prospect', 1)->count(),
         ];
 
