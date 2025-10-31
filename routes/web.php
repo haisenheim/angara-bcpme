@@ -372,6 +372,15 @@ Route::namespace('App\Http\Controllers\Analyste')
     ->name('analyste.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
+
+        // AJAX Dashboard endpoints
+        Route::get('dashboard/stats','DashboardController@getStats')->name('dashboard.stats');
+        Route::get('dashboard/dossiers-distribution','DashboardController@getDossiersDistribution')->name('dashboard.dossiers.distribution');
+        Route::get('dashboard/monthly-analysis','DashboardController@getMonthlyAnalysis')->name('dashboard.monthly.analysis');
+        Route::get('dashboard/recent-dossiers','DashboardController@getRecentDossiers')->name('dashboard.recent.dossiers');
+        Route::get('dashboard/performance-metrics','DashboardController@getPerformanceMetrics')->name('dashboard.performance.metrics');
+        Route::get('dashboard/alerts','DashboardController@getAlerts')->name('dashboard.alerts');
+        Route::get('dashboard/programmes','DashboardController@getProgrammes')->name('dashboard.programmes');
         Route::resource('entreprises','CompanyController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
@@ -425,6 +434,14 @@ Route::namespace('App\Http\Controllers\Ca')
     ->name('ca.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
+
+        // AJAX Dashboard endpoints
+        Route::get('dashboard/stats','DashboardController@getStats')->name('dashboard.stats');
+        Route::get('dashboard/performance-data','DashboardController@getPerformanceData')->name('dashboard.performance.data');
+        Route::get('dashboard/team-performance','DashboardController@getTeamPerformance')->name('dashboard.team.performance');
+        Route::get('dashboard/recent-dossiers','DashboardController@getRecentDossiers')->name('dashboard.recent.dossiers');
+        Route::get('dashboard/monthly-stats','DashboardController@getMonthlyStats')->name('dashboard.monthly.stats');
+        Route::get('dashboard/alerts','DashboardController@getAlerts')->name('dashboard.alerts');
         Route::get('entreprises','CompanyController@index')->name('entreprises.index');
         Route::get('entreprises/{token}','CompanyController@show')->name('entreprises.show');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
