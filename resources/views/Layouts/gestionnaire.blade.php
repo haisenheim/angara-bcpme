@@ -201,7 +201,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
            </a>
        </li>
        <li class="nav-item">
-           <a href="{{ route('gestionnaire.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
+           <a href="#" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
                <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
            </a>
        </li>
@@ -227,7 +227,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
     <ul class="mainnav__menu nav flex-column">
         <li class="nav-item">
-            <a href="{{ route('gestionnaire.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
+            <a href="#" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
             </a>
         </li>
