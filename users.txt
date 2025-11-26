@@ -1,0 +1,12 @@
+name	email
+HAMAN AMADOU	haman.amadou@bc-pme.cm
+NDJOMO EKO Rodrigue	rodrigue.ndjomo@bc-pme.cm
+HEBIBE Ambachair	ambachair.hebibe@bc-pme.cm
+KAMLA Victor	victor.kamla@bc-pme.cm
+GALLAH Leslie	leslie.gallah@bc-pme.cm
+RAHIMATOU Djidjatou	rahimatou.djidjatou@bc-pme.cm
+TABI Fabien	fabien.tabi@bc-pme.cm
+ZE Roland	roland.ze@bc-pme.cm
+MAIRAMOU BOBO	bobo.mairamou@bc-pme.cm
+MANGA Welisane	Welisane.Manga@bc-pme.cm
+	
