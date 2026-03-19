@@ -154,8 +154,8 @@ class DossierController extends Controller
         if($sequence==4) $data = ['appuis'=>$content];
         if($sequence==5) $data = ['analyse_risque'=>$content];
         if($sequence==6) $data = ['analyse_rentabilite'=>$content];
-        if($sequence==7) $data = ['conclusions_gestionnaire'=>$content];
-        if($sequence==8) $data = ['conclusions_ca'=>$content];
+        if($sequence==8) $data = ['conclusions_gestionnaire'=>$content];
+        if($sequence==9) $data = ['conclusions_ca'=>$content];
         if (!empty($data)) {
             $dossier->update($data);
         }

@@ -20,7 +20,7 @@
     <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->entreprise?->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" data-sequence="8" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
+        <li><a class="dropdown-item" data-sequence="9" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
     </ul>
 </div>
 @endsection
@@ -65,12 +65,16 @@
                             <h4 class="fs-5">6. RENTABILITE DE LA RELATION POUR L'ETABLISSEMENT</h4>
                             <p class="lh-base"><?= $item['analyse_rentabilite'] ?? '—' ?></p>
                         </div>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">7. CONCLUSIONS MOTIVEES, RECOMMANDATIONS DE L'ANALYSTE FINANCIER</h4>
+                            <p class="lh-base"><?= $item['conclusions_analyste'] ?? '—' ?></p>
+                        </div>
                         <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
-                            <h4 class="fs-5">7. CONCLUSIONS ET RECOMMANDATIONS DU GESTIONNAIRE</h4>
+                            <h4 class="fs-5">8. CONCLUSIONS ET RECOMMANDATIONS DU GESTIONNAIRE</h4>
                             <p class="lh-base"><?= $item['conclusions_gestionnaire'] ?? '—' ?></p>
                         </div>
                         <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
-                            <h4 class="fs-5">8. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
+                            <h4 class="fs-5">9. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
                             <p class="lh-base"><?= $item['conclusions_ca'] ?? '—' ?></p>
                         </div>
                     </div>
@@ -88,11 +92,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 8).</p>
+                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 9).</p>
                     <form action="{{ route('ca.dossier.set.analyse') }}" method="post">
                         @csrf
                         <input type="hidden" name="dossier_id" value="{{ $item->id }}">
-                        <input type="hidden" name="sequence" value="8">
+                        <input type="hidden" name="sequence" value="9">
                         <div class="mb-3">
                             <div id="quill-editor-ca" class="mb-3" style="height: 150px;"></div>
                             <textarea rows="3" class="d-none" name="content" id="quill-editor-area-ca">{{ $item->conclusions_ca ?? '' }}</textarea>

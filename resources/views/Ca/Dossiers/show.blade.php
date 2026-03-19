@@ -22,7 +22,7 @@
             <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
             @endif
             <li><hr class="dropdown-divider"></li>
-            <li><a data-sequence="8" class="dropdown-item" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
+            <li><a data-sequence="9" class="dropdown-item" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
         </ul>
     </div>
 @endsection
@@ -258,7 +258,7 @@
         </div>
     </div>
 
-    {{-- Modal Remarques et recommandations du Chef d'agence (point 8) --}}
+    {{-- Modal Remarques et recommandations du Chef d'agence (point 9) --}}
     <div class="modal fade" id="reportCaModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -267,11 +267,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 8).</p>
+                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 9).</p>
                     <form action="{{ route('ca.dossier.set.analyse') }}" method="post">
                         @csrf
                         <input type="hidden" name="dossier_id" value="{{ $item->id }}">
-                        <input type="hidden" name="sequence" value="8">
+                        <input type="hidden" name="sequence" value="9">
                         <div class="mb-3">
                             <div id="quill-editor-ca-show" class="mb-3" style="height: 150px;"></div>
                             <textarea rows="3" class="d-none" name="content" id="quill-editor-area-ca-show">{{ $item->conclusions_ca ?? '' }}</textarea>

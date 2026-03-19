@@ -19,7 +19,7 @@
         <span class="vr"></span>
     </button>
     <ul class="dropdown-menu analyse">
-        <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations du gestionnaire</a></li>
+        <li><a data-sequence="8" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations du gestionnaire</a></li>
     </ul>
 </div>
 @endsection
@@ -64,12 +64,16 @@
                             <h4 class="fs-5">6. RENTABILITE DE LA RELATION POUR L'ETABLISSEMENT</h4>
                             <p class="lh-base"><?= $item['analyse_rentabilite'] ?? '—' ?></p>
                         </div>
+                        <div class="mt-4 border rounded rounded-2 p-2">
+                            <h4 class="fs-5">7. CONCLUSIONS MOTIVEES, RECOMMANDATIONS DE L'ANALYSTE FINANCIER</h4>
+                            <p class="lh-base"><?= $item['conclusions_analyste'] ?? '—' ?></p>
+                        </div>
                         <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
-                            <h3 class="fs-5">7. CONCLUSIONS ET RECOMMANDATIONS DU GESTIONNAIRE</h3>
+                            <h3 class="fs-5">8. CONCLUSIONS ET RECOMMANDATIONS DU GESTIONNAIRE</h3>
                             <p class="lh-base"><?= $item['conclusions_gestionnaire'] ?? '—' ?></p>
                         </div>
                         <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
-                            <h4 class="fs-5">8. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
+                            <h4 class="fs-5">9. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
                             <p class="lh-base"><?= $item['conclusions_ca'] ?? '—' ?></p>
                         </div>
                     </div>
@@ -90,7 +94,7 @@
                     <form action="{{ route('gestionnaire.dossier.set.analyse') }}" method="post">
                         @csrf
                         <input type="hidden" value="{{ $item['id'] }}" name="dossier_id">
-                        <input type="hidden" id="sequence" name="sequence" value="7">
+                        <input type="hidden" id="sequence" name="sequence" value="8">
                         <div class="mt-2">
                             <div id="quill-editor-grille" class="mb-3" style="height: 150px;"></div>
                             <textarea rows="3" class="d-none" name="content" id="quill-editor-area-grille">{{ $item->conclusions_gestionnaire ?? '' }}</textarea>

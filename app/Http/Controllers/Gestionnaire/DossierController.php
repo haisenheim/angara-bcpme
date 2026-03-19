@@ -123,7 +123,7 @@ class DossierController extends Controller
         $dossier = Dossier::where('id', $dossier_id)->where('gestionnaire_id', auth()->user()->id)->first();
         if (!$dossier) return back();
 
-        if ($sequence == 7) {
+        if ($sequence == 8) {
             $dossier->update(['conclusions_gestionnaire' => $content]);
         }
         return redirect()->back()->with('success', 'Recommandations enregistrées.');
