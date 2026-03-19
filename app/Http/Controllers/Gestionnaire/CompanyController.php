@@ -27,7 +27,6 @@ use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
 use App\Models\Region;
-use App\Models\Forme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
