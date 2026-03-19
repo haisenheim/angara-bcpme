@@ -16,8 +16,13 @@
         <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
             <i class="demo-psi-dot-vertical me-1"></i> Actions
         </button>
-        <ul class="dropdown-menu dropdown-menu-end analyse">
-            <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#"><i class="demo-psi-file-edit me-2"></i>Conclusions motivées, recommandations du gestionnaire</a></li>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ route('ca.dossier.get.grille.analyse', $item->token) }}"><i class="demo-psi-magnifi-glass me-2"></i>Grille d'analyse critique</a></li>
+            @if($item->entreprise)
+            <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+            @endif
+            <li><hr class="dropdown-divider"></li>
+            <li><a data-sequence="8" class="dropdown-item" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
         </ul>
     </div>
 @endsection
@@ -253,22 +258,23 @@
         </div>
     </div>
 
-    {{-- Modal Conclusions motivées --}}
-    <div class="modal fade" id="report1Modal" tabindex="-1">
+    {{-- Modal Remarques et recommandations du Chef d'agence (point 8) --}}
+    <div class="modal fade" id="reportCaModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Conclusions motivées, recommandations du gestionnaire</h5>
+                    <h5 class="modal-title">Remarques et recommandations du Chef d'agence</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="description" class="text-muted small mb-3"></p>
+                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 8).</p>
                     <form action="{{ route('ca.dossier.set.analyse') }}" method="post">
                         @csrf
                         <input type="hidden" name="dossier_id" value="{{ $item->id }}">
-                        <input type="hidden" id="sequence" name="sequence">
+                        <input type="hidden" name="sequence" value="8">
                         <div class="mb-3">
-                            <x-quill :name="'content'"></x-quill>
+                            <div id="quill-editor-ca-show" class="mb-3" style="height: 150px;"></div>
+                            <textarea rows="3" class="d-none" name="content" id="quill-editor-area-ca-show">{{ $item->conclusions_ca ?? '' }}</textarea>
                         </div>
                         <div class="d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -311,23 +317,18 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const labels = [
-        "Brèves données générales actualisées sur l'emprunteur / Diagnostic des options stratégiques et politiques.",
-        "Analyse critique d'ensemble / Diagnostic opérationnel de l'emprunteur, aspects non financiers.",
-        "Analyse financière de l'emprunteur (passé récent, présent, futur).",
-        "Appuis financiers et non-financiers proposés.",
-        "Analyse du risque et de la capacité de remboursement de l'emprunteur.",
-        "Rentabilité de la relation pour l'établissement.",
-        "Conclusions motivées, recommandations de l'Analyste Financier"
-    ];
-
-    document.querySelectorAll('.analyse .dropdown-item').forEach(function(el) {
-        el.addEventListener('click', function() {
-            var seq = this.dataset.sequence;
-            document.getElementById('description').textContent = labels[seq - 1] || '';
-            document.getElementById('sequence').value = seq;
+    if (document.getElementById('quill-editor-ca-show')) {
+        var editor = new Quill('#quill-editor-ca-show', {
+            theme: 'snow',
+            modules: { toolbar: [ [{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline', 'strike'], ['blockquote', 'code-block'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['link'], ['clean'] ] }
         });
-    });
+        var quillArea = document.getElementById('quill-editor-area-ca-show');
+        editor.root.innerHTML = quillArea.value || '';
+        editor.on('text-change', function() { quillArea.value = editor.root.innerHTML; });
+        document.getElementById('reportCaModal').addEventListener('show.bs.modal', function() {
+            editor.root.innerHTML = quillArea.value || '';
+        });
+    }
 
     document.querySelectorAll('.btn-critere').forEach(function(btn) {
         btn.addEventListener('click', function() {

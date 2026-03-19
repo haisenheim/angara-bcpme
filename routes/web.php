@@ -507,6 +507,7 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('instruction/critere/choices',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'getChoices'])->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'saveCritereReponse'])->name('instruction.critere.reponse');
         Route::post('dossier/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
+        Route::get('dossier/grille/analyse/{token}','DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
 
         Route::resource('wallets','WalletController');
 

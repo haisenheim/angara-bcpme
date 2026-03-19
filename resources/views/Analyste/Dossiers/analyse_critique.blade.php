@@ -63,7 +63,11 @@
                         </div>
                         <div class="mt-4 border rounded rounded-2 p-2">
                             <h3 class="fs-5">7. CONCLUSIONS GENERALES POUR L'ANALYSTE</h3>
-                            <p class="lh-base"><?= $item['conclusions_analyste'] ?></p>
+                            <p class="lh-base"><?= $item['conclusions_analyste'] ?? '—' ?></p>
+                        </div>
+                        <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
+                            <h4 class="fs-5">8. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
+                            <p class="lh-base"><?= $item['conclusions_ca'] ?? '—' ?></p>
                         </div>
                     </div>
                 </div>

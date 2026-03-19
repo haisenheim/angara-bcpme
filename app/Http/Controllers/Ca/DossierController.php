@@ -50,10 +50,23 @@ class DossierController extends Controller
         return view('Ca/Dossiers/show',compact('item','indicateurs','criteres','sme','banques'));
     }
 
+    public function getGrilleAnalyse($token)
+    {
+        $item = Dossier::where('token', $token)->first();
+        if (!$item || $item->agence_id != auth()->user()->agence_id) {
+            return back();
+        }
+        return view('Ca/Dossiers/analyse_critique', compact('item'));
+    }
+
     public function setAnalyse(){
         $sequence = request('sequence');
         $content = request('content');
         $dossier_id = request('dossier_id');
+        $dossier = Dossier::find($dossier_id);
+        if (!$dossier || $dossier->agence_id != auth()->user()->agence_id) {
+            return back();
+        }
         $data = [];
         if($sequence==1) $data = ['donnees_generales'=>$content];
         if($sequence==2) $data = ['analyse_ensemble'=>$content];
@@ -61,9 +74,12 @@ class DossierController extends Controller
         if($sequence==4) $data = ['appuis'=>$content];
         if($sequence==5) $data = ['analyse_risque'=>$content];
         if($sequence==6) $data = ['analyse_rentabilite'=>$content];
-        if($sequence==7) $data = ['conclusions_analyste'=>$content];
-        Dossier::updateOrCreate(['id'=>$dossier_id],$data);
-        return redirect()->back();
+        if($sequence==7) $data = ['conclusions_gestionnaire'=>$content];
+        if($sequence==8) $data = ['conclusions_ca'=>$content];
+        if (!empty($data)) {
+            $dossier->update($data);
+        }
+        return redirect()->back()->with('success', 'Enregistrement effectué.');
     }
 
     private function parseCriteres(Critere $critere){
