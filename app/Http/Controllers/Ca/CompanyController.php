@@ -9,7 +9,9 @@ use App\Models\Dossier;
 use App\Models\Instruction\Critere;
 use App\Models\Entreprise;
 use App\Models\Forme;
+use App\Models\Region;
 use App\Models\Instruction\Engagement;
+use Illuminate\Support\Facades\DB;
 use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
 use App\Models\Programme;
@@ -39,9 +41,96 @@ class CompanyController extends Controller
 
 
     public function fetchAll(){
-        $items = Entreprise::where('prospect',0)->where('agence_id',auth()->user()->agence_id)->get();
+        $items = $this->baseQuery()->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
+    }
+
+    private function baseQuery()
+    {
+        return Entreprise::where('prospect', 0)->where('agence_id', auth()->user()->agence_id);
+    }
+
+    public function fetchStats(Request $request)
+    {
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $stats = [
+            'total' => (clone $query)->count(),
+            'par_taille' => (clone $query)->select('taille', DB::raw('count(*) as count'))->groupBy('taille')->pluck('count', 'taille')->toArray(),
+            'formelles' => (clone $query)->where('caractere', 'Formel')->count(),
+            'informelles' => (clone $query)->where('caractere', 'Informel')->count(),
+        ];
+        return response()->json($stats);
+    }
+
+    public function fetchPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim($request->input('search.value', ''));
+
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $recordsTotal = $this->baseQuery()->count();
+        $recordsFiltered = $query->count();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+            $recordsFiltered = $query->count();
+        }
+
+        $items = $query->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $resolved = EntrepriseListResource::collection($items)->toArray($request);
+        $data = $resolved['data'] ?? $resolved;
+        $data = array_values($data);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    private function parseFilters(Request $request): array
+    {
+        return [
+            'region_id' => $request->input('region_id'),
+            'taille' => $request->input('taille'),
+            'forme_id' => $request->input('forme_id'),
+            'caractere' => $request->input('caractere'),
+        ];
+    }
+
+    private function applyFilters($query, array $filters)
+    {
+        if (!empty($filters['region_id'])) $query->where('region_id', $filters['region_id']);
+        if (!empty($filters['taille'])) $query->where('taille', $filters['taille']);
+        if (!empty($filters['forme_id'])) $query->where('forme_id', $filters['forme_id']);
+        if (!empty($filters['caractere'])) $query->where('caractere', $filters['caractere']);
+        return $query;
+    }
+
+    public function fetchFilterOptions()
+    {
+        return response()->json([
+            'regions' => Region::orderBy('name')->get(['id', 'name']),
+            'formes' => Forme::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function fetchProspects(){

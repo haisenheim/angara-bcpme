@@ -501,9 +501,15 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
         Route::get('territoire','TerritoireController@index')->name('territoire');
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/data/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
+        Route::get('companies/stats','CompanyController@fetchStats')->name('entreprises.stats');
+        Route::get('companies/filter-options','CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+        Route::get('folders/data/paginated','DossierController@fetchPaginated')->name('dossiers.paginated');
+        Route::get('folders/stats','DossierController@fetchStats')->name('dossiers.stats');
+        Route::get('folders/filter-options','DossierController@fetchFilterOptions')->name('dossiers.filter-options');
         Route::get('instruction/critere/choices',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'getChoices'])->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'saveCritereReponse'])->name('instruction.critere.reponse');
         Route::post('dossier/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
