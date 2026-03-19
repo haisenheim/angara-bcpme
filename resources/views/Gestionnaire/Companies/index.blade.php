@@ -15,13 +15,13 @@
     .btn-action:hover { transform: translateY(-1px); }
     .btn-action-view { background: var(--bs-primary); color: white !important; border: none; }
     .btn-action-view:hover { background: var(--bs-primary); opacity: 0.9; color: white !important; }
-    /* Pagination - style Bootstrap-like */
+    /* Pagination - fond bleu/primary (pas noir) */
     #entreprisesTable_wrapper .dataTables_wrapper .dataTables_paginate { padding: 1rem 0; }
     #entreprisesTable_wrapper .dataTables_paginate { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; align-items: center; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button { margin: 0; padding: 0.5rem 0.85rem; border-radius: 0.375rem; border: 1px solid #dee2e6; background: #fff; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) { background: var(--bs-primary); color: #fff !important; border-color: var(--bs-primary); }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.current { background: var(--bs-primary) !important; color: #fff !important; border-color: var(--bs-primary) !important; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button { margin: 0; padding: 0.5rem 0.85rem; border-radius: 0.375rem; border: 1px solid #dee2e6; background: #fff !important; color: #495057 !important; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.current { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fff !important; }
     #entreprisesTable_wrapper .dataTables_paginate .paginate_button.previous,
     #entreprisesTable_wrapper .dataTables_paginate .paginate_button.next { font-weight: 600; }
     #entreprisesTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
