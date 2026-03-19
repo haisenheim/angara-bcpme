@@ -30,9 +30,9 @@
 
 @section('content')
     <div class="row justify-content-center">
-        <div class="col-12 col-xl-10">
-            <div class="card shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-xl-11">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
                     <form action="{{ route('gestionnaire.entreprises.store') }}" method="post" id="my-form">
                         @csrf
                         <input type="hidden" id="appuisnf" name="appuisnf">
@@ -40,14 +40,16 @@
                         <input type="hidden" id="autres" name="autres">
                         <input type="hidden" id="arr_id" name="arrondissement_id">
                         <section data-step="step-1">
-                            <h3 class="text-center mb-3">Étape 1: Identification</h3>
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-id me-2"></i>Étape 1: Identification
+                            </h5>
                             <div class="row g-3 mb-3">
                                 <div class="col-md-4">
                                     <label for="rccm" class="form-label">N° Registre de commerce</label>
                                     <input required type="text" id="rccm" name="rccm" placeholder="Numéro de registre de commerce" class="form-control">
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="">&numero; d’identifiant unique</label>
+                                    <label for="niu" class="form-label">N° d’identifiant unique</label>
                                     <input required type="text" id="niu" name="niu" placeholder="Numéro d’identifiant unique (NIU/Impôt)" class="form-control">
                                 </div>
                                 <div class="col-md-4">
@@ -157,8 +159,8 @@
                             </div>
 
 
-                            <fieldset class="mt-3">
-                                <legend>Infos du dirigeant</legend>
+                            <fieldset class="mt-4 pt-3 border-top">
+                                <legend class="fs-6 fw-semibold text-muted">Infos du dirigeant</legend>
 
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-8">
@@ -214,117 +216,120 @@
                                 </div>
                             </fieldset>
 
-                            <button type="button" class="btn btn-primary mt-3" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
+                            </div>
                         </section>
 
                         <section data-step="step-2">
-                            <h3 class="text-center mb-3">Étape 2: Objet Social   </h3>
-                            <div class="d-flex justify-content-center">
-                                <div>
-                                    <fieldset>
-                                        <legend>Produit principal</legend>
-                                        <div>
-                                            <div style="width: 600px" class="form-group mt-2 mb-3">
-                                                <select id="produit_id" name="produit_id" class="easyui-combotree form-control" style="width:600px;"
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-box me-2"></i>Étape 2: Objet social
+                            </h5>
+                            <div class="row justify-content-center">
+                                <div class="col-12 col-lg-10">
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Produit principal</legend>
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label for="produit_id" class="form-label">Produit principal</label>
+                                                <select id="produit_id" name="produit_id" class="easyui-combotree form-control" style="width:100%;max-width:100%;"
                                                     data-options="url:'{{ route('util.produits.list') }}',method:'get',label:'Produit principal:',labelPosition:'top'">
                                                 </select>
                                             </div>
-                                            <div style="width: 600px" class="form-group mt-3">
-                                                <label for="">Ancienneté dans le service/produit principal (Année )</label>
-                                                <input name="produit_year_start" id="produit_year_start" class="form-control"  type="number">
+                                            <div class="col-md-6">
+                                                <label for="produit_year_start" class="form-label">Ancienneté dans le service/produit principal (années)</label>
+                                                <input name="produit_year_start" id="produit_year_start" class="form-control" type="number" placeholder="Nombre d'années">
                                             </div>
                                         </div>
                                     </fieldset>
 
-                                    <fieldset class="mt-3">
-                                        <legend>Produits secondaires</legend>
-                                        <div style="width: 600px" class="form-group mt-3">
-                                            <label for="">Choix des autres produits</label>
-                                            <input id="ct" class="form-control"  type="text">
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Produits secondaires</legend>
+                                        <div class="mb-3">
+                                            <label for="ct" class="form-label">Choix des autres produits</label>
+                                            <input id="ct" class="form-control" type="text" placeholder="Rechercher et sélectionner...">
                                         </div>
-
-                                        <h5 class="text-center mt-4 mb-3">Liste des produits/services secondaires</h5>
-                                        <div>
-                                            <ul id="produits" class="list-group mt-3 fw-bold fs-6">
-                                            </ul>
-                                        </div>
+                                        <p class="text-muted small mb-2">Produits/services secondaires sélectionnés</p>
+                                        <ul id="produits" class="list-group list-group-flush">
+                                        </ul>
                                     </fieldset>
                                 </div>
                             </div>
 
-                            <button type="button" class="btn btn-outline-secondary mt-2" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
-                            <button type="button" class="btn btn-primary mt-2" data-next>Suivant<i class="demo-pli-arrow-right ms-1"></i></button>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="button" class="btn btn-primary" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
+                            </div>
                         </section>
 
                         <section data-step="step-3">
-                            <div class="d-flex justify-content-center">
-                                <div>
-                                    <h3 class="text-center">Étape 3: Appuis sollicités</h3>
-                                <fieldset class="mt-3">
-                                    <legend>Appuis Financiers</legend>
-                                    <div style="width: 600px" class="form-group mt-3">
-                                        <label for="">Choix des appuis financiers</label>
-                                        <input id="af" class="form-control"  type="text">
-                                    </div>
-
-                                    <h5 class="text-center mt-4 mb-3">Liste des appuis financiers</h5>
-                                    <div>
-                                        <ul id="afs" class="list-group mt-3 fw-bold fs-6">
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-handshake me-2"></i>Étape 3: Appuis sollicités
+                            </h5>
+                            <div class="row justify-content-center">
+                                <div class="col-12 col-lg-10">
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Appuis financiers</legend>
+                                        <div class="mb-3">
+                                            <label for="af" class="form-label">Choix des appuis financiers</label>
+                                            <input id="af" class="form-control" type="text" placeholder="Rechercher et sélectionner...">
+                                        </div>
+                                        <p class="text-muted small mb-2">Appuis financiers sélectionnés</p>
+                                        <ul id="afs" class="list-group list-group-flush">
                                         </ul>
-                                    </div>
-                                </fieldset>
+                                    </fieldset>
 
-                                <fieldset class="mt-3">
-                                    <legend>Appuis non Financiers</legend>
-                                    <div style="width: 600px" class="form-group mt-3">
-                                        <label for="">Choix des appuis non financiers</label>
-                                        <input  id="anf" class="form-control"  type="text">
-                                    </div>
-
-                                    <h5 class="text-center mt-4 mb-3">Liste des  appuis non financiers</h5>
-                                    <div>
-                                        <ul id="anfs" class="list-group mt-3 fw-bold fs-6">
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Appuis non financiers</legend>
+                                        <div class="mb-3">
+                                            <label for="anf" class="form-label">Choix des appuis non financiers</label>
+                                            <input id="anf" class="form-control" type="text" placeholder="Rechercher et sélectionner...">
+                                        </div>
+                                        <p class="text-muted small mb-2">Appuis non financiers sélectionnés</p>
+                                        <ul id="anfs" class="list-group list-group-flush">
                                         </ul>
-                                    </div>
-                                </fieldset>
+                                    </fieldset>
                                 </div>
-
                             </div>
-                            <div class="d-flex gap-2 mt-3">
+                            <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
-                                <button type="button" class="btn btn-primary" data-next>Suivant<i class="demo-pli-arrow-right ms-1"></i></button>
+                                <button type="button" class="btn btn-primary" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
                             </div>
                         </section>
                         <section data-step="step-4">
-                            <div class="d-flex justify-content-center">
-                                <div>
-                                    <h3 class="text-center">Étape 4: Localisation / Contact</h3>
-                                <fieldset class="mt-3">
-                                    <legend>Localisation</legend>
-                                    <div style="width: 600px" class="form-group mt-3">
-                                        <label for="arrondissement_id" class="form-label">Commune</label>
-                                        <input  id="arrondissement_id" class="form-control"  type="text">
-                                    </div>
-                                </fieldset>
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-map me-2"></i>Étape 4: Localisation / Contact
+                            </h5>
+                            <div class="row justify-content-center">
+                                <div class="col-12 col-lg-10">
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Localisation</legend>
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label for="arrondissement_id" class="form-label">Commune</label>
+                                                <input id="arrondissement_id" class="form-control" type="text" placeholder="Rechercher la commune...">
+                                            </div>
+                                        </div>
+                                    </fieldset>
 
-                                <fieldset class="mt-3">
-                                    <legend>Contact</legend>
-                                    <div style="width: 600px" class="form-group mt-3">
-                                        <label for="phone" class="form-label">Téléphone</label>
-                                        <input name="phone" id="phone" class="form-control"  type="text">
-                                    </div>
-                                    <div style="width: 600px" class="form-group mt-3">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input name="email" id="email" class="form-control"  type="email">
-                                    </div>
-
-                                </fieldset>
+                                    <fieldset class="mb-4">
+                                        <legend class="fs-6 fw-semibold text-muted">Contact</legend>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="phone" class="form-label">Téléphone</label>
+                                                <input name="phone" id="phone" class="form-control" type="text" placeholder="Numéro de téléphone">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="email" class="form-label">Email</label>
+                                                <input name="email" id="email" class="form-control" type="email" placeholder="Adresse email">
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
-
                             </div>
-                            <div class="d-flex gap-2 mt-3">
+                            <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
-                                <button type="submit" class="btn btn-success" data-next><i class="demo-pli-check me-1"></i>Enregistrer</button>
+                                <button type="submit" class="btn btn-success"><i class="demo-pli-check me-1"></i>Enregistrer</button>
                             </div>
                         </section>
                     </form>
