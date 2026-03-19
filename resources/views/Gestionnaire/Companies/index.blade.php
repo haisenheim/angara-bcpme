@@ -15,15 +15,34 @@
     .btn-action:hover { transform: translateY(-1px); }
     .btn-action-view { background: var(--bs-primary); color: white !important; border: none; }
     .btn-action-view:hover { background: var(--bs-primary); opacity: 0.9; color: white !important; }
-    /* Pagination - fond bleu/primary (pas noir) */
-    #entreprisesTable_wrapper .dataTables_wrapper .dataTables_paginate { padding: 1rem 0; }
-    #entreprisesTable_wrapper .dataTables_paginate { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; align-items: center; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button { margin: 0; padding: 0.5rem 0.85rem; border-radius: 0.375rem; border: 1px solid #dee2e6; background: #fff !important; color: #495057 !important; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.current { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fff !important; }
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.previous,
-    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.next { font-weight: 600; }
+    /* Pagination - fond bleu, override noir (Nifty/theme) */
+    #entreprises-card .paginate_button,
+    #entreprises-card .page-link,
+    #entreprises-card .dt-paging a,
+    #entreprises-card .dt-paging span,
+    #entreprises-card .dataTables_paginate a,
+    #entreprises-card .dataTables_paginate span:not(.ellipsis),
+    #entreprises-card ul.pagination li a,
+    #entreprises-card ul.pagination li span { 
+        background-color: #ffffff !important; background: #ffffff !important; 
+        color: #495057 !important; border-color: #dee2e6 !important;
+    }
+    #entreprises-card .paginate_button.current,
+    #entreprises-card .page-item.active .page-link,
+    #entreprises-card .page-item.active span,
+    #entreprises-card ul.pagination .page-item.active .page-link { 
+        background-color: #0d6efd !important; background: #0d6efd !important; 
+        color: #ffffff !important; border-color: #0d6efd !important;
+    }
+    #entreprises-card .paginate_button:hover:not(.disabled):not(.current),
+    #entreprises-card .page-link:hover,
+    #entreprises-card ul.pagination .page-link:hover { 
+        background-color: #0d6efd !important; background: #0d6efd !important; 
+        color: #ffffff !important; border-color: #0d6efd !important;
+    }
+    #entreprises-card .paginate_button.disabled { 
+        background-color: #f8f9fa !important; background: #f8f9fa !important; color: #adb5bd !important; opacity: 0.7;
+    }
     #entreprisesTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
 </style>
 @endpush
@@ -166,7 +185,7 @@
     </div>
 
     {{-- Tableau avec pagination AJAX --}}
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm" id="entreprises-card">
         <div class="card-body p-4">
             <div class="table-responsive">
                 <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
@@ -278,7 +297,20 @@ document.addEventListener('DOMContentLoaded', function() {
             searchPlaceholder: 'Rechercher...'
         },
         processing: true,
-        drawCallback: function() { loadStats(); },
+        drawCallback: function() { 
+            loadStats();
+            // Force pagination bleu (override noir thème)
+            var btns = document.querySelectorAll('#entreprises-card .paginate_button, #entreprises-card .page-link, #entreprises-card .dt-paging button, #entreprises-card .dt-paging a');
+            btns.forEach(function(el) {
+                if (el.classList.contains('current') || (el.closest && el.closest('.page-item.active'))) {
+                    el.style.setProperty('background-color', '#0d6efd', 'important');
+                    el.style.setProperty('color', '#fff', 'important');
+                } else if (!el.classList.contains('disabled')) {
+                    el.style.setProperty('background-color', '#fff', 'important');
+                    el.style.setProperty('color', '#495057', 'important');
+                }
+            });
+        },
         pagingType: 'simple_numbers'
     });
 
