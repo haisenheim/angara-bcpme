@@ -411,6 +411,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('dashboard/performance-metrics','DashboardController@getPerformanceMetrics')->name('dashboard.performance.metrics');
         Route::get('dashboard/alerts','DashboardController@getAlerts')->name('dashboard.alerts');
         Route::get('dashboard/programmes','DashboardController@getProgrammes')->name('dashboard.programmes');
+        Route::get('entreprises/data/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::resource('entreprises','CompanyController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
