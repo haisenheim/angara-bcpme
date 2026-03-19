@@ -338,6 +338,9 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::resource('users','UserController');
         Route::get('territoire','TerritoireController@index')->name('territoire');
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/data/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
+        Route::get('companies/stats','CompanyController@fetchStats')->name('entreprises.stats');
+        Route::get('companies/filter-options','CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
@@ -434,7 +437,6 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::resource('users','UserController');
         Route::get('territoire','TerritoireController@index')->name('territoire');
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
-        Route::get('companies/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
