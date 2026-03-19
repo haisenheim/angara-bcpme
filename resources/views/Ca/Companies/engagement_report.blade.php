@@ -23,7 +23,7 @@
         <div class="card-header bg-white border-0 py-3">
             <h6 class="mb-0 fw-semibold"><i class="demo-psi-file-text-image me-2 text-primary"></i>Répartition des engagements</h6>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-0" style="max-height: 75vh; overflow-y: auto;">
             <div class="table-responsive">
                 <table class="table table-hover table-bordered align-middle mb-0 engagement-table">
                     <thead class="table-light">

@@ -19,7 +19,7 @@
                 <div class="card-header p-4">
                     <h4 class="text-center mb-0">ETAT DES ENGAGEMENTS</h4>
                 </div>
-                <div class="card-body table-responsive">
+                <div class="card-body table-responsive" style="max-height: 75vh; overflow-y: auto;">
                     <table class="table sm table-bordered">
                         <thead>
                             <tr>
