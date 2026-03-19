@@ -49,6 +49,23 @@ class DossierController extends Controller
 
         return view('Ca/Dossiers/show',compact('item','indicateurs','criteres','sme','banques'));
     }
+
+    public function setAnalyse(){
+        $sequence = request('sequence');
+        $content = request('content');
+        $dossier_id = request('dossier_id');
+        $data = [];
+        if($sequence==1) $data = ['donnees_generales'=>$content];
+        if($sequence==2) $data = ['analyse_ensemble'=>$content];
+        if($sequence==3) $data = ['analyse_financiere'=>$content];
+        if($sequence==4) $data = ['appuis'=>$content];
+        if($sequence==5) $data = ['analyse_risque'=>$content];
+        if($sequence==6) $data = ['analyse_rentabilite'=>$content];
+        if($sequence==7) $data = ['conclusions_analyste'=>$content];
+        Dossier::updateOrCreate(['id'=>$dossier_id],$data);
+        return redirect()->back();
+    }
+
     private function parseCriteres(Critere $critere){
         $dsc = [];
         $note = 0;

@@ -12,6 +12,11 @@ class Dossier extends Model
     use HasFactory;
     protected $guarded = [];
 
+    public function getRouteKeyName(): string
+    {
+        return 'token';
+    }
+
     public function entreprise(){
         return $this->belongsTo('App\Models\Entreprise');
     }
@@ -45,6 +50,10 @@ class Dossier extends Model
     public function reponses()
     {
         return $this->hasMany(Reponse::class);
+    }
+
+    public function esgEvaluation(){
+        return $this->hasOne(DossierEsgEvaluation::class);
     }
 
     // Accessor pour 'name'

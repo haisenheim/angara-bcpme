@@ -346,6 +346,21 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.evaluation-frameworks.index') }}" class="nav-link {{ $active==810?'active':'' }}">Frameworks ESG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.evaluation-categories.index') }}" class="nav-link {{ $active==811?'active':'' }}">Catégories ESG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.evaluation-indicators.index') }}" class="nav-link {{ $active==812?'active':'' }}">Indicateurs ESG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.evaluation-thresholds.index') }}" class="nav-link {{ $active==813?'active':'' }}">Seuils ESG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.evaluation-settings.index') }}" class="nav-link {{ $active==814?'active':'' }}">Réglages ESG</a>
+                    </li>
                 </ul>
                 <!-- END : Dashboard submenu list -->
             </li>

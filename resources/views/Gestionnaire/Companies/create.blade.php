@@ -1,33 +1,37 @@
 @extends('Layouts.gestionnaire')
 
-@section('title', 'Accueil')
-@section('breadcrumb')
+@push('styles')
 <link rel="stylesheet" href="{{ asset('dropdowncombotree/comboTreeStyle.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/default/easyui.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/icon.css') }}">
-<script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
+@endpush
+
+@section('title', 'Nouvelle entreprise')
+@section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entreprises</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Nouvelle Entreprise</li>
+       <li class="breadcrumb-item"><a href="{{ route('gestionnaire.dashboard') }}">Angara</a></li>
+       <li class="breadcrumb-item"><a href="{{ route('gestionnaire.entreprises.index') }}">Entreprises</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Nouvelle entreprise</li>
     </ol>
- </nav>
+</nav>
+@endsection
+
+@section('actions')
+<a href="{{ route('gestionnaire.entreprises.index') }}" class="btn btn-outline-secondary btn-sm"><i class="demo-pli-arrow-left me-2"></i>Annuler</a>
 @endsection
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Nouvelle Entreprise</h5>
+        <h5 class="page-title mb-0 mt-2">Nouvelle entreprise</h5>
+        <p class="text-body-secondary mb-0">Remplissez les informations en 4 étapes</p>
     </div>
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-center">
-        <div class="d-flex gap-0" style="width: 900px">
-            <div style="width: 20px;" class="bg-blue">
-
-            </div>
-            <div class="card flex-fill">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card shadow-sm">
                 <div class="card-body">
                     <form action="{{ route('gestionnaire.entreprises.store') }}" method="post" id="my-form">
                         @csrf
@@ -37,34 +41,34 @@
                         <input type="hidden" id="arr_id" name="arrondissement_id">
                         <section data-step="step-1">
                             <h3 class="text-center mb-3">Étape 1: Identification</h3>
-                            <div class="d-flex gap-2">
-                                <div class="form-group w-300px">
-                                    <label for="">&numero; Registre de commerce</label>
-                                    <input required type="text" id="rccm" name="rccm" placeholder="Numero de Registre de commerce de l'entreprise" class="form-control">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label for="rccm" class="form-label">N° Registre de commerce</label>
+                                    <input required type="text" id="rccm" name="rccm" placeholder="Numéro de registre de commerce" class="form-control">
                                 </div>
-                                <div class="form-group flex-fill">
+                                <div class="col-md-4">
                                     <label for="">&numero; d’identifiant unique</label>
                                     <input required type="text" id="niu" name="niu" placeholder="Numéro d’identifiant unique (NIU/Impôt)" class="form-control">
                                 </div>
-                                <div class="form-group flex-fill">
-                                    <label for="">&numero; Employeur ou Assurance volontaire</label>
-                                    <input required type="text" id="cnps" name="cnps" placeholder="Numero Employeur ou Assurance volontaire (CNPS)" class="form-control">
+                                <div class="col-md-4">
+                                    <label for="cnps" class="form-label">N° Employeur ou Assurance volontaire</label>
+                                    <input required type="text" id="cnps" name="cnps" placeholder="CNPS" class="form-control">
                                 </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                <div class="form-group flex-fill">
-                                    <label for="">Dénomination</label>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-8">
+                                    <label for="name" class="form-label">Dénomination</label>
                                     <input required type="text" id="name" placeholder="Dénomination de l'entreprise" name="name" class="form-control">
                                 </div>
-                                <div class="form-group w-200px">
-                                    <label for="">Numéro principal Mobile Money</label>
-                                    <input required type="text" id="mm_phone" placeholder="Numéro principal Mobile Money" name="mm_phone" class="form-control">
+                                <div class="col-md-4">
+                                    <label for="mm_phone" class="form-label">Numéro Mobile Money</label>
+                                    <input required type="text" id="mm_phone" placeholder="Numéro Mobile Money" name="mm_phone" class="form-control">
                                 </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                <div class="form-group w-200px">
-                                    <label for="">Type d'entreprise</label>
-                                    <select required name="taille" id="taille" class="form-control">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label for="taille" class="form-label">Type d'entreprise</label>
+                                    <select required name="taille" id="taille" class="form-select">
                                         <option value="">Choisir ...</option>
                                         <option value="GRANDE">GRANDE</option>
                                         <option value="MOYENNE">MOYENNE</option>
@@ -74,120 +78,115 @@
                                         <option value="ASSOCIATION">ASSOCIATION</option>
                                     </select>
                                 </div>
-                                <div style="margin-left: 20px" class="form-group w-200px">
-                                    <div class="">
-                                        <label class="col-form-label">Caractère : </label>
-                                        <div class="">
-                                           <div class="form-check form-check-inline">
-                                              <input data-formal="1" id="_dm-inlineRadio2" checked class="form-check-input caractere" type="radio" name="caractere" value="Formel">
-                                              <label for="_dm-inlineRadio2" class="form-check-label">Formel</label>
-                                           </div>
-                                           <div class="form-check form-check-inline">
-                                              <input data-formal="0" id="_dm-inlineRadio3" class="form-check-input caractere" type="radio" name="caractere" value="Informel">
-                                              <label for="_dm-inlineRadio3" class="form-check-label">Informel</label>
-                                           </div>
-                                        </div>
-                                     </div>
+                                <div class="col-md-4">
+                                    <label class="form-label d-block">Caractère</label>
+                                    <div class="form-check form-check-inline">
+                                        <input data-formal="1" id="caractere-formel" checked class="form-check-input caractere" type="radio" name="caractere" value="Formel">
+                                        <label for="caractere-formel" class="form-check-label">Formel</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input data-formal="0" id="caractere-informel" class="form-check-input caractere" type="radio" name="caractere" value="Informel">
+                                        <label for="caractere-informel" class="form-check-label">Informel</label>
+                                    </div>
                                 </div>
-                                <div class="form-group flex-fill">
-                                    <label for="">Forme juridique  </label>
-                                    <select required name="forme_id" id="forme_id" class="form-control">
+                                <div class="col-md-4">
+                                    <label for="forme_id" class="form-label">Forme juridique</label>
+                                    <select required name="forme_id" id="forme_id" class="form-select">
                                         <option value="">Choisir ...</option>
-
                                     </select>
                                 </div>
                             </div>
 
-                            <div class="d-flex gap-1">
-                                <div class="form-group w-25">
-                                    <label for="">Système comptable : </label>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Système comptable</label>
                                     <div class="">
                                         <div class="form-check form-check-inline">
-                                           <input id="normal" checked class="form-check-input" type="radio" name="systeme" value="Normal">
-                                           <label for="normal"  class="form-check-label">Normal</label>
+                                           <input id="systeme-normal" checked class="form-check-input" type="radio" name="systeme" value="Normal">
+                                           <label for="systeme-normal" class="form-check-label">Normal</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                           <input id="simple" class="form-check-input" type="radio" name="systeme" value="Minimal">
-                                           <label for="simple" class="form-check-label">Minimal</label>
+                                           <input id="systeme-minimal" class="form-check-input" type="radio" name="systeme" value="Minimal">
+                                           <label for="systeme-minimal" class="form-check-label">Minimal</label>
                                         </div>
                                      </div>
                                 </div>
-                                <div class="form-group w-25">
-                                    <label for="">Capital social de l'entreprise</label>
-                                    <input required type="number" id="capital" placeholder="Capital social de l'entreprise" name="capital" class="form-control formal-control">
+                                <div class="col-md-3">
+                                    <label for="capital" class="form-label">Capital social</label>
+                                    <input required type="number" id="capital" placeholder="Capital social" name="capital" class="form-control formal-control">
                                 </div>
-                                <div class="form-group w-25">
-                                    <label for="">Date de création formelle</label>
-                                    <input required type="date" id="dt_creation"  name="dt_creation" class="form-control">
+                                <div class="col-md-3">
+                                    <label for="dt_creation" class="form-label">Date de création formelle</label>
+                                    <input required type="date" id="dt_creation" name="dt_creation" class="form-control">
                                 </div>
-                                <div class="form-group w-25">
-                                    <label for="">Date début des activités</label>
-                                    <input required type="date" id="dt_start"  name="dt_start" class="form-control">
+                                <div class="col-md-3">
+                                    <label for="dt_start" class="form-label">Date début des activités</label>
+                                    <input required type="date" id="dt_start" name="dt_start" class="form-control">
                                 </div>
                             </div>
-                            <div class="d-flex gap-3">
-                                <div class="form-group w-25">
-                                    <label for="">Ressources propres </label>
-                                    <input required type="number" id="ressources_propres"  name="ressources_propres" placeholder="Ressources propres de l'entreprise " class="form-control formal-control">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label for="ressources_propres" class="form-label">Ressources propres</label>
+                                    <input required type="number" id="ressources_propres" name="ressources_propres" placeholder="Ressources propres" class="form-control formal-control">
                                 </div>
-                                <div class="form-group w-25">
-                                    <label for="">Total actif (Voir bilan)</label>
-                                    <input required type="number" id="total_actif"   name="total_actif" placeholder="Total actif de l'entreprise" class="form-control formal-control">
+                                <div class="col-md-3">
+                                    <label for="total_actif" class="form-label">Total actif</label>
+                                    <input required type="number" id="total_actif" name="total_actif" placeholder="Total actif (bilan)" class="form-control formal-control">
                                 </div>
-                                <div class="form-group w-30 mt-3">
-                                    <label for="">Type de personnel : </label>
+                                <div class="col-md-3">
+                                    <label class="form-label">Type de personnel</label>
                                     <div class="">
                                         <div class="form-check form-check-inline">
-                                           <input id="s1" checked class="form-check-input" type="radio" name="type_personnel" value="permanent">
-                                           <label for="normal"  class="form-check-label">Permanent</label>
+                                           <input id="type-permanent" checked class="form-check-input" type="radio" name="type_personnel" value="permanent">
+                                           <label for="type-permanent" class="form-check-label">Permanent</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                           <input id="s2" class="form-check-input" type="radio" name="type_personnel" value="saisonier">
-                                           <label for="simple" class="form-check-label">Saisonier</label>
+                                           <input id="type-saisonier" class="form-check-input" type="radio" name="type_personnel" value="saisonier">
+                                           <label for="type-saisonier" class="form-check-label">Saisonnier</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                            <input id="s3" class="form-check-input" type="radio" name="type_personnel" value="mixte">
-                                            <label for="simple" class="form-check-label">Mixte</label>
+                                            <input id="type-mixte" class="form-check-input" type="radio" name="type_personnel" value="mixte">
+                                            <label for="type-mixte" class="form-check-label">Mixte</label>
                                          </div>
                                      </div>
                                 </div>
-                                <div class="form-group flex-fill">
-                                    <label for="">Nombre d'employés</label>
-                                    <input required  type="number" id="nb_personnel"  name="nb_personnel" placeholder="Nombre d'employés" class="form-control">
+                                <div class="col-md-3">
+                                    <label for="nb_personnel" class="form-label">Nombre d'employés</label>
+                                    <input required type="number" id="nb_personnel" name="nb_personnel" placeholder="Nombre d'employés" class="form-control">
                                 </div>
                             </div>
 
 
-                            <fieldset>
+                            <fieldset class="mt-3">
                                 <legend>Infos du dirigeant</legend>
 
-                                <div class="d-flex gap-1">
-                                    <div class="form-group w-75">
-                                        <label for="">Nom</label>
-                                        <input required type="text" id="manager" placeholder="Nom et prenom du dirigeant" name="manager" class="form-control">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-8">
+                                        <label for="manager" class="form-label">Nom</label>
+                                        <input required type="text" id="manager" placeholder="Nom et prénom du dirigeant" name="manager" class="form-control">
                                     </div>
-                                    <div class="form-group w-25 mt-4">
-                                        <label for="">Sexe: </label>
+                                    <div class="col-md-4">
+                                        <label class="form-label d-block">Sexe</label>
                                         <div class="">
                                             <div class="form-check form-check-inline">
-                                               <input id="male" checked class="form-check-input" type="radio" name="manager_sexe" value="Homme">
-                                               <label for="male"  class="form-check-label">Homme</label>
+                                               <input id="manager-male" checked class="form-check-input" type="radio" name="manager_sexe" value="Homme">
+                                               <label for="manager-male" class="form-check-label">Homme</label>
                                             </div>
                                             <div class="form-check form-check-inline">
-                                               <input id="simple" class="form-check-input" type="radio" name="manager_sexe" value="Femme">
-                                               <label for="simple" class="form-check-label">Femme</label>
+                                               <input id="manager-femme" class="form-check-input" type="radio" name="manager_sexe" value="Femme">
+                                               <label for="manager-femme" class="form-check-label">Femme</label>
                                             </div>
                                          </div>
                                     </div>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <div class="form-group w-30">
-                                        <label for="">Contact</label>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-4">
+                                        <label for="manager_contact" class="form-label">Contact</label>
                                         <input required type="text" id="manager_contact" placeholder="Contact du dirigeant" name="manager_contact" class="form-control">
                                     </div>
-                                    <div class="form-group w-25">
-                                        <label for="">Niveau d'instruction du dirigeant</label>
-                                        <select required name="manager_niveau" id="manager_niveau" class="form-control">
+                                    <div class="col-md-4">
+                                        <label for="manager_niveau" class="form-label">Niveau d'instruction</label>
+                                        <select required name="manager_niveau" id="manager_niveau" class="form-select">
                                             <option value="">Choisir ...</option>
                                             <option value="Supérieur">Supérieur</option>
                                             <option value="Secondaire">Secondaire</option>
@@ -195,12 +194,12 @@
                                             <option value="Sans niveau">Sans niveau</option>
                                         </select>
                                     </div>
-                                    <div class="form-group flex-fill mr-2">
-                                        <label for="">Date de naissance</label>
-                                        <input required type="date" id="manager_dtn"  name="manager_dtn" class="form-control">
+                                    <div class="col-md-2">
+                                        <label for="manager_dtn" class="form-label">Date de naissance</label>
+                                        <input required type="date" id="manager_dtn" name="manager_dtn" class="form-control">
                                     </div>
-                                    <div class="form-group w-25 mt-4">
-                                        <label for="">Le dirigeant est-il le promoteur ? </label>
+                                    <div class="col-md-2">
+                                        <label class="form-label d-block">Promoteur ?</label>
                                         <div class="">
                                             <div class="form-check form-check-inline">
                                                <input id="mp-1" checked class="form-check-input" type="radio" name="manager_promoteur" value="1">
@@ -215,7 +214,7 @@
                                 </div>
                             </fieldset>
 
-                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <button type="button" class="btn btn-primary mt-3" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
                         </section>
 
                         <section data-step="step-2">
@@ -253,8 +252,8 @@
                                 </div>
                             </div>
 
-                            <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <button type="button" class="btn btn-outline-secondary mt-2" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                            <button type="button" class="btn btn-primary mt-2" data-next>Suivant<i class="demo-pli-arrow-right ms-1"></i></button>
                         </section>
 
                         <section data-step="step-3">
@@ -291,9 +290,9 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="button" class="btn btn-primary" data-next>Suivant<i class="demo-pli-arrow-right ms-1"></i></button>
                             </div>
                         </section>
                         <section data-step="step-4">
@@ -303,7 +302,7 @@
                                 <fieldset class="mt-3">
                                     <legend>Localisation</legend>
                                     <div style="width: 600px" class="form-group mt-3">
-                                        <label for="">Commune</label>
+                                        <label for="arrondissement_id" class="form-label">Commune</label>
                                         <input  id="arrondissement_id" class="form-control"  type="text">
                                     </div>
                                 </fieldset>
@@ -311,11 +310,11 @@
                                 <fieldset class="mt-3">
                                     <legend>Contact</legend>
                                     <div style="width: 600px" class="form-group mt-3">
-                                        <label for="">Telephone</label>
+                                        <label for="phone" class="form-label">Téléphone</label>
                                         <input name="phone" id="phone" class="form-control"  type="text">
                                     </div>
                                     <div style="width: 600px" class="form-group mt-3">
-                                        <label for="">Email</label>
+                                        <label for="email" class="form-label">Email</label>
                                         <input name="email" id="email" class="form-control"  type="email">
                                     </div>
 
@@ -323,10 +322,9 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button class="btn btn-success mt-2" data-next>Enregistrer</button>
-
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="submit" class="btn btn-success" data-next><i class="demo-pli-check me-1"></i>Enregistrer</button>
                             </div>
                         </section>
                     </form>
@@ -334,10 +332,17 @@
             </div>
         </div>
     </div>
+@endsection
 
- <script>
+@section('script')
+<script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
+<script>
     document.addEventListener('DOMContentLoaded', () => {
             const wizard = new Zangdar('#my-form');
+            document.getElementById('my-form').addEventListener('submit', function() {
+                // Réactiver les champs désactivés pour qu'ils soient envoyés (Informel)
+                $('.formal-control').prop('disabled', false);
+            });
     })
  </script>
  <script src="{{ asset('dropdowncombotree/comboTreePlugin.js') }}"></script>
@@ -415,9 +420,9 @@
                      $('.caractere').change(function(){
                         var c = $(this).data('formal');
                         if(c==0){
-                            $('.formal-control').prop('disabled', true)
+                            $('.formal-control').prop('disabled', true).val(0);
                         }else{
-                            $('.formal-control').prop('disabled', false)
+                            $('.formal-control').prop('disabled', false).val('');
                         }
                         $('#forme_id').html(`<option value="">Choisir une forme ...</option>`)
                         formes.forEach(elt => {
@@ -443,7 +448,7 @@
             var li = `<li class="list-group-item">${element.title}</li>`
             $('#produits').append(li)
         });
-        $('#autres').val(autres)
+        $('#autres').val(autres.join(','))
      }
 
      function buildAnf(){
@@ -454,7 +459,7 @@
             var li = `<li class="list-group-item">${element.title}</li>`
             $('#anfs').append(li)
         });
-        $('#appuisnf').val(apnfs)
+        $('#appuisnf').val(apnfs.join(','))
      }
 
      function buildAf(){
@@ -465,7 +470,7 @@
             var li = `<li class="list-group-item">${element.title}</li>`
             $('#afs').append(li)
         });
-        $('#appuisf').val(apfs)
+        $('#appuisf').val(apfs.join(','))
      }
  </script>
 

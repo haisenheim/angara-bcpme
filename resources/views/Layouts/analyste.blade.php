@@ -44,6 +44,9 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                     <a href="{{ route('analyste.dossiers.index') }}" class="nav-link {{ $active==201?'active':'' }}">DOSSIERS D'INSTRUCTION</a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('analyste.dossiers.esg-evaluations.index') }}" class="nav-link {{ $active==206?'active':'' }}">ÉVALUATIONS ESG</a>
+                </li>
+                <li class="nav-item">
                     <a href="#" class="nav-link {{ $active==202?'active':'' }}">DOSSIERS DE COMPENSATION</a>
                 </li>
                 <li class="nav-item">

@@ -76,9 +76,9 @@ class CompanyController extends ExtendedController
     {
         //
         $data = $request->except('_token','appuisnf','appuisf','autres','type_personnel');
-        $anfs = explode(',',$request->appuisnf);
-        $afs = explode(',',$request->appuisf);
-        $produits = explode(',',$request->autres);
+        $anfs = array_filter(explode(',', $request->appuisnf ?? ''));
+        $afs = array_filter(explode(',', $request->appuisf ?? ''));
+        $produits = array_filter(explode(',', $request->autres ?? ''));
         $type_personnel = $request->type_personnel;
         $data['token'] = sha1(time().rand(0,99));
         $ar = Arrondissement::find($data['arrondissement_id']);

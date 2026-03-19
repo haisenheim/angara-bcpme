@@ -262,6 +262,12 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
+        // ESG - Paramétrage
+        Route::resource('evaluation-frameworks','EvaluationFrameworkController')->parameters(['evaluation-framework'=>'evaluation_framework']);
+        Route::resource('evaluation-categories','EvaluationCategoryController')->parameters(['evaluation-category'=>'evaluation_category']);
+        Route::resource('evaluation-indicators','EvaluationIndicatorController')->parameters(['evaluation-indicator'=>'evaluation_indicator']);
+        Route::resource('evaluation-thresholds','EvaluationScoreThresholdController')->parameters(['evaluation-threshold'=>'evaluation_threshold']);
+        Route::resource('evaluation-settings','EvaluationSettingController')->parameters(['evaluation-setting'=>'evaluation_setting']);
     });
 
 Route::namespace('App\Http\Controllers\Gestionnaire')
@@ -278,6 +284,13 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('dashboard/entreprises-data','DashboardController@getEntreprisesData')->name('dashboard.entreprises.data');
 
         Route::resource('secteurs','SecteurController');
+        // ESG - Profils d'évaluation (avant resource pour éviter conflit de routes)
+        Route::get('entreprises/evaluation-profiles','EntrepriseEvaluationProfileController@index')->name('entreprises.evaluation-profiles.index');
+        Route::get('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@show')->name('entreprises.evaluation-profile.show');
+        Route::get('entreprises/{entreprise}/evaluation-profile/create','EntrepriseEvaluationProfileController@create')->name('entreprises.evaluation-profile.create');
+        Route::post('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@store')->name('entreprises.evaluation-profile.store');
+        Route::get('entreprises/{entreprise}/evaluation-profile/edit','EntrepriseEvaluationProfileController@edit')->name('entreprises.evaluation-profile.edit');
+        Route::put('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@update')->name('entreprises.evaluation-profile.update');
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');
         Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
@@ -403,6 +416,15 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
+        // ESG - Évaluations (avant resource dossiers)
+        Route::get('dossiers/esg-evaluations','DossierEsgEvaluationController@index')->name('dossiers.esg-evaluations.index');
+        Route::get('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@show')->name('dossiers.esg-evaluation.show');
+        Route::get('dossiers/{dossier}/esg-evaluation/create','DossierEsgEvaluationController@create')->name('dossiers.esg-evaluation.create');
+        Route::post('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@store')->name('dossiers.esg-evaluation.store');
+        Route::get('dossiers/{dossier}/esg-evaluation/edit','DossierEsgEvaluationController@edit')->name('dossiers.esg-evaluation.edit');
+        Route::put('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@update')->name('dossiers.esg-evaluation.update');
+        Route::post('dossiers/{dossier}/esg-evaluation/submit','DossierEsgEvaluationController@submit')->name('dossiers.esg-evaluation.submit');
+        Route::post('dossiers/{dossier}/esg-evaluation/rebuild-scores','DossierEsgEvaluationController@rebuildScores')->name('dossiers.esg-evaluation.rebuild-scores');
         Route::resource('dossiers','DossierController');
         Route::post('dossier/dsf','DossierController@loadDsf')->name('dossier.dsf');
         Route::resource('programmes','ProgrammeController');
@@ -412,6 +434,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::resource('users','UserController');
         Route::get('territoire','TerritoireController@index')->name('territoire');
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
+        Route::get('companies/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
@@ -433,7 +456,6 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
-
     });
 
 Route::namespace('App\Http\Controllers\Ca')
@@ -474,6 +496,9 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
+        Route::get('instruction/critere/choices',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'getChoices'])->name('instruction.critere.choices');
+        Route::post('instruction/critere/reponse',[\App\Http\Controllers\Gestionnaire\InstructionController::class,'saveCritereReponse'])->name('instruction.critere.reponse');
+        Route::post('dossier/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
 
         Route::resource('wallets','WalletController');
 
@@ -487,6 +512,13 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::resource('requests','RequestController');
         Route::post('request/validate','RequestController@valider')->name('request.validate');
         Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
+
+        // ESG - Validation des évaluations
+        Route::get('esg-evaluations','DossierEsgValidationController@index')->name('esg-evaluations.index');
+        Route::get('esg-evaluations/dashboard','DossierEsgValidationController@dashboard')->name('esg-evaluations.dashboard');
+        Route::get('esg-evaluations/{evaluation}','DossierEsgValidationController@show')->name('esg-evaluations.show');
+        Route::post('esg-evaluations/{evaluation}/validate','DossierEsgValidationController@validateEvaluation')->name('esg-evaluations.validate');
+        Route::post('esg-evaluations/{evaluation}/reject','DossierEsgValidationController@rejectEvaluation')->name('esg-evaluations.reject');
 });
 
 Route::namespace('App\Http\Controllers\Regional')
@@ -590,8 +622,7 @@ Route::namespace('App\Http\Controllers\Program')
         Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
-
-});
+    });
 
 Route::namespace('App\Http\Controllers\Sectoriel')
     ->prefix('sectoriel')

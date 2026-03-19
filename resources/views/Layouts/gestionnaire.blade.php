@@ -201,6 +201,11 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
            </a>
        </li>
        <li class="nav-item">
+           <a href="{{ route('gestionnaire.entreprises.evaluation-profiles.index') }}" class="nav-link mininav-toggle {{ $active==406?'active':'' }}"><i class="pli-file-edit fs-2 me-2"></i>
+               <span class="nav-label mininav-content ms-1">Profils ESG</span>
+           </a>
+       </li>
+       <li class="nav-item">
            <a href="#" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
                <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
            </a>

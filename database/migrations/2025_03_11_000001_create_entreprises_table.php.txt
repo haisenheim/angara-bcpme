@@ -1,0 +1,76 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('entreprises', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name')->nullable();
+            $table->string('rccm', 20)->nullable();
+            $table->string('niu', 20)->nullable();
+            $table->string('cnps', 20)->nullable();
+            $table->string('mm_phone', 20)->nullable();
+            $table->string('taille', 20)->nullable();
+            $table->enum('caractere', ['Formel', 'Informel'])->nullable();
+            $table->integer('forme_id')->default(0);
+            $table->enum('systeme', ['Normal', 'Minimal']);
+            $table->double('capital')->default(0);
+            $table->double('ressources_propres')->default(0);
+            $table->double('total_actif')->default(0);
+            $table->integer('nb_personnel')->default(0);
+            $table->integer('nb_personnel_permanent')->default(0);
+            $table->integer('nb_personnel_saisonier')->default(0);
+            $table->boolean('personnel_permanent')->default(false);
+            $table->boolean('personnel_saisonier')->default(false);
+            $table->boolean('personnel_mixte')->default(false);
+            $table->date('dt_creation')->nullable();
+            $table->date('dt_start')->nullable();
+            $table->string('email', 100)->nullable();
+            $table->string('phone', 50)->nullable();
+            $table->string('manager', 155)->nullable();
+            $table->string('manager_contact')->nullable();
+            $table->enum('manager_sexe', ['Homme', 'Femme'])->nullable();
+            $table->enum('manager_niveau', ['Supérieur', 'Secondaire', 'Primaire', 'Sans niveau'])->nullable();
+            $table->boolean('manager_promoteur')->default(true);
+            $table->date('manager_dtn')->nullable();
+            $table->integer('produit_id')->default(0);
+            $table->integer('produit_year_start')->nullable();
+            $table->integer('filiere_id')->default(0);
+            $table->integer('branche_id')->default(0);
+            $table->integer('user_id')->default(0);
+            $table->integer('gestionnaire_id')->default(0);
+            $table->integer('agence_id')->default(0);
+            $table->integer('representation_id')->default(0);
+            $table->integer('region_id')->default(0);
+            $table->integer('departement_id')->default(0);
+            $table->integer('arrondissement_id')->default(0);
+            $table->integer('village_id')->default(0);
+            $table->integer('quartier_id')->default(0);
+            $table->timestamps();
+            $table->string('token', 100)->nullable();
+            $table->boolean('prospect')->default(false);
+            $table->integer('programme_id')->default(0);
+            $table->integer('parent_id')->default(0);
+            $table->boolean('individual')->default(false);
+            $table->integer('producteur_id')->default(0);
+            $table->integer('verger_id')->default(0);
+            $table->integer('cooperative_id')->default(0);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('entreprises');
+    }
+};

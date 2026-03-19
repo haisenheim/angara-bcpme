@@ -28,8 +28,10 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        //
-        return view('/Analyste/Companies/index');
+        $regions = \App\Models\Region::orderBy('name')->get(['id', 'name']);
+        $departements = \App\Models\Departement::orderBy('name')->get(['id', 'name', 'region_id']);
+        $formes = Forme::orderBy('name')->get(['id', 'name']);
+        return view('/Analyste/Companies/index', compact('regions', 'departements', 'formes'));
     }
 
     public function getProspects()
@@ -39,10 +41,60 @@ class CompanyController extends Controller
     }
 
 
+    /**
+     * Entreprises pour lesquelles l'analyste a des dossiers d'instruction.
+     */
     public function fetchAll(){
-        $items = Entreprise::where('prospect',0)->where('user_id',auth()->user()->id)->get();
+        $analysteId = auth()->id();
+        $items = Entreprise::where('prospect', 0)
+            ->whereHas('dossiers', fn($q) => $q->where('analyste_id', $analysteId))
+            ->orderBy('name')
+            ->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
+    }
+
+    /**
+     * Liste paginée avec filtres (AJAX).
+     */
+    public function fetchPaginated(Request $request){
+        $analysteId = auth()->id();
+        $query = Entreprise::where('prospect', 0)
+            ->whereHas('dossiers', fn($q) => $q->where('analyste_id', $analysteId))
+            ->with(['region', 'departement', 'forme', 'arrondissement']);
+
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%");
+            });
+        }
+        if ($request->filled('region_id')) {
+            $query->where('region_id', $request->region_id);
+        }
+        if ($request->filled('departement_id')) {
+            $query->where('departement_id', $request->departement_id);
+        }
+        if ($request->filled('forme_id')) {
+            $query->where('forme_id', $request->forme_id);
+        }
+
+        $perPage = min(50, max(10, (int) $request->get('per_page', 15)));
+        $paginator = $query->orderBy('name')->paginate($perPage);
+
+        return response()->json([
+            'data' => EntrepriseListResource::collection($paginator->items()),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+        ]);
     }
 
     public function fetchProspects(){
@@ -105,15 +157,20 @@ class CompanyController extends Controller
 
     /**
      * Display the specified resource.
+     * Accès réservé aux entreprises pour lesquelles l'analyste a des dossiers.
      */
     public function show(string $token)
     {
-        //
-        $item = Entreprise::where('token',$token)->first();
-        if(!$item){
+        $item = Entreprise::where('token', $token)->first();
+        if (!$item) {
             return back();
         }
-        //dd($item);
+
+        $dossiersAnalyste = $item->dossiers()->where('analyste_id', auth()->id())->with('programme')->get();
+        if ($dossiersAnalyste->isEmpty()) {
+            abort(403, 'Vous n\'avez aucun dossier d\'instruction pour cette entreprise.');
+        }
+
         $reponses = $item->reponses;
         $groups = $reponses->groupBy('critere_id');
         $groups = $groups->map(function($v,$k){
@@ -131,9 +188,9 @@ class CompanyController extends Controller
         });
         //dd($groups);
         $mr = $groups;
-        $analystes = User::where('role_id',14)->where('agence_id',auth()->user()->agence_id)->get();
+        $analystes = User::where('role_id', 14)->where('agence_id', auth()->user()->agence_id)->get();
         $programmes = Programme::all();
-        return view('/Analyste/Companies/show',compact('item','mr','programmes','analystes'));
+        return view('/Analyste/Companies/show', compact('item', 'mr', 'programmes', 'analystes', 'dossiersAnalyste'));
 
     }
 

@@ -34,6 +34,9 @@ class Gestionnaire
         if(in_array('entreprises',$parts)|| in_array('entreprise',$parts)){
             $active = 4;
         }
+        if(in_array('evaluation-profiles',$parts)){
+            $active = 406;
+        }
         if(in_array('prospects',$parts)){
             $active = 5;
         }
