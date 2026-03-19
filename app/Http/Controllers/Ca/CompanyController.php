@@ -134,9 +134,69 @@ class CompanyController extends Controller
     }
 
     public function fetchProspects(){
-        $items = Entreprise::where('prospect',1)->get();
+        $items = $this->prospectsQuery()->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
+    }
+
+    private function prospectsQuery()
+    {
+        return Entreprise::where('prospect', 1)->where('agence_id', auth()->user()->agence_id);
+    }
+
+    public function fetchProspectsStats(Request $request)
+    {
+        $base = $this->prospectsQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $stats = [
+            'total' => (clone $query)->count(),
+            'par_taille' => (clone $query)->select('taille', DB::raw('count(*) as count'))->groupBy('taille')->pluck('count', 'taille')->toArray(),
+            'formelles' => (clone $query)->where('caractere', 'Formel')->count(),
+            'informelles' => (clone $query)->where('caractere', 'Informel')->count(),
+        ];
+        return response()->json($stats);
+    }
+
+    public function fetchProspectsPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim($request->input('search.value', ''));
+
+        $base = $this->prospectsQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $recordsTotal = $this->prospectsQuery()->count();
+        $recordsFiltered = $query->count();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+            $recordsFiltered = $query->count();
+        }
+
+        $items = $query->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $resolved = EntrepriseListResource::collection($items)->toArray($request);
+        $data = $resolved['data'] ?? $resolved;
+        $data = array_values($data);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
     }
 
     /**

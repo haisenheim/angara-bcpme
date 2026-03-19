@@ -505,6 +505,8 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('companies/stats','CompanyController@fetchStats')->name('entreprises.stats');
         Route::get('companies/filter-options','CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('companies/prospects/paginated','CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
+        Route::get('companies/prospects/stats','CompanyController@fetchProspectsStats')->name('prospects.stats');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
         Route::get('folders/data/paginated','DossierController@fetchPaginated')->name('dossiers.paginated');
