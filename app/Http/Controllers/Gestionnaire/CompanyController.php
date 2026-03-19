@@ -367,13 +367,13 @@ class CompanyController extends ExtendedController
 
     public function createQuestionnaire(string $token)
     {
-        //
         $item = Entreprise::where('token',$token)->first();
         if(!$item){
             return back();
         }
         $criteres = QuestionSousCritere::all();
-        return view('/Gestionnaire/Companies/questionnaire',compact('item','criteres'));
+        $reponses = $item->reponses()->pluck('choice_id', 'question_id')->toArray() ?? [];
+        return view('/Gestionnaire/Companies/questionnaire',compact('item','criteres','reponses'));
     }
 
     public function saveQuestionnaire(Request $request)
