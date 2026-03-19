@@ -1,213 +1,178 @@
 @extends('Layouts.ca')
 
-@section('title', 'Accueil')
+@section('title', $item->name)
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Programmes</a></li>
-       <li class="breadcrumb-item active" aria-current="page">{{ $item->name }}</li>
+       <li class="breadcrumb-item"><a href="{{ route('ca.dashboard') }}">Angara</a></li>
+       <li class="breadcrumb-item"><a href="{{ route('ca.programmes.index') }}">Programmes</a></li>
+       <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($item->name, 40) }}</li>
     </ol>
- </nav>
+</nav>
 @endsection
-
 
 @section('page-header')
     <div>
         <h5 class="page-title mb-0 mt-2">{{ $item->name }}</h5>
-        <p class="lead">Fiche signalitique du programme</p>
+        <p class="text-body-secondary mb-0 mt-1">Fiche signalétique du programme</p>
     </div>
 @endsection
 
 @section('content')
-
-    <div class="d-flex gap-2">
-        <div style="height: 80vh; overflow: scroll;" class="card w-400px">
-            <div class="card-body">
-                <table class="table table-striped">
-                    <tbody>
-                        <tr>
-                            <td>Designation</td>
-                            <th>{{ $item->name }}</th>
-                        </tr>
-                        <tr>
-                            <td>&numero; Référence de la Convention cadre du programme </td>
-                            <th>{{ $item->convention}}</th>
-                        </tr>
-                        <tr>
-                            <td>Date de signature de la convention cadre </td>
-                            <th>{{ \Carbon\Carbon::parse($item->dt_sig_conv)->format('d/m/Y')}}</th>
-                        </tr>
-                        <tr>
-                            <td>Institution signataire </td>
-                            <th>{{ $item->signataire }}</th>
-                        </tr>
-                        <tr>
-                            <td>Budget des appuis financiers</td>
-                            <th>{{ number_format($item->budget_af,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Budget des appuis non financiers</td>
-                            <th>{{ number_format($item->budget_anf,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Budget de la coordination</td>
-                            <th>{{ number_format($item->budget_coord,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Budget total</td>
-                            <th>{{ number_format($item->budget,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Bénéficiaires cibles personnes morales</td>
-                            <th>{{ $item->type_pm }}</th>
-                        </tr>
-                        <tr>
-                            <td>Bénéficiaires cibles personnes physiques</td>
-                            <th>{{ $item->type_pp }}</th>
-                        </tr>
-                        <tr>
-                            <td>Date début des activités </td>
-                            <th>{{ \Carbon\Carbon::parse($item->dt_start)->format('d/m/Y') }}</th>
-                        </tr>
-                        <tr>
-                            <td>Personnes ressources et contact du programme</td>
-                            <th>{{ $item->contact }}</th>
-                        </tr>
-                    </tbody>
-                </table>
-
+    <div class="row g-4">
+        {{-- Panneau d'informations --}}
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-body">
+                        <i class="demo-psi-file-edit me-2 text-primary"></i>Informations générales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row g-3 mb-0 programme-info-list">
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Désignation</dt>
+                            <dd class="mb-0 fw-medium">{{ $item->name }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">N° Référence convention cadre</dt>
+                            <dd class="mb-0">{{ $item->convention ?? '—' }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Date de signature</dt>
+                            <dd class="mb-0">{{ $item->dt_sig_conv ? \Carbon\Carbon::parse($item->dt_sig_conv)->format('d/m/Y') : '—' }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Institution signataire</dt>
+                            <dd class="mb-0">{{ $item->signataire ?? '—' }}</dd>
+                        </div>
+                        <div class="col-12 pt-2 border-top">
+                            <dt class="text-muted small text-uppercase mb-2">Budgets</dt>
+                            <dd class="mb-0">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between"><span class="text-muted">Appuis financiers</span><span class="fw-medium">{{ number_format($item->budget_af ?? 0, 0, ',', '.') }} XAF</span></div>
+                                    <div class="d-flex justify-content-between"><span class="text-muted">Appuis non financiers</span><span class="fw-medium">{{ number_format($item->budget_anf ?? 0, 0, ',', '.') }} XAF</span></div>
+                                    <div class="d-flex justify-content-between"><span class="text-muted">Coordination</span><span class="fw-medium">{{ number_format($item->budget_coord ?? 0, 0, ',', '.') }} XAF</span></div>
+                                    <div class="d-flex justify-content-between pt-2 border-top"><span class="fw-semibold">Total</span><span class="fw-bold text-primary">{{ number_format($item->budget ?? 0, 0, ',', '.') }} XAF</span></div>
+                                </div>
+                            </dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Bénéficiaires cibles PM</dt>
+                            <dd class="mb-0">{{ $item->type_pm ?? '—' }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Bénéficiaires cibles PP</dt>
+                            <dd class="mb-0">{{ $item->type_pp ?? '—' }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Début des activités</dt>
+                            <dd class="mb-0">{{ $item->dt_start ? \Carbon\Carbon::parse($item->dt_start)->format('d/m/Y') : '—' }}</dd>
+                        </div>
+                        <div class="col-12">
+                            <dt class="text-muted small text-uppercase mb-1">Contact</dt>
+                            <dd class="mb-0">{{ $item->contact ?? '—' }}</dd>
+                        </div>
+                    </dl>
+                </div>
             </div>
         </div>
-        <div class="card flex-fill">
-            <div class="card-body">
-                <div class="tab-base">
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-underline nav-component border-bottom" role="tablist">
-                       <li class="nav-item" role="presentation">
-                          <button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Secteurs cibles</button>
-                       </li>
-                       <li class="nav-item" role="presentation">
-                          <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false" tabindex="-1">Appuis proposés</button>
-                       </li>
-                       <li class="nav-item" role="presentation">
-                          <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false" tabindex="-1">Les composantes</button>
-                       </li>
-                       <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">Resultats attendus</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Entreprises</button>
-                         </li>
+
+        {{-- Contenu principal avec onglets --}}
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <ul class="nav nav-underline nav-component border-bottom px-3 pt-2" role="tablist">
+                        <li class="nav-item" role="presentation"><button class="nav-link px-3 active" data-bs-toggle="tab" data-bs-target="#_tab1" type="button" role="tab">Secteurs cibles</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab2" type="button" role="tab">Appuis proposés</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab3" type="button" role="tab">Composantes</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab">Résultats attendus</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab">Entreprises</button></li>
                     </ul>
-
-
-                    <!-- Tabs content -->
-                    <div class="tab-content">
-                       <div id="_tab1" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
-
-                            <table class="table table-sm table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Produit</th>
-                                        <th>Filiere</th>
-                                        <th>Branche</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($item->produits as $p)
-                                        <tr>
-                                            <td>{{ $p->name }}</td>
-                                            <td>{{ $p->filiere?->name }}</td>
-                                            <td>{{ $p->branche?->name }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                       </div>
-                       <div id="_tab2" class="tab-pane fade" role="tabpanel" aria-labelledby="profile-tab">
-
-                            <table class="table table-sm table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Service</th>
-                                        <th>Type</th>
-                                        <th>Nature</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($item->appuis as $service)
-                                        <tr>
-                                            <td>{{ $service->name }}</td>
-                                            <td>{{ $service->type?->name }}</td>
-                                            <td>{{ $service->financier?'Financier':'Non financier' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                       </div>
-                       <div id="_tab3" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Entité</th>
-                                    <th>Nature</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($item->composantes as $cmp)
-                                    <tr>
-                                        <td>{{ $cmp->name }}</td>
-                                        <td>{{ $cmp->type }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                       </div>
-                       <div id="_tab4" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Indicateur</th>
-                                    <th>Attentes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($item->resultats as $cmp)
-                                    <tr>
-                                        <td>{{ $cmp->indicateur?->name }}</td>
-                                        <td>{{ $cmp->attente }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                       </div>
-                       <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Entreprise</th>
-                                    <th>Localité</th>
-                                    <th>Taille</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($item->entreprises as $ent)
-                                    <tr>
-                                        <td>{{ $ent->name }}</td>
-                                        <td>{{ $ent->localite }}</td>
-                                        <td>{{ $ent->taille }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                       </div>
+                    <div class="tab-content p-4">
+                        <div id="_tab1" class="tab-pane fade active show">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Produit</th><th>Filière</th><th>Branche</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($item->produits as $p)
+                                            <tr><td>{{ $p->name }}</td><td>{{ $p->filiere?->name ?? '—' }}</td><td>{{ $p->branche?->name ?? '—' }}</td></tr>
+                                        @empty
+                                            <tr><td colspan="3" class="text-center text-muted py-4">Aucun secteur cible</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="_tab2" class="tab-pane fade">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Service</th><th>Type</th><th>Nature</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($item->appuis as $service)
+                                            <tr><td>{{ $service->name }}</td><td>{{ $service->type?->name ?? '—' }}</td><td><span class="badge bg-{{ $service->financier ? 'success' : 'info' }} bg-opacity-10 text-{{ $service->financier ? 'success' : 'info' }}">{{ $service->financier ? 'Financier' : 'Non financier' }}</span></td></tr>
+                                        @empty
+                                            <tr><td colspan="3" class="text-center text-muted py-4">Aucun appui proposé</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="_tab3" class="tab-pane fade">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Entité</th><th>Nature</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($item->composantes as $cmp)
+                                            <tr><td>{{ $cmp->name }}</td><td>{{ $cmp->type ?? '—' }}</td></tr>
+                                        @empty
+                                            <tr><td colspan="2" class="text-center text-muted py-4">Aucune composante</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="_tab4" class="tab-pane fade">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Indicateur</th><th>Attentes</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($item->resultats as $r)
+                                            <tr><td>{{ $r->indicateur?->name ?? '—' }}</td><td>{{ $r->attente ?? '—' }}</td></tr>
+                                        @empty
+                                            <tr><td colspan="2" class="text-center text-muted py-4">Aucun résultat attendu</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="_tab5" class="tab-pane fade">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Entreprise</th><th>Localité</th><th>Taille</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($item->entreprises as $ent)
+                                            <tr><td>{{ $ent->name }}</td><td>{{ $ent->localite ?? '—' }}</td><td>{{ $ent->taille ?? '—' }}</td></tr>
+                                        @empty
+                                            <tr><td colspan="3" class="text-center text-muted py-4">Aucune entreprise</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                 </div>
+                </div>
             </div>
         </div>
     </div>
 @endsection
-
-

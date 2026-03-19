@@ -9,26 +9,131 @@ use App\Models\Banque;
 use App\Models\Dossier;
 use App\Models\Instruction\Critere;
 use App\Models\Instruction\IndicateurFinancier;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class DossierController extends Controller
 {
-    //
     public function index()
     {
-        //
         return view('/Gestionnaire/Dossiers/index');
     }
 
     public function fetchAll(){
-        $items = Dossier::orderBy('created_at','DESC')->where('gestionnaire_id',auth()->user()->id)->get();
+        $items = $this->baseQuery()->orderBy('created_at','DESC')->get();
         $items = DossierListResource::collection($items);
         return response()->json($items);
     }
 
-    public function show($token){
+    private function baseQuery()
+    {
+        return Dossier::where('gestionnaire_id', auth()->user()->id);
+    }
 
-        $item = Dossier::where('token',$token)->first();
+    public function fetchStats(Request $request)
+    {
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $stats = [
+            'total' => (clone $query)->count(),
+            'avec_analyste' => (clone $query)->whereNotNull('analyste_id')->count(),
+            'sans_analyste' => (clone $query)->whereNull('analyste_id')->count(),
+        ];
+        return response()->json($stats);
+    }
+
+    public function fetchPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim($request->input('search.value', ''));
+
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $recordsTotal = $this->baseQuery()->count();
+        $recordsFiltered = $query->count();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('entreprise', function ($e) use ($search) {
+                    $e->where('name', 'like', "%{$search}%");
+                })->orWhereHas('programme', function ($p) use ($search) {
+                    $p->where('name', 'like', "%{$search}%");
+                })->orWhereHas('analyste', function ($a) use ($search) {
+                    $a->where('name', 'like', "%{$search}%");
+                });
+            });
+            $recordsFiltered = $query->count();
+        }
+
+        $items = $query->with(['entreprise','programme','analyste','agence'])->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $resolved = DossierListResource::collection($items)->toArray($request);
+        $data = array_values($resolved['data'] ?? $resolved);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    private function parseFilters(Request $request): array
+    {
+        return [
+            'programme_id' => $request->input('programme_id'),
+            'analyste_id' => $request->input('analyste_id'),
+        ];
+    }
+
+    private function applyFilters($query, array $filters)
+    {
+        if (!empty($filters['programme_id'])) $query->where('programme_id', $filters['programme_id']);
+        if (!empty($filters['analyste_id'])) $query->where('analyste_id', $filters['analyste_id']);
+        return $query;
+    }
+
+    public function fetchFilterOptions()
+    {
+        $programmes = \App\Models\Programme::orderBy('name')->get(['id', 'name']);
+        $analysteIds = Dossier::where('gestionnaire_id', auth()->user()->id)->whereNotNull('analyste_id')->distinct()->pluck('analyste_id');
+        $analystes = \App\Models\User::whereIn('id', $analysteIds)->get(['id', 'name']);
+        return response()->json(['programmes' => $programmes, 'analystes' => $analystes]);
+    }
+
+    public function getGrilleAnalyse($token)
+    {
+        $item = Dossier::where('token', $token)->first();
+        if (!$item || $item->gestionnaire_id != auth()->user()->id) {
+            return back();
+        }
+        return view('Gestionnaire/Dossiers/analyse_critique', compact('item'));
+    }
+
+    public function setAnalyse(Request $request)
+    {
+        $sequence = $request->sequence;
+        $content = $request->content;
+        $dossier_id = $request->dossier_id;
+        $dossier = Dossier::where('id', $dossier_id)->where('gestionnaire_id', auth()->user()->id)->first();
+        if (!$dossier) return back();
+
+        if ($sequence == 7) {
+            $dossier->update(['conclusions_gestionnaire' => $content]);
+        }
+        return redirect()->back()->with('success', 'Recommandations enregistrées.');
+    }
+
+    public function show($token){
+        $item = Dossier::where('token', $token)->with('esgEvaluation')->first();
+        if (!$item || $item->gestionnaire_id != auth()->user()->id) {
+            abort(404);
+        }
         $criteres = Critere::all();
         $id = $item->id;
         $criteres = $criteres->map(function($critere)use($id){

@@ -342,9 +342,15 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('companies/stats','CompanyController@fetchStats')->name('entreprises.stats');
         Route::get('companies/filter-options','CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('companies/prospects/paginated','CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
+        Route::get('companies/prospects/stats','CompanyController@fetchProspectsStats')->name('prospects.stats');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-
+        Route::get('folders/data/paginated','DossierController@fetchPaginated')->name('dossiers.paginated');
+        Route::get('folders/stats','DossierController@fetchStats')->name('dossiers.stats');
+        Route::get('folders/filter-options','DossierController@fetchFilterOptions')->name('dossiers.filter-options');
+        Route::get('grille/analyse/{token}','DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
+        Route::post('dossier/grille/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
 
         //Route::resource('entreprises','EntrepriseController');
         Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');

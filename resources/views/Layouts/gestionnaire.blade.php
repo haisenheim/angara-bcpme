@@ -258,4 +258,5 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
         </li>
     </ul>
 </div>
+@yield('modal')
 @endsection

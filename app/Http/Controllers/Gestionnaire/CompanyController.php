@@ -179,9 +179,81 @@ class CompanyController extends ExtendedController
     }
 
     public function fetchProspects(){
-        $items = Entreprise::where('prospect',1)->get();
+        $items = $this->prospectsQuery()->get();
         $items = EntrepriseListResource::collection($items);
         return response()->json($items);
+    }
+
+    /**
+     * Base query for prospects (prospect=1)
+     */
+    private function prospectsQuery()
+    {
+        return Entreprise::where('prospect', 1);
+    }
+
+    /**
+     * Stats for prospects (AJAX)
+     */
+    public function fetchProspectsStats(Request $request)
+    {
+        $base = $this->prospectsQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $stats = [
+            'total' => (clone $query)->count(),
+            'par_taille' => (clone $query)->select('taille', DB::raw('count(*) as count'))->groupBy('taille')->pluck('count', 'taille')->toArray(),
+            'formelles' => (clone $query)->where('caractere', 'Formel')->count(),
+            'informelles' => (clone $query)->where('caractere', 'Informel')->count(),
+            'par_region' => (clone $query)->leftJoin('regions', 'entreprises.region_id', '=', 'regions.id')
+                ->select('regions.name', DB::raw('count(*) as count'))
+                ->groupBy('regions.id', 'regions.name')
+                ->pluck('count', 'name')->toArray(),
+        ];
+        return response()->json($stats);
+    }
+
+    /**
+     * Paginated prospects (DataTables server-side)
+     */
+    public function fetchProspectsPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim($request->input('search.value', ''));
+
+        $base = $this->prospectsQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters);
+
+        $recordsTotal = $this->prospectsQuery()->count();
+        $recordsFiltered = $query->count();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+            $recordsFiltered = $query->count();
+        }
+
+        $items = $query->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $resolved = EntrepriseListResource::collection($items)->toArray($request);
+        $data = array_values($resolved['data'] ?? $resolved);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
     }
 
     /**
