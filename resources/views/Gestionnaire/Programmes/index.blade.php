@@ -11,9 +11,7 @@
 </nav>
 @endsection
 @section('actions')
-    <a href="{{ route('gestionnaire.programmes.create') }}" class="btn btn-primary btn-sm">
-        <i class="demo-pli-add me-2 fs-5"></i> Nouveau programme
-    </a>
+    {{-- Les gestionnaires ne peuvent pas créer de nouveaux programmes --}}
 @endsection
 
 @section('page-header')

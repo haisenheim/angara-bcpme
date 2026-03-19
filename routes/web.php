@@ -331,7 +331,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::resource('dossiers','DossierController');
 
-        Route::resource('programmes','ProgrammeController');
+        Route::resource('programmes','ProgrammeController', ['except' => ['create', 'store']]);
         Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
         Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
 
@@ -436,7 +436,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('dossiers/{dossier}/esg-evaluation/rebuild-scores','DossierEsgEvaluationController@rebuildScores')->name('dossiers.esg-evaluation.rebuild-scores');
         Route::resource('dossiers','DossierController');
         Route::post('dossier/dsf','DossierController@loadDsf')->name('dossier.dsf');
-        Route::resource('programmes','ProgrammeController');
+        Route::resource('programmes','ProgrammeController', ['except' => ['create', 'store']]);
         Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
         Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
 

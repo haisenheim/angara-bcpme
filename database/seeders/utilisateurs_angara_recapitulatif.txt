@@ -1,0 +1,55 @@
+================================================================================
+                    RÉCAPITULATIF DES UTILISATEURS ANGARA
+================================================================================
+Mot de passe pour tous : bcpme
+================================================================================
+
++----------------------+---------------------+---------------------------+----------+
+| Nom                  | Rôle                | Email                     | Mot de   |
+|                      |                     |                           | passe    |
++----------------------+---------------------+---------------------------+----------+
+| HAMAN AMADOU         | Gestionnaire        | amadou.haman@angara.cm    | bcpme    |
+| HAMAN AMADOU         | Analyste financier  | amadou.haman1@angara.cm   | bcpme    |
+| HAMAN AMADOU         | Chef d'agence       | amadou.haman2@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| YAKOUBOU MOUSSA      | Gestionnaire        | moussa.yakoubou@angara.cm | bcpme    |
+| YAKOUBOU MOUSSA      | Analyste financier  | moussa.yakoubou1@angara.cm| bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| MBENA NDONGO         | Gestionnaire        | ndongo.mbena@angara.cm    | bcpme    |
+| MBENA NDONGO         | Analyste financier  | ndongo.mbena1@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| TABI FABIEN          | Chef d'agence       | fabien.tabi@angara.cm     | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| HASSAN MEY           | Analyste financier  | mey.hassan@angara.cm      | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| MAIRAMOU BOBO        | Analyste financier  | bobo.mairamou@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| GALLAH LESLIE        | Analyste financier  | leslie.gallah@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| KAMLA VICTOR         | Gestionnaire        | victor.kamla@angara.cm    | bcpme    |
+| KAMLA VICTOR         | Analyste financier  | victor.kamla1@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| MINTOM YVETTE        | Gestionnaire        | yvette.mintom@angara.cm   | bcpme    |
+| MINTOM YVETTE        | Analyste financier  | yvette.mintom1@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| NDJOMO EKO           | IT                  | eko.ndjomo@angara.cm      | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| MANGA Welisane       | IT                  | welisane.manga@angara.cm  | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| YAKANA BABOYA        | IT                  | baboya.yakana@angara.cm   | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| WAMBA FOKOU          | IT                  | fokou.wamba@angara.cm     | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| BLAISE ROLAND ZE     | Gestionnaire        | roland.blaise@angara.cm   | bcpme    |
+| BLAISE ROLAND ZE     | Analyste financier  | roland.blaise1@angara.cm  | bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| ESSAKA SANDRINE      | Gestionnaire        | sandrine.essaka@angara.cm | bcpme    |
+| ESSAKA SANDRINE      | Analyste financier  | sandrine.essaka1@angara.cm| bcpme    |
++----------------------+---------------------+---------------------------+----------+
+| EKITIKE BONDIMA      | Gestionnaire        | bondima.ekitike@angara.cm | bcpme    |
+| EKITIKE BONDIMA      | Analyste financier  | bondima.ekitike1@angara.cm| bcpme    |
++----------------------+---------------------+---------------------------+----------+
+
+Total : 27 comptes utilisateurs
+
+================================================================================
