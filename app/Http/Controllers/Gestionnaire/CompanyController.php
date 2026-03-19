@@ -342,18 +342,26 @@ class CompanyController extends ExtendedController
             'niveau'=>$eng->niveau,
         ];
         if($data['is_leaf']){
-            $elts = EngagementEntreprise::where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
-            //dd($elts);
+            $elts = EngagementEntreprise::with('banque')->where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
             $data['encours_montant'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_montant;
+                return $carry + ($item->encours_montant ?? 0);
             },0);
             $data['sollicite_montant']= $elts->reduce(function($carry,$item){
-                return $carry + $item->sollicite_montant;
+                return $carry + ($item->sollicite_montant ?? 0);
             },0);
             $data['encours_impaye'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_impaye;
+                return $carry + ($item->encours_impaye ?? 0);
             },0);
-            $data['elts'] = $elts;
+            $data['elts'] = $elts->map(function($elt){
+                return [
+                    'banque_name' => $elt->banque?->name ?? '—',
+                    'encours_montant' => $elt->encours_montant ?? 0,
+                    'encours_impaye' => $elt->encours_impaye ?? 0,
+                    'encours_dt_validite' => $elt->encours_dt_vadilite ? \Carbon\Carbon::parse($elt->encours_dt_vadilite)->format('d/m/Y') : '—',
+                    'sollicite_montant' => $elt->sollicite_montant ?? 0,
+                    'sollicite_dt_validite' => $elt->sollicite_dt_vadilite ? \Carbon\Carbon::parse($elt->sollicite_dt_vadilite)->format('d/m/Y') : '—',
+                ];
+            })->values()->toArray();
             $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
 
         }else{

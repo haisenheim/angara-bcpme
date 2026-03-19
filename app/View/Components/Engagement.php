@@ -12,10 +12,10 @@ class Engagement extends Component
      * Create a new component instance.
      */
     public function __construct(
-        public string $eng
+        public string $eng,
+        public bool $canEdit = true
     )
     {
-        //dd($_data);
     }
 
     /**
@@ -23,7 +23,6 @@ class Engagement extends Component
      */
     public function render(): View|Closure|string
     {
-        //dd($_data);
         return view('components.engagement');
     }
 }
