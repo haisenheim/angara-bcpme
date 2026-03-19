@@ -25,7 +25,7 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 engagement-table">
+                <table class="table table-hover table-bordered align-middle mb-0 engagement-table">
                     <thead class="table-light">
                         <tr>
                             <th rowspan="2" class="align-middle">Engagement</th>
@@ -101,7 +101,9 @@
     </script>
 
     <style>
-        .engagement-table th { font-weight: 600; font-size: 0.8rem; }
-        .engagement-table td { font-size: 0.875rem; }
+        .engagement-table { border-collapse: collapse; }
+        .engagement-table th,
+        .engagement-table td { border: 1px solid #dee2e6; font-size: 0.875rem; }
+        .engagement-table th { font-weight: 600; font-size: 0.8rem; background: #f8f9fa; }
     </style>
 @endsection
