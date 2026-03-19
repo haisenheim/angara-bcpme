@@ -1,177 +1,154 @@
 @extends('Layouts.ca')
 
-@section('title', 'Accueil')
+@section('title', $item->name)
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entités individuelles</a></li>
-       <li class="breadcrumb-item active" aria-current="page">{{ $item->name }}</li>
+        <li class="breadcrumb-item"><a href="{{ route('ca.dashboard') }}">Angara</a></li>
+        <li class="breadcrumb-item"><a href="{{ route('ca.entites.index') }}">Entités individuelles</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($item->name, 40) }}</li>
     </ol>
- </nav>
+</nav>
 @endsection
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-       Actions
-       <span class="vr"></span>
+<div class="dropdown">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="demo-psi-dot-vertical me-1"></i> Actions
     </button>
-    <ul class="dropdown-menu">
-        <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
-        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements',$item->token) }}">Etat des engagement de l'entreprise</a></li>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#"><i class="demo-psi-affiliate me-2"></i>Affecter à un programme</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
     </ul>
- </div>
+</div>
 @endsection
 
 @section('page-header')
-    <div>
-        <div class="d-flex justify-content-between">
-            <h5 class="page-title mb-0 mt-2">{{ $item->name }}</h5>
-            @if($item->prospect)
-                <div class="mt-4"><span class="badge bg-danger">prospect</span></div>
-            @endif
-
-        </div>
-        <p class="lead">Fiche signalitique de l'entité individuelle</p>
+<div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h5 class="page-title mb-0">{{ $item->name }}</h5>
+        @if($item->prospect)
+            <span class="badge bg-danger">Prospect</span>
+        @endif
+        <span class="badge bg-secondary">{{ $item->taille }}</span>
+        <span class="badge bg-{{ $item->caractere === 'Formel' ? 'success' : 'warning' }}">{{ $item->caractere }}</span>
     </div>
+    <p class="text-body-secondary mb-0 mt-1">Dossier entité individuelle — {{ $item->forme?->name ?? '—' }}</p>
+</div>
 @endsection
 
 @section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+@endif
 
-    <div class="d-flex gap-2">
-        <div style="height: 80vh; overflow: scroll;" class="card w-400px">
-            <div class="card-body">
-                <table class="table table-striped">
-                    <tbody>
-                        <tr>
-                            <td>Désignation</td>
-                            <th>{{ $item->name }}</th>
-                        </tr>
-                        <tr>
-                            <td>&numero; Registre de commerce </td>
-                            <th>{{ $item->rccm }}</th>
-                        </tr>
-                        <tr>
-                            <td>&numero;  d’identifiant unique </td>
-                            <th>{{ $item->niu }}</th>
-                        </tr>
-                        <tr>
-                            <td>&numero; Employeur ou Assurance volontaire </td>
-                            <th>{{ $item->cnps }}</th>
-                        </tr>
-                        <tr>
-                            <td>&numero; principal Mobile Money  </td>
-                            <th>{{ $item->mm_phone }}</th>
-                        </tr>
-                        <tr>
-                            <td>Type d'entité </td>
-                            <th>{{ $item->taille }}</th>
-                        </tr>
-                        <tr>
-                            <td>Caractère </td>
-                            <th>{{ $item->caractere }}</th>
-                        </tr>
-                        <tr>
-                            <td>Forme juridique </td>
-                            <th>{{ $item->forme?->name }}</th>
-                        </tr>
-                        <tr>
-                            <td>Système comptable </td>
-                            <th>{{ $item->systeme }}</th>
-                        </tr>
-                        <tr>
-                            <td>Capital social </td>
-                            <th>{{ number_format($item->capital,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Date de création formelle </td>
-                            <th>{{ \Carbon\Carbon::parse($item->dt_creation)->format('d/m/Y') }} ({{ \Carbon\Carbon::parse($item->dt_creation)->age}}an(s))</th>
-                        </tr>
-                        <tr>
-                            <td>Date début des activités </td>
-                            <th>{{ \Carbon\Carbon::parse($item->dt_start)->format('d/m/Y') }} ({{ \Carbon\Carbon::parse($item->dt_start)->age}}an(s))</th>
-                        </tr>
-                        <tr>
-                            <td>Ressources propres</td>
-                            <th>{{ number_format($item->ressources_propres,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Total actif </td>
-                            <th>{{ number_format($item->total_actif,0,',','.') }} XAF</th>
-                        </tr>
-                        <tr>
-                            <td>Nombre d'employés permanents</td>
-                            <th>{{ number_format($item->nb_personnel_permanent,0,',','.') }}</th>
-                        </tr>
-                        <tr>
-                            <td>Nombre d'employés saisonniers</td>
-                            <th>{{ number_format($item->nb_personnel_saisonier,0,',','.') }}</th>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <fieldset>
-                    <legend>Infos du dirigeant</legend>
-                    <table class="table table-striped">
-                        <tbody>
-                            <tr>
-                                <td>Nom</td>
-                                <th>{{ $item->manager }}</th>
-                            </tr>
-                            <tr>
-                                <td>Sexe </td>
-                                <th>{{ $item->manager_sexe }}</th>
-                            </tr>
-                            <tr>
-                                <td>Date de naissance </td>
-                                <th>{{ \Carbon\Carbon::parse($item->manager_dtn)->format('d/m/Y') }}  ({{ \Carbon\Carbon::parse($item->manager_dtn)->age}}ans)</th>
-                            </tr>
-                            <tr>
-                                <td>Niveau d'instruction </td>
-                                <th>{{ $item->manager_niveau }}</th>
-                            </tr>
-                            <tr>
-                                <td>Est-il le promoteur ? </td>
-                                <th>{{ $item->manager_promoteur?'Oui':'Non' }} </th>
-                            </tr>
-                        </tbody>
-                    </table>
-                </fieldset>
-
-                <fieldset class="mt-2">
-                    <legend>Localisation et Contact</legend>
-                    <table class="table table-striped">
-                        <tbody>
-                            <tr>
-                                <td>Quartier/Village  </td>
-                                <th>{{ $item->village?->name }} {{ $item->quartier?->name }}</th>
-                            </tr>
-                            <tr>
-                                <td>Commune</td>
-                                <th>{{ $item->arrondissement?->name }}</th>
-                            </tr>
-                            <tr>
-                                <td>Departement </td>
-                                <th>{{ $item->departement?->name }}</th>
-                            </tr>
-                            <tr>
-                                <td>Region </td>
-                                <th>{{ $item->region?->name }}</th>
-                            </tr>
-                            <tr>
-                                <td>Telephone </td>
-                                <th>{{ $item->phone }}</th>
-                            </tr>
-                            <tr>
-                                <td>Email </td>
-                                <th>{{ $item->email }} </th>
-                            </tr>
-                        </tbody>
-                    </table>
-                </fieldset>
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <small class="text-muted text-uppercase d-block mb-1">Capital social</small>
+                <p class="mb-0 fw-semibold">{{ number_format($item->capital ?? 0, 0, ',', ' ') }} XAF</p>
             </div>
         </div>
-        <div class="card flex-fill">
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <small class="text-muted text-uppercase d-block mb-1">Effectif</small>
+                <p class="mb-0 fw-semibold">{{ ($item->nb_personnel_permanent ?? 0) + ($item->nb_personnel_saisonier ?? 0) }} employés</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <small class="text-muted text-uppercase d-block mb-1">Dirigeant</small>
+                <p class="mb-0 fw-semibold">{{ $item->manager ?? '—' }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body py-3">
+                <small class="text-muted text-uppercase d-block mb-1">Localisation</small>
+                <p class="mb-0 fw-semibold">{{ $item->arrondissement?->name ?? $item->region?->name ?? '—' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h6 class="mb-0 fw-semibold"><i class="demo-psi-information me-2 text-primary"></i>Identification</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0 g-2">
+                    <dt class="col-sm-5 text-muted small">Dénomination</dt>
+                    <dd class="col-sm-7">{{ $item->name }}</dd>
+                    <dt class="col-sm-5 text-muted small">RCCM</dt>
+                    <dd class="col-sm-7">{{ $item->rccm ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">NIU</dt>
+                    <dd class="col-sm-7">{{ $item->niu ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">CNPS</dt>
+                    <dd class="col-sm-7">{{ $item->cnps ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Mobile Money</dt>
+                    <dd class="col-sm-7">{{ $item->mm_phone ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Forme juridique</dt>
+                    <dd class="col-sm-7">{{ $item->forme?->name ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Système comptable</dt>
+                    <dd class="col-sm-7">{{ $item->systeme ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Capital social</dt>
+                    <dd class="col-sm-7">{{ number_format($item->capital ?? 0, 0, ',', ' ') }} XAF</dd>
+                    <dt class="col-sm-5 text-muted small">Création</dt>
+                    <dd class="col-sm-7">{{ $item->dt_creation ? \Carbon\Carbon::parse($item->dt_creation)->format('d/m/Y') : '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Début activités</dt>
+                    <dd class="col-sm-7">{{ $item->dt_start ? \Carbon\Carbon::parse($item->dt_start)->format('d/m/Y') : '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Ressources propres</dt>
+                    <dd class="col-sm-7">{{ number_format($item->ressources_propres ?? 0, 0, ',', ' ') }} XAF</dd>
+                    <dt class="col-sm-5 text-muted small">Total actif</dt>
+                    <dd class="col-sm-7">{{ number_format($item->total_actif ?? 0, 0, ',', ' ') }} XAF</dd>
+                    <dt class="col-sm-5 text-muted small">Effectif permanent</dt>
+                    <dd class="col-sm-7">{{ $item->nb_personnel_permanent ?? 0 }}</dd>
+                    <dt class="col-sm-5 text-muted small">Effectif saisonnier</dt>
+                    <dd class="col-sm-7">{{ $item->nb_personnel_saisonier ?? 0 }}</dd>
+                </dl>
+                <h6 class="fw-semibold mt-4 mb-2"><i class="demo-psi-male me-2 text-primary"></i>Dirigeant</h6>
+                <dl class="row mb-0 g-2">
+                    <dt class="col-sm-5 text-muted small">Nom</dt>
+                    <dd class="col-sm-7">{{ $item->manager ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Sexe</dt>
+                    <dd class="col-sm-7">{{ $item->manager_sexe ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Naissance</dt>
+                    <dd class="col-sm-7">{{ $item->manager_dtn ? \Carbon\Carbon::parse($item->manager_dtn)->format('d/m/Y') . ' (' . \Carbon\Carbon::parse($item->manager_dtn)->age . ' ans)' : '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Niveau</dt>
+                    <dd class="col-sm-7">{{ $item->manager_niveau ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Promoteur</dt>
+                    <dd class="col-sm-7">{{ $item->manager_promoteur ? 'Oui' : 'Non' }}</dd>
+                </dl>
+                <h6 class="fw-semibold mt-4 mb-2"><i class="demo-psi-map me-2 text-primary"></i>Localisation & contact</h6>
+                <dl class="row mb-0 g-2">
+                    <dt class="col-sm-5 text-muted small">Quartier / Village</dt>
+                    <dd class="col-sm-7">{{ trim(($item->village?->name ?? '') . ' ' . ($item->quartier?->name ?? '')) ?: '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Commune</dt>
+                    <dd class="col-sm-7">{{ $item->arrondissement?->name ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Département</dt>
+                    <dd class="col-sm-7">{{ $item->departement?->name ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Région</dt>
+                    <dd class="col-sm-7">{{ $item->region?->name ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Téléphone</dt>
+                    <dd class="col-sm-7">{{ $item->phone ?? '—' }}</dd>
+                    <dt class="col-sm-5 text-muted small">Email</dt>
+                    <dd class="col-sm-7">{{ $item->email ?? '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="tab-base">
                     <!-- Nav tabs -->
@@ -189,10 +166,13 @@
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">État des engagements</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
                          </li>
                          <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">PIECES CONSTITUTIVES</button>
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">Pièces constitutives</button>
                          </li>
                     </ul>
 
@@ -200,7 +180,7 @@
                     <!-- Tabs content -->
                     <div class="tab-content">
                        <div id="_tab1" class="tab-pane fade active show" role="tabpanel" aria-labelledby="home-tab">
-                            <h4>OBJET SOCIAL</h4>
+                            <h5 class="fw-semibold mb-3"><i class="demo-psi-box me-2 text-primary"></i>Objet social</h5>
                             <table class="table table-bordered">
                                 <tbody>
                                     <tr>
@@ -219,7 +199,7 @@
                                     </tr>
                                 </tbody>
                             </table>
-                            <h5>Autres produits ou services</h5>
+                            <h6 class="fw-semibold mt-4 mb-2">Autres produits ou services</h6>
                             <table class="table table-sm table-striped">
                                 <thead>
                                     <tr>
@@ -309,7 +289,7 @@
                                                 <th>{{ $tier->company->name }}</th>
                                                 <td>{{ $tier->company->email }}</td>
                                                 <td>{{ $tier->company->phone }}</td>
-                                                <td>{{ $tier->company->produit->name }}</td>
+                                                <td>{{ $tier->company->produit?->name ?? '—' }}</td>
                                                 <td>{{ $tier->company->manager }}</td>
                                                 <th>{{ $tier->lien }}</th>
                                                 <td><span class="badge bg-{{ $tier->company->prospect?'danger':'success' }}">{{ $tier->company->prospect?'E':'I' }}</span></td>
@@ -325,13 +305,13 @@
 
                             <div class="accordion accordion-flush" id="_dm-flushAccordion">
                                 @foreach ($mr as $r)
-                                <div style="max-width:700px;" class="accordion-item">
+                                <div class="accordion-item">
                                     <div class="accordion-header" id="_p_acc_{{ $r['critere']->id }}">
                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#_acc_{{ $r['critere']->id }}" aria-expanded="false" aria-controls="_dm-flushAccCollapseOne">
                                          {{ $r['critere']->name }}
                                        </button>
                                     </div>
-                                    <div id="_acc_{{ $r['critere']->id }}" class="accordion-collapse collapse" aria-labelledby="_acc_{{ $r['critere']->id }}" data-bs-parent="#_p_acc_{{ $r['critere']->id }}" style="">
+                                    <div id="_acc_{{ $r['critere']->id }}" class="accordion-collapse collapse" aria-labelledby="_acc_{{ $r['critere']->id }}" data-bs-parent="#_dm-flushAccordion" style="">
                                             <div class="accordion-body">
                                                 <div class="tab-base tab-vertical d-flex">
                                                     <!-- Nav tabs -->
@@ -371,6 +351,14 @@
                                     </div>
                                 @endforeach
                              </div>
+                       </div>
+                       <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                            <h5 class="fw-semibold mb-3">État des engagements</h5>
+                            <p class="mb-3">
+                                <a href="{{ route('ca.entreprise.get.engagements',$item->token) }}" class="btn btn-primary">
+                                    <i class="demo-psi-file-text-image me-2"></i>Voir l'état des engagements
+                                </a>
+                            </p>
                        </div>
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">
@@ -424,14 +412,12 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addProgModal">
+    <div class="modal fade" id="addProgModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header justify-content-between">
+                <div class="modal-header">
                     <h5 class="modal-title">Affectation à un programme</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
                     <form enctype="multipart/form-data" action="{{ route('ca.entite.programme.save') }}" method="post">
@@ -439,18 +425,18 @@
                         <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
                         <input type="hidden" name="gestionnaire_id" value="{{ $item->user_id }}">
                             <div class="">
-                                <div class="form-group">
-                                    <label for="">Programme</label>
-                                    <select required  name="programme_id" id="programme_id" class="form-control cmp">
+                                <div class="mb-3">
+                                    <label for="programme_id" class="form-label">Programme</label>
+                                    <select required name="programme_id" id="programme_id" class="form-select">
                                         <option value="0">Selectionner un programme ...</option>
                                         @foreach($programmes as $it)
                                             <option value="{{ $it->id }}">{{ $it->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label for="">Analyste financier</label>
-                                    <select required  name="analyste_id" id="analyste_id" class="form-control cmp">
+                                <div class="mb-3">
+                                    <label for="analyste_id" class="form-label">Analyste financier</label>
+                                    <select required name="analyste_id" id="analyste_id" class="form-select">
                                         <option value="0">Selectionner un analyste ...</option>
                                         @foreach($analystes as $it)
                                             <option value="{{ $it->id }}">{{ $it->name }}-{{ $it->agence?->name }}</option>
@@ -459,7 +445,7 @@
                                 </div>
                             </div>
                         <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
                         </div>
                     </form>
                 </div>

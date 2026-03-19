@@ -1,34 +1,38 @@
 @extends('Layouts.gestionnaire')
 
-@section('title', 'Accueil')
-@section('breadcrumb')
+@push('styles')
 <link rel="stylesheet" href="{{ asset('dropdowncombotree/comboTreeStyle.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/default/easyui.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ asset('jquery-easyui/themes/icon.css') }}">
-<script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
+@endpush
+
+@section('title', 'Nouvelle entité individuelle')
+@section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Entités individuelles</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Nouvelle Entité individuelle</li>
+        <li class="breadcrumb-item"><a href="{{ route('gestionnaire.dashboard') }}">Angara</a></li>
+        <li class="breadcrumb-item"><a href="{{ route('gestionnaire.entites.index') }}">Entités individuelles</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nouvelle entité</li>
     </ol>
- </nav>
+</nav>
+@endsection
+
+@section('actions')
+<a href="{{ route('gestionnaire.entites.index') }}" class="btn btn-outline-secondary btn-sm"><i class="demo-pli-arrow-left me-2"></i>Annuler</a>
 @endsection
 
 @section('page-header')
-    <div>
-        <h5 class="page-title mb-0 mt-2">Nouvelle Entité individuelle</h5>
-    </div>
+<div>
+    <h5 class="page-title mb-0">Nouvelle entité individuelle</h5>
+    <p class="text-body-secondary mb-0">Remplissez les informations en 4 étapes</p>
+</div>
 @endsection
 
 @section('content')
-    <div class="d-flex justify-content-center">
-        <div class="d-flex gap-0" style="width: 900px">
-            <div style="width: 20px;" class="bg-blue">
-
-            </div>
-            <div class="card flex-fill">
-                <div class="card-body">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-11">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-lg-5">
                     <form action="{{ route('gestionnaire.entites.store') }}" method="post" id="my-form">
                         @csrf
                         <input type="hidden" id="appuisnf" name="appuisnf">
@@ -36,7 +40,9 @@
                         <input type="hidden" id="autres" name="autres">
                         <input type="hidden" id="arr_id" name="arrondissement_id">
                         <section data-step="step-1">
-                            <h3 class="text-center mb-3">Étape 1: Identification</h3>
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-id me-2"></i>Étape 1: Identification
+                            </h5>
                             <div class="d-flex gap-2">
                                 <div class="form-group w-300px">
                                     <label for="">&numero; Registre de commerce</label>
@@ -208,7 +214,9 @@
                         </section>
 
                         <section data-step="step-2">
-                            <h3 class="text-center mb-3">Étape 2: Objet Social   </h3>
+                            <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-box me-2"></i>Étape 2: Objet social
+                            </h5>
                             <div class="d-flex justify-content-center">
                                 <div>
                                     <fieldset>
@@ -242,14 +250,18 @@
                                 </div>
                             </div>
 
-                            <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                            <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="button" class="btn btn-primary" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
+                            </div>
                         </section>
 
                         <section data-step="step-3">
                             <div class="d-flex justify-content-center">
                                 <div>
-                                    <h3 class="text-center">Étape 3: Appuis sollicités</h3>
+                                    <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-handshake me-2"></i>Étape 3: Appuis sollicités
+                            </h5>
                                 <fieldset class="mt-3">
                                     <legend>Appuis Financiers</legend>
                                     <div style="width: 600px" class="form-group mt-3">
@@ -280,15 +292,17 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button class="btn btn-primary mt-2" data-next>Suivant</button>
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="button" class="btn btn-primary" data-next>Suivant <i class="demo-pli-arrow-right ms-1"></i></button>
                             </div>
                         </section>
                         <section data-step="step-4">
                             <div class="d-flex justify-content-center">
                                 <div>
-                                    <h3 class="text-center">Étape 4: Localisation / Contact</h3>
+                                    <h5 class="text-primary fw-semibold mb-4">
+                                <i class="demo-psi-map me-2"></i>Étape 4: Localisation / Contact
+                            </h5>
                                 <fieldset class="mt-3">
                                     <legend>Localisation</legend>
                                     <div style="width: 600px" class="form-group mt-3">
@@ -312,10 +326,9 @@
                                 </div>
 
                             </div>
-                            <div>
-                                <button id="btn-test" class="btn btn-light mt-2" data-prev>Precdent</button>
-                                <button class="btn btn-success mt-2" data-next>Enregistrer</button>
-
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-prev><i class="demo-pli-arrow-left me-1"></i>Précédent</button>
+                                <button type="submit" class="btn btn-success"><i class="demo-pli-check me-1"></i>Enregistrer</button>
                             </div>
                         </section>
                     </form>
@@ -324,9 +337,13 @@
         </div>
     </div>
 
+ <script type="text/javascript" src="{{ asset('jquery-easyui/jquery.easyui.min.js') }}"></script>
  <script>
     document.addEventListener('DOMContentLoaded', () => {
             const wizard = new Zangdar('#my-form');
+            document.getElementById('my-form').addEventListener('submit', function() {
+                $('.formal-control').prop('disabled', false);
+            });
     })
  </script>
  <script src="{{ asset('dropdowncombotree/comboTreePlugin.js') }}"></script>
