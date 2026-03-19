@@ -27,13 +27,13 @@ class EngagementEntreprise extends Model
         return $this->belongsTo('App\Models\Entreprise');
     }
 
-    public function getEncoursDtVadiliteAttribute()
+    public function getEncoursDtValiditeAttribute($value)
     {
-        return $this->encours_dt_vadilite ? $this->encours_dt_vadilite->format('d/m/Y') : null;
+        return $value ? \Carbon\Carbon::parse($value)->format('d/m/Y') : null;
     }
 
-    public function getSolliciteDtVadiliteAttribute()
+    public function getSolliciteDtValiditeAttribute($value)
     {
-        return $this->sollicite_dt_vadilite ? $this->sollicite_dt_vadilite->format('d/m/Y') : null;
+        return $value ? \Carbon\Carbon::parse($value)->format('d/m/Y') : null;
     }
 }

@@ -240,9 +240,9 @@ class CompanyController extends Controller
                     'banque_name' => $elt->banque?->name ?? '—',
                     'encours_montant' => $elt->encours_montant ?? 0,
                     'encours_impaye' => $elt->encours_impaye ?? 0,
-                    'encours_dt_validite' => $elt->encours_dt_vadilite ? \Carbon\Carbon::parse($elt->encours_dt_vadilite)->format('d/m/Y') : '—',
+                    'encours_dt_validite' => $elt->encours_dt_validite ?? '—',
                     'sollicite_montant' => $elt->sollicite_montant ?? 0,
-                    'sollicite_dt_validite' => $elt->sollicite_dt_vadilite ? \Carbon\Carbon::parse($elt->sollicite_dt_vadilite)->format('d/m/Y') : '—',
+                    'sollicite_dt_validite' => $elt->sollicite_dt_validite ?? '—',
                 ];
             })->values()->toArray();
             $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
