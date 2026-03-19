@@ -7,6 +7,24 @@
     .stats-card:hover { transform: translateY(-2px); }
     .stats-card .stat-value { font-size: 1.75rem; font-weight: 700; }
     #entreprisesTable_wrapper .dataTables_processing { padding: 1rem; }
+    /* Colonne Actions visible */
+    #entreprisesTable th:last-child,
+    #entreprisesTable td:last-child { min-width: 100px; white-space: nowrap; }
+    /* Boutons actions */
+    .btn-action { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.8rem; border-radius: 0.375rem; text-decoration: none; transition: all 0.2s; }
+    .btn-action:hover { transform: translateY(-1px); }
+    .btn-action-view { background: var(--bs-primary); color: white !important; border: none; }
+    .btn-action-view:hover { background: var(--bs-primary); opacity: 0.9; color: white !important; }
+    /* Pagination - style Bootstrap-like */
+    #entreprisesTable_wrapper .dataTables_wrapper .dataTables_paginate { padding: 1rem 0; }
+    #entreprisesTable_wrapper .dataTables_paginate { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; align-items: center; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button { margin: 0; padding: 0.5rem 0.85rem; border-radius: 0.375rem; border: 1px solid #dee2e6; background: #fff; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) { background: var(--bs-primary); color: #fff !important; border-color: var(--bs-primary); }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.current { background: var(--bs-primary) !important; color: #fff !important; border-color: var(--bs-primary) !important; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.previous,
+    #entreprisesTable_wrapper .dataTables_paginate .paginate_button.next { font-weight: 600; }
+    #entreprisesTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
 </style>
 @endpush
 
@@ -149,9 +167,9 @@
 
     {{-- Tableau avec pagination AJAX --}}
     <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
+        <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="entreprisesTable" class="table table-hover align-middle mb-0" style="width:100%">
+                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
                     <thead class="table-light">
                         <tr>
                             <th>Dénomination</th>
@@ -247,8 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
             { data: null, orderable: false, render: function(d, t, row) { return (row?.commune || '-') + (row?.region ? ' / ' + row.region : ''); } },
             { data: 'taille', name: 'taille', defaultContent: '-', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
             { data: 'capital', name: 'capital', defaultContent: '-', render: function(d) { return d != null ? new Intl.NumberFormat('fr-FR').format(d) : '-'; } },
-            { data: 'token', orderable: false, className: 'text-end', render: function(token) {
-                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn btn-sm btn-outline-primary"><i class="demo-psi-eye"></i></a>';
+            { data: 'token', orderable: false, className: 'text-end', width: '100px', render: function(token) {
+                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn-action btn-action-view"><i class="demo-psi-eye"></i> Voir</a>';
             }}
         ],
         order: [[0, 'asc']],
@@ -260,7 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
             searchPlaceholder: 'Rechercher...'
         },
         processing: true,
-        drawCallback: function() { loadStats(); }
+        drawCallback: function() { loadStats(); },
+        pagingType: 'simple_numbers'
     });
 
     // Recherche avec debounce
