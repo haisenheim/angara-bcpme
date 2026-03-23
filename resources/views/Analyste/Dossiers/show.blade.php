@@ -13,8 +13,8 @@
 
 @section('actions')
     <div class="dropdown">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-            <i class="demo-psi-dot-vertical"></i>
+        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+            <i class="demo-psi-dot-vertical me-1"></i> Actions
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="{{ route('analyste.dossiers.esg-evaluation.show', $item) }}"><i class="demo-psi-bar-chart me-2"></i> Évaluation ESG</a></li>
