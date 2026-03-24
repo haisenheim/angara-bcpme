@@ -11,17 +11,6 @@
 </nav>
 @endsection
 
-@section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="demo-psi-two-column-layout me-1"></i> Actions
-    </button>
-    <ul class="dropdown-menu">
-        <li><a data-sequence="1" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Brèves données générales actualisées sur l'emprunteur</a></li>
-        <li><a data-sequence="2" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse critique d'ensemble</a></li>
-    </ul>
-</div>
-@endsection
 
 @section('page-header')
     <div>
