@@ -51,6 +51,10 @@ Route::get('apme',function(){
     return 'Ok';
 });
 
+Route::get('/',function(){
+    return redirect('/login');
+});
+
 
 
 
