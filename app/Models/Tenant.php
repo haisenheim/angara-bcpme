@@ -20,8 +20,6 @@ class Tenant extends Model
         ];
     }
 
-    protected $dates = ['dtn'];
-
     public function getTenantKey(): string
     {
         return (string) $this->getKey();
