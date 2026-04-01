@@ -164,7 +164,6 @@ return [
          * Application Service Providers...
          */
         App\Providers\AppServiceProvider::class,
-        App\Providers\TenancyServiceProvider::class, 
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
@@ -173,7 +172,6 @@ return [
         Ladumor\OneSignal\OneSignalServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         Spatie\Permission\PermissionServiceProvider::class,
-        App\Providers\TenancyServiceProvider::class,
 
     ])->toArray(),
 

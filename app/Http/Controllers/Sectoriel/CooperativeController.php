@@ -71,7 +71,7 @@ class CooperativeController extends ExtendedController
         $tenant->run(function()use($data){
             Caisse::create($data);
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return back();
     }
 
@@ -85,7 +85,7 @@ class CooperativeController extends ExtendedController
         $tenant->run(function()use($data){
             Wallet::create($data);
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return back();
     }
 
@@ -125,7 +125,7 @@ class CooperativeController extends ExtendedController
         }
         $tenant = Tenant::create($data_);
         $tenantSlug = Str::slug($tenant->name, '-');
-        $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('tenancy.central_domains')[0]]);
+        $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('structuration.central_domains')[0]]);
 
         $data['name'] = $request->username;
         $data['email'] = $request->email;
@@ -141,7 +141,7 @@ class CooperativeController extends ExtendedController
             $user->token = sha1(time().rand(1,999));
             $user->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return back();
     }
 
@@ -223,7 +223,7 @@ class CooperativeController extends ExtendedController
                 'requests'=>$requests,
             ];
         });
-        tenancy()->initialize($item);
+        app()->instance('tenant', $item);
         $operateurs = Operateur::all();
 		return view('Sectoriel/Cooperatives/show')->with(compact('item','operateurs','data'));
 	}

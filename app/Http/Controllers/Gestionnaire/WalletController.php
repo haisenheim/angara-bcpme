@@ -47,7 +47,7 @@ class WalletController extends ExtendedController
             $wallet->active = 1;
             $wallet->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return back()->with('success','Le wallet a été activé avec succès');
     }
 
@@ -59,7 +59,7 @@ class WalletController extends ExtendedController
             $wallet->active = 0;
             $wallet->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return back()->with('success','Le wallet a été désactivé avec succès');
     }
 

@@ -34,7 +34,7 @@ class FortifyServiceProvider extends ServiceProvider
 
     protected function isSubdomain(string $hostname): bool
     {
-        $central = config('tenancy.central_domains')[0];
+        $central = config('structuration.central_domains')[0];
         if($hostname == $central){
             return false;
         }

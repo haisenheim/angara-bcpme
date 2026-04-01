@@ -30,7 +30,7 @@ class PayementController extends Controller
             $payment->save();
         });
 
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
 
 
         //event(new PaymentCompleted($payment));

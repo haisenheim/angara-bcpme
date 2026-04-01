@@ -18,8 +18,6 @@ class PaymentService
 
     public function processPayment(Paiement $payment)
     {
-        tenancy()->initialize($this->tenant->getTenantKey());
-
         $data = [
         "reference"=> $payment->token,
         "callbackUrl"=>route('util.paiement.callback', $this->tenant->token),
@@ -36,8 +34,6 @@ class PaymentService
                 'Accept' => 'application/json'
             ])
             ->post($this->DIGIBANK_OPEN_API_URL, $data);
-
-            tenancy()->end();
 
         return true; // Return true if the payment was processed successfully
     }

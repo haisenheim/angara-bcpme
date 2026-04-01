@@ -63,7 +63,7 @@ class CompteController extends ExtendedController
         $requests = $tenant->run(function()use($item){
             return StructurationRequest::orderBy('created_at','desc')->where('source_id',$item->id)->whereNull('cancelled_at')->get();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         return view('Structuration/Banquier/Comptes/show')->with(compact('item', 'requests'));
 	}
 }

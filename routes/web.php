@@ -90,9 +90,8 @@ Route::get('questions',function(){
 
 
 
-foreach (config('tenancy.central_domains') as $domain) {
+foreach (config('structuration.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
-        // your actual routes
         Route::get('/', function () {
             return redirect(route('login'));
         });

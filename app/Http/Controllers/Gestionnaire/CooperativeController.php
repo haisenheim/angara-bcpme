@@ -132,7 +132,7 @@ class CooperativeController extends ExtendedController
         }
         $tenant = Tenant::create($data_);
         $tenantSlug = Str::slug($tenant->name, '-');
-        $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('tenancy.central_domains')[0]]);
+        $tenant->domains()->create(['domain'=>$tenantSlug.'.'.config('structuration.central_domains')[0]]);
 
         if($request->username){
             $data['name'] = $request->username;
@@ -149,7 +149,7 @@ class CooperativeController extends ExtendedController
                 $user->token = sha1(time().rand(1,999));
                 $user->save();
             });
-            tenancy()->initialize($tenant);
+            app()->instance('tenant', $tenant);
         }
         Session::flash('success','Organisation intérimaire créée avec succès!');
         return back();
@@ -181,7 +181,7 @@ class CooperativeController extends ExtendedController
                 'title'=>$title,
             ];
         });
-        tenancy()->initialize($item);
+        app()->instance('tenant', $item);
         return Excel::download(new PaiementExport($data['paiements'],$item,$request->from,$request->to),$data['title'].'.xlsx');
     }
 
@@ -202,7 +202,7 @@ class CooperativeController extends ExtendedController
                 'title'=>$title,
             ];
         });
-        tenancy()->initialize($item);
+        app()->instance('tenant', $item);
         return Excel::download(new EntreeExport($data['items'],$item,$request->from,$request->to),$data['title'].'.xlsx');
 
     }
@@ -249,7 +249,7 @@ class CooperativeController extends ExtendedController
                 $caisse->save();
             }
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('success','Utilisateur créé avec succès!');
         return back();
     }
@@ -310,7 +310,7 @@ class CooperativeController extends ExtendedController
                 'users'=>$users,
             ];
         });
-        tenancy()->initialize($item);
+        app()->instance('tenant', $item);
         //$data['requests'] = $requests;
         //$data['membres'] = $membres;
         //$data['entrepots'] = $entrepots;

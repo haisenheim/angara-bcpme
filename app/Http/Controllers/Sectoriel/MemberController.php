@@ -84,7 +84,7 @@ class MemberController extends ExtendedController
                 'parts'=>$parts,
             ];
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
 
         $item = $data['item'];
         $parts = $data['parts'];
@@ -105,7 +105,7 @@ class MemberController extends ExtendedController
                 'campagnes'=> CampagneResource::collection($campagnes)->toJson()
             ];
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
 
         $item = $data['item'];
         $campagnes = json_decode($data['campagnes'],true);
@@ -136,7 +136,7 @@ class MemberController extends ExtendedController
             $item->description = $data['description'];
             $item->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('success','Enregistrement effectue avec succes');
         return back();
     }
@@ -161,7 +161,7 @@ class MemberController extends ExtendedController
             $item->description = $data['description'];
             $item->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('success','Enregistrement effectue avec succes');
         return back();
     }
@@ -176,7 +176,7 @@ class MemberController extends ExtendedController
             $campagne->rendement = $data['rendement'];
             $campagne->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('success','Enregistrement effectue avec succes');
         return back();
     }
@@ -202,7 +202,7 @@ class MemberController extends ExtendedController
             $item->description = $data['description'];
             $item->save();
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('success','Enregistrement effectue avec succes');
         return back();
     }
@@ -240,7 +240,7 @@ class MemberController extends ExtendedController
                 'cooperative_id' => $item->cooperative_id,
             ];
         });
-    tenancy()->initialize($tenant);
+    app()->instance('tenant', $tenant);
 
     $dossier = Dossier::create([
         'name' => $data['name']. ' - ' . $verger['producteur'],
@@ -281,7 +281,7 @@ class MemberController extends ExtendedController
 
             $item->save();
         });
-    tenancy()->initialize($tenant);
+    app()->instance('tenant', $tenant);
     Session::flash('success','Enregistrement effectue avec succes');
     return back();
 

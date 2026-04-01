@@ -64,7 +64,7 @@ class RequestController extends ExtendedController
                 }
         });
         Session::flash('success','Requete approuvée avec succès!');
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
        // Session::flash('error','Echec lors de l\'approbation de la requete!');
         return back();
     }
@@ -81,7 +81,7 @@ class RequestController extends ExtendedController
                 $item->save();
             }
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
         Session::flash('info','Requete rejetée!');
         return back();
     }

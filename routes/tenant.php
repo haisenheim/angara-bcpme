@@ -11,25 +11,21 @@ use App\Models\Region;
 use App\Models\Structuration\Membre;
 use App\Models\Village;
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use App\Http\Middleware\BindTenantFromHost;
 
 /*
 |--------------------------------------------------------------------------
 | Tenant Routes
 |--------------------------------------------------------------------------
 |
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider.
-|
-| Feel free to customize them however you want. Good luck!
+| Portail coopérative : résolution de la coopérative par domaine (table domains).
+| Chargé depuis RouteServiceProvider après routes/web.php.
 |
 */
 
 Route::middleware([
     'web',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
+    BindTenantFromHost::class,
 ])->group(function () {
     //dd(tenant('name'));
     Route::get('/', function () {

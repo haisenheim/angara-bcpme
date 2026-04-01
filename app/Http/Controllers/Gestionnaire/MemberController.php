@@ -77,7 +77,7 @@ class MemberController extends ExtendedController
                 'paiements'=>$paiements
             ];
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
 
 		return view('Gestionnaire/Cooperatives/member')->with(compact('item','data','villages','tenant_id'));
 	}
@@ -95,7 +95,7 @@ class MemberController extends ExtendedController
                 'campagnes'=> CampagneResource::collection($campagnes)->toJson()
             ];
         });
-        tenancy()->initialize($tenant);
+        app()->instance('tenant', $tenant);
 
         $item = $data['item'];
         $campagnes = json_decode($data['campagnes'],true);
