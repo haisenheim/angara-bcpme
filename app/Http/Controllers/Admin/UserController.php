@@ -24,6 +24,13 @@ class UserController extends Controller
     {
         //
         $items = User::where('role_id','>',1)->get();
+        foreach ($items as $user) {
+            if (empty($user->token)) {
+                $user->forceFill([
+                    'token' => sha1(uniqid((string) $user->id, true)),
+                ])->saveQuietly();
+            }
+        }
         $roles = Role::where('metier',1)->get();
         $representations = Representation::all();
         $agences = Agence::all();
