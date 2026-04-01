@@ -1,0 +1,31 @@
+# Laravel (branche bcpme) — base MySQL sur la machine hôte, .env sur l'hôte.
+#
+# Prérequis sur le .env (côté hôte) pour joindre MySQL depuis le conteneur :
+#   DB_HOST=host.docker.internal
+#   DB_PORT=<port MySQL sur l'hôte, souvent 3306>
+#   DB_DATABASE, DB_USERNAME, DB_PASSWORD selon votre serveur local
+#
+# Démarrage (depuis la racine du dépôt) :
+#   docker compose -f docker-compose.bcpme.yml up --build
+#
+# Fichier .env hors du dépôt :
+#   export HOST_ENV_FILE=/chemin/vers/.env
+#   docker compose -f docker-compose.bcpme.yml up
+#
+# Première utilisation (dépendances PHP) :
+#   docker compose -f docker-compose.bcpme.yml run --rm app composer install
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/bcpme/Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - .:/var/www/html
+      - ${HOST_ENV_FILE:-./.env}:/var/www/html/.env:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    working_dir: /var/www/html
+    command: php artisan serve --host=0.0.0.0 --port=8000

@@ -16,12 +16,15 @@ return [
      * The list of domains hosting your central app.
      *
      * Only relevant if you're using the domain or subdomain identification middleware.
+     *
+     * TENANCY_CENTRAL_EXTRA: liste séparée par des virgules (IP serveur, localhost, etc.).
+     * Sans cela, l’accès par IP (ex. http://192.168.x.x) n’est pas reconnu comme « central »
+     * et le middleware tente de résoudre un tenant → erreur « Tenant could not be identified ».
      */
-    'central_domains' => [
-        //'127.0.0.1',
-        //'localhost',
-        env('TENANCY_DOMAIN')
-    ],
+    'central_domains' => array_values(array_filter(array_unique(array_merge(
+        array_filter([env('TENANCY_DOMAIN')]),
+        array_filter(array_map('trim', explode(',', (string) env('TENANCY_CENTRAL_EXTRA', '')))),
+    )))) ?: ['localhost'],
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
