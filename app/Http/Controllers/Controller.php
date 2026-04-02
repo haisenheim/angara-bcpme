@@ -15,7 +15,7 @@ class Controller extends BaseController
 
     public function __construct()
     {
-        $this->_saison = Saison::whereNull('closed_at')->first();
+       // $this->_saison = Saison::whereNull('closed_at')->first();
 
     }
 }
