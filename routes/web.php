@@ -86,12 +86,12 @@ Route::get('questions',function(){
 });
 
 /*
-| Redirection racine vers le login — tous les hôtes (central et portails coop).
+| Page d’accueil (lien vers la connexion) — tous les hôtes (central et portails coop).
 | Doit rester avant les routes « tenant » chargées ensuite pour que / ne passe pas par BindTenantFromHost.
 */
 Route::get('/', function () {
-    return redirect(route('login'));
-});
+    return view('accueil');
+})->name('accueil');
 
 foreach (config('structuration.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
