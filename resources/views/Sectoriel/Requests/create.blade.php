@@ -1,4 +1,4 @@
-@extends('Layouts.cooperative')
+@extends('Layouts.sectoriel')
 
 @section('title', 'Accueil')
 @section('breadcrumb')
@@ -25,7 +25,7 @@
             <h4 class="text-primary text-center">Saisie d'une appel de fonds</h4>
         </div>
         <div class="card-body">
-            <form method="post" action="{{route('cooperative.requests.store')}}">
+            <form method="post" action="{{ route('sectoriel.requests.store') }}">
                 @csrf
                 <div class="">
                     <div class="">

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Ca;
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\Entreprise;
-use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -34,9 +33,9 @@ class DashboardController extends Controller
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
             'dossiers_en_cours' => $dossiersEnCours,
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
+            'total_entites_individuelles' => Entreprise::where('agence_id', $agenceId)->where('prospect', 0)->where('individual', 1)->count(),
 
             'total_users' => $users->count(),
-            'total_cooperatives' => Tenant::whereIn('user_id', $users->pluck('id'))->count(),
             'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('prospect', 1)->count(),
         ];
 

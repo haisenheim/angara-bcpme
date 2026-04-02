@@ -58,7 +58,7 @@ class MemberController extends ExtendedController
         $parts = Entree::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
         //$pps = PaiementPart::where('saison_id',$this->_saison->id)->where('exploitant_id',$item->id)->get();
        // $plateformes = Plateforme::all();
-		return view('Ca/Cooperatives/member')->with(compact('item','parts'));
+		return view('Ca/Members/member')->with(compact('item','parts'));
 	}
 
     

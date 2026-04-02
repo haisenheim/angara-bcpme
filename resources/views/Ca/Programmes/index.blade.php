@@ -62,10 +62,10 @@
 
             const gridOptions = {
                 theme: agGrid.themeBalham.withParams({
-                    headerBackgroundColor: 'var(--bs-primary)',
+                    headerBackgroundColor: '#88b824',
                     headerHeight: '36px',
                     headerTextColor: 'white',
-                    rowHoverColor: '#f1f5f9'
+                    rowHoverColor: 'rgba(136, 184, 36, 0.12)'
                 }),
                 rowData: null,
                 columnDefs: columnDefs,

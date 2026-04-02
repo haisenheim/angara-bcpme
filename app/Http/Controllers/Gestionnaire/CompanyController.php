@@ -26,10 +26,12 @@ use App\Models\QuestionSousCritere;
 use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
+use App\Models\Departement;
 use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class CompanyController extends ExtendedController
 {
@@ -46,6 +48,76 @@ class CompanyController extends ExtendedController
     {
         //
         return view('/Gestionnaire/Companies/prospects');
+    }
+
+    /**
+     * Formulaire de création d'un prospect (entreprise non validée).
+     */
+    public function createProspect()
+    {
+        $formes = Forme::orderBy('name')->get(['id', 'name']);
+        $regions = Region::orderBy('name')->get(['id', 'name']);
+        $departements = Departement::orderBy('name')->get(['id', 'name', 'region_id']);
+        $arrondissements = Arrondissement::orderBy('name')->get(['id', 'name', 'departement_id']);
+
+        return view('Gestionnaire.Companies.create_prospect', compact('formes', 'regions', 'departements', 'arrondissements'));
+    }
+
+    /**
+     * Enregistre un prospect (prospect = 1).
+     */
+    public function storeProspect(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'arrondissement_id' => ['required', 'integer', Rule::exists(Arrondissement::class, 'id')],
+            'taille' => 'nullable|string|max:30',
+            'caractere' => 'nullable|in:Formel,Informel',
+            'rccm' => 'nullable|string|max:30',
+            'niu' => 'nullable|string|max:30',
+            'manager' => 'nullable|string|max:155',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+        ]);
+
+        $ar = Arrondissement::with('departement')->findOrFail($validated['arrondissement_id']);
+
+        $formeRaw = $request->input('forme_id');
+        $formeId = ($formeRaw === '' || $formeRaw === null) ? 0 : (int) $formeRaw;
+
+        $taille = $validated['taille'] ?? null;
+        if ($taille === '') {
+            $taille = null;
+        }
+
+        $data = [
+            'name' => $validated['name'],
+            'arrondissement_id' => $validated['arrondissement_id'],
+            'departement_id' => $ar->departement_id,
+            'region_id' => $ar->departement->region_id,
+            'forme_id' => $formeId,
+            'taille' => $taille,
+            'caractere' => $validated['caractere'] ?? null,
+            'rccm' => $validated['rccm'] ?? null,
+            'niu' => $validated['niu'] ?? null,
+            'manager' => $validated['manager'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'token' => sha1(time().rand(0, 99)),
+            'prospect' => true,
+            'systeme' => 'Normal',
+            'user_id' => auth()->id(),
+            'gestionnaire_id' => auth()->id(),
+            'agence_id' => auth()->user()->agence_id,
+            'representation_id' => auth()->user()->representation_id,
+            'personnel_permanent' => true,
+        ];
+
+        Entreprise::create($data);
+
+        Session::flash('success', 'Le prospect a été enregistré. Vous pouvez le compléter ultérieurement pour validation.');
+
+        return redirect()->route('gestionnaire.entreprises.prospects');
     }
 
 

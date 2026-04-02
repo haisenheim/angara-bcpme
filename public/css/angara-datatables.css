@@ -1,0 +1,152 @@
+/**
+ * Angara / BC-PME — tableaux DataTables & listes AJAX
+ * Vert #88b824 (en-têtes), rouge #c41e3a (pagination active, accents).
+ */
+
+:root {
+    --angara-dt-header-bg: var(--bcpme-green, #88b824);
+    --angara-dt-header-fg: #ffffff;
+    --angara-dt-hover-row: rgba(136, 184, 36, 0.08);
+    --angara-dt-accent: var(--bcpme-red, #c41e3a);
+    --angara-dt-accent-dark: var(--bcpme-red-dark, #9e1830);
+}
+
+/* —— Cartes filtres (aligné prospects) —— */
+.angara-filter-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.angara-filter-card .card-header,
+.angara-filter-card .card-body {
+    border-color: #e0e0e0;
+}
+
+/* —— Conteneur tableau DataTables / AJAX —— */
+.angara-dt-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.angara-dt-card .table-responsive,
+.angara-index-table .table-responsive {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* En-têtes : vert institutionnel */
+.angara-dt-card table thead th,
+.angara-dt-card table.dataTable thead th,
+.angara-dt-card .dt-container table thead th,
+.angara-index-table table thead th {
+    background-color: var(--angara-dt-header-bg) !important;
+    color: var(--angara-dt-header-fg) !important;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    vertical-align: middle;
+}
+
+.angara-dt-card table.table-bordered thead th,
+.angara-index-table table.table-bordered thead th {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.angara-dt-card table tbody tr:hover,
+.angara-index-table table tbody tr:hover {
+    background-color: var(--angara-dt-hover-row) !important;
+}
+
+/* DataTables tri */
+.angara-dt-card table.dataTable thead .dt-sorting::before,
+.angara-dt-card table.dataTable thead .dt-sorting::after {
+    opacity: 0.85;
+}
+
+/* Processing */
+.angara-dt-card .dt-container .dt-processing,
+.angara-dt-card .dataTables_processing {
+    padding: 1rem;
+    color: #6b6b6b;
+}
+
+/* Info */
+.angara-dt-card .dt-container .dt-info,
+.angara-dt-card .dataTables_info,
+.angara-index-table .text-muted.small {
+    padding: 0.75rem 0;
+    color: #6b6b6b !important;
+    font-size: 0.875rem;
+}
+
+/* —— Pagination DataTables 2 + Bootstrap —— */
+.angara-dt-card .dt-paging-button,
+.angara-dt-card .dt-paging a,
+.angara-dt-card .dt-paging button,
+.angara-dt-card .paginate_button,
+.angara-dt-card .page-link,
+.angara-dt-card .dataTables_paginate a,
+.angara-dt-card .dataTables_paginate span:not(.ellipsis),
+.angara-dt-card ul.pagination li a,
+.angara-dt-card ul.pagination li span,
+.angara-index-table .pagination .page-link {
+    background-color: #ffffff !important;
+    color: #495057 !important;
+    border-color: #dee2e6 !important;
+}
+
+.angara-dt-card .dt-paging-button.current,
+.angara-dt-card .dt-paging .current a,
+.angara-dt-card .paginate_button.current,
+.angara-dt-card .page-item.active .page-link,
+.angara-dt-card .page-item.active span,
+.angara-dt-card ul.pagination .page-item.active .page-link,
+.angara-index-table .pagination .page-item.active .page-link {
+    background-color: var(--angara-dt-accent) !important;
+    border-color: var(--angara-dt-accent) !important;
+    color: #ffffff !important;
+}
+
+.angara-dt-card .dt-paging-button:hover:not(.disabled):not(.current),
+.angara-dt-card .dt-paging a:hover:not(.disabled),
+.angara-dt-card .paginate_button:hover:not(.disabled):not(.current),
+.angara-dt-card .page-link:hover:not(.disabled),
+.angara-dt-card ul.pagination .page-link:hover:not(.disabled),
+.angara-index-table .pagination .page-link:hover:not(.disabled) {
+    background-color: var(--angara-dt-accent) !important;
+    border-color: var(--angara-dt-accent) !important;
+    color: #ffffff !important;
+}
+
+.angara-dt-card .dt-paging-button.disabled,
+.angara-dt-card .paginate_button.disabled {
+    background-color: #f8f9fa !important;
+    color: #adb5bd !important;
+    opacity: 0.75;
+}
+
+/* Boutons d’action dans cellules */
+.angara-dt-card .btn-action-view {
+    background: var(--angara-dt-accent) !important;
+    color: #ffffff !important;
+    border: none;
+}
+
+.angara-dt-card .btn-action-view:hover {
+    background: var(--angara-dt-accent-dark) !important;
+    color: #ffffff !important;
+}
+
+/* Stats cards : pastille verte */
+.angara-stats-row .rounded-circle.bg-primary.bg-opacity-10 {
+    background-color: rgba(136, 184, 36, 0.15) !important;
+}
+
+.angara-stats-row .text-primary.stat-value,
+.angara-stats-row i.text-primary {
+    color: var(--angara-dt-header-bg) !important;
+}

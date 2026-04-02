@@ -51,12 +51,6 @@ Route::get('apme',function(){
     return 'Ok';
 });
 
-Route::get('/',function(){
-    return redirect('/login');
-});
-
-
-
 
 Route::get('load',function(){
    $users = User::whereNull('token')->get();
@@ -91,15 +85,16 @@ Route::get('questions',function(){
     return 'ok';
 });
 
-
-
+/*
+| Redirection racine vers le login — tous les hôtes (central et portails coop).
+| Doit rester avant les routes « tenant » chargées ensuite pour que / ne passe pas par BindTenantFromHost.
+*/
+Route::get('/', function () {
+    return redirect(route('login'));
+});
 
 foreach (config('structuration.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
-        Route::get('/', function () {
-            return redirect(route('login'));
-        });
-
         Route::get('/payment/callback/{token}', [PayementController::class, 'handleCallback'])->name('util.paiement.callback');
 
         Route::namespace('App\Http\Controllers\Admin')
@@ -109,9 +104,6 @@ foreach (config('structuration.central_domains') as $domain) {
         ->group(function(){
             Route::resource('entreprises','CompanyController');
             Route::resource('entites','EntiteController');
-            Route::resource('cooperatives','CooperativeController');
-            Route::get('tenants/data','CooperativeController@fetchAll')->name('cooperatives.fetchAll');
-            Route::get('cooperatives/{token}/stats','CooperativeController@getStats')->name('cooperatives.stats');
             Route::resource('secteurs','SecteurController');
             Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
 
@@ -207,7 +199,6 @@ Route::namespace('App\Http\Controllers\Admin')
     ->group(function(){
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');
-        Route::resource('cooperatives','CooperativeController');
         Route::resource('secteurs','SecteurController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
 
@@ -294,6 +285,8 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@store')->name('entreprises.evaluation-profile.store');
         Route::get('entreprises/{entreprise}/evaluation-profile/edit','EntrepriseEvaluationProfileController@edit')->name('entreprises.evaluation-profile.edit');
         Route::put('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@update')->name('entreprises.evaluation-profile.update');
+        Route::get('entreprises/prospects/create','CompanyController@createProspect')->name('entreprises.prospects.create');
+        Route::post('entreprises/prospects','CompanyController@storeProspect')->name('entreprises.prospects.store');
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');
         Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
@@ -348,6 +341,9 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('companies/prospects/paginated','CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
         Route::get('companies/prospects/stats','CompanyController@fetchProspectsStats')->name('prospects.stats');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        Route::get('programs/data/paginated','ProgrammeController@fetchPaginated')->name('programmes.paginated');
+        Route::get('programs/stats','ProgrammeController@fetchStats')->name('programmes.stats');
+        Route::get('programs/filter-options','ProgrammeController@fetchFilterOptions')->name('programmes.filter-options');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
         Route::get('folders/data/paginated','DossierController@fetchPaginated')->name('dossiers.paginated');
         Route::get('folders/stats','DossierController@fetchStats')->name('dossiers.stats');
@@ -375,15 +371,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('wallet/enable','WalletController@enable')->name('wallet.enable');
         Route::get('wallet/disable','WalletController@disable')->name('wallet.disable');
 
-        Route::resource('cooperatives','CooperativeController');
-        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
-        Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
-        Route::get('cooperative/entrees/{token}','CooperativeController@getEntree')->name('cooperative.entrees.show');
-        Route::get('cooperative/entrepots/{token}','CooperativeController@getEntrepot')->name('cooperative.entrepots.show');
-        Route::post('cooperative/comptes','CooperativeController@addCompte')->name('cooperative.comptes.add');
-        Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
-        Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
-
         Route::get('members/show','MemberController@show')->name('members.show');
         Route::get('members/verger','MemberController@getVerger')->name('members.verger.show');
         //Route::resource('members','MemberController');
@@ -394,7 +381,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::resource('requests','RequestController');
         Route::post('request/validate','RequestController@valider')->name('request.validate');
         Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
-        Route::post('cooperative/users','CooperativeController@addUser')->name('cooperative.users.store');
     });
 
 
@@ -415,6 +401,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('dashboard/alerts','DashboardController@getAlerts')->name('dashboard.alerts');
         Route::get('dashboard/programmes','DashboardController@getProgrammes')->name('dashboard.programmes');
         Route::get('entreprises/data/paginated','CompanyController@fetchPaginated')->name('entreprises.paginated');
+        Route::get('entreprises/stats','CompanyController@fetchEntreprisesIndexStats')->name('entreprises.stats');
         Route::resource('entreprises','CompanyController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
@@ -452,6 +439,9 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('companies/prospects/paginated','CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
         Route::get('companies/prospects/stats','CompanyController@fetchProspectsStats')->name('prospects.stats');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
+        Route::get('programs/data/paginated','ProgrammeController@fetchPaginated')->name('programmes.paginated');
+        Route::get('programs/stats','ProgrammeController@fetchStats')->name('programmes.stats');
+        Route::get('programs/filter-options','ProgrammeController@fetchFilterOptions')->name('programmes.filter-options');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
         Route::get('folders/data/paginated','DossierController@fetchPaginated')->name('dossiers.paginated');
         Route::get('folders/stats','DossierController@fetchStats')->name('dossiers.stats');
@@ -529,9 +519,6 @@ Route::namespace('App\Http\Controllers\Ca')
 
         Route::resource('wallets','WalletController');
 
-        Route::resource('cooperatives','CooperativeController');
-        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
-
         Route::resource('members','MemberController');
         Route::get('member/data','MemberController@fetchAll')->name('members.all');
 
@@ -569,43 +556,6 @@ Route::namespace('App\Http\Controllers\Regional')
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
 });
-
-Route::namespace('App\Http\Controllers\Cooperative')
-    ->prefix('cooperative')
-    ->middleware(['auth','cooperative'])
-    ->name('cooperative.')
-    ->group(function(){
-        Route::get('dashboard','DashboardController@index')->name('dashboard');
-        Route::resource('exploitants','ExploitantController');
-        Route::resource('members','MemberController');
-        Route::post('member/key','MemberController@addKey')->name('member.add.key');
-        Route::resource('entrepots','EntrepotController');
-        Route::resource('villages','VillageController');
-        Route::resource('entrepots','EntrepotController');
-        Route::resource('agents','AgentController');
-        Route::resource('mouvements','MouvementController');
-        Route::resource('requests','RequestController');
-        Route::get('mouvement/data','MouvementController@fetchAll')->name('mouvements.all');
-
-        Route::resource('entrees','EntreeController');
-        Route::get('entree/data','EntreeController@fetchAll')->name('entrees.all');
-        Route::post('entree/paiemnt','EntreeController@addPaiement')->name('entree.paiement');
-        Route::get('paiements','EntreeController@getPaiements')->name('paiements');
-
-        Route::resource('sorties','SortieController');
-        Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');
-
-        Route::resource('wallets','WalletController');
-        Route::get('caisses','WalletController@getCaisses')->name('caisses.index');
-        Route::get('my_wallets','WalletController@getMyWallets')->name('my.wallets');
-        Route::post('wallet/recharge','WalletController@recharger')->name('wallet.recharge');
-        Route::get('recharges','WalletController@getRecharges')->name('recharges');
-        Route::get('wallet/disable/{token}','WalletController@disable')->name('wallet.disable');
-        Route::get('wallet/enable/{token}','WalletController@enable')->name('wallet.enable');
-        Route::get('kpi/agents/solde','KpiController@getAgentSolde')->name('kpi.agents.solde');
-    });
-
-
 
 Route::namespace('App\Http\Controllers\Program')
     ->prefix('program')
@@ -680,17 +630,6 @@ Route::namespace('App\Http\Controllers\Sectoriel')
 
 
         Route::resource('villages','VillageController');
-
-        Route::resource('cooperatives','CooperativeController');
-        Route::get('cooperative/data','CooperativeController@fetchAll')->name('cooperatives.all');
-        Route::post('cooperative/caisse','CooperativeController@addCaisse')->name('cooperative.caisse.add');
-        Route::get('cooperative/entrees/{token}','CooperativeController@getEntree')->name('cooperative.entrees.show');
-        Route::get('cooperative/entrepot','CooperativeController@getEntrepot')->name('entrepots.show');
-
-        Route::post('cooperative/paiements/export','CooperativeController@exportPaiements')->name('cooperative.paiements.export');
-        Route::post('cooperative/entrees/export','CooperativeController@exportEntrees')->name('cooperative.entrees.export');
-
-
 
 });
 

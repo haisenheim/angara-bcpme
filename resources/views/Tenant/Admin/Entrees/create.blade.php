@@ -105,7 +105,7 @@
                         $('select[name="entrepot_id"]').append('<option value="' + item.id + '">' + item.name + '</option>');
                     });
                 });
-                $.get('{{ route('admin.cooperative.membres',['id'=>':token']) }}'.replace(':token',tenant_id), function(data) {
+                $.get('{{ route('admin.tenant.membres',['id'=>':token']) }}'.replace(':token',tenant_id), function(data) {
                     $('select[name="exploitant_id"]').html('<option value="">Selectionner l\'entrepot source ...</option>');
                     data.forEach(function(item) {
                         $('select[name="exploitant_id"]').append('<option value="' + item.id + '">' + item.name + '</option>');

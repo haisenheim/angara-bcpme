@@ -175,21 +175,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                 <span class="nav-label mininav-content ms-1">INSTRUCTION</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==202?'active':'' }}"><i class="pli-folders fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">COMPENSATION</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link {{ $active==203?'active':'' }}"><i class="pli-files fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">INVESTISSEMENT</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link {{ $active==204?'active':'' }}"><i class="pli-handshake fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">GARANTIE</span>
-            </a>
-        </li>
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">
@@ -198,16 +183,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
        <li class="nav-item">
            <a href="{{ route('gestionnaire.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==401?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
                <span class="nav-label mininav-content ms-1">Entreprises</span>
-           </a>
-       </li>
-       <li class="nav-item">
-           <a href="{{ route('gestionnaire.entreprises.evaluation-profiles.index') }}" class="nav-link mininav-toggle {{ $active==406?'active':'' }}"><i class="pli-file-edit fs-2 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Profils ESG</span>
-           </a>
-       </li>
-       <li class="nav-item">
-           <a href="#" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
            </a>
        </li>
        <li class="nav-item">
@@ -228,35 +203,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
 
     </ul>
 </div>
-<div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
-    <ul class="mainnav__menu nav flex-column">
-        <li class="nav-item">
-            <a href="#" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
-                <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
-            </a>
-        </li>
-    </ul>
-</div>
 
-<div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">Systeme</h6>
-    <ul class="mainnav__menu nav flex-column">
-
-        <li class="nav-item has-sub">
-            <a href="#" class="mininav-toggle nav-link {{ ($active>800&&$active<900)?'active':'' }}"><i class="demo-pli-gears fs-5 me-2"></i>
-                <span class="nav-label ms-1">Parametres</span>
-            </a>
-            <!-- Settings submenu list -->
-            <ul class="mininav-content nav collapse">
-                <li class="nav-item">
-                    <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
-                    <a href="#" class="nav-link {{ $active==801?'active':'' }}">Banques</a>
-                </li>
-            </ul>
-            <!-- END : Dashboard submenu list -->
-        </li>
-    </ul>
-</div>
 @yield('modal')
 @endsection

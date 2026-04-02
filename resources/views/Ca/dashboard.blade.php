@@ -240,9 +240,6 @@
                             <a href="{{ route('ca.entreprises.index') }}" class="btn btn-outline-primary btn-sm">
                                 <i class="pli-bank me-2"></i>Gérer les entreprises
                             </a>
-                            <a href="{{ route('ca.cooperatives.index') }}" class="btn btn-outline-success btn-sm">
-                                <i class="pli-leafs me-2"></i>Gérer les coopératives
-                            </a>
                             <a href="{{ route('ca.dossiers.index') }}" class="btn btn-outline-info btn-sm">
                                 <i class="pli-folder me-2"></i>Suivre les dossiers
                             </a>

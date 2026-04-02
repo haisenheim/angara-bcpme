@@ -1,13 +1,24 @@
 :root {
-    /* Angara custom themes */
+    /* Angara — déploiement BC-PME (vert institutionnel logo) */
+    --bcpme-green: #88b824;
+    --bcpme-green-dark: #6f9a1c;
+    --bcpme-green-subtle: #e8f5d9;
     --bg-color: #f5f5f5;
-    --gray-1: #c4c4c4;
-    --primary-color: #e30613;
-    --dark-color: #000;
-    --ligth-color: #fff;
-    --green-color: #2a9046;
+    --gray-1: #e0e0e0;
+    /* Rouge logo BC-PME (flèche / cartouche) — actions primaires */
+    --primary-color: #c41e3a;
+    --primary-dark: #9e1830;
+    --primary-light: #fce8ec;
+    --on-primary: #ffffff;
+    --dark-color: #1a1a1a;
+    --ligth-color: #ffffff;
+    --text-body: #3a3a3a;
+    --text-muted-custom: #6b6b6b;
+    --border-color-bcpme: #e0e0e0;
+    --green-color: #2e7d32;
     --blue-color: #1294de;
     --orange-color: rgb(255, 136, 0);
+    --semantic-danger: #c62828;
     --common-padding: 15px;
     --nf-header-bg: var(--bs-component-bg);
     --nf-header-color: var(--bs-component-color);
@@ -22,8 +33,8 @@
     --nf-header-transition-timing: ease;
     --bs-component-bg: #fff;
     --bs-component-bg-rgb: 255, 255, 255;
-    --bs-component-color: #414547;
-    --bs-component-color-rgb: 65, 69, 71;
+    --bs-component-color: #3a3a3a;
+    --bs-component-color-rgb: 58, 58, 58;
     --bs-component-hover-bg: #d5d9dd;
     --bs-component-hover-bg-rgb: 213, 217, 221;
     --bs-component-hover-color: #1a1d21;
@@ -37,9 +48,9 @@
     --bs-box-shadow-alpha-sm: 0.125;
     --bs-box-shadow-alpha-lg: 0.25;
     --bs-box-shadow-alpha-inset: 0.1;
-    --bs-primary-color: #a2161a;
+    --bs-primary-color: #ffffff;
     --bs-primary-color-rgb: 255, 255, 255;
-    --bs-primary-border: #456092;
+    --bs-primary-border: #9e1830;
 
     /* General theme */
     --blue-50: #f5f9ff;
@@ -152,14 +163,20 @@
     --red-700: #b32b23;
     --red-800: #8c221c;
     --red-900: #661814;
-    --primary-50: #f49ba1;
-    --primary-100: #f18389;
-    --primary-200: #ee6a71;
-    --primary-300: #e93842;
-    --primary-400: #e61f2b;
-    --primary-500: #e30613;
-    --primary-600: #cc0511;
-    --primary-700: #b6050f;
-    --primary-800: #9f040d;
-    --primary-900: #88040b;
+    --primary-50: #fff5f7;
+    --primary-100: #f9d1d9;
+    --primary-200: #f0a3b3;
+    --primary-300: #e6758d;
+    --primary-400: #d84867;
+    --primary-500: #c41e3a;
+    --primary-600: #9e1830;
+    --primary-700: #7a1326;
+    --primary-800: #570e1c;
+    --primary-900: #3a0a12;
+    /* Bootstrap primary (rouge BC-PME) */
+    --bs-primary: #c41e3a;
+    --bs-primary-rgb: 196, 30, 58;
+    --bs-primary-text-emphasis: #5c0f1e;
+    --bs-primary-bg-subtle: #fce8ec;
+    --bs-primary-border-subtle: #e8a0b0;
 }

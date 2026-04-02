@@ -33,7 +33,7 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>COOPERATIVE</th>
+                            <th>ORGANISATION</th>
                             <th>TELEPHONE</th>
                             <th>ARRONDISSEMENT</th>
                             <th>DEPARTEMENT</th>
@@ -43,7 +43,7 @@
                     <tbody>
                         @foreach($item->cooperatives as $it)
                         <tr>
-                            <td><a class="btn-link" href="{{ route('sectoriel.cooperatives.show',$it->token) }}">{{ $it->name }}</a></td>
+                            <td>{{ $it->name }}</td>
                             <td>{{ $it->phone }}</td>
                             <td>{{ $it->arrondissement?->name }}</td>
                             <td>{{ $it->departement?->name }}</td>

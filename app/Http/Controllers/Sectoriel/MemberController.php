@@ -89,7 +89,7 @@ class MemberController extends ExtendedController
         $item = $data['item'];
         $parts = $data['parts'];
 
-		return view('Sectoriel/Cooperatives/member')->with(compact('item','parts','villages','tenant_id'));
+		return view('Sectoriel/Members/member')->with(compact('item','parts','villages','tenant_id'));
 	}
 
     public function getVerger()
@@ -112,7 +112,7 @@ class MemberController extends ExtendedController
         $produits = ProduitPhytoSanitaire::where('active',1)->get();
         $travaux = TypeTravailVerger::where('active',1)->get();
 
-		return view('Sectoriel/Cooperatives/verger')->with(compact('item','tenant_id','campagnes','produits','travaux'));
+		return view('Sectoriel/Members/verger')->with(compact('item','tenant_id','campagnes','produits','travaux'));
 	}
 
     public function addTravailCampagne(Request $request){

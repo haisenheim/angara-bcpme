@@ -187,8 +187,8 @@
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('admin.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-conference fs-3 me-2"></i>
-                    <span class="nav-label mininav-content ms-1">Cooperatives</span>
+                <a href="{{ route('admin.tenants.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-conference fs-3 me-2"></i>
+                    <span class="nav-label mininav-content ms-1">Structures</span>
                 </a>
             </li>
         @endif

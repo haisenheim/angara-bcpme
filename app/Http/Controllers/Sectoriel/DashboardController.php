@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Sectoriel;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Contrat;
-use App\Models\Cooperative;
 use App\Models\Livraison;
 use App\Models\Protocole;
 use App\Models\Saison;

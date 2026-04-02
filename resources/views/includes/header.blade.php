@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light" data-scheme="night" style="font-size:14px;">
+<html lang="fr" data-bs-theme="light" data-scheme="corn" style="font-size:14px;">
 
 <head>
     <meta name="generator" content="Hugo 0.87.0" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
-    <meta name="description" content="Plateforme Cogelo de gestion de la collecte de la feve au Cameroun.">
-    <title>@yield('title') | Alliages Technologies - Adjuvant</title>
+    <meta name="description" content="Angara — plateforme financière. Déploiement Banque Camerounaise des Petites et Moyennes Entreprises (BC-PME).">
+    <title>@yield('title') | ANGARA</title>
 
     <!-- STYLESHEETS -->
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--- -->
@@ -14,7 +14,7 @@
     <!-- Fonts [ OPTIONAL ] -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS [ REQUIRED ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
@@ -28,6 +28,7 @@
 
     <!-- Angara Custom Style -->
     <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/nifty-override.css') }}">
 
     <!-- Demo purpose CSS [ DEMO ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
@@ -69,11 +70,11 @@
              </div>
 
             <!-- FOOTER -->
-            <footer class="content__boxed mt-auto">
+            <footer class="content__boxed mt-auto bc-pme-footer">
                 <div class="content__wrap py-3 py-md-1 d-flex flex-column flex-md-row align-items-md-center">
-                    <div class="text-nowrap mb-4 mb-md-0">Copyright &copy; {{ date('Y') }} <a href="#" class="ms-1 btn-link fw-bold">Alliages Technologies - Adjuvant</a></div>
+                    <div class="text-nowrap mb-4 mb-md-0">Copyright &copy; {{ date('Y') }} <a href="#" class="ms-1 btn-link fw-bold">Angara finance</a></div>
                     <nav class="nav flex-column gap-1 flex-md-row gap-md-3 ms-md-auto" style="row-gap: 0 !important;">
-                        <a class="nav-link px-0" href="#">Contactez nous</a>
+                        <a class="nav-link px-0" href="#">Contactez-nous</a>
                     </nav>
                 </div>
             </footer>
@@ -95,12 +96,12 @@
 
                      <!-- Brand logo -->
                      <a href="index.html" class="brand-img stretched-link">
-                        <img style="width: 40px; height:40px; color:white" src="{{ asset('img/logo.png') }}" alt="Nifty Logo" class="Nifty logo mt-1" width="16" height="16">
-                     </a>   
+                        <img src="{{ asset('img/logo-bcpme.png') }}" alt="Banque Camerounaise des Petites et Moyennes Entreprises — Angara" class="Nifty logo mt-1">
+                     </a>
 
 
                      <!-- Brand title -->
-                     <div class="brand-title">Cogelo</div>
+                     <div class="brand-title">Angara</div>
                   </div>
                </div>
                <!-- End - Brand -->
@@ -123,7 +124,7 @@
                      <div class="header-searchbox">
 
                         <!-- Searchbox toggler for small devices -->
-                        <label for="header-search-input" class="header__btn d-md-none btn btn-icon rounded-pill shadow-none border-0 btn-sm" type="button">
+                        <label for="header-search-input" class="header__btn d-md-none btn btn-icon rounded shadow-none border-0 btn-sm" type="button">
                            <i class="demo-psi-magnifi-glass"></i>
                         </label>
 

@@ -1,0 +1,302 @@
+/**
+ * Angara — thème déploiement BC-PME (Nifty overrides).
+ * Vert institutionnel #88b824 : fonds navigation.
+ * Rouge logo #c41e3a : boutons / CTA primaires.
+ */
+
+:root,
+html[data-scheme="corn"] {
+    --bcpme-green: #88b824;
+    --bcpme-green-dark: #6f9a1c;
+    --bcpme-green-subtle: #e8f5d9;
+    --bcpme-red: #c41e3a;
+    --bcpme-red-dark: #9e1830;
+    --bcpme-red-subtle: #fce8ec;
+    --nifty-primary: #c41e3a;
+    --nifty-primary-dark: #9e1830;
+    --nifty-primary-light: #fce8ec;
+    --nifty-sidebar-bg: #88b824;
+    --nifty-sidebar-active: #ffffff;
+    --nifty-navbar-bg: #ffffff;
+    --nf-content-title-color: #1a1a1a;
+    --nf-content-title-weight: 700;
+    --bs-body-bg: #f5f5f5;
+    --bs-body-bg-rgb: 245, 245, 245;
+    --bs-body-color: #3a3a3a;
+    --bs-body-color-rgb: 58, 58, 58;
+    --bs-heading-color: #1a1a1a;
+    --bs-border-color: #e0e0e0;
+    --bs-secondary-color: #6b6b6b;
+}
+
+html {
+    font-family: "Inter", "Open Sans", system-ui, -apple-system, sans-serif;
+}
+
+body {
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--bs-body-color);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.page-title {
+    color: #1a1a1a;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* —— Top header: white bar, subtle bottom border —— */
+.header {
+    --nf-header-bg: #ffffff;
+    --nf-header-color: #1a1a1a;
+    --nf-header-secondary-color: #6b6b6b;
+    --nf-header-border-color: #e0e0e0;
+    --nf-header-shadow: none;
+    --nf-header-btn-hover-bg: rgba(26, 26, 26, 0.08);
+    --nf-header-btn-hover-color: #1a1a1a;
+    --nf-brand-bg: #ffffff;
+    --nf-brand-color: #1a1a1a;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: none !important;
+}
+
+/* Fair header: keep logo strip white on desktop (Nifty ties brand to mainnav) */
+@media (min-width: 992px) {
+    .tm--fair-hd.mn--min .header__brand,
+    .mn--min.tm--tall-hd .header__brand,
+    .tm--fair-hd.mn--max .header__brand,
+    .mn--max.tm--tall-hd .header__brand {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+    }
+}
+
+/* —— Main navigation (sidebar): vert BC-PME #88b824, actif lisible sur fond clair —— */
+.mainnav {
+    --nf-mainnav-bg: #88b824;
+    --nf-mainnav-color: rgba(255, 255, 255, 0.95);
+    --nf-mainnav-secondary-color: rgba(255, 255, 255, 0.55);
+    --nf-mainnav-link-color: rgba(255, 255, 255, 0.9);
+    --nf-mainnav-link-hover: #ffffff;
+    --nf-mainnav-link-active: #1a1a1a;
+    --nf-mainnav-link-active-underline-color: rgba(255, 255, 255, 0.35);
+    --nf-mainnav-icon-color: rgba(255, 255, 255, 0.95);
+    --nf-mainnav-heading-color: rgba(255, 255, 255, 0.72);
+    --nf-mainnav-border-color: rgba(0, 0, 0, 0.12);
+    --nf-mainnav-submenu-active-bg: #ffffff;
+    --nf-mainnav-submenu-active-color: #1a1a1a;
+    --nf-mainnav-submenu-active-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --nf-mainnav-submenu-dashed-color: rgba(255, 255, 255, 0.35);
+    --nf-mainnav-min-icon-color: #ffffff;
+    --nf-mainnav-min-icon-active-color: #88b824;
+    --nf-mainnav-min-submenu-active-bg: #ffffff;
+    --nf-mainnav-min-submenu-active-color: #1a1a1a;
+}
+
+.mainnav__inner .mainnav__menu > .nav-item > .nav-link.active {
+    font-weight: 600 !important;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.root .mainnav__inner .mainnav__menu > .nav-item > .nav-link:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.14) !important;
+    color: #ffffff !important;
+}
+
+.root .mainnav__inner .mainnav__menu > .nav-item > .nav-link:hover:not(.active) i,
+.root .mainnav__inner .mainnav__menu > .nav-item > .nav-link:hover:not(.active) .nav-icon {
+    color: #ffffff !important;
+}
+
+.mainnav__inner .mainnav__menu > .nav-item > .nav-link.active i,
+.mainnav__inner .mainnav__menu > .nav-item > .nav-link.active .nav-icon {
+    color: #88b824 !important;
+}
+
+.mainnav__inner .mainnav__menu > .nav-item > .nav-link.active .nav-label {
+    color: #1a1a1a !important;
+}
+
+.mainnav__bottom-content {
+    background-color: #6f9a1c !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.mainnav__bottom-content .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.mainnav__bottom-content .nav-link:hover {
+    color: #ffffff !important;
+}
+
+/* Section labels / small caps */
+.bc-pme-label,
+.section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+}
+
+/* —— Primary / outline buttons (rouge logo BC-PME) —— */
+.btn-primary,
+a.btn-primary {
+    --bs-btn-bg: var(--bcpme-red);
+    --bs-btn-border-color: var(--bcpme-red);
+    --bs-btn-color: #ffffff;
+    --bs-btn-hover-bg: var(--bcpme-red-dark);
+    --bs-btn-hover-border-color: var(--bcpme-red-dark);
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-active-bg: var(--bcpme-red-dark);
+    --bs-btn-active-border-color: var(--bcpme-red-dark);
+    --bs-btn-active-color: #ffffff;
+    border-radius: 4px;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+
+.btn-outline-primary,
+a.btn-outline-primary {
+    --bs-btn-color: var(--bcpme-red);
+    --bs-btn-border-color: var(--bcpme-red);
+    --bs-btn-hover-bg: var(--bcpme-red-subtle);
+    --bs-btn-hover-border-color: var(--bcpme-red);
+    --bs-btn-hover-color: var(--bcpme-red-dark);
+    border-width: 2px;
+    border-radius: 4px;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+
+.btn-secondary:not(.btn-outline-secondary) {
+    border-radius: 4px;
+}
+
+/* Badges */
+.badge.bg-primary,
+span.badge.bg-primary {
+    background-color: var(--bcpme-red) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.badge.bg-success {
+    background-color: #e8f5e9 !important;
+    color: #2e7d32 !important;
+}
+
+/* Cards */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.angara-card {
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e0e0e0;
+}
+
+.card-header {
+    background-color: #f5f5f5 !important;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #1a1a1a;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Feature icon discs (vert institutionnel + pastille) */
+.bc-pme-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--bcpme-green-subtle);
+    color: var(--bcpme-green);
+}
+
+/* Footer (in-layout) — sobre, filet vert BC-PME */
+.bc-pme-footer {
+    background-color: #1a1a1a !important;
+    color: #cccccc !important;
+    border-top: 3px solid #88b824 !important;
+}
+
+.bc-pme-footer a {
+    color: #cccccc !important;
+}
+
+.bc-pme-footer a:hover {
+    color: #88b824 !important;
+}
+
+.bc-pme-footer .nav-link {
+    color: #cccccc !important;
+}
+
+.bc-pme-footer .nav-link:hover {
+    color: #88b824 !important;
+}
+
+.bc-pme-footer .btn-link {
+    color: #cccccc !important;
+}
+
+.bc-pme-footer .btn-link:hover {
+    color: #88b824 !important;
+}
+
+/* Secondary sidebar (Nifty aside) */
+.sidebar {
+    background-color: #f5f5f5;
+    border-inline-start: 1px solid #e0e0e0;
+}
+
+/* Header controls: avoid pill shape on search toggles */
+.header .rounded-pill {
+    border-radius: 4px !important;
+}
+
+/* Logo barre : zone blanche, logo horizontal BC-PME */
+.header__brand .brand-wrap .brand-img img {
+    max-height: 2.75rem;
+    width: auto;
+    max-width: min(220px, 36vw);
+    height: auto;
+    object-fit: contain;
+}
+
+.header__brand .brand-wrap .brand-icon img {
+    max-height: 2rem;
+    width: auto;
+    max-width: 48px;
+    object-fit: contain;
+}
+
+/* Scroll-to-top : vert institutionnel */
+.scroll-page {
+    --nf-btn-scroll-bg: #88b824;
+    --nf-btn-scroll-color: #ffffff;
+}
+

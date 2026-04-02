@@ -36,9 +36,9 @@
             /* Changes the color of the grid background */
             backgroundColor: "rgb(241, 247, 255)",
             /* Changes the header color of the top row */
-            headerBackgroundColor: "rgb(228, 237, 250)",
+            headerBackgroundColor: "#e8f5d9",
             /* Changes the hover color of the row*/
-            rowHoverColor: "rgb(216, 226, 255)",
+            rowHoverColor: "rgba(136, 184, 36, 0.14)",
             });
             const columnDefs = [
                         { field: "programme", minWidth: 100,filter:true},
@@ -59,9 +59,9 @@
 
             const gridOptions = {
             theme: agGrid.themeBalham.withParams({
-                headerBackgroundColor: "var(--bs-primary)",
+                headerBackgroundColor: "#88b824",
                 headerHeight: '30px',
-                headerTextColor: 'var(--nf-mainnav-link-color)',
+                headerTextColor: '#ffffff',
             }),
             rowData: null,
             columnDefs: columnDefs,

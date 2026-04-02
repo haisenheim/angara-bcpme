@@ -18,8 +18,11 @@ class BindTenantFromHost
     {
         $host = $request->getHost();
 
+        // Domaine « central » (instruction, etc.) : pas de coopérative liée au Host.
+        // Les routes communes (ex. / → login) sont dans routes/web.php ; ici on laisse passer
+        // sans lier de tenant (comme PreventAccessFromCentralDomains côté Stancl).
         if (in_array($host, config('structuration.central_domains'), true)) {
-            abort(403, 'Accès portail coopérative uniquement depuis un domaine dédié à une coopérative.');
+            return $next($request);
         }
 
         $domain = Domain::query()->where('domain', $host)->first();

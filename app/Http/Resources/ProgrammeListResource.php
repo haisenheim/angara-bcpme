@@ -24,7 +24,9 @@ class ProgrammeListResource extends JsonResource
             'contact'=>$this->contact,
             'type_pp'=>$this->type_pp,
             'type_pm'=>$this->type_pm,
-            'dt_sig_conv'=>Carbon::parse($this->dt_sig_conv)->format('d/m/Y'),
+            'dt_sig_conv'=>$this->dt_sig_conv
+                ? Carbon::parse($this->dt_sig_conv)->format('d/m/Y')
+                : '—',
             'token'=>$this->token,
         ];
     }

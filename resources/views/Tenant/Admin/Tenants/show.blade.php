@@ -30,7 +30,7 @@
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5>Informations sur la coopérative</h5>
+                        <h5>Informations sur la structure</h5>
                         <table class="table table-striped table-bordered">
                             <tbody>
                                 <tr>
@@ -169,7 +169,7 @@
                     <h5 class="modal-title" id="addMembreModalLabel">Créer un membre</h5>
                 </div>
                 <div class="modal-body">
-                    <form action="{{ route('admin.cooperative.membre') }}" method="post">
+                    <form action="{{ route('admin.tenant.membre') }}" method="post">
                         @csrf
                         <input type="hidden" name="tenant_id" value="{{ $item->id }}">
                         <fieldset>
@@ -296,7 +296,7 @@
                     <h5 class="modal-title" id="addModalLabel">Créer un entrepot</h5>
                 </div>
                 <div class="modal-body">
-                    <form action="{{ route('admin.cooperative.entrepot') }}" method="post">
+                    <form action="{{ route('admin.tenant.entrepot') }}" method="post">
                         @csrf
                         <input type="hidden" name="tenant_id" value="{{ $item->id }}">
                         <div class="form-group">

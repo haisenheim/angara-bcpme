@@ -42,7 +42,7 @@
                         @foreach($item->cooperatives as $it)
                         <tr>
                             <td>{{ $it->id }}</td>
-                            <td><a href="{{ route('admin.cooperatives.show',$it->id) }}">{{ $it->name }}</a></td>
+                            <td>{{ $it->name }}</td>
                             <td>{{ $it->phone }}</td>
                             <td>{{ $it->arrondissement?$item->arrondissement->name:'-' }}</td>
                             <td>{{ $it->departement?$item->departement->name:'-' }}</td>

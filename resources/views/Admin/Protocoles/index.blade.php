@@ -44,7 +44,7 @@
                             <td>
                                 <div>
                                     <img class="image-25 image-circle" src="{{ $item->cooperative->photo }}" />
-                                    <a style="vertical-align:middle" href="{{ route('admin.cooperatives.show',$item->cooperative_id) }}">{{ $item->cooperative?$item->cooperative->name:'-' }}</a>
+                                    <span style="vertical-align:middle">{{ $item->cooperative?$item->cooperative->name:'-' }}</span>
                                 </div>
                             </td>
                             <td><a href="{{ route('admin.saisons.show',$item->saison_id) }}">{{ $item->saison?$item->saison->name:'-' }}</a></td>

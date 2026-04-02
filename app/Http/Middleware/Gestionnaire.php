@@ -23,31 +23,44 @@ class Gestionnaire
             return redirect('/login');
         }
         $path = request()->getPathInfo();
-        $parts = explode('/',$path);
+        $parts = array_values(array_filter(explode('/', $path)));
+        // Codes alignés sur resources/views/Layouts/gestionnaire.blade.php
         $active = 1;
-        if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
+        if (in_array('dossiers', $parts) || in_array('dossier', $parts) || in_array('instruction', $parts) || in_array('folders', $parts)) {
             $active = 201;
-        }
-        if(in_array('programmes',$parts)){
-            $active = 3;
-        }
-        if(in_array('entreprises',$parts)|| in_array('entreprise',$parts)){
-            $active = 4;
-        }
-        if(in_array('evaluation-profiles',$parts)){
-            $active = 406;
-        }
-        if(in_array('prospects',$parts)){
-            $active = 5;
-        }
-        if(in_array('users',$parts)){
+        } elseif (in_array('prospects', $parts)) {
+            $active = 404;
+        } elseif ($this->isProgrammesNavSection($parts)) {
+            $active = 405;
+        } elseif (in_array('entites', $parts) || in_array('entite', $parts) || in_array('entities', $parts)) {
+            $active = 403;
+        } elseif (in_array('entreprises', $parts) || in_array('entreprise', $parts)) {
+            $active = 401;
+        } elseif (in_array('users', $parts)) {
             $active = 6;
-        }
-        if(in_array('territoire',$parts)){
+        } elseif (in_array('territoire', $parts)) {
             $active = 701;
         }
         Session::put('active',$active);
         Session::put('agence',$agence);
         return $next($request);
+    }
+
+    /**
+     * Menu « programmes » : index /programmes et routes /programme/… sauf entreprise|entite/programme.
+     */
+    private function isProgrammesNavSection(array $parts): bool
+    {
+        if (in_array('programmes', $parts)) {
+            return true;
+        }
+        if (!in_array('programme', $parts)) {
+            return false;
+        }
+        if (in_array('entreprise', $parts) || in_array('entite', $parts) || in_array('entreprises', $parts) || in_array('entites', $parts)) {
+            return false;
+        }
+
+        return true;
     }
 }

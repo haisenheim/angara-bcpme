@@ -81,7 +81,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                 <!-- Settings submenu list -->
                 <ul class="mininav-content nav collapse">
                     <li class="nav-item">
-                        <a href="{{ route('gestionnaire.cooperatives.index') }}" class="nav-link {{ $active==601?'active':'' }}">Cooperatives</a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('gestionnaire.wallets.index') }}" class="nav-link {{ $active==601?'active':'' }}">Wallets</a>

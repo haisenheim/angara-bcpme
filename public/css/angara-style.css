@@ -110,7 +110,7 @@ header .context .figure:hover {
 }
 
 input::-moz-placeholder {
-    font-family: "Poppins", sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 *,
@@ -128,13 +128,13 @@ a,
 li,
 label,
 input::placeholder {
-    font-family: "Poppins", sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 label {
     display: inline-block;
     margin-bottom: 0.5rem !important;
-    color: #000;
+    color: #1a1a1a;
 }
 
 .btn-icon {
@@ -174,7 +174,7 @@ label {
     width: 15px;
     height: 15px;
     background: var(--primary-color);
-    color: var(--ligth-color);
+    color: var(--on-primary);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -343,8 +343,8 @@ button,
 .btn {
     padding: 8px 10px;
     gap: 8px;
-    border-radius: 8px;
-    font-family: "Poppins", sans-serif;
+    border-radius: 4px;
+    font-family: "Inter", sans-serif;
     text-align: center;
     font-size: 1rem;
     border: none;
@@ -363,7 +363,7 @@ button,
 
 button.btn.btn-primary {
     background-color: var(--primary-color);
-    color: var(--ligth-color);
+    color: var(--on-primary);
 }
 
 button.btn.btn-dark {
@@ -392,13 +392,15 @@ button.icon-btn {
 
 .btn.btn-action {
     background-color: var(--primary-color);
-    color: var(--ligth-color);
+    color: var(--on-primary);
 }
 
 button.btn.btn-primary,
 a.btn.btn-primary {
     background-color: var(--primary-color);
-    color: var(--ligth-color);
+    color: var(--on-primary);
+    border-radius: 4px;
+    font-weight: 600;
 }
 
 .btn-primary:not(:disabled):not(.disabled).active,
@@ -470,23 +472,9 @@ a.btn.btn-red.small {
     margin-right: -30px;
 }
 
-.mainnav__inner {
-    background-color: var(--ligth-color);
-}
-.mainnav__inner .nav-link {
-    color: #000 !important;
-}
-.mainnav__inner .nav-link.active {
-    color: var(--primary-color) !important;
-    font-weight: normal !important;
-}
-
-.mainnav__bottom-content {
-    background: #ffffff !important;
-}
-
+/* Main sidebar — see public/css/nifty-override.css (vert #88b824) */
 .mainnav__inner :where(.border-top, .border-end, .border-bottom, .border-start) {
-    border-color: #c3c4c5 !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 :where(.ag-header.ag-header-allow-overflow) .ag-header-row {
@@ -636,7 +624,7 @@ h6.label {
 .filter-item-container {
     padding: 8px 15px;
     border-radius: 4px;
-    background-color: rgba(227, 6, 19, 0.22);
+    background-color: rgba(196, 30, 58, 0.12);
     cursor: pointer;
     max-width: 140px;
 }
@@ -1217,13 +1205,13 @@ hr.sub-separator {
     color: var(--orange-color);
 }
 .status.status-retard {
-    background: rgba(240, 45, 45, 0.2);
-    color: var(--primary-color);
+    background: rgba(198, 40, 40, 0.15);
+    color: var(--semantic-danger);
 }
 
 @media (min-width: 992px) {
     .mn--min .mainnav__menu > .nav-item > .nav-link.active i,
-.mn--min .mainnav__menu > .nav-item > .nav-link.active .nav-icon {
-        color: var(--ligth-color) !important;
+    .mn--min .mainnav__menu > .nav-item > .nav-link.active .nav-icon {
+        color: var(--bcpme-green) !important;
     }
 }

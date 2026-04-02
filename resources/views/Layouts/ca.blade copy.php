@@ -201,11 +201,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
            </a>
        </li>
         <li class="nav-item">
-           <a href="{{ route('ca.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==2?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Organisations intermed.</span>
-           </a>
-       </li>
-        <li class="nav-item">
             <a href="{{ route('ca.entites.index') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-home-2 fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Entités individuelles</span>
             </a>

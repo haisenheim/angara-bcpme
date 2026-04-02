@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Gestionnaire;
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\Entreprise;
-use App\Models\Tenant;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -26,7 +25,7 @@ class DashboardController extends Controller
 
         $stats = [
             'total_entreprises' => Entreprise::where('user_id', $userId)->count(),
-            'total_cooperatives' => Tenant::where('user_id', $userId)->count(),
+            'total_entites_individuelles' => Entreprise::where('user_id', $userId)->where('prospect', 0)->where('individual', 1)->count(),
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
             'total_prospects' => Entreprise::where('user_id', $userId)->where('prospect', 1)->count(),
         ];

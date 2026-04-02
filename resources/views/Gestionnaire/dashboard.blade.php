@@ -47,8 +47,8 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    Coopératives</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-cooperatives">
+                                    Entités individuelles</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-entites-individuelles">
                                     <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </div>
                             </div>

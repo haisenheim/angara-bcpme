@@ -1,5 +1,18 @@
 @extends('Layouts.gestionnaire')
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap5.min.css">
+<style>
+    .stats-card { transition: transform 0.2s; }
+    .stats-card:hover { transform: translateY(-2px); }
+    .stats-card .stat-value { font-size: 1.75rem; font-weight: 700; }
+    #programmesTable th:last-child,
+    #programmesTable td:last-child { min-width: 100px; white-space: nowrap; }
+    .btn-action { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.8rem; border-radius: 0.375rem; text-decoration: none; transition: all 0.2s; }
+    .btn-action:hover { transform: translateY(-1px); }
+</style>
+@endpush
+
 @section('title', 'Programmes')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
@@ -10,8 +23,8 @@
     </ol>
 </nav>
 @endsection
+
 @section('actions')
-    {{-- Les gestionnaires ne peuvent pas créer de nouveaux programmes --}}
 @endsection
 
 @section('page-header')
@@ -22,96 +35,183 @@
 @endsection
 
 @section('content')
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3">
-            <div class="row align-items-center g-2">
-                <div class="col-12 col-md-6">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-light border-end-0"><i class="demo-psi-magnifier-2"></i></span>
-                        <input type="text" id="programmes-search-input" class="form-control border-start-0 bg-light" placeholder="Rechercher un programme..." aria-label="Recherche">
+    <div class="row g-3 mb-4 angara-stats-row" id="stats-section">
+        <div class="col-6 col-md-4">
+            <div class="card stats-card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                            <i class="demo-psi-folder text-primary fs-2"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="col-12 col-md-6 text-md-end">
-                    <span class="badge bg-primary bg-opacity-10 text-primary" id="programmes-count">—</span>
-                    <small class="text-muted ms-1">programme(s)</small>
+                    <div>
+                        <div class="stat-value text-primary" id="stat-total">-</div>
+                        <small class="text-muted">Total programmes</small>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="card-body p-0">
-            <div id="myGrid" class="ag-theme-balham" style="height: 480px; width: 100%;"></div>
+        <div class="col-6 col-md-4">
+            <div class="card stats-card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                            <i class="demo-psi-check text-success fs-2"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value text-success" id="stat-actifs">-</div>
+                        <small class="text-muted">Actifs</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card stats-card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                            <i class="demo-psi-file text-info fs-2"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value text-info" id="stat-avec-convention">-</div>
+                        <small class="text-muted">Avec convention</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="{{ asset('js/jquery.min.js') }}"></script>
-    <script src="{{ asset('js/ag-grid-community.min.js') }}"></script>
-    @section('script')
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const columnDefs = [
-                { field: "name", minWidth: 180, headerName: 'Désignation', filter: true, flex: 1 },
-                { field: "convention", headerName: 'Convention', minWidth: 120 },
-                { field: "signataire", headerName: 'Signataire', minWidth: 140 },
-                { field: "dt_sig_conv", headerName: "Date de signature", minWidth: 120 },
-                {
-                    field: "budget",
-                    headerName: "Budget (XAF)",
-                    minWidth: 130,
-                    valueFormatter: (p) => p.value ? new Intl.NumberFormat('fr-FR').format(p.value) : '—'
-                },
-                { field: "type_pp", headerName: "Bénéficiaires PP", minWidth: 120 },
-                { field: "type_pm", headerName: "Bénéficiaires PM", minWidth: 120 },
-                { field: "token", hide: true }
-            ];
+    <div class="card border-0 shadow-sm mb-4 angara-filter-card">
+        <div class="card-body py-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label for="filter-search" class="form-label small text-muted">Recherche</label>
+                    <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Désignation, convention, signataire...">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="filter-signataire" class="form-label small text-muted">Signataire</label>
+                    <select id="filter-signataire" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="button" id="btn-reset-filters" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="demo-psi-arrow-left"></i> Réinit.
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            const gridOptions = {
-                theme: agGrid.themeBalham.withParams({
-                    headerBackgroundColor: '#0f85f2',
-                    headerHeight: '36px',
-                    headerTextColor: 'white',
-                    rowHoverColor: '#f1f5f9'
-                }),
-                rowData: null,
-                columnDefs: columnDefs,
-                defaultColDef: { filter: true, sortable: true },
-                autoSizeStrategy: {
-                    type: 'fitCellContents',
-                    defaultMinWidth: 100,
-                    columnLimits: [{ colId: 'name', minWidth: 180 }]
-                },
-                pagination: true,
-                paginationPageSize: 25,
-                paginationPageSizeSelector: [25, 50, 100, 200],
-                rowSelection: { mode: 'singleRow', hideDisabledCheckboxes: true },
-                suppressCellFocus: true,
-                domLayout: 'normal'
-            };
+    <div class="card border-0 shadow-sm angara-dt-card" id="programmes-card">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table id="programmesTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Désignation</th>
+                            <th>Convention</th>
+                            <th>Signataire</th>
+                            <th>Date de signature</th>
+                            <th>Budget (XAF)</th>
+                            <th>Bénéficiaires PP</th>
+                            <th>Bénéficiaires PM</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+@endsection
 
-            const gridDiv = document.querySelector("#myGrid");
-            const gridApi = agGrid.createGrid(gridDiv, gridOptions);
+@section('script')
+<script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap5.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const baseUrl = "{{ url('gestionnaire/programmes') }}";
+    const paginatedUrl = "{{ route('gestionnaire.programmes.paginated') }}";
+    const statsUrl = "{{ route('gestionnaire.programmes.stats') }}";
+    const filterOptionsUrl = "{{ route('gestionnaire.programmes.filter-options') }}";
 
-            gridApi.addEventListener('rowSelected', function(e) {
-                if (e.data?.token) window.location.href = "{{ url('gestionnaire/programmes') }}/" + e.data.token;
+    let table;
+    let filterTimeout;
+
+    fetch(filterOptionsUrl)
+        .then(r => r.json())
+        .then(data => {
+            const sel = document.getElementById('filter-signataire');
+            (data.signataires || []).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                sel.appendChild(opt);
             });
+        })
+        .catch(err => console.error('Filter options:', err));
 
-            const searchInput = document.getElementById("programmes-search-input");
-            if (searchInput) {
-                searchInput.addEventListener("input", function() {
-                    gridApi.setGridOption("quickFilterText", this.value);
-                });
+    function loadStats() {
+        const params = new URLSearchParams();
+        const sig = document.getElementById('filter-signataire')?.value;
+        if (sig) params.append('signataire_filter', sig);
+        fetch(statsUrl + (params.toString() ? '?' + params : ''))
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('stat-total').textContent = data.total ?? 0;
+                document.getElementById('stat-actifs').textContent = data.actifs ?? 0;
+                document.getElementById('stat-avec-convention').textContent = data.avec_convention ?? 0;
+            })
+            .catch(err => console.error('Stats:', err));
+    }
+
+    table = new DataTable('#programmesTable', AngaraDataTables.mergeDefaults({
+        serverSide: true,
+        ajax: {
+            url: paginatedUrl,
+            data: function(d) {
+                d.signataire_filter = document.getElementById('filter-signataire').value;
             }
+        },
+        columns: [
+            { data: 'name', name: 'name', render: function(d, t, row) {
+                return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>';
+            }},
+            { data: 'convention', name: 'convention', defaultContent: '-' },
+            { data: 'signataire', name: 'signataire', defaultContent: '-' },
+            { data: 'dt_sig_conv', name: 'dt_sig_conv', defaultContent: '-' },
+            { data: 'budget', name: 'budget', defaultContent: '-', render: function(d) {
+                return d != null ? new Intl.NumberFormat('fr-FR').format(d) : '—';
+            }},
+            { data: 'type_pp', name: 'type_pp', defaultContent: '-' },
+            { data: 'type_pm', name: 'type_pm', defaultContent: '-' },
+            { data: 'token', orderable: false, className: 'text-end', width: '100px', render: function(token) {
+                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn-action btn-action-view"><i class="demo-psi-eye"></i> Voir</a>';
+            }}
+        ],
+        order: [[0, 'asc']],
+        pageLength: 15,
+        lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+        drawCallback: function() { loadStats(); }
+    }));
 
-            fetch("{{ route('gestionnaire.programmes.all') }}")
-                .then(r => r.json())
-                .then(data => {
-                    gridApi.setGridOption("rowData", data);
-                    document.getElementById("programmes-count").textContent = data?.length ?? 0;
-                });
-        });
-    </script>
-    @endsection
+    document.getElementById('filter-search').addEventListener('input', function() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(() => table.search(this.value).draw(), 350);
+    });
 
-    <style>
-        .ag-theme-balham .ag-root-wrapper { border-radius: 0 0 0.375rem 0.375rem; }
-        #programmes-search-input:focus { box-shadow: none; }
-    </style>
+    document.getElementById('filter-signataire').addEventListener('change', () => table.ajax.reload());
+
+    document.getElementById('btn-reset-filters').addEventListener('click', function() {
+        document.getElementById('filter-search').value = '';
+        document.getElementById('filter-signataire').value = '';
+        table.search('').ajax.reload();
+    });
+
+    loadStats();
+});
+</script>
 @endsection

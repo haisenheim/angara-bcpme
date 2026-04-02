@@ -9,12 +9,14 @@
 		</title>
 		<link href="{{ asset('img/favicon.ico') }}" rel="icon">
 		<link href="{{ asset('img/apple-icon.png') }}" rel="apple-icon">
-		<link href="https://fonts.cdnfonts.com/css/roboto" rel="stylesheet">
-		<link href="https://fonts.cdnfonts.com/css/open-sans" rel="stylesheet">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 		<!-- Bootstrap CSS [ REQUIRED ] -->
         <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
         <!-- Angara Custom Style -->
         <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/nifty-override.css') }}">
 		<link href="{{ asset('css/style.css') }}" rel="stylesheet">
 		<link rel="stylesheet" href="{{ asset('css/nice-select2.css') }}">
 
@@ -72,7 +74,7 @@
                             </div>
                         </aside>
                         <div class="login-content d-flex flex-column align-items-center justify-content-center">
-                            <img src="{{asset('img/logo.png')}}" alt="angara" class="margin-bottom">
+                            <img src="{{ asset('img/logo-bcpme.png') }}" alt="Angara — Banque Camerounaise des PME" class="margin-bottom">
                             <h3 class="bold margin-bottom">Connectez vous</h3>
                             <input type="email" name="email" class="margin-bottom" v-model="user.email" placeholder="Email" autofocus>
                             {{-- @if ($errors->has('email'))
@@ -83,7 +85,7 @@
                                 <span class="text-danger">{{ $errors->first('password') }}</span>
                             @endif --}}
                             
-                            <button class="btn btn-dark margin-bottom">Connexion</button>
+                            <button type="submit" class="btn btn-primary margin-bottom">Connexion</button>
                             {{-- @if ($errors->has('password') || $errors->has('email'))
                                 @include('includes.flash-message')
                             @endif --}}

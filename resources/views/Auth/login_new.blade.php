@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light" data-scheme="night">
+<html lang="fr" data-bs-theme="light" data-scheme="corn">
 
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
-    <meta name="description" content="The login page allows a user to gain access to an application by entering their username and password or by authenticating using a social media login.">
+    <meta name="description" content="Angara — connexion. Déploiement BC-PME.">
     <title>Login | ANGARA</title>
     <link rel="icon" type="image/svg" sizes="32x32" href="{{ asset('img/favicon.ico') }}">
 
@@ -14,7 +14,7 @@
     <!-- Fonts [ OPTIONAL ] -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS [ REQUIRED ] -->
     <link rel="stylesheet" href="{{asset('assets/css/bootstrap.css')}}">
@@ -24,6 +24,8 @@
 
     <!-- Nifty Demo Icons [ OPTIONAL ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/nifty-override.css') }}">
 </head>
 
 <body class="">

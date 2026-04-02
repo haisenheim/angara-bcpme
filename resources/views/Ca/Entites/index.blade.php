@@ -6,14 +6,9 @@
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
     .stats-card .stat-value { font-size: 1.75rem; font-weight: 700; }
-    #entitesTable_wrapper .dataTables_processing { padding: 1rem; }
     #entitesTable th:last-child, #entitesTable td:last-child { min-width: 90px; white-space: nowrap; }
     .btn-action { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.8rem; border-radius: 0.375rem; text-decoration: none; transition: all 0.2s; }
     .btn-action:hover { transform: translateY(-1px); }
-    .btn-action-view { background: var(--bs-primary); color: white !important; border: none; }
-    .btn-action-view:hover { background: var(--bs-primary); opacity: 0.9; color: white !important; }
-    #entites-card .paginate_button.current, #entites-card .page-item.active .page-link { background-color: var(--bs-primary) !important; color: #fff !important; }
-    #entitesTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
 </style>
 @endpush
 
@@ -35,7 +30,7 @@
 @endsection
 
 @section('content')
-    <div class="row g-3 mb-4" id="stats-section">
+    <div class="row g-3 mb-4 angara-stats-row" id="stats-section">
         <div class="col-6 col-md-3">
             <div class="card stats-card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
@@ -98,7 +93,7 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 angara-filter-card">
         <div class="card-body py-3">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-4">
@@ -134,11 +129,11 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm" id="entites-card">
+    <div class="card border-0 shadow-sm angara-dt-card" id="entites-card">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="entitesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
-                    <thead class="table-light">
+                <table id="entitesTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                    <thead>
                         <tr>
                             <th>Dénomination</th>
                             <th>RCCM</th>
@@ -180,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             allData = data;
-            table = new DataTable('#entitesTable', {
+            table = new DataTable('#entitesTable', AngaraDataTables.mergeDefaults({
                 data: data,
                 columns: [
                     { data: 'name', render: function(d, t, row) { return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>'; } },
@@ -197,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: [[0, 'asc']],
                 pageLength: 15,
                 lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
-                language: { url: '//cdn.datatables.net/plug-ins/2.3.0/i18n/fr-FR.json', search: '', searchPlaceholder: 'Rechercher...' },
                 dom: 'rtip',
                 drawCallback: function() {
                     const rows = table.rows({ search: 'applied' });
@@ -205,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     rows.every(function() { arr.push(this.data()); return true; });
                     updateStats(arr);
                 }
-            });
+            }));
             $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
                 const api = new $.fn.dataTable.Api(settings);
                 const row = api.row(dataIndex).data();

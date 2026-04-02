@@ -40,7 +40,7 @@
                         @foreach($arrondissement->cooperatives as $item)
                         <tr>
                             <td>{{ $item->id }}</td>
-                            <td><a href="{{ route('admin.cooperatives.show',$item->id) }}">{{ $item->name }}</a></td>
+                            <td>{{ $item->name }}</td>
                             <td>{{ $item->phone }}</td>
                             <td>{{ $item->arrondissement?$item->arrondissement->name:'-' }}</td>
                             <td>{{ $item->departement?$item->departement->name:'-' }}</td>

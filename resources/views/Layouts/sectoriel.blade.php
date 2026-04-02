@@ -171,11 +171,6 @@ $secteur = \Illuminate\Support\Facades\Session::get('secteur');
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">STRUCTURATION</h6>
     <ul class="mainnav__menu nav flex-column">
         <li class="nav-item">
-           <a href="{{ route('sectoriel.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==402?'active':'' }}"><i class="pli-leafs fs-3 me-2"></i>
-               <span class="nav-label mininav-content ms-1">Organisations interméd.</span>
-           </a>
-       </li>
-        <li class="nav-item">
             <a href="{{ route('sectoriel.villages.index') }}" class="nav-link mininav-toggle {{ $active==10?'active':'' }}"><i class="pli-map fs-3 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Villages</span>
             </a>

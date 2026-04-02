@@ -262,12 +262,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.cooperatives.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
-                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/programmes.svg')}}" alt=""></span>
-                    <span class="nav-label mininav-content ms-1">ORGANISAT. INTERM.</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}">
                     {{-- <i class="pli-affiliate fs-2 me-2"></i> --}}
                     <span  class="icon-nav" class="icon-nav"><img src="{{ asset('img/new/navigation/programmes.svg')}}" alt=""></span>

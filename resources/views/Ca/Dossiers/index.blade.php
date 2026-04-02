@@ -6,35 +6,6 @@
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
     .stats-card .stat-value { font-size: 1.75rem; font-weight: 700; }
-    #dossiersTable_wrapper .dataTables_processing { padding: 1rem; }
-    #dossiers-card .paginate_button,
-    #dossiers-card .page-link,
-    #dossiers-card .dt-paging a,
-    #dossiers-card .dt-paging span,
-    #dossiers-card .dataTables_paginate a,
-    #dossiers-card .dataTables_paginate span:not(.ellipsis),
-    #dossiers-card ul.pagination li a,
-    #dossiers-card ul.pagination li span {
-        background-color: #ffffff !important; background: #ffffff !important;
-        color: #495057 !important; border-color: #dee2e6 !important;
-    }
-    #dossiers-card .paginate_button.current,
-    #dossiers-card .page-item.active .page-link,
-    #dossiers-card .page-item.active span,
-    #dossiers-card ul.pagination .page-item.active .page-link {
-        background-color: #0d6efd !important; background: #0d6efd !important;
-        color: #ffffff !important; border-color: #0d6efd !important;
-    }
-    #dossiers-card .paginate_button:hover:not(.disabled):not(.current),
-    #dossiers-card .page-link:hover,
-    #dossiers-card ul.pagination .page-link:hover {
-        background-color: #0d6efd !important; background: #0d6efd !important;
-        color: #ffffff !important; border-color: #0d6efd !important;
-    }
-    #dossiers-card .paginate_button.disabled {
-        background-color: #f8f9fa !important; background: #f8f9fa !important; color: #adb5bd !important; opacity: 0.7;
-    }
-    #dossiersTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
 </style>
 @endpush
 
@@ -57,7 +28,7 @@
 
 @section('content')
     {{-- Statistiques --}}
-    <div class="row g-3 mb-4" id="stats-section">
+    <div class="row g-3 mb-4 angara-stats-row" id="stats-section">
         <div class="col-6 col-md-4">
             <div class="card stats-card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
@@ -106,7 +77,7 @@
     </div>
 
     {{-- Filtres --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 angara-filter-card">
         <div class="card-body py-3">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-3">
@@ -135,11 +106,11 @@
     </div>
 
     {{-- Tableau --}}
-    <div class="card border-0 shadow-sm" id="dossiers-card">
+    <div class="card border-0 shadow-sm angara-dt-card" id="dossiers-card">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="dossiersTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
-                    <thead class="table-light">
+                <table id="dossiersTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                    <thead>
                         <tr>
                             <th>Programme</th>
                             <th>Signataire</th>
@@ -207,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Stats:', err));
     }
 
-    table = new DataTable('#dossiersTable', {
+    table = new DataTable('#dossiersTable', AngaraDataTables.mergeDefaults({
         serverSide: true,
         ajax: {
             url: paginatedUrl,
@@ -233,15 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
         order: [[6, 'desc']],
         pageLength: 15,
         lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/2.3.0/i18n/fr-FR.json',
-            search: '',
-            searchPlaceholder: 'Rechercher...'
-        },
-        processing: true,
         drawCallback: function() { loadStats(); },
         pagingType: 'simple_numbers'
-    });
+    }));
 
     document.getElementById('filter-search').addEventListener('input', function() {
         clearTimeout(filterTimeout);

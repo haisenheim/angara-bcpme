@@ -5,8 +5,8 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
        <li class="breadcrumb-item"><a href="#">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Cooperatives</a></li>
-       <li class="breadcrumb-item active" aria-current="page">Liste des cooperatives</li>
+       <li class="breadcrumb-item"><a href="#">Structures</a></li>
+       <li class="breadcrumb-item active" aria-current="page">Liste des structures</li>
     </ol>
  </nav>
 @endsection
@@ -15,8 +15,8 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Liste des cooperatives de l'union </h5>
-        <p class="lead">Liste des cooperatives de l'union </p>
+        <h5 class="page-title mb-0 mt-2">Liste des structures de l'union</h5>
+        <p class="lead">Liste des structures de l'union</p>
     </div>
 @endsection
 
@@ -27,7 +27,7 @@
                 <table class="table table-sm table-striped table-bordered">
                     <thead>
                         <tr>
-                            <th>Cooperative</th>
+                            <th>Structure</th>
                             <th>Telephone</th>
                             <th>Arrondissement</th>
                             <th>Departement</th>
@@ -37,7 +37,7 @@
                     <tbody>
                         @foreach ($items as $item)
                             <tr>
-                                <td><a href="{{ route('admin.cooperatives.show',$item->token) }}">{{ $item->name }}</a></td>
+                                <td><a href="{{ route('admin.tenants.show',$item->token) }}">{{ $item->name }}</a></td>
                                 <td>{{ $item->phone }}</td>
                                 <td>{{ $item->arrondissement?$item->arrondissement->name:'-' }}</td>
                                 <td>{{ $item->departement?$item->departement->name:'-' }}</td>

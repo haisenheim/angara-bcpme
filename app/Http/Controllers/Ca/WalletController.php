@@ -60,8 +60,7 @@ class WalletController extends ExtendedController
      */
 	public function show($token)
 	{
-		$item = Cooperative::where('token',$token)->first();
-		return view('Ca.Cooperatives.show')->with(compact('item'));
+		return redirect()->route('ca.wallets.index');
 	}
 
 }

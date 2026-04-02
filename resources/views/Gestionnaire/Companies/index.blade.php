@@ -6,44 +6,10 @@
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
     .stats-card .stat-value { font-size: 1.75rem; font-weight: 700; }
-    #entreprisesTable_wrapper .dataTables_processing { padding: 1rem; }
-    /* Colonne Actions visible */
     #entreprisesTable th:last-child,
     #entreprisesTable td:last-child { min-width: 100px; white-space: nowrap; }
-    /* Boutons actions */
     .btn-action { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.8rem; border-radius: 0.375rem; text-decoration: none; transition: all 0.2s; }
     .btn-action:hover { transform: translateY(-1px); }
-    .btn-action-view { background: var(--bs-primary); color: white !important; border: none; }
-    .btn-action-view:hover { background: var(--bs-primary); opacity: 0.9; color: white !important; }
-    /* Pagination - fond bleu, override noir (Nifty/theme) */
-    #entreprises-card .paginate_button,
-    #entreprises-card .page-link,
-    #entreprises-card .dt-paging a,
-    #entreprises-card .dt-paging span,
-    #entreprises-card .dataTables_paginate a,
-    #entreprises-card .dataTables_paginate span:not(.ellipsis),
-    #entreprises-card ul.pagination li a,
-    #entreprises-card ul.pagination li span { 
-        background-color: #ffffff !important; background: #ffffff !important; 
-        color: #495057 !important; border-color: #dee2e6 !important;
-    }
-    #entreprises-card .paginate_button.current,
-    #entreprises-card .page-item.active .page-link,
-    #entreprises-card .page-item.active span,
-    #entreprises-card ul.pagination .page-item.active .page-link { 
-        background-color: #0d6efd !important; background: #0d6efd !important; 
-        color: #ffffff !important; border-color: #0d6efd !important;
-    }
-    #entreprises-card .paginate_button:hover:not(.disabled):not(.current),
-    #entreprises-card .page-link:hover,
-    #entreprises-card ul.pagination .page-link:hover { 
-        background-color: #0d6efd !important; background: #0d6efd !important; 
-        color: #ffffff !important; border-color: #0d6efd !important;
-    }
-    #entreprises-card .paginate_button.disabled { 
-        background-color: #f8f9fa !important; background: #f8f9fa !important; color: #adb5bd !important; opacity: 0.7;
-    }
-    #entreprisesTable_wrapper .dataTables_info { padding: 0.75rem 0; color: #6c757d; font-size: 0.875rem; }
 </style>
 @endpush
 
@@ -72,7 +38,7 @@
 
 @section('content')
     {{-- Section statistiques dynamiques --}}
-    <div class="row g-3 mb-4" id="stats-section">
+    <div class="row g-3 mb-4 angara-stats-row" id="stats-section">
         <div class="col-6 col-md-3">
             <div class="card stats-card border-0 shadow-sm h-100">
                 <div class="card-body d-flex align-items-center">
@@ -136,7 +102,7 @@
     </div>
 
     {{-- Filtres dynamiques --}}
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 angara-filter-card">
         <div class="card-body py-3">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-3">
@@ -185,11 +151,11 @@
     </div>
 
     {{-- Tableau avec pagination AJAX --}}
-    <div class="card border-0 shadow-sm" id="entreprises-card">
+    <div class="card border-0 shadow-sm angara-dt-card" id="entreprises-card">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
-                    <thead class="table-light">
+                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                    <thead>
                         <tr>
                             <th>Dénomination</th>
                             <th>RCCM</th>
@@ -264,8 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Stats:', err));
     }
 
-    // Initialiser DataTable avec pagination serveur
-    table = new DataTable('#entreprisesTable', {
+    table = new DataTable('#entreprisesTable', AngaraDataTables.mergeDefaults({
         serverSide: true,
         ajax: {
             url: paginatedUrl,
@@ -291,28 +256,9 @@ document.addEventListener('DOMContentLoaded', function() {
         order: [[0, 'asc']],
         pageLength: 15,
         lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/2.3.0/i18n/fr-FR.json',
-            search: '',
-            searchPlaceholder: 'Rechercher...'
-        },
-        processing: true,
-        drawCallback: function() { 
-            loadStats();
-            // Force pagination bleu (override noir thème)
-            var btns = document.querySelectorAll('#entreprises-card .paginate_button, #entreprises-card .page-link, #entreprises-card .dt-paging button, #entreprises-card .dt-paging a');
-            btns.forEach(function(el) {
-                if (el.classList.contains('current') || (el.closest && el.closest('.page-item.active'))) {
-                    el.style.setProperty('background-color', '#0d6efd', 'important');
-                    el.style.setProperty('color', '#fff', 'important');
-                } else if (!el.classList.contains('disabled')) {
-                    el.style.setProperty('background-color', '#fff', 'important');
-                    el.style.setProperty('color', '#495057', 'important');
-                }
-            });
-        },
+        drawCallback: function() { loadStats(); },
         pagingType: 'simple_numbers'
-    });
+    }));
 
     // Recherche avec debounce
     document.getElementById('filter-search').addEventListener('input', function() {

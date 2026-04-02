@@ -27,10 +27,7 @@ Route::middleware([
     'web',
     BindTenantFromHost::class,
 ])->group(function () {
-    //dd(tenant('name'));
-    Route::get('/', function () {
-            return redirect(route('login'));
-    });
+    // La racine / est définie dans routes/web.php (redirection login) pour tous les domaines.
 
     Route::get('/critere/choices',function(){
         $critere_id = request()->query('id');
@@ -174,11 +171,11 @@ Route::middleware([
         Route::get('paiements','EntreeController@getPaiements')->name('paiements');
         Route::resource('reglements','PaiementController');
         Route::get('reglement/data','PaiementController@fetchAll')->name('reglements.all');
-        Route::resource('cooperatives','TenantController');
-        Route::post('cooperative/entrepot','TenantController@addEntrepot')->name('cooperative.entrepot');
-        Route::get('cooperative/entrepot/{token}','TenantController@showEntrepot')->name('cooperative.entrepot.show');
-        Route::get('cooperative/membres/{id}','TenantController@getMembres')->name('cooperative.membres');
-        Route::post('cooperative/membre','TenantController@addMembre')->name('cooperative.membre');
+        Route::resource('tenants','TenantController');
+        Route::post('tenant/entrepot','TenantController@addEntrepot')->name('tenant.entrepot');
+        Route::get('tenant/entrepot/{token}','TenantController@showEntrepot')->name('tenant.entrepot.show');
+        Route::get('tenant/membres/{id}','TenantController@getMembres')->name('tenant.membres');
+        Route::post('tenant/membre','TenantController@addMembre')->name('tenant.membre');
 
         Route::resource('sorties','SortieController');
         Route::get('sortie/data','SortieController@fetchAll')->name('sorties.all');

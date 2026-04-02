@@ -108,7 +108,7 @@ class TenantController extends ExtendedController
         $item = Tenant::where('token',$token)->first();
         $membres = $item->membres;
         if($item->union_id != tenant()->id){
-            Session::flash('error','Vous n\'avez pas les permissions pour accéder à cette coopérative');
+            Session::flash('error','Vous n\'avez pas les permissions pour accéder à cette structure');
             return back();
         }
         $item->entrees = $item->run(function(){

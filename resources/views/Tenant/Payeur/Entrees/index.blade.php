@@ -48,7 +48,7 @@
 
             const gridOptions = {
             theme: agGrid.themeBalham.withParams({
-                headerBackgroundColor: "var(--bs-primary)",
+                headerBackgroundColor: "#88b824",
                 headerHeight: '30px',
                 headerTextColor: '#fff',
             }),

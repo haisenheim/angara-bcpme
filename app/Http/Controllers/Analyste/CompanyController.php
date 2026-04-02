@@ -57,15 +57,75 @@ class CompanyController extends Controller
     }
 
     /**
-     * Liste paginée avec filtres (AJAX).
+     * Entreprises liées à l'analyste (dossiers d'instruction).
      */
-    public function fetchPaginated(Request $request){
+    private function analysteEntreprisesBaseQuery()
+    {
         $analysteId = auth()->id();
-        $query = Entreprise::where('prospect', 0)
-            ->whereHas('dossiers', fn($q) => $q->where('analyste_id', $analysteId))
-            ->with(['region', 'departement', 'forme', 'arrondissement']);
 
-        if ($search = $request->get('search')) {
+        return Entreprise::where('prospect', 0)
+            ->whereHas('dossiers', fn ($q) => $q->where('analyste_id', $analysteId));
+    }
+
+    private function parseEntreprisesIndexFilters(Request $request): array
+    {
+        return [
+            'region_id' => $request->input('region_id'),
+            'departement_id' => $request->input('departement_id'),
+            'forme_id' => $request->input('forme_id'),
+        ];
+    }
+
+    private function applyEntreprisesIndexFilters($query, array $filters)
+    {
+        if (! empty($filters['region_id'])) {
+            $query->where('region_id', $filters['region_id']);
+        }
+        if (! empty($filters['departement_id'])) {
+            $query->where('departement_id', $filters['departement_id']);
+        }
+        if (! empty($filters['forme_id'])) {
+            $query->where('forme_id', $filters['forme_id']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Statistiques (filtres région / département / forme, sans recherche textuelle).
+     */
+    public function fetchEntreprisesIndexStats(Request $request)
+    {
+        $filters = $this->parseEntreprisesIndexFilters($request);
+        $query = $this->applyEntreprisesIndexFilters($this->analysteEntreprisesBaseQuery(), $filters);
+
+        return response()->json([
+            'total' => (clone $query)->count(),
+            'avec_rccm' => (clone $query)->whereNotNull('rccm')->where('rccm', '!=', '')->count(),
+            'avec_niu' => (clone $query)->whereNotNull('niu')->where('niu', '!=', '')->count(),
+        ]);
+    }
+
+    /**
+     * Liste paginée DataTables (server-side) avec filtres.
+     */
+    public function fetchPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim((string) $request->input('search.value', ''));
+
+        $filters = $this->parseEntreprisesIndexFilters($request);
+        $query = $this->applyEntreprisesIndexFilters(
+            $this->analysteEntreprisesBaseQuery()->with(['region', 'departement', 'forme', 'arrondissement']),
+            $filters
+        );
+
+        $recordsTotal = $this->analysteEntreprisesBaseQuery()->count();
+
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('rccm', 'like', "%{$search}%")
@@ -73,29 +133,24 @@ class CompanyController extends Controller
                     ->orWhere('manager', 'like', "%{$search}%");
             });
         }
-        if ($request->filled('region_id')) {
-            $query->where('region_id', $request->region_id);
-        }
-        if ($request->filled('departement_id')) {
-            $query->where('departement_id', $request->departement_id);
-        }
-        if ($request->filled('forme_id')) {
-            $query->where('forme_id', $request->forme_id);
-        }
 
-        $perPage = min(50, max(10, (int) $request->get('per_page', 15)));
-        $paginator = $query->orderBy('name')->paginate($perPage);
+        $recordsFiltered = $query->count();
+
+        $orderColumnIndex = (int) $request->input('order.0.column', 0);
+        $orderDir = $request->input('order.0.dir', 'asc') === 'desc' ? 'desc' : 'asc';
+        $columnMap = ['name', 'rccm', 'niu', 'manager', 'region_id', 'forme_id'];
+        $orderBy = $columnMap[$orderColumnIndex] ?? 'name';
+        $query->orderBy($orderBy, $orderDir);
+
+        $items = $query->skip($start)->take($length)->get();
+        $resolved = EntrepriseListResource::collection($items)->toArray($request);
+        $data = array_values($resolved['data'] ?? $resolved);
 
         return response()->json([
-            'data' => EntrepriseListResource::collection($paginator->items()),
-            'pagination' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-            ],
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
         ]);
     }
 
