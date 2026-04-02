@@ -8,6 +8,10 @@
 .env
 .env.backup
 .env.production
+# Secrets déploiement VM (voir deploy/bcpme-vm/README-DEPLOIEMENT.md)
+/deploy/bcpme-vm/.env
+/deploy/bcpme-vm/laravel.env
+/deploy/bcpme-vm/mysql-init.sql
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
