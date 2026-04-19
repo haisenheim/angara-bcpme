@@ -130,7 +130,7 @@ class DossierController extends Controller
     }
 
     public function show($token){
-        $item = Dossier::where('token', $token)->with('esgEvaluation')->first();
+        $item = Dossier::where('token', $token)->first();
         if (!$item || $item->gestionnaire_id != auth()->user()->id) {
             abort(404);
         }

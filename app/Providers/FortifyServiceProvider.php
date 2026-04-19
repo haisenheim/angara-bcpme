@@ -15,10 +15,10 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\LogoutResponse;
 
 use Laravel\Fortify\Fortify;
+use Illuminate\Support\Str;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -35,15 +35,6 @@ class FortifyServiceProvider extends ServiceProvider
                 return redirect('/');
             }
         });
-    }
-
-    protected function isSubdomain(string $hostname): bool
-    {
-        $central = config('structuration.central_domains')[0];
-        if($hostname == $central){
-            return false;
-        }
-        return Str::endsWith($hostname, $central);
     }
 
     /**
@@ -69,15 +60,11 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::loginView(function (Request $request) {
-            $host = $request->getHost();
-            if($this->isSubdomain($host)){
-                return view('Tenant.Auth.login');
-            }
             return view('Auth.login');
         });
 
         Event::listen(Attempting::class, function (Attempting $event) {
-            if (! in_array($event->guard, ['web', 'tenant'], true)) {
+            if ($event->guard !== 'web') {
                 return;
             }
             $c = $event->credentials;
@@ -92,7 +79,7 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Event::listen(Login::class, function (Login $event) {
-            if (! in_array($event->guard, ['web', 'tenant'], true)) {
+            if ($event->guard !== 'web') {
                 return;
             }
             Log::debug('[auth] Connexion réussie', [
@@ -102,7 +89,7 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Event::listen(Failed::class, function (Failed $event) {
-            if (! in_array($event->guard, ['web', 'tenant'], true)) {
+            if ($event->guard !== 'web') {
                 return;
             }
             Log::debug('[auth] Connexion refusée', [

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('entrepot_id')->default(0);
             $table->string('email')->unique();
             $table->string('password');
+            $table->rememberToken();
             $table->string('token')->nullable();
             $table->timestamps();
         });

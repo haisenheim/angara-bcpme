@@ -6,11 +6,11 @@ APP_NAME=Angara
 APP_ENV=development
 APP_KEY=base64:ICido30XIhOpscWZXqvHydKkCHFqI9khyobEP4DgjeY=
 APP_DEBUG=true
-APP_URL=http://192.168.120.20
+APP_URL=localhost
 
 # Hôtes « centraux » : l’hôte de APP_URL est inclus automatiquement.
 # Ajoutez d’autres noms/IP si besoin (séparés par des virgules).
-STRUCTURATION_CENTRAL_EXTRA=127.0.0.1,localhost
+#STRUCTURATION_CENTRAL_EXTRA=127.0.0.1,localhost
 
 AUTH_GUARD=web
 
@@ -22,11 +22,11 @@ DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=angara_bcpme
-DB_USERNAME=angara
-DB_PASSWORD=angara2026
+DB_USERNAME=root
+DB_PASSWORD=root
 
-DB_STRUCTURATION_DATABASE=angara_structuration_db
-SCORING_DB_DATABASE=scoring_producteur_db
+#DB_STRUCTURATION_DATABASE=angara_structuration_db
+#SCORING_DB_DATABASE=scoring_producteur_db
 
 BROADCAST_DRIVER=log
 CACHE_DRIVER=file

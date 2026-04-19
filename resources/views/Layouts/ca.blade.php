@@ -77,11 +77,6 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
                 <span class="nav-label mininav-content ms-1">INSTRUCTION</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="{{ route('ca.esg-evaluations.index') }}" class="nav-link mininav-toggle {{ $active==207?'active':'' }}"><i class="pli-file-edit fs-2 me-2"></i>
-                <span class="nav-label mininav-content ms-1">VALIDATIONS ESG</span>
-            </a>
-        </li>
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">

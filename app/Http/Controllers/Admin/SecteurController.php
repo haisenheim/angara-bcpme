@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agence;
 use App\Models\Secteur;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
 class SecteurController extends Controller
@@ -15,7 +16,11 @@ class SecteurController extends Controller
      */
     public function index()
     {
-        //
+        if (! Schema::hasTable('secteurs')) {
+            Session::flash('warning', 'Le referentiel des secteurs cooperatifs n\'est pas disponible.');
+            return redirect()->route('admin.dashboard');
+        }
+
         $items = Secteur::all();
         $agences = Agence::all();
         return view('/Admin/Secteurs/index',compact('items','agences'));
@@ -37,11 +42,13 @@ class SecteurController extends Controller
      */
     public function store(Request $request)
     {
-        //
-        //dd($request->all());
+        if (! Schema::hasTable('secteurs')) {
+            Session::flash('warning', 'Le referentiel des secteurs cooperatifs n\'est pas disponible.');
+            return redirect()->route('admin.dashboard');
+        }
+
         $data = $request->all();
         $data['token'] = sha1(time().rand(0,99));
-        //$data['user_id'] = auth()->user()->id;
         $item = Secteur::create($data);
         Session::flash('success','Enregistrement effectué avec succès!');
         return back();
@@ -50,6 +57,11 @@ class SecteurController extends Controller
 
     public function save(Request $request)
     {
+        if (! Schema::hasTable('secteurs')) {
+            Session::flash('warning', 'Le referentiel des secteurs cooperatifs n\'est pas disponible.');
+            return redirect()->route('admin.dashboard');
+        }
+
         $data = $request->data();
         $data['user_id'] = auth()->user()->id;
         $item = Secteur::updateOrCreate(['id'=>$request->id],$data);
@@ -63,7 +75,11 @@ class SecteurController extends Controller
      */
     public function show(string $token)
     {
-        //
+        if (! Schema::hasTable('secteurs')) {
+            Session::flash('warning', 'Le referentiel des secteurs cooperatifs n\'est pas disponible.');
+            return redirect()->route('admin.dashboard');
+        }
+
         $item = Secteur::where('token',$token)->first();
 
         return view('Admin/Secteurs/show',compact('item'));

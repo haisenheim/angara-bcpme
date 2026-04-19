@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\Util\PayementController;
 use App\Imports\ApmeImport;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Route;
@@ -9,7 +8,6 @@ use App\Models\Question;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
-use Spatie\Permission\Models\Permission;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /*
@@ -22,28 +20,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
-Route::get('init/permissions',function(){
-    //die();
-    app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
-    Permission::create(['name'=>'entreprises.*','label'=>'Gestion des entreprises']);
-    Permission::create(['name'=>'dossiers.*','label'=>'Gestion des dossiers']);
-    Permission::create(['name'=>'entreprises.list','label'=>'Lister toutes les entreprises']);
-    Permission::create(['name'=>'entreprises.my','label'=>'Lister mes entreprises uniquement']);
-    Permission::create(['name'=>'dossiers.list','label'=>'Lister tous les dossiers d\'instruction']);
-    Permission::create(['name'=>'dossiers.my','label'=>'Lister mes dossiers d\'instruction uniquement']);
-    Permission::create(['name'=>'entreprises.create','label'=>'Creer des entreprises']);
-    Permission::create(['name'=>'entreprises.edit','label'=>'Editer toute entreprise']);
-    Permission::create(['name'=>'entreprises.show','label'=>'Afficher une entreprise']);
-    Permission::create(['name'=>'entreprises.extract','label'=>'Extraire de fiche signalitique de l\'entreprise']);
-    Permission::create(['name'=>'dossiers.create','label'=>'Inclure de l\'entreprise au programme']);
-    Permission::create(['name'=>'dossiers.edit','label'=>'Instruire un dossier']);
-    Permission::create(['name'=>'dossiers.show','label'=>'Afficher un dossier d\'instruction']);
-    Permission::create(['name'=>'dossiers.extract','label'=>'Extraire un dossier d\'instruction']);
-    Permission::create(['name'=>'users.handle','label'=>'Gerer des utilisateurs']);
-
-    return 'Initialisation des droits terminee';
-});
 
 Route::get('apme',function(){
     //$file = request()->fichier;
@@ -86,89 +62,32 @@ Route::get('questions',function(){
 });
 
 /*
-| Page d’accueil (lien vers la connexion) — tous les hôtes (central et portails coop).
-| Doit rester avant les routes « tenant » chargées ensuite pour que / ne passe pas par BindTenantFromHost.
+| Page d’accueil de l’application centrale BC-PME.
 */
 Route::get('/', function () {
     return view('accueil');
 })->name('accueil');
 
-foreach (config('structuration.central_domains') as $domain) {
-    Route::domain($domain)->group(function () {
-        Route::get('/payment/callback/{token}', [PayementController::class, 'handleCallback'])->name('util.paiement.callback');
-
-        Route::namespace('App\Http\Controllers\Admin')
-        ->prefix('admin')
-        ->middleware(['auth','admin'])
-        ->name('admin.')
-        ->group(function(){
-            Route::resource('entreprises','CompanyController');
-            Route::resource('entites','EntiteController');
-            Route::resource('secteurs','SecteurController');
-            Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
-
-            Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
-            Route::post('programme/user/permissions','ProgrammeController@saveUserPermissions')->name('programme.user.permissions.save');
-            Route::post('programme/poste','ProgrammeController@savePoste')->name('programme.poste.save');
-            Route::post('programme/user','ProgrammeController@saveUser')->name('programme.user.save');
-
-            Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
-            Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
-
-            Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
-            Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
-
-            Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
-            Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
-
-            Route::resource('dossiers','DossierController');
-
-            Route::resource('programmes','ProgrammeController');
-            Route::post('programme/composante','ProgrammeController@saveComposante')->name('programme.composante.save');
-            Route::post('programme/appui','ProgrammeController@saveAppui')->name('programme.appui.save');
-            Route::post('programme/produit','ProgrammeController@saveProduit')->name('programme.produit.save');
-            Route::post('programme/resultat','ProgrammeController@saveResultat')->name('programme.resultat.save');
-            Route::post('programme/save','ProgrammeController@save')->name('programmes.save');
-
-            Route::resource('users','UserController');
-            Route::get('territoire','TerritoireController@index')->name('territoire');
-            Route::get('villages','TerritoireController@getVillages')->name('villages.index');
-            Route::get('villages/{id}','TerritoireController@getVillage')->name('villages.show');
-            Route::get('agences','TerritoireController@getAgences')->name('agences.index');
-            Route::get('agences/{id}','TerritoireController@getAgence')->name('agences.show');
-            Route::get('villages/{id}/edit','TerritoireController@getVillageEdit')->name('villages.edit');
-            Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
-            Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
-            Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
-            Route::get('folders/data','DossierController@fetchAll')->name('dossiers.all');
-
-
-            //Route::resource('entreprises','EntrepriseController');
-            Route::get('dossier/{id}','EntrepriseController@getDossier')->name('dossier.show');
-            Route::get('dossier/instruction/{id}','EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-            Route::post('engagement','EntrepriseController@setEngagement')->name('entreprise.set.engagement');
-
-            Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
-
-            Route::get('dashboard','DashboardController@index')->name('dashboard');
-            Route::resource('users','UserController');
-            Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
-            Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
-
-            Route::resource('operateurs','OperateurController');
-
-            Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
-
-            Route::post('instruction/dossier/dsf','InstructionController@loadDsf')->name('instruction.dsf');
-            Route::get('instruction/dossier/create','InstructionController@createDossier')->name('instruction.dossier.create');
-            Route::get('instruction/dossier/{id}','InstructionController@getDossier')->name('instruction.dossier');
-            Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
-            Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
-            Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
-
+$registerGovernanceSpace = function (string $prefix, string $middleware, string $name) {
+    Route::prefix($prefix)
+        ->middleware(['auth', $middleware])
+        ->name($name.'.')
+        ->group(function () {
+            Route::get('dashboard', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+            Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
+            Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
+            Route::get('dossiers', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+            Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         });
-    });
-}
+};
+
+$registerGovernanceSpace('pca', 'pca', 'pca');
+$registerGovernanceSpace('administrateur', 'adm', 'administrateur');
+$registerGovernanceSpace('dg', 'dg', 'dg');
+$registerGovernanceSpace('dga', 'dga', 'dga');
+$registerGovernanceSpace('controleur', 'respci', 'controleur');
+$registerGovernanceSpace('auditeur', 'respaud', 'auditeur');
 
 
 
@@ -183,7 +102,6 @@ Route::namespace('App\Http\Controllers\Util')
         Route::get('localites','SearchController@getLocalites')->name('localites');
         Route::get('organismes','SearchController@getOrganismes')->name('organismes');
         Route::get('ville/agences','SearchController@getAgencesByVilleId')->name('ville.agences');
-       Route::get('agence/caisses','SearchController@getCaissesByAgenceId')->name('agence.caisses');
        Route::get('produits/all','SearchController@fetchAllProduit')->name('produits.list');
        Route::get('services/afs','SearchController@fetchAfs')->name('afs.list');
        Route::get('services/anfs','SearchController@fetchAnfs')->name('anfs.list');
@@ -198,12 +116,10 @@ Route::namespace('App\Http\Controllers\Admin')
     ->name('admin.')
     ->group(function(){
         Route::resource('entreprises','CompanyController');
-        Route::resource('entites','EntiteController');
         Route::resource('secteurs','SecteurController');
         Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
 
         Route::post('entreprise/programme','CompanyController@saveProgramme')->name('entreprise.programme.save');
-        Route::post('programme/user/permissions','ProgrammeController@saveUserPermissions')->name('programme.user.permissions.save');
         Route::post('programme/poste','ProgrammeController@savePoste')->name('programme.poste.save');
         Route::post('programme/user','ProgrammeController@saveUser')->name('programme.user.save');
 
@@ -211,6 +127,7 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 
         Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
+        Route::get('entreprise/tiers/morale/search/portfolio','CompanyController@searchTierMoralePortfolio')->name('entreprise.morale.search');
         Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
 
         Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
@@ -227,6 +144,7 @@ Route::namespace('App\Http\Controllers\Admin')
 
         Route::resource('users','UserController');
         Route::get('territoire','TerritoireController@index')->name('territoire');
+        Route::resource('pieces-exigibles', 'PieceExigibleDefinitionController')->except(['destroy']);
         Route::get('companies/data','CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/all/prospects','CompanyController@fetchProspects')->name('prospects.all');
         Route::get('programs/data','ProgrammeController@fetchAll')->name('programmes.all');
@@ -241,11 +159,8 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::post('dossier/analyse','EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
 
         Route::get('dashboard','DashboardController@index')->name('dashboard');
-        Route::resource('users','UserController');
         Route::get('user/enable/{token}','UserController@enable')->name('user.enable');
         Route::get('user/disable/{token}','UserController@disable')->name('user.disable');
-
-        Route::resource('operateurs','OperateurController');
 
         Route::get('instruction/criteres/params','InstructionController@getCritereParamsForm');
 
@@ -256,12 +171,6 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
-        // ESG - Paramétrage
-        Route::resource('evaluation-frameworks','EvaluationFrameworkController')->parameters(['evaluation-framework'=>'evaluation_framework']);
-        Route::resource('evaluation-categories','EvaluationCategoryController')->parameters(['evaluation-category'=>'evaluation_category']);
-        Route::resource('evaluation-indicators','EvaluationIndicatorController')->parameters(['evaluation-indicator'=>'evaluation_indicator']);
-        Route::resource('evaluation-thresholds','EvaluationScoreThresholdController')->parameters(['evaluation-threshold'=>'evaluation_threshold']);
-        Route::resource('evaluation-settings','EvaluationSettingController')->parameters(['evaluation-setting'=>'evaluation_setting']);
     });
 
 Route::namespace('App\Http\Controllers\Gestionnaire')
@@ -278,15 +187,13 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('dashboard/entreprises-data','DashboardController@getEntreprisesData')->name('dashboard.entreprises.data');
 
         Route::resource('secteurs','SecteurController');
-        // ESG - Profils d'évaluation (avant resource pour éviter conflit de routes)
-        Route::get('entreprises/evaluation-profiles','EntrepriseEvaluationProfileController@index')->name('entreprises.evaluation-profiles.index');
-        Route::get('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@show')->name('entreprises.evaluation-profile.show');
-        Route::get('entreprises/{entreprise}/evaluation-profile/create','EntrepriseEvaluationProfileController@create')->name('entreprises.evaluation-profile.create');
-        Route::post('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@store')->name('entreprises.evaluation-profile.store');
-        Route::get('entreprises/{entreprise}/evaluation-profile/edit','EntrepriseEvaluationProfileController@edit')->name('entreprises.evaluation-profile.edit');
-        Route::put('entreprises/{entreprise}/evaluation-profile','EntrepriseEvaluationProfileController@update')->name('entreprises.evaluation-profile.update');
         Route::get('entreprises/prospects/create','CompanyController@createProspect')->name('entreprises.prospects.create');
         Route::post('entreprises/prospects','CompanyController@storeProspect')->name('entreprises.prospects.store');
+        Route::post('entreprises/prospects/{token}/submit','CompanyController@submitProspect')->name('entreprises.prospects.submit');
+        Route::get('entreprises/{token}/pieces-exigibles', 'PieceExigibleController@index')->name('entreprises.pieces-exigibles.index');
+        Route::post('entreprises/{token}/pieces-exigibles/{definition}', 'PieceExigibleController@store')->name('entreprises.pieces-exigibles.store');
+        Route::get('entreprises/{token}/analyse-critique', 'AnalyseCritiqueController@show')->name('entreprises.analyse-critique.show');
+        Route::post('entreprises/{token}/analyse-critique', 'AnalyseCritiqueController@update')->name('entreprises.analyse-critique.update');
         Route::resource('entreprises','CompanyController');
         Route::resource('entites','EntiteController');
         Route::post('entreprise/save','CompanyController@save')->name('entreprises.save');
@@ -300,6 +207,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 
         Route::get('entreprise/tiers/morale/{token}','CompanyController@createTiersMorale')->name('entreprise.morale.create');
+        Route::get('entreprise/tiers/morale/search/portfolio','CompanyController@searchTierMoralePortfolio')->name('entreprise.morale.search');
         Route::post('entreprise/tiers/morale','CompanyController@saveTiersMorale')->name('entreprise.morale.save');
 
         Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
@@ -320,10 +228,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('entite/questionnaire/{token}','EntiteController@createQuestionnaire')->name('entite.questionnaire');
         Route::post('entite/questionnaire','EntiteController@saveQuestionnaire')->name('entite.questionnaire.save');
         Route::get('entities/data','EntiteController@fetchAll')->name('entites.all');
-
-        Route::get('entite/member/{token}','EntiteController@createFromMember')->name('entite.member.create');
-        Route::post('entite/member','EntiteController@storeFromMember')->name('entite.member.store');
-        //
 
         Route::resource('dossiers','DossierController');
 
@@ -367,20 +271,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
-        Route::resource('wallets','WalletController');
-        Route::get('wallet/enable','WalletController@enable')->name('wallet.enable');
-        Route::get('wallet/disable','WalletController@disable')->name('wallet.disable');
-
-        Route::get('members/show','MemberController@show')->name('members.show');
-        Route::get('members/verger','MemberController@getVerger')->name('members.verger.show');
-        //Route::resource('members','MemberController');
-        Route::get('member/data','MemberController@fetchAll')->name('members.all');
-
-        Route::get('request//{request_id}','RequestController@getByTenant')->name('request.get');
-        Route::resource('entrepots','EntrepotController');
-        Route::resource('requests','RequestController');
-        Route::post('request/validate','RequestController@valider')->name('request.validate');
-        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
     });
 
 
@@ -416,15 +306,6 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('entreprise/questionnaire/{token}','CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire','CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
-        // ESG - Évaluations (avant resource dossiers)
-        Route::get('dossiers/esg-evaluations','DossierEsgEvaluationController@index')->name('dossiers.esg-evaluations.index');
-        Route::get('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@show')->name('dossiers.esg-evaluation.show');
-        Route::get('dossiers/{dossier}/esg-evaluation/create','DossierEsgEvaluationController@create')->name('dossiers.esg-evaluation.create');
-        Route::post('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@store')->name('dossiers.esg-evaluation.store');
-        Route::get('dossiers/{dossier}/esg-evaluation/edit','DossierEsgEvaluationController@edit')->name('dossiers.esg-evaluation.edit');
-        Route::put('dossiers/{dossier}/esg-evaluation','DossierEsgEvaluationController@update')->name('dossiers.esg-evaluation.update');
-        Route::post('dossiers/{dossier}/esg-evaluation/submit','DossierEsgEvaluationController@submit')->name('dossiers.esg-evaluation.submit');
-        Route::post('dossiers/{dossier}/esg-evaluation/rebuild-scores','DossierEsgEvaluationController@rebuildScores')->name('dossiers.esg-evaluation.rebuild-scores');
         Route::resource('dossiers','DossierController');
         Route::post('dossier/dsf','DossierController@loadDsf')->name('dossier.dsf');
         Route::resource('programmes','ProgrammeController', ['except' => ['create', 'store']]);
@@ -464,6 +345,22 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('instruction/dossier','InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices','InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
+    });
+
+Route::namespace('App\Http\Controllers\AnalysteCredit')
+    ->prefix('analyste-credit')
+    ->middleware(['auth','analyste.credit'])
+    ->name('analyste-credit.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
+    });
+
+Route::namespace('App\Http\Controllers\AnalysteJuridique')
+    ->prefix('analyste-juridique')
+    ->middleware(['auth','analyste.juridique'])
+    ->name('analyste-juridique.')
+    ->group(function(){
+        Route::get('dashboard','DashboardController@index')->name('dashboard');
     });
 
 Route::namespace('App\Http\Controllers\Ca')
@@ -517,22 +414,6 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::post('dossier/analyse','DossierController@setAnalyse')->name('dossier.set.analyse');
         Route::get('dossier/grille/analyse/{token}','DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
 
-        Route::resource('wallets','WalletController');
-
-        Route::resource('members','MemberController');
-        Route::get('member/data','MemberController@fetchAll')->name('members.all');
-
-        Route::resource('entrepots','EntrepotController');
-        Route::resource('requests','RequestController');
-        Route::post('request/validate','RequestController@valider')->name('request.validate');
-        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
-
-        // ESG - Validation des évaluations
-        Route::get('esg-evaluations','DossierEsgValidationController@index')->name('esg-evaluations.index');
-        Route::get('esg-evaluations/dashboard','DossierEsgValidationController@dashboard')->name('esg-evaluations.dashboard');
-        Route::get('esg-evaluations/{evaluation}','DossierEsgValidationController@show')->name('esg-evaluations.show');
-        Route::post('esg-evaluations/{evaluation}/validate','DossierEsgValidationController@validateEvaluation')->name('esg-evaluations.validate');
-        Route::post('esg-evaluations/{evaluation}/reject','DossierEsgValidationController@rejectEvaluation')->name('esg-evaluations.reject');
 });
 
 Route::namespace('App\Http\Controllers\Regional')
@@ -563,7 +444,7 @@ Route::namespace('App\Http\Controllers\Program')
     ->name('program.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
-        Route::get('entreprises','CompanyController@index')->name('entreprises.index')->middleware('permission:entreprises.list');
+        Route::get('entreprises','CompanyController@index')->name('entreprises.index');
         Route::get('entreprise/tiers/physique/{token}','CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique','CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
 
@@ -601,49 +482,31 @@ Route::namespace('App\Http\Controllers\Program')
         Route::post('instruction/critere/reponse','InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
     });
 
-Route::namespace('App\Http\Controllers\Sectoriel')
-    ->prefix('sectoriel')
-    ->middleware(['auth','sectoriel'])
-    ->name('sectoriel.')
+Route::namespace('App\Http\Controllers\ChefFiliere')
+    ->prefix('chef-filiere')
+    ->middleware(['auth','chef.filiere'])
+    ->name('chef-filiere.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
+        Route::get('qualifications','QualificationController@index')->name('qualifications.index');
+        Route::get('qualifications/{token}','QualificationController@show')->name('qualifications.show');
+        Route::post('qualifications/{token}','QualificationController@update')->name('qualifications.update');
+        Route::post('qualifications/{token}/programmes','QualificationController@saveProgrammes')->name('qualifications.programmes.save');
+        Route::post('qualifications/{token}/submit','QualificationController@submit')->name('qualifications.submit');
+    });
 
-        Route::get('prospects','CompanyController@getProspects')->name('entreprises.prospects');
-
-        //entites individuelles
-        Route::get('members','MemberController@show')->name('members.show');
-        Route::post('members/verger','MemberController@addVerger')->name('members.verger.add');
-        Route::get('members/verger','MemberController@getVerger')->name('members.verger.show');
-
-        Route::post('members/verger/campagne','MemberController@addCampagneVerger')->name('verger.campagne.add');
-        Route::post('members/verger/travail','MemberController@addTravailCampagne')->name('campagne.travail.add');
-        Route::post('members/verger/traitement','MemberController@addTraitementCampagne')->name('campagne.traitement.add');
-        Route::post('members/verger/rendement','MemberController@setRendementCampagne')->name('campagne.rendement');
-        Route::post('members/verger/visite','MemberController@addVisiteCampagne')->name('campagne.visite.add');
-
-        Route::resource('wallets','WalletController');
-        Route::resource('caisses','CaisseController');
-        Route::resource('requests','RequestController');
-        Route::resource('programmes','ProgrammeController');
-        Route::resource('users','UserController');
-        Route::get('territoire','TerritoireController@index')->name('territoire');
-
-
-        Route::resource('villages','VillageController');
-
-});
-
-
-Route::namespace('App\Http\Controllers\Structuration\Banquier')
-    ->prefix('structuration/gestionnaire')
-    ->middleware(['auth','structuration.gestionnaire'])
-    ->name('structuration_gestionnaire.')
+Route::namespace('App\Http\Controllers\ChefAgence')
+    ->prefix('chef-agence')
+    ->middleware(['auth','chef.agence'])
+    ->name('chef-agence.')
     ->group(function(){
         Route::get('dashboard','DashboardController@index')->name('dashboard');
-        Route::resource('requests','RequestController');
-        Route::resource('comptes','CompteController');
-        Route::post('request/validate','RequestController@valider')->name('request.validate');
-        Route::post('request/cancel','RequestController@cancel')->name('request.cancel');
+        Route::get('prospects','ProspectController@index')->name('prospects.index');
+        Route::get('prospects/{token}','ProspectController@show')->name('prospects.show');
+        Route::post('prospects/{token}/approve','ProspectController@approve')->name('prospects.approve');
+        Route::get('instructions','ProspectController@instructionIndex')->name('instructions.index');
+        Route::get('instructions/{token}','ProspectController@instructionShow')->name('instructions.show');
+        Route::post('instructions/{token}/approve','ProspectController@approveInstruction')->name('instructions.approve');
     });
 
 
@@ -651,6 +514,30 @@ Route::namespace('App\Http\Controllers\Structuration\Banquier')
 
 
 
+
+Route::namespace('App\Http\Controllers\Juridique')
+    ->prefix('juridique')
+    ->middleware(['auth', 'reju'])
+    ->name('juridique.')
+    ->group(function () {
+        Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+        Route::get('entreprises', 'CompanyController@index')->name('entreprises.index');
+        Route::get('entreprises/{token}', 'CompanyController@show')->name('entreprises.show');
+        Route::get('prospects', 'ProspectController@index')->name('prospects.index');
+        Route::get('prospects/{token}', 'ProspectController@show')->name('prospects.show');
+        Route::post('prospects/{token}/avis', 'ProspectController@store')->name('prospects.avis');
+    });
+
+Route::namespace('App\Http\Controllers\Conformite')
+    ->prefix('conformite')
+    ->middleware(['auth', 'reconf'])
+    ->name('conformite.')
+    ->group(function () {
+        Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+        Route::get('prospects', 'ProspectController@index')->name('prospects.index');
+        Route::get('prospects/{token}', 'ProspectController@show')->name('prospects.show');
+        Route::post('prospects/{token}/avis', 'ProspectController@store')->name('prospects.avis');
+    });
 
 Route::get('/home',[HomeController::class,'index'])->name('home')->middleware('auth');
 Route::get('/profile',[HomeController::class,'profile'])->name('profile')->middleware('auth');

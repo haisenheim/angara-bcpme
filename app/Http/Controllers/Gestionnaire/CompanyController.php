@@ -20,6 +20,7 @@ use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
 use App\Models\Programme;
+use App\Models\Produit;
 use App\Models\Question;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
@@ -30,6 +31,7 @@ use App\Models\Departement;
 use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 
@@ -55,69 +57,280 @@ class CompanyController extends ExtendedController
      */
     public function createProspect()
     {
-        $formes = Forme::orderBy('name')->get(['id', 'name']);
-        $regions = Region::orderBy('name')->get(['id', 'name']);
-        $departements = Departement::orderBy('name')->get(['id', 'name', 'region_id']);
-        $arrondissements = Arrondissement::orderBy('name')->get(['id', 'name', 'departement_id']);
-
-        return view('Gestionnaire.Companies.create_prospect', compact('formes', 'regions', 'departements', 'arrondissements'));
+        return view('Gestionnaire.Companies.create_prospect', $this->prospectFormContext());
     }
 
     /**
-     * Enregistre un prospect (prospect = 1).
+     * Enregistre un prospect (prospect = 1), champs hérités du formulaire entreprise en grande partie facultatifs.
      */
     public function storeProspect(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'arrondissement_id' => ['required', 'integer', Rule::exists(Arrondissement::class, 'id')],
-            'taille' => 'nullable|string|max:30',
-            'caractere' => 'nullable|in:Formel,Informel',
-            'rccm' => 'nullable|string|max:30',
-            'niu' => 'nullable|string|max:30',
-            'manager' => 'nullable|string|max:155',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+        $validated = $this->validateProspectFields($request);
+        $data = $this->mapValidatedToProspectRow($validated, $request);
+        $data['token'] = sha1(time().rand(0, 99));
+        $data['prospect'] = true;
+        $data['prospect_submitted_at'] = null;
+        $data['user_id'] = auth()->id();
+        $data['gestionnaire_id'] = auth()->id();
+        $data['agence_id'] = auth()->user()->agence_id;
+        $data['representation_id'] = auth()->user()->representation_id;
+        if (empty($data['systeme'])) {
+            $data['systeme'] = 'Normal';
+        }
+
+        $entreprise = Entreprise::create($data);
+        $this->syncAppuisEtProduits($entreprise, $request);
+
+        Session::flash('success', 'Brouillon prospect enregistré. Complétez les informations puis soumettez pour avis juridique et conformité.');
+
+        return redirect()->route('gestionnaire.entreprises.prospects');
+    }
+
+    /**
+     * Mise à jour d'un brouillon prospect (avant soumission explicite).
+     */
+    public function updateProspectDraft(Request $request, Entreprise $entreprise): \Illuminate\Http\RedirectResponse
+    {
+        $uid = auth()->id();
+        if ((int) $entreprise->gestionnaire_id !== (int) $uid && (int) $entreprise->user_id !== (int) $uid) {
+            abort(403);
+        }
+
+        $validated = $this->validateProspectFields($request);
+        $data = $this->mapValidatedToProspectRow($validated, $request);
+        unset($data['token'], $data['prospect'], $data['prospect_submitted_at']);
+        $entreprise->fill($data);
+        $entreprise->save();
+        $this->syncAppuisEtProduits($entreprise, $request);
+
+        Session::flash('success', 'Fiche prospect mise à jour.');
+
+        return redirect()->route('gestionnaire.entreprises.show', $entreprise->token);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateProspectFields(Request $request): array
+    {
+        $today = now()->toDateString();
+        $adultLimitDate = now()->subYears(18)->toDateString();
+
+        $request->merge([
+            'rccm' => $this->normalizeIdentifier($request->input('rccm')),
+            'niu' => $this->normalizeIdentifier($request->input('niu')),
+            'phone' => $this->normalizeCameroonPhone($request->input('phone')),
+            'mm_phone' => $this->normalizeCameroonPhone($request->input('mm_phone')),
+            'forme_id' => $request->input('forme_id') === '' ? null : $request->input('forme_id'),
+            'arrondissement_id' => $request->input('arrondissement_id') === '' ? null : $request->input('arrondissement_id'),
+            'produit_id' => $request->input('produit_id') === '' ? null : $request->input('produit_id'),
         ]);
 
-        $ar = Arrondissement::with('departement')->findOrFail($validated['arrondissement_id']);
+        return $request->validate([
+            'name' => 'nullable|string|max:255',
+            'arrondissement_id' => ['nullable', 'integer', Rule::exists(Arrondissement::class, 'id')],
+            'village_ou_quartier' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string|max:100',
+            'longitude' => 'nullable|string|max:100',
+            'taille' => 'nullable|string|max:30',
+            'caractere' => 'nullable|in:Formel,Informel',
+            'rccm' => ['nullable', 'string', 'max:100', 'regex:/^RC\/[A-Z0-9-]+\/\d{4}\/[A-Z0-9]+\/\d+$/i'],
+            'niu' => ['nullable', 'string', 'max:100', 'regex:/^[A-Z][A-Z0-9]{10,19}$/i'],
+            'cnps' => 'nullable|string|max:100',
+            'mm_phone' => ['nullable', 'string', 'max:50', 'regex:/^(?:\+237)?6\d{8}$/'],
+            'manager' => 'nullable|string|max:255',
+            'phone' => ['nullable', 'string', 'max:50', 'regex:/^(?:\+237)?(?:2|6)\d{8}$/'],
+            'email' => 'nullable|email|max:100',
+            'forme_id' => 'nullable|integer|min:0',
+            'systeme' => 'nullable|in:Normal,Minimal',
+            'capital' => 'nullable|numeric',
+            'chiffre_affaire' => 'nullable|numeric',
+            'dt_creation' => 'nullable|date|before_or_equal:'.$today,
+            'dt_start' => 'nullable|date|before_or_equal:'.$today,
+            'ressources_propres' => 'nullable|numeric',
+            'total_actif' => 'nullable|numeric',
+            'nb_personnel' => 'nullable|integer|min:0',
+            'nb_personnel_permanent' => 'nullable|integer|min:0',
+            'nb_personnel_saisonier' => 'nullable|integer|min:0',
+            'manager_sexe' => 'nullable|in:Homme,Femme',
+            'manager_contact' => 'nullable|string|max:100',
+            'manager_niveau' => 'nullable|string|max:50',
+            'manager_dtn' => 'nullable|date|before_or_equal:'.$adultLimitDate,
+            'manager_promoteur' => 'nullable|in:0,1',
+            'produit_id' => 'nullable|integer|min:0',
+            'produit_year_start' => 'nullable|integer|min:0',
+            'type_personnel' => 'nullable|in:permanent,saisonier,mixte',
+            'autres' => 'nullable|array',
+            'autres.*' => 'integer|min:1',
+            'appuisf' => 'nullable|array',
+            'appuisf.*' => 'integer|min:1',
+            'appuisnf' => 'nullable|array',
+            'appuisnf.*' => 'integer|min:1',
+        ], [
+            'rccm.regex' => 'Le RCCM doit respecter un format camerounais valide, par exemple RC/YAO/2024/B/123.',
+            'niu.regex' => 'Le NIU doit respecter un format camerounais valide, par exemple M123456789012A.',
+            'phone.regex' => 'Le telephone doit suivre la numerotation camerounaise, par exemple 6XXXXXXXX ou +2376XXXXXXXX.',
+            'mm_phone.regex' => 'Le numero Mobile Money doit suivre la numerotation camerounaise mobile, par exemple 6XXXXXXXX ou +2376XXXXXXXX.',
+            'dt_creation.before_or_equal' => 'La date de creation formelle ne peut pas etre dans le futur.',
+            'dt_start.before_or_equal' => 'La date de debut des activites ne peut pas etre dans le futur.',
+            'manager_dtn.before_or_equal' => 'La date de naissance du dirigeant doit etre coherente: le dirigeant doit etre majeur.',
+        ]);
+    }
 
-        $formeRaw = $request->input('forme_id');
-        $formeId = ($formeRaw === '' || $formeRaw === null) ? 0 : (int) $formeRaw;
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function mapValidatedToProspectRow(array $validated, Request $request): array
+    {
+        $name = trim((string) ($validated['name'] ?? ''));
+        if ($name === '') {
+            $name = 'Prospect (à compléter)';
+        }
+
+        $arrId = isset($validated['arrondissement_id']) && $validated['arrondissement_id'] !== null
+            ? (int) $validated['arrondissement_id']
+            : null;
+        $depId = null;
+        $regId = null;
+        if ($arrId !== null && $arrId > 0) {
+            $ar = Arrondissement::with('departement')->find($arrId);
+            if ($ar) {
+                $depId = $ar->departement_id;
+                $regId = $ar->departement->region_id;
+            }
+        }
+
+        $formeRaw = $request->input('forme_id', $validated['forme_id'] ?? null);
+        $formeId = ($formeRaw === '' || $formeRaw === null) ? null : (int) $formeRaw;
 
         $taille = $validated['taille'] ?? null;
         if ($taille === '') {
             $taille = null;
         }
 
-        $data = [
-            'name' => $validated['name'],
-            'arrondissement_id' => $validated['arrondissement_id'],
-            'departement_id' => $ar->departement_id,
-            'region_id' => $ar->departement->region_id,
+        $personnelPermanent = false;
+        $personnelSaisonier = false;
+        $personnelMixte = false;
+        $tp = $validated['type_personnel'] ?? $request->input('type_personnel');
+        if ($tp === 'saisonier') {
+            $personnelSaisonier = true;
+        } elseif ($tp === 'mixte') {
+            $personnelMixte = true;
+        } elseif ($tp === 'permanent') {
+            $personnelPermanent = true;
+        }
+
+        return $this->appendOptionalProspectColumns([
+            'name' => $name,
+            'arrondissement_id' => $arrId,
+            'departement_id' => $depId,
+            'region_id' => $regId,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
             'forme_id' => $formeId,
             'taille' => $taille,
             'caractere' => $validated['caractere'] ?? null,
             'rccm' => $validated['rccm'] ?? null,
             'niu' => $validated['niu'] ?? null,
+            'cnps' => $validated['cnps'] ?? null,
+            'mm_phone' => $validated['mm_phone'] ?? null,
             'manager' => $validated['manager'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
-            'token' => sha1(time().rand(0, 99)),
-            'prospect' => true,
-            'systeme' => 'Normal',
-            'user_id' => auth()->id(),
-            'gestionnaire_id' => auth()->id(),
-            'agence_id' => auth()->user()->agence_id,
-            'representation_id' => auth()->user()->representation_id,
-            'personnel_permanent' => true,
-        ];
+            'systeme' => $validated['systeme'] ?? null,
+            'capital' => $validated['capital'] ?? null,
+            'chiffre_affaire' => $validated['chiffre_affaire'] ?? null,
+            'dt_creation' => $validated['dt_creation'] ?? null,
+            'dt_start' => $validated['dt_start'] ?? null,
+            'ressources_propres' => $validated['ressources_propres'] ?? null,
+            'total_actif' => $validated['total_actif'] ?? null,
+            'nb_personnel' => $validated['nb_personnel'] ?? null,
+            'nb_personnel_permanent' => $validated['nb_personnel_permanent'] ?? null,
+            'nb_personnel_saisonier' => $validated['nb_personnel_saisonier'] ?? null,
+            'manager_sexe' => $validated['manager_sexe'] ?? null,
+            'manager_contact' => $validated['manager_contact'] ?? null,
+            'manager_niveau' => $validated['manager_niveau'] ?? null,
+            'manager_dtn' => $validated['manager_dtn'] ?? null,
+            'manager_promoteur' => isset($validated['manager_promoteur'])
+                ? (bool) (int) $validated['manager_promoteur']
+                : null,
+            'produit_id' => array_key_exists('produit_id', $validated) && $validated['produit_id'] !== null
+                ? (int) $validated['produit_id']
+                : null,
+            'produit_year_start' => $validated['produit_year_start'] ?? null,
+            'personnel_permanent' => $personnelPermanent,
+            'personnel_saisonier' => $personnelSaisonier,
+            'personnel_mixte' => $personnelMixte,
+        ], $validated);
+    }
 
-        Entreprise::create($data);
+    /**
+     * @return array<string, mixed>
+     */
+    private function appendOptionalProspectColumns(array $payload, array $validated): array
+    {
+        if (Schema::connection('central_app_mysql')->hasColumn('entreprises', 'village_ou_quartier')) {
+            $payload['village_ou_quartier'] = $validated['village_ou_quartier'] ?? null;
+        }
 
-        Session::flash('success', 'Le prospect a été enregistré. Vous pouvez le compléter ultérieurement pour validation.');
+        return $payload;
+    }
 
-        return redirect()->route('gestionnaire.entreprises.prospects');
+    private function syncAppuisEtProduits(Entreprise $entreprise, Request $request): void
+    {
+        $anfs = $this->normalizeSelectionInput($request->input('appuisnf', []));
+        $afs = $this->normalizeSelectionInput($request->input('appuisf', []));
+        $produits = $this->normalizeSelectionInput($request->input('autres', []));
+
+        EntrepriseAppui::where('entreprise_id', $entreprise->id)->delete();
+        EntrepriseProduit::where('entreprise_id', $entreprise->id)->delete();
+
+        foreach ($afs as $a) {
+            EntrepriseAppui::create([
+                'entreprise_id' => $entreprise->id,
+                'service_id' => $a,
+            ]);
+        }
+        foreach ($anfs as $a) {
+            EntrepriseAppui::create([
+                'entreprise_id' => $entreprise->id,
+                'service_id' => $a,
+            ]);
+        }
+        foreach ($produits as $a) {
+            EntrepriseProduit::create([
+                'entreprise_id' => $entreprise->id,
+                'produit_id' => $a,
+            ]);
+        }
+    }
+
+    /**
+     * Soumission explicite du dossier prospect (horodatée) pour instruction juridique / conformité.
+     */
+    public function submitProspect(string $token)
+    {
+        $item = Entreprise::where('token', $token)->where('prospect', true)->first();
+        if (! $item) {
+            abort(404);
+        }
+        $uid = auth()->id();
+        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+            abort(403);
+        }
+        if ($item->prospect_submitted_at !== null) {
+            Session::flash('info', 'Ce prospect a déjà été soumis.');
+
+            return redirect()->route('gestionnaire.entreprises.show', $token);
+        }
+
+        $item->prospect_submitted_at = now();
+        $item->save();
+
+        Session::flash('success', 'Prospect soumis le '.$item->prospect_submitted_at->format('d/m/Y \à H:i').'.');
+
+        return redirect()->route('gestionnaire.entreprises.show', $token);
     }
 
 
@@ -261,7 +474,12 @@ class CompanyController extends ExtendedController
      */
     private function prospectsQuery()
     {
-        return Entreprise::where('prospect', 1);
+        $uid = auth()->id();
+
+        return Entreprise::where('prospect', 1)
+            ->where(function ($q) use ($uid) {
+                $q->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
+            });
     }
 
     /**
@@ -329,72 +547,45 @@ class CompanyController extends ExtendedController
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Toute création passe par le parcours prospect (alignement cahier des charges BC-PME).
      */
     public function create()
     {
-        //
-
-        return view('/Gestionnaire/Companies/create');
+        return redirect()->route('gestionnaire.entreprises.prospects.create');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Ancien formulaire multi-étapes : même traitement que l'enregistrement prospect (brouillon).
      */
     public function store(Request $request)
     {
-        //
-        $data = $request->except('_token','appuisnf','appuisf','autres','type_personnel');
-        $anfs = array_filter(explode(',', $request->appuisnf ?? ''));
-        $afs = array_filter(explode(',', $request->appuisf ?? ''));
-        $produits = array_filter(explode(',', $request->autres ?? ''));
-        $type_personnel = $request->type_personnel;
-        $data['token'] = sha1(time().rand(0,99));
-        $ar = Arrondissement::find($data['arrondissement_id']);
-        $data['departement_id'] = $ar->departement_id;
-        $data['region_id'] = $ar->departement->region_id;
-        $data['user_id'] = auth()->user()->id;
-        $data['gestionnaire_id'] = auth()->user()->id;
-        $data['agence_id'] = auth()->user()->agence_id;
-        $data['representation_id'] = auth()->user()->representation_id;
-        $data['personnel_'.$type_personnel] = 1;
-        $entreprise = Entreprise::create($data);
-        foreach($afs as $a){
-            EntrepriseAppui::create([
-                'entreprise_id'=>$entreprise->id,
-                'service_id'=>$a
-            ]);
-        }
-        foreach($anfs as $a){
-            EntrepriseAppui::create([
-                'entreprise_id'=>$entreprise->id,
-                'service_id'=>$a
-            ]);
-        }
-        foreach($produits as $a){
-            EntrepriseProduit::create([
-                'entreprise_id'=>$entreprise->id,
-                'produit_id'=>$a
-            ]);
-        }
-        //dd($data);
-        return redirect(route('gestionnaire.entreprises.index'));
+        return $this->storeProspect($request);
     }
 
     public function save(Request $request)
     {
-        //
-       $data = $request->except('_token','type_personnel');
+        $token = $request->input('token');
+        $item = $token ? Entreprise::where('token', $token)->first() : null;
+        if ($item && $item->prospect) {
+            if ($item->prospect_submitted_at !== null) {
+                Session::flash('info', 'Ce prospect est déjà soumis pour avis ; la fiche n’est plus modifiable par ce formulaire.');
+
+                return redirect()->route('gestionnaire.entreprises.show', $token);
+            }
+
+            return $this->updateProspectDraft($request, $item);
+        }
+
+        $data = $request->except('_token', 'type_personnel');
         $type_personnel = $request->type_personnel;
         $ar = Arrondissement::find($data['arrondissement_id']);
         $data['departement_id'] = $ar->departement_id;
         $data['region_id'] = $ar->departement->region_id;
         $data['personnel_'.$type_personnel] = 1;
-        $entreprise = Entreprise::updateOrcreate(['token'=>$data['token']],$data);
+        Entreprise::updateOrCreate(['token' => $data['token']], $data);
 
-        //dd($data);
-        Session::flash('success','Enregistrement effectué avec succès!');
-        //return back();
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
         return redirect(route('gestionnaire.entreprises.index'));
     }
 
@@ -480,30 +671,54 @@ class CompanyController extends ExtendedController
         if(!$item){
             return back();
         }
+        $mr = $this->buildQuestionnaireResults($item);
+        $checklist = $item->piecesExigiblesChecklist();
+        if ($item->prospect) {
+            $item->load([
+                'juridiqueAvisUser',
+                'conformiteAvisUser',
+                'arrondissement',
+                'departement',
+                'region',
+                'forme',
+                'agence.representation',
+                'produit',
+                'produits',
+                'appuis.type',
+                'reponses.question',
+                'reponses.choice',
+            ]);
+
+            return view('Gestionnaire.Companies.show_prospect', compact('item', 'mr', 'checklist'));
+        }
         //dd($item);
-        $reponses = $item->reponses;
-        $groups = $reponses->groupBy('critere_id');
-        $groups = $groups->map(function($v,$k){
-            $critere = InstructionCritere::find($k);
-            return ['critere'=>$critere,
-             'items'=>$v->groupBy('sous_critere_id')
-                        ->map(function($m,$n){
-                            $sc = QuestionSousCritere::find($n);
-                            return [
-                                'sous_critere'=>$sc,
-                                'items'=>$m
-                            ];
-                        })
-            ];
-        });
-        //dd($groups);
-        $mr = $groups;
         $analystes = User::where('role_id',14)->where('agence_id',auth()->user()->agence_id)->get();
         $programmes = Programme::all();
         $appuis = Service::all();
         $elements = ElementConstitutif::where('active',1)->get();
-        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis','elements'));
+        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis','elements','checklist'));
 
+    }
+
+    private function buildQuestionnaireResults(Entreprise $item)
+    {
+        $reponses = $item->reponses()->with(['question', 'choice'])->get();
+
+        return $reponses->groupBy('critere_id')->map(function ($items, $critereId) {
+            $critere = InstructionCritere::find($critereId);
+
+            return [
+                'critere' => $critere,
+                'items' => $items->groupBy('sous_critere_id')->map(function ($group, $sousCritereId) {
+                    $sousCritere = QuestionSousCritere::find($sousCritereId);
+
+                    return [
+                        'sous_critere' => $sousCritere,
+                        'items' => $group,
+                    ];
+                }),
+            ];
+        });
     }
 
     public function saveProgramme(Request $request)
@@ -573,13 +788,69 @@ class CompanyController extends ExtendedController
 
     public function createTiersMorale(string $token)
     {
-        //
-        $item = Entreprise::where('token',$token)->first();
-        if(!$item){
+        $parentEntreprise = Entreprise::where('token', $token)->first();
+        if (! $parentEntreprise) {
             return back();
         }
-        $formes = Forme::all();
-        return view('/Gestionnaire/Companies/tiers_morale',compact('item','formes'));
+
+        return view('Gestionnaire.Companies.tiers_morale', array_merge(
+            ['parentEntreprise' => $parentEntreprise],
+            $this->prospectFormContext()
+        ));
+    }
+
+    public function searchTierMoralePortfolio(Request $request)
+    {
+        $query = trim((string) $request->input('q', ''));
+        $excludeId = (int) $request->input('exclude_id', 0);
+
+        if (mb_strlen($query) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $items = Entreprise::query()
+            ->with(['agence:id,name', 'representation:id,name'])
+            ->when($excludeId > 0, fn ($builder) => $builder->where('id', '!=', $excludeId))
+            ->where(function ($builder) use ($query) {
+                $builder->where('name', 'like', "%{$query}%")
+                    ->orWhere('rccm', 'like', "%{$query}%")
+                    ->orWhere('niu', 'like', "%{$query}%")
+                    ->orWhere('manager', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%")
+                    ->orWhere('phone', 'like', "%{$query}%");
+            })
+            ->orderByRaw('case when prospect = 1 then 0 else 1 end')
+            ->orderBy('name')
+            ->limit(12)
+            ->get([
+                'id',
+                'name',
+                'token',
+                'prospect',
+                'rccm',
+                'niu',
+                'email',
+                'phone',
+                'manager',
+            ]);
+
+        return response()->json([
+            'data' => $items->map(fn (Entreprise $entreprise) => [
+                'id' => $entreprise->id,
+                'name' => $entreprise->name ?: 'Denomination non renseignee',
+                'token' => $entreprise->token,
+                'prospect' => (bool) $entreprise->prospect,
+                'status_label' => $entreprise->prospect ? 'Prospect' : 'Client',
+                'rccm' => $entreprise->rccm,
+                'niu' => $entreprise->niu,
+                'email' => $entreprise->email,
+                'phone' => $entreprise->phone,
+                'manager' => $entreprise->manager,
+                'agence' => $entreprise->agence?->name,
+                'representation' => $entreprise->representation?->name,
+                'show_url' => route('gestionnaire.entreprises.show', $entreprise->token),
+            ])->values(),
+        ]);
     }
 
     public function saveTiersPhysique(Request $request)
@@ -611,34 +882,114 @@ class CompanyController extends ExtendedController
 
     public function saveTiersMorale(Request $request)
     {
-        //dd($request->all());
-        $token = $request->token;
-        $data = $request->except('lien','entreprise_id','token');
-        $data['token'] = sha1(time().rand(1,9999));
-        $data['prospect'] = 1;
-        $data['user_id'] = auth()->user()->id;
-        $data['agence_id'] = auth()->user()->agence_id;
-        $data['representation_id'] = auth()->user()->representation_id;
-        $entreprise = Entreprise::where('phone',$data['phone'])->orWhere('email',$data['email'])->first();
-        if(!$entreprise){
-            $entreprise = Entreprise::create($data);
+        $meta = $request->validate([
+            'entreprise_id' => ['required', 'integer'],
+            'token' => ['required', 'string'],
+            'tier_mode' => ['required', 'in:existing,new'],
+            'lien' => ['required', 'string', 'max:255'],
+            'commentaire' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'lien.required' => 'Le lien entre les deux entreprises est obligatoire.',
+        ]);
+
+        $parentEntreprise = Entreprise::where('id', $meta['entreprise_id'])
+            ->where('token', $meta['token'])
+            ->firstOrFail();
+
+        if ($meta['tier_mode'] === 'existing') {
+            $existing = $request->validate([
+                'selected_company_id' => ['required', 'integer', Rule::exists(Entreprise::class, 'id')],
+            ], [
+                'selected_company_id.required' => 'Selectionnez un prospect ou un client existant a lier.',
+            ]);
+
+            $entreprise = Entreprise::findOrFail((int) $existing['selected_company_id']);
+
+            if ((int) $entreprise->id === (int) $parentEntreprise->id) {
+                return back()
+                    ->withErrors(['selected_company_id' => 'Vous ne pouvez pas lier une entreprise a elle-meme.'])
+                    ->withInput();
+            }
+
+            Tier::updateOrCreate(
+                [
+                    'entreprise_id' => $parentEntreprise->id,
+                    'company_id' => $entreprise->id,
+                ],
+                $this->tierMoraleRelationPayload($parentEntreprise->id, $entreprise->id, $meta)
+            );
+
+            Session::flash('success', 'Le tiers personne morale existant a ete lie a la fiche avec succes.');
+
+            return redirect(route('gestionnaire.entreprises.show', $parentEntreprise->token));
         }
 
-        Tier::updateOrCreate(
-            [
-            'entreprise_id'=>$request->entreprise_id,
-            'company_id'=>$entreprise->id,
-            ],
-            [
-                'entreprise_id'=>$request->entreprise_id,
-                'company_id'=>$entreprise->id,
-                'lien'=>$request->lien
-            ]
+        $validated = $this->validateProspectFields($request);
+        $prospectData = $this->mapValidatedToProspectRow($validated, $request);
+        if (empty($prospectData['systeme'])) {
+            $prospectData['systeme'] = 'Normal';
+        }
+
+        $linkedExisting = false;
+
+        DB::transaction(function () use ($prospectData, $request, $meta, $parentEntreprise, &$linkedExisting) {
+            $entreprise = Entreprise::query()
+                ->where('id', '!=', $parentEntreprise->id)
+                ->where(function ($query) use ($prospectData) {
+                    $hasIdentifier = false;
+
+                    foreach (['rccm', 'niu', 'email', 'phone'] as $field) {
+                        if (! empty($prospectData[$field])) {
+                            $query->orWhere($field, $prospectData[$field]);
+                            $hasIdentifier = true;
+                        }
+                    }
+
+                    if (! $hasIdentifier) {
+                        $query->whereRaw('1 = 0');
+                    }
+                })
+                ->first();
+
+            if ($entreprise) {
+                $linkedExisting = true;
+
+                if ($entreprise->prospect && ((int) $entreprise->gestionnaire_id === (int) auth()->id() || (int) $entreprise->user_id === (int) auth()->id())) {
+                    $entreprise->fill($prospectData);
+                    $entreprise->save();
+                    $this->syncAppuisEtProduits($entreprise, $request);
+                }
+            } else {
+                $entreprise = Entreprise::create(array_merge($prospectData, [
+                    'token' => sha1(time().rand(1, 9999)),
+                    'prospect' => true,
+                    'prospect_submitted_at' => null,
+                    'user_id' => auth()->id(),
+                    'gestionnaire_id' => auth()->id(),
+                    'agence_id' => auth()->user()->agence_id,
+                    'representation_id' => auth()->user()->representation_id,
+                ]));
+
+                $this->syncAppuisEtProduits($entreprise, $request);
+            }
+
+            Tier::updateOrCreate(
+                [
+                    'entreprise_id' => $parentEntreprise->id,
+                    'company_id' => $entreprise->id,
+                ],
+                $this->tierMoraleRelationPayload($parentEntreprise->id, $entreprise->id, $meta)
+            );
+        });
+
+        Session::flash(
+            'success',
+            $linkedExisting
+                ? 'Un tiers deja present dans le portefeuille a ete detecte puis lie a la fiche pour eviter un doublon.'
+                : 'Le tiers personne morale a ete cree et lie a la fiche avec succes.'
         );
 
-
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.entreprises.show',$token));
+        return redirect(route('gestionnaire.entreprises.show', $parentEntreprise->token));
     }
 
 
@@ -648,9 +999,9 @@ class CompanyController extends ExtendedController
         if(!$item){
             return back();
         }
-        $criteres = QuestionSousCritere::all();
+        $criteres = QuestionSousCritere::with(['questions.choices'])->get();
         $reponses = $item->reponses()->pluck('choice_id', 'question_id')->toArray() ?? [];
-        return view('/Gestionnaire/Companies/questionnaire',compact('item','criteres','reponses'));
+        return view('Gestionnaire.Companies.questionnaire', compact('item', 'criteres', 'reponses'));
     }
 
     public function saveQuestionnaire(Request $request)
@@ -672,13 +1023,21 @@ class CompanyController extends ExtendedController
      */
     public function edit(string $token)
     {
-        //
-        $item = Entreprise::where('token',$token)->first();
-        if($item){
-            $formes = Forme::all();
-            return view('Gestionnaire.Companies.edit',compact('item','formes'));
+        $item = Entreprise::where('token', $token)->first();
+        if (! $item) {
+            return back();
         }
-        return back();
+        if ($item->prospect) {
+            $item->load(['produits:id,name,code', 'appuis:id,name,financier,type_id']);
+
+            return view('Gestionnaire.Companies.edit_prospect', array_merge(
+                ['item' => $item],
+                $this->prospectFormContext()
+            ));
+        }
+        $formes = Forme::all();
+
+        return view('Gestionnaire.Companies.edit', compact('item', 'formes'));
     }
 
     /**
@@ -695,5 +1054,91 @@ class CompanyController extends ExtendedController
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function prospectFormContext(): array
+    {
+        return [
+            'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'regions' => Region::orderBy('name')->get(['id', 'name']),
+            'departements' => Departement::orderBy('name')->get(['id', 'name', 'region_id']),
+            'arrondissements' => Arrondissement::orderBy('name')->get(['id', 'name', 'departement_id']),
+            'produitsCatalogue' => Produit::query()->orderBy('code')->orderBy('name')->get(['id', 'name', 'code']),
+            'appuisFinanciers' => Service::with('type')->where('financier', 1)->orderBy('name')->get(),
+            'appuisNonFinanciers' => Service::with('type')->where('financier', 0)->orderBy('name')->get(),
+        ];
+    }
+
+    /**
+     * @param  array<int|string, mixed>|string|null  $raw
+     * @return array<int, int>
+     */
+    private function normalizeSelectionInput(array|string|null $raw): array
+    {
+        if (is_string($raw)) {
+            $raw = $raw === '' ? [] : explode(',', $raw);
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($value) {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return (int) $value;
+        }, $raw), fn ($value) => $value !== null && $value > 0));
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     * @return array<string, mixed>
+     */
+    private function tierMoraleRelationPayload(int $entrepriseId, int $companyId, array $meta): array
+    {
+        $payload = [
+            'entreprise_id' => $entrepriseId,
+            'company_id' => $companyId,
+            'lien' => $meta['lien'],
+        ];
+
+        if (Schema::connection('central_app_mysql')->hasTable('tiers') && Schema::connection('central_app_mysql')->hasColumn('tiers', 'commentaire')) {
+            $payload['commentaire'] = $meta['commentaire'] ?? null;
+        }
+
+        return $payload;
+    }
+
+    private function normalizeCameroonPhone(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        return preg_replace('/[\s\-\.]/', '', $value);
+    }
+
+    private function normalizeIdentifier(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        return strtoupper($value);
     }
 }

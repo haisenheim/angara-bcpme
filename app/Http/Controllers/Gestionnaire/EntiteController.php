@@ -19,7 +19,6 @@ use App\Models\Programme;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Service;
-use App\Models\Structuration\Exploitant;
 use App\Models\Tier;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -53,14 +52,6 @@ class EntiteController extends ExtendedController
         //
 
         return view('Gestionnaire/Entites/create');
-    }
-
-
-    public function createFromMember($token)
-    {
-        //
-        $item = Exploitant::where('token',$token)->first();
-        return view('Gestionnaire/Entites/create_from_member',compact('item'));
     }
 
     /**

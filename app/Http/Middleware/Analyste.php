@@ -19,7 +19,8 @@ class Analyste
     {
         $user = auth()->user();
         $agence = Agence::find($user->agence_id);
-        if($user->role_id!=14){
+        $expected = (int) config('angara.role_analyste_financier', 14);
+        if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
         $path = request()->getPathInfo();
@@ -27,9 +28,6 @@ class Analyste
         $active = 1;
         if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
             $active = 201;
-        }
-        if(in_array('esg-evaluations',$parts)){
-            $active = 206;
         }
         if(in_array('programmes',$parts)){
             $active = 3;

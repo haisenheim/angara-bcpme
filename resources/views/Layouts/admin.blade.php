@@ -3,7 +3,7 @@
 
     {{-- <div>
         <span>Connecté  en tant que :</span>
-        <strong><span class="badge bg-white text-dark fs-6">Administrateur</span></strong>
+        <strong><span class="badge bg-white text-dark fs-6">SuperAdmin</span></strong>
     </div> --}}
     <div class="header__content-end">
                   <!-- Notification Dropdown -->
@@ -254,13 +254,15 @@
                     <span class="nav-label mininav-content ms-1">ENTREPRISES</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ route('admin.entites.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
-                    {{-- <i class="pli-bank fs-2 me-2"></i> --}}
-                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/enterprises.svg')}}" alt=""></span>
-                    <span class="nav-label mininav-content ms-1">ENTITES INDIV.</span>
-                </a>
-            </li>
+            @if (Route::has('admin.entites.index'))
+                <li class="nav-item">
+                    <a href="{{ route('admin.entites.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
+                        {{-- <i class="pli-bank fs-2 me-2"></i> --}}
+                        <span class="icon-nav"><img src="{{ asset('img/new/navigation/enterprises.svg')}}" alt=""></span>
+                        <span class="nav-label mininav-content ms-1">ENTITES INDIV.</span>
+                    </a>
+                </li>
+            @endif
             <li class="nav-item">
                 <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}">
                     {{-- <i class="pli-affiliate fs-2 me-2"></i> --}}
@@ -291,11 +293,20 @@
                 </a>
             </li>
 
+            @if (\Illuminate\Support\Facades\Schema::hasTable('secteurs'))
+                <li class="nav-item">
+                    <a href="{{ route('admin.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==7?'active':'' }}">
+                        {{-- <i class="pli-conference fs-2 me-2"></i> --}}
+                        <span class="icon-nav"><img src="{{ asset('img/new/navigation/territoire.svg')}}" alt=""></span>
+                        <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
+                    </a>
+                </li>
+            @endif
+
             <li class="nav-item">
-                <a href="{{ route('admin.secteurs.index') }}" class="nav-link mininav-toggle {{ $active==7?'active':'' }}">
-                    {{-- <i class="pli-conference fs-2 me-2"></i> --}}
-                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/territoire.svg')}}" alt=""></span>
-                    <span class="nav-label mininav-content ms-1">SECTEURS COOP.</span>
+                <a href="{{ route('admin.pieces-exigibles.index') }}" class="nav-link mininav-toggle">
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/prospect.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">Pieces exigibles</span>
                 </a>
             </li>
 
@@ -311,12 +322,16 @@
                  <li class="nav-item">
                      <a href="{{ route('admin.territoire') }}" class="nav-link {{ $active==701?'active':'' }}">Organisation administrative</a>
                  </li>
-                 <li class="nav-item">
-                     <a href="{{ route('admin.agences.index') }}" class="nav-link {{ $active==702?'active':'' }}">Agences</a>
-                 </li>
-                 <li class="nav-item">
-                     <a href="{{ route('admin.villages.index') }}" class="nav-link {{ $active==703?'active':'' }}">Villages</a>
-                 </li>
+                 @if (Route::has('admin.agences.index'))
+                     <li class="nav-item">
+                         <a href="{{ route('admin.agences.index') }}" class="nav-link {{ $active==702?'active':'' }}">Agences</a>
+                     </li>
+                 @endif
+                 @if (Route::has('admin.villages.index'))
+                     <li class="nav-item">
+                         <a href="{{ route('admin.villages.index') }}" class="nav-link {{ $active==703?'active':'' }}">Villages</a>
+                     </li>
+                 @endif
 
              </ul>
              <!-- END : Dashboard submenu list -->
@@ -337,24 +352,11 @@
                     <li class="nav-item">
                         <a href="#" class="nav-link {{ $active==802?'active':'' }}">Banques</a>
                     </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.evaluation-frameworks.index') }}" class="nav-link {{ $active==810?'active':'' }}">Frameworks ESG</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.evaluation-categories.index') }}" class="nav-link {{ $active==811?'active':'' }}">Catégories ESG</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.evaluation-indicators.index') }}" class="nav-link {{ $active==812?'active':'' }}">Indicateurs ESG</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.evaluation-thresholds.index') }}" class="nav-link {{ $active==813?'active':'' }}">Seuils ESG</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.evaluation-settings.index') }}" class="nav-link {{ $active==814?'active':'' }}">Réglages ESG</a>
-                    </li>
+                    @if (Route::has('admin.operateurs.index'))
+                        <li class="nav-item">
+                            <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
+                        </li>
+                    @endif
                 </ul>
                 <!-- END : Dashboard submenu list -->
             </li>

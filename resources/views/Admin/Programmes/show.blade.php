@@ -233,7 +233,6 @@
                                     <th>Poste</th>
                                     <th>Email</th>
                                     <th>Phone</th>
-                                    <th>Permissions</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -245,17 +244,9 @@
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->phone }}</td>
                                         <td>
-                                            <ul class="list-inline">
-                                                @foreach ($user->permissions as $p)
-                                                    <li class="list-inline-item">{{ $p->label }},</li>
-                                                @endforeach
-                                            </ul>
-                                        </td>
-                                        <td>
                                             <div class="btn-group">
                                                 <button type="button" class="btn btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false"> </button>
                                                 <ul class="dropdown-menu">
-                                                    <li><a class="dropdown-item permission-link" data-id="{{ $user->id }}" data-bs-target="#permissionsModal" data-bs-toggle="modal" href="#">Definir les droits</a></li>
                                                     <li><a class="dropdown-item" href="#">Bloquer le compte</a></li>
 
                                                 </ul>
@@ -442,44 +433,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="permissionsModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Definition des droits</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.programme.user.permissions.save') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="token" value="{{ $item->token }}">
-                        <input type="hidden" id="user_id" name="user_id" >
-                        <div style="max-height: 400px; overflow: scroll;">
-                            <ul class="list-group">
-                                @foreach ($permissions as $permission)
-                                    <li class="list-group-item">
-                                        <div class="form-group">
-                                            <div class="form-check form-check-inline">
-                                                <label for="" class="form-check-label">{{ $permission->label }}</label>
-                                                <input id="" class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}">
-
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="addPosteModal">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -558,11 +511,6 @@
     </div>
 
     <script>
-
-        $('.permission-link').click(function(){
-            $('#user_id').val($(this).data('id'))
-        })
-
 
         $('#banque_id').change(function(){
             $('#name').val($('#banque_id option:selected').text())

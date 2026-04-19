@@ -171,7 +171,6 @@ return [
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Ladumor\OneSignal\OneSignalServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
-        Spatie\Permission\PermissionServiceProvider::class,
 
     ])->toArray(),
 

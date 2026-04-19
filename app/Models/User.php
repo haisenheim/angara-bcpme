@@ -7,18 +7,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 //use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
-use Spatie\Permission\Traits\HasRoles;
 
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable;
    // protected $connection = 'central_app_mysql';
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'phone',
+        'role_id',
+        'token',
+        'active',
+        'agence_id',
     ];
 
     protected $hidden = [
@@ -50,22 +54,6 @@ class User extends Authenticatable
 
     public function departement(){
         return $this->belongsTo('App\Models\Departement');
-    }
-
-    public function representation(){
-        return $this->belongsTo('App\Models\Representation');
-    }
-
-    public function cooperative(){
-        return $this->belongsTo('App\Models\Structuration\Cooperative');
-    }
-
-    public function secteur(){
-        return $this->belongsTo('App\Models\Secteur');
-    }
-
-    public function banque(){
-        return $this->belongsTo('App\Models\Banque');
     }
 
 

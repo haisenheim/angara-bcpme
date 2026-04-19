@@ -16,7 +16,8 @@ class ReJu
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        if($user->role_id!=10){
+        $expected = (int) config('angara.role_responsable_juridique', 10);
+        if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
         return $next($request);

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Agence;
 use App\Models\Representation;
-use App\Models\Secteur;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +28,7 @@ class HomeController extends ExtendedController
             return redirect('/pca/dashboard');
            }
            if($role_id == 3){
-                return redirect('/adm/dashboard');
+                return redirect('/administrateur/dashboard');
             }
            if($role_id == 4){
                 return redirect('/dg/dashboard');
@@ -41,16 +40,16 @@ class HomeController extends ExtendedController
                 return redirect('/respexp/dashboard');
             }
            if($role_id == 7){
-                return redirect('/respaud/dashboard');
+                return redirect('/auditeur/dashboard');
             }
            if($role_id == 8){
-                return redirect('/respci/dashboard');
+                return redirect('/controleur/dashboard');
             }
            if($role_id == 9){
                 return redirect('/reri/dashboard');
             }
-           if($role_id == 10){
-                return redirect('/reju/dashboard');
+           if($role_id == config('angara.role_responsable_juridique')){
+                return redirect('/juridique/dashboard');
             }
            if($role_id == 11){
                 $region = Representation::find($user->representation_id);
@@ -60,7 +59,7 @@ class HomeController extends ExtendedController
            if($role_id == 12){
             $agence = Agence::find($user->agence_id);
             Session::put('agence',$agence);
-            return redirect('/ca/dashboard');
+            return redirect('/chef-agence/dashboard');
            }
            if($role_id == 13){
             $agence = Agence::find($user->agence_id);
@@ -73,19 +72,26 @@ class HomeController extends ExtendedController
             return redirect('/analyste/dashboard');
            }
 
+           $roleAnalysteCredit = (int) config('angara.role_analyste_credit', 0);
+           $roleConformite = (int) config('angara.role_responsable_conformite', 0);
+           if($roleAnalysteCredit > 0 && $roleAnalysteCredit !== $roleConformite && $role_id == $roleAnalysteCredit){
+                return redirect('/analyste-credit/dashboard');
+           }
+
+           if($role_id == config('angara.role_analyste_juridique')){
+                return redirect('/analyste-juridique/dashboard');
+           }
+
+           if($role_id == config('angara.role_responsable_conformite')){
+            return redirect('/conformite/dashboard');
+           }
+
            if($role_id == 19){
             return redirect('/program/dashboard');
            }
 
            if($role_id == 20){
-            $secteur = Secteur::find($user->secteur_id);
-            Session::put('secteur',$secteur);
-            //dd($secteur);
-            return redirect('/sectoriel/dashboard');
-           }
-
-           if($role_id == 21){
-            return redirect('/structuration/gestionnaire/dashboard');
+            return redirect('/chef-filiere/dashboard');
            }
 
 

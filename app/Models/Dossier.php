@@ -52,8 +52,17 @@ class Dossier extends Model
         return $this->hasMany(Reponse::class);
     }
 
-    public function esgEvaluation(){
-        return $this->hasOne(DossierEsgEvaluation::class);
+    /**
+     * Entrées d’avis dans le dossier d’analyse critique liées à ce dossier d’instruction.
+     */
+    public function analyseCritiqueAvisMentions()
+    {
+        return $this->hasMany(AnalyseCritiqueAvis::class, 'instruction_dossier_id');
+    }
+
+    public function dossierEntreeRelationProgrammes()
+    {
+        return $this->hasMany(DossierEntreeRelationProgramme::class, 'instruction_dossier_id');
     }
 
     // Accessor pour 'name'

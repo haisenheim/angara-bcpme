@@ -14,8 +14,8 @@
 @section('page-header')
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="h3 mb-0">Tableau de bord analyste</h1>
-            <p class="text-muted mb-0">Bienvenue {{ auth()->user()->name }}, vue d'ensemble de vos analyses</p>
+            <h1 class="h3 mb-0">Tableau de bord AnalysteFinancier</h1>
+            <p class="text-muted mb-0">Bienvenue {{ auth()->user()->name }}, vue d'ensemble de vos analyses financieres</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary btn-sm" onclick="refreshDashboard()">

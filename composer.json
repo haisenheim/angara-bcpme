@@ -17,7 +17,6 @@
         "maatwebsite/excel": "^3.1",
         "masbug/flysystem-google-drive-ext": "^2.4",
         "php-open-source-saver/jwt-auth": "^2.3",
-        "spatie/laravel-permission": "^6.10",
         "tcg/voyager": "^1.7"
     },
     "require-dev": {

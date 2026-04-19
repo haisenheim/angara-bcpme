@@ -94,39 +94,6 @@
                 </div>
             </div>
 
-            @php $esgEvaluation = $item->esgEvaluation ?? null; @endphp
-            <div class="card border-0 shadow-sm mt-3 {{ $esgEvaluation ? 'border-start border-3 border-success' : '' }}">
-                <div class="card-header bg-transparent border-0 py-3 d-flex align-items-center justify-content-between">
-                    <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Évaluation ESG</h6>
-                    @if($esgEvaluation)
-                        @php
-                            $statusConfig = [
-                                'draft' => ['label' => 'Brouillon', 'bg' => 'secondary'],
-                                'submitted' => ['label' => 'Soumise', 'bg' => 'warning'],
-                                'validated' => ['label' => 'Validée', 'bg' => 'success'],
-                                'rejected' => ['label' => 'Rejetée', 'bg' => 'danger'],
-                            ];
-                            $esgStatus = $statusConfig[$esgEvaluation->status] ?? ['label' => ucfirst($esgEvaluation->status), 'bg' => 'info'];
-                        @endphp
-                        <span class="badge bg-{{ $esgStatus['bg'] }}">{{ $esgStatus['label'] }}</span>
-                    @endif
-                </div>
-                <div class="card-body">
-                    @if($esgEvaluation)
-                        <p class="mb-2">
-                            <span class="text-muted small">Score global :</span>
-                            <strong>{{ number_format((float) $esgEvaluation->score_global, 1) }}/100</strong>
-                        </p>
-                        <p class="mb-0 small text-muted">
-                            {{ $esgEvaluation->risk_level ? 'Risque : ' . $esgEvaluation->risk_level : '' }}
-                            {{ $esgEvaluation->bankability_level ? ' • Bancabilité : ' . $esgEvaluation->bankability_level : '' }}
-                        </p>
-                    @else
-                        <p class="text-muted small mb-0">Aucune évaluation ESG pour ce dossier.</p>
-                    @endif
-                </div>
-            </div>
-
             @if($sme)
                 <div class="card border-0 shadow-sm mt-3">
                     <div class="card-header bg-transparent border-0 py-3">

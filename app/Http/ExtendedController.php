@@ -24,12 +24,7 @@ class ExtendedController extends Controller
 
 		$ext = $file->getClientOriginalExtension();
 		$arr_ext = $this->authExtensions();
-        $tenant_id = tenant('id');
-        if($tenant_id){
-            $dir = 'img/tenant_'.$tenant_id.'/'.$entity;
-        }else{
-            $dir = 'img/central/'.$entity;
-        }
+        $dir = 'img/central/'.$entity;
 
 
 		if (!file_exists(public_path($dir))) {

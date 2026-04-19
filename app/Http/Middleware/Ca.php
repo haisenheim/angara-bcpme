@@ -26,9 +26,6 @@ class Ca
         if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
             $active = 201;
         }
-        if(in_array('esg-evaluations',$parts)){
-            $active = 207;
-        }
         if(in_array('programmes',$parts)){
             $active = 3;
         }

@@ -9,7 +9,7 @@ $agence = \Illuminate\Support\Facades\Session::get('agence');
     </div>
     <div>
         <span>Connecté  en tant que :</span>
-        <strong><span class="badge bg-white text-dark fs-6">analyste financier</span></strong>
+        <strong><span class="badge bg-white text-dark fs-6">AnalysteFinancier</span></strong>
     </div>
     <div style="display: none">
         <form id="logout-form" method="POST" action="{{ route('logout') }}">

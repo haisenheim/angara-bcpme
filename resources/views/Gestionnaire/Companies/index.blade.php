@@ -24,15 +24,15 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('gestionnaire.entreprises.create') }}" class="btn btn-primary btn-sm">
-        <i class="demo-psi-add me-2"></i>Nouvelle entreprise
+    <a href="{{ route('gestionnaire.entreprises.prospects.create') }}" class="btn btn-primary btn-sm">
+        <i class="demo-psi-add me-2"></i>Nouveau prospect
     </a>
 @endsection
 
 @section('page-header')
     <div>
         <h5 class="page-title mb-0">Portefeuille entreprises</h5>
-        <p class="text-body-secondary mb-0 mt-1">Liste et gestion de vos entreprises</p>
+        <p class="text-body-secondary mb-0 mt-1">Clients issus de prospects validés — tout nouvel enregistrement commence par un prospect (voir menu Prospects)</p>
     </div>
 @endsection
 

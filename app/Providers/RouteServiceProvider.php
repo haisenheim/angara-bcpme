@@ -36,11 +36,5 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
-
-        $this->app->booted(function () {
-            if (file_exists(base_path('routes/tenant.php'))) {
-                require base_path('routes/tenant.php');
-            }
-        });
     }
 }

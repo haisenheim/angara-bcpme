@@ -66,11 +66,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
-        //Roles and permissions middlewares
-        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-        'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-
         'admin'=> \App\Http\Middleware\Admin::class,
         'pca'=> \App\Http\Middleware\Pca::class,
         'adm'=> \App\Http\Middleware\Adm::class,
@@ -81,19 +76,17 @@ class Kernel extends HttpKernel
         'respci'=> \App\Http\Middleware\RespCi::class,
         'reri'=> \App\Http\Middleware\ReRi::class,
         'reju'=> \App\Http\Middleware\ReJu::class,
+        'reconf'=> \App\Http\Middleware\ResponsableConformite::class,
         'regional'=> \App\Http\Middleware\Regional::class,
         'ca'=> \App\Http\Middleware\Ca::class,
         'gestionnaire'=> \App\Http\Middleware\Gestionnaire::class,
         'analyste'=> \App\Http\Middleware\Analyste::class,
+        'analyste.credit'=> \App\Http\Middleware\AnalysteCredit::class,
+        'analyste.juridique'=> \App\Http\Middleware\AnalysteJuridique::class,
         'program'=> \App\Http\Middleware\Program::class,
         'sectoriel'=> \App\Http\Middleware\Sectoriel::class,
-        'structuration.gestionnaire'=> \App\Http\Middleware\StructurationGestionnaire::class,
-
-        //tenant
-        'tenant.admin'=> \App\Http\Middleware\Tenant\Admin::class,
-        'tenant.agent'=> \App\Http\Middleware\Tenant\Agent::class,
-        'tenant.rstock'=> \App\Http\Middleware\Tenant\Rstock::class,
-        'tenant.payeur'=> \App\Http\Middleware\Tenant\Payeur::class,
+        'chef.agence' => \App\Http\Middleware\Ca::class,
+        'chef.filiere' => \App\Http\Middleware\Sectoriel::class,
 
     ];
 }

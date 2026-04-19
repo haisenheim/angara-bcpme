@@ -13,8 +13,8 @@
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0 mt-2">Tableau de bord de l'administrateur</h5>
-        <p class="lead">Hello {{ auth()->user()->name }}, bienvenu sur <span class="text-muted">Cogelo</span> votre plateforme de trading de la feve!</p>
+        <h5 class="page-title mb-0 mt-2">Tableau de bord SuperAdmin</h5>
+        <p class="lead">Hello {{ auth()->user()->name }}, bienvenu sur <span class="text-muted">Cogelo</span> votre espace de supervision globale.</p>
     </div>
 @endsection
 

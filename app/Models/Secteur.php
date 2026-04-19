@@ -14,8 +14,4 @@ class Secteur extends Model
     public function agence(){
         return $this->belongsTo('App\Models\Agence');
     }
-
-    public function cooperatives(){
-        return $this->hasMany('App\Models\Tenant','secteur_id');
-    }
 }

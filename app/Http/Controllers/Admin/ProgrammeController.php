@@ -18,7 +18,6 @@ use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
-use Spatie\Permission\Models\Permission;
 
 class ProgrammeController extends Controller
 {
@@ -120,19 +119,8 @@ class ProgrammeController extends Controller
         $banques = Banque::all();
         $organismes = Organisme::all();
         $indicateurs = Indicateur::all();
-        $permissions = Permission::all();
         $services = Service::all();
-        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','permissions','services'));
-    }
-
-
-    public function saveUserPermissions(Request $request){
-       // dd($request->all());
-       $user = User::find($request->user_id);
-       $permissions = $request->permissions;
-       $user->syncPermissions($permissions);
-       Session::flash('success','Enregistrement effectué avec succès!');
-       return back();
+        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','services'));
     }
 
     public function saveUser(Request $request){

@@ -12,8 +12,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-           EsgParametrageSeeder::class,
-        ]);
+        if (filter_var(env('BCPME_SEED_REFERENCE', false), FILTER_VALIDATE_BOOLEAN)) {
+            $this->call(BcpmeAngaraDemoReferenceSeeder::class);
+        }
     }
 }

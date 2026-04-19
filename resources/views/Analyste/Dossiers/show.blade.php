@@ -17,7 +17,6 @@
             <i class="demo-psi-dot-vertical me-1"></i> Actions
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('analyste.dossiers.esg-evaluation.show', $item) }}"><i class="demo-psi-bar-chart me-2"></i> Évaluation ESG</a></li>
             @if($item->entreprise)
                 <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
             @endif
@@ -108,53 +107,6 @@
                 </div>
             </div>
 
-            {{-- Évaluation ESG --}}
-            @php $esgEvaluation = $item->esgEvaluation; @endphp
-            <div class="card border-0 shadow-sm mt-3 {{ $esgEvaluation ? 'border-start border-3 border-success' : '' }}">
-                <div class="card-header bg-transparent border-0 py-3 d-flex align-items-center justify-content-between">
-                    <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Évaluation ESG</h6>
-                    @if($esgEvaluation)
-                        @php
-                            $statusConfig = [
-                                'draft' => ['label' => 'Brouillon', 'bg' => 'secondary'],
-                                'submitted' => ['label' => 'Soumise', 'bg' => 'warning'],
-                                'validated' => ['label' => 'Validée', 'bg' => 'success'],
-                                'rejected' => ['label' => 'Rejetée', 'bg' => 'danger'],
-                            ];
-                            $esgStatus = $statusConfig[$esgEvaluation->status] ?? ['label' => ucfirst($esgEvaluation->status), 'bg' => 'info'];
-                        @endphp
-                        <span class="badge bg-{{ $esgStatus['bg'] }}">{{ $esgStatus['label'] }}</span>
-                    @endif
-                </div>
-                <div class="card-body">
-                    @if($esgEvaluation)
-                        <p class="mb-2">
-                            <span class="text-muted small">Score global :</span>
-                            <strong>{{ number_format((float) $esgEvaluation->score_global, 1) }}/100</strong>
-                        </p>
-                        <p class="mb-3 small text-muted">
-                            {{ $esgEvaluation->risk_level ? 'Risque : ' . $esgEvaluation->risk_level : '' }}
-                            {{ $esgEvaluation->bankability_level ? ' • Bancabilité : ' . $esgEvaluation->bankability_level : '' }}
-                        </p>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('analyste.dossiers.esg-evaluation.show', $item) }}" class="btn btn-sm btn-outline-primary flex-grow-1">
-                                <i class="demo-psi-eye me-1"></i> Voir
-                            </a>
-                            @if($esgEvaluation->canBeEdited())
-                                <a href="{{ route('analyste.dossiers.esg-evaluation.edit', $item) }}" class="btn btn-sm btn-primary flex-grow-1">
-                                    <i class="demo-psi-pen-5 me-1"></i> Modifier
-                                </a>
-                            @endif
-                        </div>
-                    @else
-                        <p class="text-muted small mb-3">Aucune évaluation ESG pour ce dossier.</p>
-                        <a href="{{ route('analyste.dossiers.esg-evaluation.create', $item) }}" class="btn btn-primary w-100">
-                            <i class="demo-pli-add me-2"></i> Créer l'évaluation ESG
-                        </a>
-                    @endif
-                </div>
-            </div>
-
             @if($sme)
                 <div class="card border-0 shadow-sm mt-3">
                     <div class="card-header bg-transparent border-0 py-3">
@@ -178,9 +130,6 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 py-3 d-flex align-items-center justify-content-between">
                     <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Grille de notation</h6>
-                    <a href="{{ route('analyste.dossiers.esg-evaluation.show', $item) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="demo-psi-bar-chart me-1"></i> ESG
-                    </a>
                 </div>
                 <div class="card-body overflow-auto" style="max-height: 100vh;">
                     @if(count($indicateurs ?? []))

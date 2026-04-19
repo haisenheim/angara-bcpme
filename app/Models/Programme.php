@@ -35,6 +35,11 @@ class Programme extends Model
         return $this->hasMany('App\Models\Dossier','programme_id');
     }
 
+    public function eerSelections()
+    {
+        return $this->hasMany(DossierEntreeRelationProgramme::class, 'programme_id');
+    }
+
 
 
     public function produits(){

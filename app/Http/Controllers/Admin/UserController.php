@@ -3,109 +3,208 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Agence;
-use App\Models\Banque;
-use App\Models\Representation;
 use App\Models\Role;
-use App\Models\Secteur;
 use App\Models\User;
-use App\Models\Ville;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        $items = User::where('role_id','>',1)->get();
-        foreach ($items as $user) {
-            if (empty($user->token)) {
-                $user->forceFill([
-                    'token' => sha1(uniqid((string) $user->id, true)),
-                ])->saveQuietly();
-            }
-        }
-        $roles = Role::where('metier',1)->get();
-        $representations = Representation::all();
-        $agences = Agence::all();
-        $secteurs = Secteur::all();
-        $banques = Banque::all();
-        return view('/Admin/Users/index')->with(compact('items','roles','representations','agences','secteurs','banques'));
+        $this->ensureUserTokens();
+        $filters = [
+            'q' => trim((string) $request->query('q', '')),
+            'role_id' => (string) $request->query('role_id', ''),
+            'active' => (string) $request->query('active', ''),
+        ];
+
+        $items = $this->getUsersQuery()
+            ->when($filters['q'] !== '', function (Builder $query) use ($filters) {
+                $query->where(function (Builder $userQuery) use ($filters) {
+                    $userQuery
+                        ->where('name', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('email', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('phone', 'like', '%' . $filters['q'] . '%');
+                });
+            })
+            ->when($filters['role_id'] !== '', fn (Builder $query) => $query->where('role_id', (int) $filters['role_id']))
+            ->when($filters['active'] !== '', fn (Builder $query) => $query->where('active', (int) $filters['active']))
+            ->paginate(15);
+
+        $stats = [
+            'total' => User::where('role_id', '>', 1)->count(),
+            'active' => User::where('role_id', '>', 1)->where('active', 1)->count(),
+            'locked' => User::where('role_id', '>', 1)->where('active', 0)->count(),
+        ];
+
+        return view('Admin/Users/index', array_merge(
+            $this->getReferenceData(),
+            compact('items', 'filters', 'stats')
+        ));
     }
 
+    public function getRoles()
+    {
+        $items = Role::where('metier', 1)->get();
 
-    public function getRoles(){
-        $items = Role::where('metier',1)->get();
         return view('/Admin/Users/roles')->with(compact('items'));
     }
 
-
-
-
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('Admin/Users/create', array_merge(
+            $this->getReferenceData(),
+            [
+                'item' => new User([
+                    'active' => 1,
+                    'agence_id' => 0,
+                ]),
+            ]
+        ));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $user = new User();
-        $user->name = request()->name;
-        $user->token = sha1(date('Yhmdsi'). auth()->user()->id);
-        $user->password = bcrypt(request()->password);
-        $user->role_id = request()->role_id;
-        $user->phone = request()->phone;
-        $user->email = request()->email;
-        $user->secteur_id = $request->secteur_id;
-        $user->agence_id = request()->agence_id;
-        $user->representation_id = request()->representation_id;
-        $user->banque_id = request()->banque_id;
+        $data = $this->normalizePayload($request->validated());
+        $data['token'] = sha1(Str::uuid()->toString());
+        $data['active'] = $request->boolean('active', true);
+
+        $user = new User($data);
+        $this->resetLegacyAssignments($user);
         $user->save();
-        return back();
+
+        Session::flash('success', 'Compte utilisateur cree avec succes.');
+
+        return redirect()->route('admin.users.edit', $user->token);
     }
 
-    public function  enable($token){
-        $user = User::where('token',$token)->first();
+    public function show($token)
+    {
+        $item = $this->findUserByToken($token);
+
+        return view('Admin/Users/show', compact('item'));
+    }
+
+    public function edit($token)
+    {
+        $item = $this->findUserByToken($token);
+
+        return view('Admin/Users/edit', array_merge(
+            $this->getReferenceData(),
+            compact('item')
+        ));
+    }
+
+    public function update(UpdateUserRequest $request, $token)
+    {
+        $item = $this->findUserByToken($token);
+        $data = $this->normalizePayload($request->validated(), false);
+
+        if (blank($data['password'] ?? null)) {
+            unset($data['password']);
+        }
+
+        $item->fill($data);
+        $this->resetLegacyAssignments($item);
+        $item->active = $request->boolean('active');
+        $item->save();
+
+        Session::flash('success', 'Compte utilisateur mis a jour avec succes.');
+
+        return redirect()->route('admin.users.edit', $item->token);
+    }
+
+    public function enable($token)
+    {
+        $user = $this->findUserByToken($token);
         $user->active = 1;
         $user->save();
+
+        Session::flash('success', 'Le compte utilisateur a ete active.');
+
         return back();
     }
 
-    public function  disable($token){
-        $user = User::where('token',$token)->first();
+    public function disable($token)
+    {
+        $user = $this->findUserByToken($token);
         $user->active = 0;
         $user->save();
+
+        Session::flash('success', 'Le compte utilisateur a ete verrouille.');
+
         return back();
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Projet  $projet
-     * @return \Illuminate\Http\Response
-     */
-	public function show($token)
-	{
+    protected function getReferenceData(): array
+    {
+        return [
+            'roles' => Role::where('metier', 1)->orderBy('name')->get(),
+            'agences' => Agence::query()->orderBy('name')->get(),
+        ];
+    }
 
-	}
+    protected function getUsersQuery(): Builder
+    {
+        return User::query()
+            ->where('role_id', '>', 1)
+            ->with(['role', 'agence.representation'])
+            ->orderByDesc('id');
+    }
 
+    protected function findUserByToken(string $token): User
+    {
+        return $this->getUsersQuery()
+            ->where('token', $token)
+            ->firstOrFail();
+    }
 
+    protected function normalizePayload(array $validated, bool $withPassword = true): array
+    {
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'role_id' => (int) $validated['role_id'],
+            'agence_id' => (int) ($validated['agence_id'] ?? 0),
+        ];
+
+        if ($withPassword || array_key_exists('password', $validated)) {
+            $password = $validated['password'] ?? null;
+            if (filled($password)) {
+                $data['password'] = Hash::make($password);
+            }
+        }
+
+        return $data;
+    }
+
+    protected function ensureUserTokens(): void
+    {
+        User::query()
+            ->where('role_id', '>', 1)
+            ->where(function (Builder $query) {
+                $query->whereNull('token')->orWhere('token', '');
+            })
+            ->get()
+            ->each(function (User $user) {
+                $user->forceFill([
+                    'token' => sha1(Str::uuid()->toString()),
+                ])->saveQuietly();
+            });
+    }
+
+    protected function resetLegacyAssignments(User $user): void
+    {
+        $user->representation_id = 0;
+        $user->banque_id = 0;
+        $user->secteur_id = 0;
+    }
 }

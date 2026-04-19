@@ -18,4 +18,13 @@ class Fichier extends Model
     public function entreprise(){
         return $this->belongsTo('App\Models\Entreprise','entreprise_id');
     }
+
+    public function getPathAttribute(): ?string
+    {
+        if (! $this->name) {
+            return null;
+        }
+
+        return request()->getSchemeAndHttpHost().'/files/'.$this->name;
+    }
 }

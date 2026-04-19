@@ -33,7 +33,7 @@
 @section('page-header')
     <div>
         <h5 class="page-title mb-0">Prospects</h5>
-        <p class="text-body-secondary mb-0 mt-1">Entreprises à prospecter</p>
+        <p class="text-body-secondary mb-0 mt-1">Brouillons, soumission pour avis juridique &amp; conformité, puis transformation en client (étapes aval)</p>
     </div>
 @endsection
 

@@ -21,7 +21,6 @@ use App\Models\Programme;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Service;
-use App\Models\Structuration\Exploitant;
 use App\Models\Tier;
 use App\Models\User;
 use Illuminate\Http\Request;

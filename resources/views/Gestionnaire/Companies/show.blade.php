@@ -1,5 +1,169 @@
 @extends('Layouts.gestionnaire')
 
+@push('styles')
+<style>
+.relation-questionnaire {
+    --accent-color: #88b824;
+    --accent-color-dark: #6f9a1d;
+    --accent-soft: rgba(136, 184, 36, 0.10);
+}
+
+.relation-questionnaire-summary {
+    border: 1px solid rgba(136, 184, 36, 0.16);
+    background: linear-gradient(135deg, rgba(136, 184, 36, 0.12), rgba(255, 255, 255, 0.94));
+}
+
+.relation-questionnaire-progress {
+    height: 0.55rem;
+    border-radius: 999px;
+    background: #e9eef5;
+    overflow: hidden;
+}
+
+.relation-questionnaire-progress-bar {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark));
+}
+
+.relation-questionnaire-shell {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.relation-questionnaire-sidebar {
+    background: #f8fafc;
+    border-right: 1px solid #e5e7eb;
+}
+
+.relation-questionnaire-sidebar-header {
+    padding: 1rem 1rem 0.5rem;
+}
+
+.relation-questionnaire-nav {
+    padding: 0 0.75rem 1rem;
+}
+
+.relation-questionnaire-nav .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 0.85rem;
+    color: #334155;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.relation-questionnaire-nav .nav-link:hover {
+    border-color: #d9e2ec;
+    background: #fff;
+}
+
+.relation-questionnaire-nav .nav-link.active {
+    color: #17310b;
+    border-color: rgba(136, 184, 36, 0.28);
+    background: rgba(136, 184, 36, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(136, 184, 36, 0.08);
+}
+
+.relation-questionnaire-nav-label {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.relation-questionnaire-nav-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 999px;
+    background: #e9eef5;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-index {
+    color: #fff;
+    background: var(--accent-color);
+}
+
+.relation-questionnaire-nav-title {
+    min-width: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: left;
+}
+
+.relation-questionnaire-nav-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.1rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #fff;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-count {
+    color: #4e6d14;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.relation-questionnaire-pane {
+    padding: 1.5rem;
+}
+
+.relation-questionnaire-question-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.relation-questionnaire-question-card + .relation-questionnaire-question-card {
+    margin-top: 1rem;
+}
+
+.relation-questionnaire-question-label {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.35rem;
+}
+
+.relation-questionnaire-question-meta {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+@media (max-width: 991.98px) {
+    .relation-questionnaire-sidebar {
+        border-right: 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .relation-questionnaire-pane {
+        padding: 1rem;
+    }
+}
+</style>
+@endpush
+
 @section('title', $item->name)
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
@@ -18,15 +182,16 @@
     <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#"><i class="demo-psi-add me-2"></i>Ajouter un appui</a></li>
         <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#"><i class="demo-psi-file me-2"></i>Ajouter une pièce</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Checklist pièces exigibles</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Questionnaire de mise en relation</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#"><i class="demo-psi-affiliate me-2"></i>Affecter à un programme</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Modifier les informations</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.evaluation-profile.show', $item) }}"><i class="demo-psi-bar-chart me-2"></i>Profil ESG</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
     </ul>
 </div>
 @endsection
@@ -248,117 +413,143 @@
                                 </tbody>
                             </table>
                        </div>
-                       <div id="_tab3" class="tab-pane fade table-responsive" role="tabpanel" aria-labelledby="contact-tab">
-                            <fieldset class="mt-4">
-                                <legend>LISTES DES TIERS PERSONNE PHYSIQUE</legend>
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>NOM</th>
-                                            <th>NIU</th>
-                                            <th>EMAIL</th>
-                                            <th>TELEPHONE</th>
-                                            <th>ADRESSE</th>
-                                            <th>LIEN</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($item->tiers->where('person_id','!=',0) as $tier)
-                                            <tr>
-                                                <th>{{ $tier->person->name }}</th>
-                                                <td>{{ $tier->person->niu }}</td>
-                                                <td>{{ $tier->person->email }}</td>
-                                                <td>{{ $tier->person->phone }}</td>
-                                                <td>{{ $tier->person->address }}</td>
-                                                <th>{{ $tier->lien }}</th>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </fieldset>
-
-                            <fieldset class="mt-4">
-                                <legend>LISTES DES TIERS PERSONNE MORALE</legend>
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>DESIGNATION</th>
-                                            <th>EMAIL</th>
-                                            <th>TELEPHONE</th>
-                                            <th>PRODUIT/SERVICE</th>
-                                            <th>MANAGER</th>
-                                            <th>LIEN</th>
-                                            <th>I/E</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($item->tiers->where('company_id','!=',0) as $tier)
-                                            <tr>
-                                                <th>{{ $tier->company->name }}</th>
-                                                <td>{{ $tier->company->email }}</td>
-                                                <td>{{ $tier->company->phone }}</td>
-                                                <td>{{ $tier->company->produit?->name ?? '—' }}</td>
-                                                <td>{{ $tier->company->manager }}</td>
-                                                <th>{{ $tier->lien }}</th>
-                                                <td><span class="badge bg-{{ $tier->company->prospect?'danger':'success' }}">{{ $tier->company->prospect?'E':'I' }}</span></td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </fieldset>
-
+                       <div id="_tab3" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
+                            <div class="mt-3">
+                                @include('Gestionnaire.Companies.partials.tiers_section', ['item' => $item])
+                            </div>
                        </div>
                        <div id="_tab4" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>RESULTATS DU QUESTIONNAIRE DE MISE EN RELATION</h5>
+                            @php
+                                $totalQuestionnaireItems = $mr->sum(fn ($result) => collect($result['items'])->sum(fn ($group) => $group['items']->count()));
+                                $answeredQuestionnaireItems = $totalQuestionnaireItems;
+                                $questionnaireCompletionRate = $totalQuestionnaireItems > 0 ? 100 : 0;
+                            @endphp
 
-                            <div class="accordion accordion-flush" id="_dm-flushAccordion">
-                                @foreach ($mr as $r)
-                                <div class="accordion-item">
-                                    <div class="accordion-header" id="_p_acc_{{ $r['critere']->id }}">
-                                       <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#_acc_{{ $r['critere']->id }}" aria-expanded="false" aria-controls="_dm-flushAccCollapseOne">
-                                         {{ $r['critere']->name }}
-                                       </button>
-                                    </div>
-                                    <div id="_acc_{{ $r['critere']->id }}" class="accordion-collapse collapse" aria-labelledby="_acc_{{ $r['critere']->id }}" data-bs-parent="#_dm-flushAccordion" style="">
-                                            <div class="accordion-body">
-                                                <div class="tab-base tab-vertical d-flex">
-                                                    <!-- Nav tabs -->
-                                                    <ul class="nav nav-tabs" style="max-height: 60vh; overflow: scroll; width: 300px;" role="tablist">
-                                                        @foreach($r['items'] as $it)
-                                                        <li class="nav-item" role="presentation">
-                                                            <button class="nav-link {{ $loop->index==0?'active':'' }}" data-bs-toggle="tab" data-bs-target="#_vtab_{{ $it['sous_critere']->id }}" type="button" role="tab" aria-controls="tab_{{ $it['sous_critere']->id }}" aria-selected="true">{{ $it['sous_critere']->name }}</button>
-                                                        </li>
-                                                        @endforeach
-                                                    </ul>
-                                                    <!-- Tabs content -->
-                                                    <div class="tab-content flex-fill">
-                                                        @foreach($r['items'] as $it)
-                                                            <div id="_vtab_{{ $it['sous_critere']->id }}" class="tab-pane fade {{ $loop->index==0?'show active':'' }}" role="tabpanel" aria-labelledby="v{{ $it['sous_critere']->id }}-tab">
-                                                                <table class="table table-sm table-striped">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th>Question</th>
-                                                                            <th></th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        @foreach ($it['items'] as $rep)
-                                                                            <tr>
-                                                                                <td>{{ $rep->question->name }}</td>
-                                                                                <td>{{ $rep->choice?->name }}</td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        @endforeach
+                            <div class="relation-questionnaire">
+                                <div class="card relation-questionnaire-summary border-0 shadow-sm mb-4">
+                                    <div class="card-body p-4">
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-lg-7">
+                                                <p class="text-uppercase text-muted small fw-semibold mb-2">Questionnaire de mise en relation</p>
+                                                <h5 class="mb-2">Résultats du questionnaire renseigné</h5>
+                                                <p class="text-body-secondary mb-0">Consultez les réponses enregistrées par critère et par sous-critère.</p>
+                                            </div>
+                                            <div class="col-lg-5">
+                                                <div class="row g-3">
+                                                    <div class="col-4">
+                                                        <div class="d-flex flex-column gap-1">
+                                                            <span class="text-muted small">Critères</span>
+                                                            <strong class="fs-4">{{ $mr->count() }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="d-flex flex-column gap-1">
+                                                            <span class="text-muted small">Réponses</span>
+                                                            <strong class="fs-4">{{ $answeredQuestionnaireItems }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <div class="d-flex flex-column gap-1">
+                                                            <span class="text-muted small">Complétion</span>
+                                                            <strong class="fs-4">{{ $questionnaireCompletionRate }}%</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <div class="relation-questionnaire-progress">
+                                                        <div class="relation-questionnaire-progress-bar" style="width: {{ $questionnaireCompletionRate }}%;"></div>
                                                     </div>
                                                 </div>
                                             </div>
-                                       </div>
+                                        </div>
                                     </div>
-                                @endforeach
-                             </div>
+                                </div>
+
+                                @if($mr->isEmpty())
+                                    <div class="alert alert-light border mb-0">Aucune réponse enregistrée pour le moment.</div>
+                                @else
+                                    <div class="relation-questionnaire-shell">
+                                        <div class="row g-0">
+                                            <div class="col-lg-4 col-xl-3 relation-questionnaire-sidebar">
+                                                <div class="relation-questionnaire-sidebar-header">
+                                                    <h6 class="text-muted text-uppercase small mb-1">Critères</h6>
+                                                    <p class="text-body-secondary small mb-0">Navigation par critère du questionnaire.</p>
+                                                </div>
+                                                <div class="relation-questionnaire-nav">
+                                                    <ul class="nav flex-column border-0" role="tablist">
+                                                        @foreach ($mr as $r)
+                                                            @php
+                                                                $criterionTotal = collect($r['items'])->sum(fn ($group) => $group['items']->count());
+                                                            @endphp
+                                                            <li class="nav-item" role="presentation">
+                                                                <button class="nav-link {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#show-questionnaire-critere-{{ $loop->index }}" type="button" role="tab">
+                                                                    <span class="relation-questionnaire-nav-label">
+                                                                        <span class="relation-questionnaire-nav-index">{{ $loop->iteration }}</span>
+                                                                        <span class="relation-questionnaire-nav-title">{{ $r['critere']?->name ?? 'Critère' }}</span>
+                                                                    </span>
+                                                                    <span class="relation-questionnaire-nav-count">{{ $criterionTotal }}</span>
+                                                                </button>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-8 col-xl-9">
+                                                <div class="tab-content relation-questionnaire-pane">
+                                                    @foreach ($mr as $r)
+                                                        <div id="show-questionnaire-critere-{{ $loop->index }}" class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" role="tabpanel">
+                                                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+                                                                <div>
+                                                                    <p class="text-uppercase text-muted small fw-semibold mb-1">Critère {{ $loop->iteration }}</p>
+                                                                    <h5 class="fw-semibold mb-1 text-success">{{ $r['critere']?->name ?? 'Critère' }}</h5>
+                                                                    <p class="text-body-secondary mb-0">Visualisation des réponses enregistrées pour ce critère.</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="tab-base tab-vertical">
+                                                                <div class="row g-0">
+                                                                    <div class="col-md-4 col-lg-4">
+                                                                        <div class="border-end bg-light h-100">
+                                                                            <div class="p-3">
+                                                                                <h6 class="text-muted text-uppercase small mb-3">Sous-critères</h6>
+                                                                                <ul class="nav nav-tabs flex-column border-0" role="tablist">
+                                                                                    @foreach($r['items'] as $it)
+                                                                                        <li class="nav-item" role="presentation">
+                                                                                            <button class="nav-link text-start rounded {{ $loop->first ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#show-questionnaire-sc-{{ $loop->parent->index }}-{{ $loop->index }}" type="button" role="tab">
+                                                                                                {{ $it['sous_critere']?->name ?? 'Sous-critère' }}
+                                                                                            </button>
+                                                                                        </li>
+                                                                                    @endforeach
+                                                                                </ul>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-8 col-lg-8">
+                                                                        <div class="tab-content p-4" style="min-height: 24rem;">
+                                                                            @foreach($r['items'] as $it)
+                                                                                <div id="show-questionnaire-sc-{{ $loop->parent->index }}-{{ $loop->index }}" class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" role="tabpanel">
+                                                                                    <h6 class="fw-semibold mb-3 text-success">{{ $it['sous_critere']?->name ?? 'Sous-critère' }}</h6>
+                                                                                    @foreach ($it['items'] as $rep)
+                                                                                        <div class="relation-questionnaire-question-card">
+                                                                                            <div class="relation-questionnaire-question-label">{{ $rep->question->name }}</div>
+                                                                                            <div class="relation-questionnaire-question-meta">{{ $rep->choice?->name ?? '—' }}</div>
+                                                                                        </div>
+                                                                                    @endforeach
+                                                                                </div>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                        </div>
 
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
@@ -395,7 +586,62 @@
                             </table>
                        </div>
                        <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="fichier-tab">
+                        <div class="card border-0 bg-light-subtle mb-4">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h5 class="fw-semibold mb-1">Checklist des pieces exigibles</h5>
+                                        <p class="text-body-secondary mb-0">Visualisation des pieces fournies et de celles encore attendues.</p>
+                                    </div>
+                                    <a href="{{ route('gestionnaire.entreprises.pieces-exigibles.index', $item->token) }}" class="btn btn-sm btn-outline-primary">
+                                        Gerer les pieces exigibles
+                                    </a>
+                                </div>
 
+                                @if($checklist->isEmpty())
+                                    <p class="text-body-secondary mb-0">Aucune piece exigible parametree.</p>
+                                @else
+                                    <div class="row g-3">
+                                        @foreach ($checklist as $row)
+                                            @php
+                                                $definition = $row['definition'];
+                                                $entreprisePiece = $row['entreprise_piece'];
+                                            @endphp
+                                            <div class="col-md-6">
+                                                <div class="border rounded-3 bg-white p-3 h-100">
+                                                    <div class="form-check d-flex align-items-start gap-3 mb-0">
+                                                        <input class="form-check-input mt-1" type="checkbox" disabled {{ $row['fourni'] ? 'checked' : '' }}>
+                                                        <div class="flex-grow-1">
+                                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                                <label class="form-check-label fw-semibold text-dark mb-0">{{ $definition->label }}</label>
+                                                                <span class="badge bg-{{ $row['fourni'] ? 'success' : 'secondary' }}">
+                                                                    {{ $row['fourni'] ? 'Fourni' : 'Non fourni' }}
+                                                                </span>
+                                                            </div>
+                                                            @if($definition->description)
+                                                                <small class="text-body-secondary d-block mt-1">{{ $definition->description }}</small>
+                                                            @endif
+                                                            @if($row['fourni'])
+                                                                <div class="mt-2 small text-body-secondary">
+                                                                    @if($entreprisePiece?->provided_at)
+                                                                        <div>Fourni le {{ \Carbon\Carbon::parse($entreprisePiece->provided_at)->format('d/m/Y H:i') }}</div>
+                                                                    @endif
+                                                                    @if($entreprisePiece?->fichier?->path)
+                                                                        <a href="{{ $entreprisePiece->fichier->path }}" target="_blank" class="btn btn-link btn-sm p-0 mt-1">Consulter le document</a>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <h5 class="fw-semibold mb-3">Pieces constitutives versees au dossier</h5>
                         <div class="table-responsive">
                             <table class="table table-sm">
                                 <thead>
