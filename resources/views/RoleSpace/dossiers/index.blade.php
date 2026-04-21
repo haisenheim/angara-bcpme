@@ -1,11 +1,53 @@
-@extends('Layouts.app')
+@extends(match ($space['route'] ?? '') {
+    'respexp' => 'Layouts.respexp',
+    'juridique' => 'Layouts.juridique',
+    'analyste-juridique' => 'Layouts.analyste-juridique',
+    'reng' => 'Layouts.reng',
+    'analyste-credit' => 'Layouts.analyste-credit',
+    'analyste-risques' => 'Layouts.analyste-risques',
+    'rerx' => 'Layouts.rerx',
+    default => 'Layouts.app',
+})
 
 @section('title', 'Dossiers - '.$space['title'])
 
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Dossiers d'instruction</li>
+    </ol>
+</nav>
+@endsection
+
 @section('page-header')
     <div>
-        <h1 class="h3 mb-0">Dossiers</h1>
-        <p class="text-muted mb-0">Vue transverse des dossiers liés aux entreprises.</p>
+        <h5 class="page-title mb-0">Dossiers d'instruction</h5>
+        <p class="text-muted mb-0">
+            @if($space['route'] === 'respexp' && ($dossiersFilter ?? null) === 'a_affecter')
+                Liste des dossiers <strong>sans analyste affecté</strong> (à coter) — périmètre banque.
+            @elseif($space['route'] === 'respexp')
+                Tous les dossiers d’instruction — consultation, cotation analyste, avis de crédit et validation des engagements.
+            @elseif($space['route'] === 'juridique')
+                Dossiers transmis au pôle juridique — même présentation que pour le responsable exploitation (consultation).
+            @elseif($space['route'] === 'analyste-juridique')
+                Dossiers qui vous sont affectés par le responsable juridique.
+            @elseif($space['route'] === 'reng')
+                Dossiers transmis par le pôle juridique au responsable engagements.
+            @elseif($space['route'] === 'analyste-credit')
+                Dossiers du pôle engagements qui vous sont affectés en tant qu’analyste crédit.
+            @elseif($space['route'] === 'rerx')
+                Dossiers transmis par le responsable engagements au responsable risques.
+            @elseif($space['route'] === 'analyste-risques')
+                Dossiers du pôle risques qui vous sont affectés en tant qu’analyste risques.
+            @elseif($space['route'] === 'dg')
+                Dossiers d’instruction transmis par le responsable risques à la direction (DG).
+            @elseif($space['route'] === 'dga')
+                Dossiers d’instruction transmis par le responsable risques à la direction (DGA).
+            @else
+                Vue transverse des dossiers liés aux entreprises.
+            @endif
+        </p>
     </div>
 @endsection
 
@@ -25,6 +67,9 @@
                                 <th>Entreprise</th>
                                 <th>Programme</th>
                                 <th>Analyste</th>
+                                @if($space['route'] === 'respexp')
+                                    <th class="text-nowrap">Cotation du dossier</th>
+                                @endif
                                 <th>Gestionnaire</th>
                                 <th>État</th>
                                 <th></th>
@@ -44,7 +89,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">Aucun dossier trouvé.</td>
+                                    <td colspan="{{ $space['route'] === 'respexp' ? 7 : 6 }}" class="text-center text-muted py-4">Aucun dossier trouvé.</td>
                                 </tr>
                             @endforelse
                         </tbody>

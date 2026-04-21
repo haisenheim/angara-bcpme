@@ -1,4 +1,4 @@
-@extends('Layouts.app')
+@extends('Layouts.conformite')
 
 @section('title', 'Espace conformité')
 

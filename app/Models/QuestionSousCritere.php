@@ -15,4 +15,11 @@ class QuestionSousCritere extends Model
     public function questions(){
         return $this->hasMany('App\Models\Question','sous_critere_id');
     }
+
+    public function critere()
+    {
+        return $this->belongsTo(Instruction\Critere::class, 'critere_id');
+    }
+
+   
 }

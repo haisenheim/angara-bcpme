@@ -2,10 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Representation;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 use Symfony\Component\HttpFoundation\Response;
 
 class Regional
@@ -18,9 +16,11 @@ class Regional
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        if($user->role_id!=11){
+        $expected = (int) config('angara.role_responsable_regional', 14);
+        if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
+
         return $next($request);
     }
 }

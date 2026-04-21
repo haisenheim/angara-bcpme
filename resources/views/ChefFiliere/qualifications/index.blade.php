@@ -1,45 +1,70 @@
-@extends('Layouts.gestionnaire')
+@extends('Layouts.chef_filiere')
 
-@section('title', 'Qualifications clients')
+@section('title', 'Qualifications en attente')
+
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route('chef-filiere.dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Qualifications en attente</li>
+    </ol>
+</nav>
+@endsection
 
 @section('page-header')
-    <div>
-        <h1 class="h3 mb-0">Qualifications clients</h1>
-        <p class="text-muted mb-0">Clients validés à qualifier, orienter et soumettre pour création des dossiers d'instruction.</p>
-    </div>
+<div>
+    <h5 class="page-title mb-0">Qualifications en attente</h5>
+    <p class="text-body-secondary mb-0 mt-1 small">Clients promus dont la qualification n’est pas encore soumise au chef d’agence.</p>
+</div>
 @endsection
 
 @section('content')
-    <div class="container-fluid">
-        <div class="card shadow-sm">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Client</th>
-                            <th>Agence</th>
-                            <th>Promu client</th>
-                            <th>EER</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($items as $item)
-                            <tr>
-                                <td>{{ $item->name }}</td>
-                                <td>{{ $item->agence?->name ?? '-' }}</td>
-                                <td>{{ optional($item->promu_client_at)->format('d/m/Y H:i') ?? '-' }}</td>
-                                <td>{{ $item->dossierEntreeRelation?->statut ?? 'non initialisé' }}</td>
-                                <td><a href="{{ route('chef-filiere.qualifications.show', $item->token) }}" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">Aucun client à qualifier.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+<div class="cf-page">
+    <div class="cf-hero mb-4">
+        <h1 class="cf-hero__title">À traiter</h1>
+        <p class="cf-hero__lead">Ouvrez le dossier client depuis cette liste pour compléter la qualification et l’affectation programme.</p>
+        <div class="cf-hero__meta">
+            <span class="cf-kpi"><span class="text-muted fw-normal">Dossiers</span> <span class="cf-kpi__val">{{ $items->count() }}</span></span>
         </div>
     </div>
+
+    <div class="cf-panel">
+        <div class="cf-panel__toolbar">
+            <p class="cf-panel__toolbar-label mb-0">File d’attente</p>
+        </div>
+        <div class="cf-table-wrap">
+            <table class="table cf-table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Client</th>
+                        <th scope="col">Agence</th>
+                        <th scope="col">Promu client</th>
+                        <th scope="col">EER</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($items as $item)
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ $item->name }}</td>
+                            <td>{{ $item->agence?->name ?? '—' }}</td>
+                            <td><span class="text-nowrap">{{ optional($item->promu_client_at)->format('d/m/Y H:i') ?? '—' }}</span></td>
+                            <td><span class="badge rounded-pill bg-light text-dark border">{{ $item->dossierEntreeRelation?->statut ?? 'non initialisé' }}</span></td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ route('chef-filiere.clients.show', $item->token) }}" class="btn btn-sm btn-primary">Consulter</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="cf-empty border-0">
+                                <i class="cf-empty__icon demo-psi-check-mark" aria-hidden="true"></i>
+                                Aucune qualification en attente.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 @endsection

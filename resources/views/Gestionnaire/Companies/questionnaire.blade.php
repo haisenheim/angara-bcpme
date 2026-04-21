@@ -1,7 +1,9 @@
 @extends('Layouts.gestionnaire')
 
 @php
-    $totalQuestions = $criteres->sum(fn ($critere) => $critere->questions->count());
+    $allSousCriteres = $criteresPrincipaux->flatMap(fn ($c) => $c->questionnaireSousCriteres);
+    $totalSousCriteres = $allSousCriteres->count();
+    $totalQuestions = $allSousCriteres->sum(fn ($sc) => $sc->questions->count());
     $answeredQuestions = collect($reponses)->filter(fn ($choiceId) => (int) $choiceId !== 0)->count();
     $completionRate = $totalQuestions > 0 ? (int) round(($answeredQuestions / $totalQuestions) * 100) : 0;
     $backToLabel = $item->prospect ? 'Retour au prospect' : 'Retour au dossier';
@@ -241,6 +243,26 @@
         padding: 1rem;
     }
 }
+
+.questionnaire-by-critere {
+    border-top: 1px solid #e5e7eb;
+}
+
+.questionnaire-critere-principal + .questionnaire-critere-principal {
+    border-top: 1px solid #e5e7eb;
+}
+
+.questionnaire-cp-header {
+    border-left: 4px solid var(--accent-color);
+}
+
+.questionnaire-cp-header--2 {
+    border-left-color: #2563eb;
+}
+
+.questionnaire-cp-header--3 {
+    border-left-color: #7c3aed;
+}
 </style>
 @endpush
 
@@ -254,23 +276,29 @@
                             <div class="col-lg-6">
                                 <p class="text-uppercase text-muted small fw-semibold mb-2">Progression du questionnaire</p>
                                 <h5 class="mb-2">Complétez les réponses pour préparer la mise en relation.</h5>
-                                <p class="text-body-secondary mb-0">Chaque section correspond à un sous-critère. Vous pouvez enregistrer à tout moment.</p>
+                                <p class="text-body-secondary mb-0">Le questionnaire est structuré par <strong>critères principaux</strong>, puis par <strong>sous-critères</strong>. Vous pouvez enregistrer à tout moment.</p>
                             </div>
                             <div class="col-lg-6">
                                 <div class="row g-3">
-                                    <div class="col-4">
+                                    <div class="col-6 col-md-3">
                                         <div class="questionnaire-summary-metric">
-                                            <span class="text-muted small">Sections</span>
-                                            <span class="questionnaire-summary-value">{{ $criteres->count() }}</span>
+                                            <span class="text-muted small">Critères</span>
+                                            <span class="questionnaire-summary-value">{{ $criteresPrincipaux->count() }}</span>
                                         </div>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-6 col-md-3">
+                                        <div class="questionnaire-summary-metric">
+                                            <span class="text-muted small">Sous-critères</span>
+                                            <span class="questionnaire-summary-value">{{ $totalSousCriteres }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
                                         <div class="questionnaire-summary-metric">
                                             <span class="text-muted small">Questions</span>
                                             <span class="questionnaire-summary-value" id="questionnaire-total-count">{{ $totalQuestions }}</span>
                                         </div>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-6 col-md-3">
                                         <div class="questionnaire-summary-metric">
                                             <span class="text-muted small">Répondues</span>
                                             <span class="questionnaire-summary-value" id="questionnaire-answered-count">{{ $answeredQuestions }}</span>
@@ -303,93 +331,118 @@
                     <input type="hidden" id="id" name="id" value="{{ $item->id }}">
                     <input type="hidden" id="token" name="token" value="{{ $item->token }}">
 
-                    <div class="row g-0">
-                        <div class="col-lg-4 col-xl-3 questionnaire-sidebar">
-                            <div class="questionnaire-sidebar-header">
-                                <h6 class="text-muted text-uppercase small mb-1">Sections</h6>
-                                <p class="text-body-secondary small mb-0">Naviguez rapidement entre les sous-critères.</p>
-                            </div>
-                            <div class="questionnaire-nav">
-                                <ul class="nav flex-column border-0" role="tablist">
-                                    @foreach ($criteres as $sc)
-                                        @php
-                                            $criterionTotal = $sc->questions->count();
-                                            $criterionAnswered = $sc->questions->filter(fn ($question) => isset($reponses[$question->id]) && (int) $reponses[$question->id] !== 0)->count();
-                                        @endphp
-                                        <li class="nav-item" role="presentation">
-                                            <button
-                                                class="nav-link {{ $loop->first ? 'active' : '' }}"
-                                                data-bs-toggle="tab"
-                                                data-bs-target="#questionnaire-section-{{ $sc->id }}"
-                                                type="button"
-                                                role="tab"
-                                                data-criterion-id="{{ $sc->id }}"
-                                            >
-                                                <span class="questionnaire-nav-label">
-                                                    <span class="questionnaire-nav-index">{{ $loop->iteration }}</span>
-                                                    <span class="questionnaire-nav-title">{{ $sc->name }}</span>
-                                                </span>
-                                                <span class="questionnaire-nav-count" id="criterion-count-{{ $sc->id }}">{{ $criterionAnswered }}/{{ $criterionTotal }}</span>
-                                            </button>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="questionnaire-by-critere">
+                        @forelse ($criteresPrincipaux as $criterePrincipal)
+                            @php
+                                $sections = $criterePrincipal->questionnaireSousCriteres;
+                                $cpQuestionCount = $sections->sum(fn ($sc) => $sc->questions->count());
+                                $cpHeaderMod = $loop->iteration % 3 === 2 ? 'questionnaire-cp-header--2' : ($loop->iteration % 3 === 0 ? 'questionnaire-cp-header--3' : '');
+                            @endphp
+                            <div class="questionnaire-critere-principal">
+                                <div class="questionnaire-cp-header px-3 px-lg-4 py-3 bg-light {{ $cpHeaderMod }}">
+                                    <p class="text-uppercase text-muted small fw-semibold mb-1">Critère principal {{ $loop->iteration }} / {{ $criteresPrincipaux->count() }}</p>
+                                    <h5 class="mb-1">{{ $criterePrincipal->name }}</h5>
+                                    <p class="text-body-secondary small mb-0">{{ $sections->count() }} sous-critère(s) · {{ $cpQuestionCount }} question(s)</p>
+                                </div>
 
-                        <div class="col-lg-8 col-xl-9">
-                            <div class="tab-content questionnaire-pane">
-                                @foreach ($criteres as $sc)
-                                    @php
-                                        $criterionTotal = $sc->questions->count();
-                                        $criterionAnswered = $sc->questions->filter(fn ($question) => isset($reponses[$question->id]) && (int) $reponses[$question->id] !== 0)->count();
-                                    @endphp
-                                    <div id="questionnaire-section-{{ $sc->id }}" class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" role="tabpanel">
-                                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
-                                            <div>
-                                                <p class="text-uppercase text-muted small fw-semibold mb-1">Sous-critère {{ $loop->iteration }}</p>
-                                                <h5 class="fw-semibold mb-1 text-success">{{ $sc->name }}</h5>
-                                                <p class="text-body-secondary mb-0">Sélectionnez la réponse la plus adaptée pour chaque question.</p>
-                                            </div>
-                                            <span class="badge bg-light text-dark border px-3 py-2" id="criterion-pill-{{ $sc->id }}">{{ $criterionAnswered }} / {{ $criterionTotal }} répondues</span>
+                                <div class="row g-0">
+                                    <div class="col-lg-4 col-xl-3 questionnaire-sidebar">
+                                        <div class="questionnaire-sidebar-header">
+                                            <h6 class="text-muted text-uppercase small mb-1">Sous-critères</h6>
+                                            <p class="text-body-secondary small mb-0">Sections de ce critère — naviguez entre les blocs.</p>
                                         </div>
-
-                                        @forelse ($sc->questions as $question)
-                                            <div class="questionnaire-question-card">
-                                                <div class="row g-3 align-items-center">
-                                                    <div class="col-lg-7">
-                                                        <label for="choice_{{ $question->id }}" class="questionnaire-question-label">{{ $question->name }}</label>
-                                                        <div class="questionnaire-question-meta">
-                                                            {{ $question->choices->count() }} option(s) disponible(s)
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-lg-5">
-                                                        <select
-                                                            data-critere_id="{{ $sc->critere_id }}"
-                                                            data-sc_id="{{ $sc->id }}"
-                                                            data-question_id="{{ $question->id }}"
-                                                            data-criterion-group="{{ $sc->id }}"
-                                                            name="choice_{{ $question->id }}"
-                                                            id="choice_{{ $question->id }}"
-                                                            class="form-select choice questionnaire-choice"
+                                        <div class="questionnaire-nav">
+                                            <ul class="nav flex-column border-0" role="tablist">
+                                                @foreach ($sections as $sc)
+                                                    @php
+                                                        $criterionTotal = $sc->questions->count();
+                                                        $criterionAnswered = $sc->questions->filter(fn ($question) => isset($reponses[$question->id]) && (int) $reponses[$question->id] !== 0)->count();
+                                                        $paneId = 'questionnaire-section-cp-'.$criterePrincipal->id.'-'.$sc->id;
+                                                    @endphp
+                                                    <li class="nav-item" role="presentation">
+                                                        <button
+                                                            class="nav-link {{ $loop->parent->first && $loop->first ? 'active' : '' }}"
+                                                            data-bs-toggle="tab"
+                                                            data-bs-target="#{{ $paneId }}"
+                                                            type="button"
+                                                            role="tab"
+                                                            data-criterion-id="{{ $sc->id }}"
                                                         >
-                                                            <option value="0">Choisir une réponse...</option>
-                                                            @foreach ($question->choices as $choice)
-                                                                <option data-value="{{ $choice->value }}" value="{{ $choice->id }}" {{ ($reponses[$question->id] ?? 0) == $choice->id ? 'selected' : '' }}>
-                                                                    {{ $choice->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @empty
-                                            <div class="alert alert-light border mb-0">Aucune question configurée pour cette section.</div>
-                                        @endforelse
+                                                            <span class="questionnaire-nav-label">
+                                                                <span class="questionnaire-nav-index">{{ $loop->iteration }}</span>
+                                                                <span class="questionnaire-nav-title">{{ $sc->name }}</span>
+                                                            </span>
+                                                            <span class="questionnaire-nav-count" id="criterion-count-{{ $sc->id }}">{{ $criterionAnswered }}/{{ $criterionTotal }}</span>
+                                                        </button>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
                                     </div>
-                                @endforeach
+
+                                    <div class="col-lg-8 col-xl-9">
+                                        <div class="tab-content questionnaire-pane">
+                                            @foreach ($sections as $sc)
+                                                @php
+                                                    $criterionTotal = $sc->questions->count();
+                                                    $criterionAnswered = $sc->questions->filter(fn ($question) => isset($reponses[$question->id]) && (int) $reponses[$question->id] !== 0)->count();
+                                                    $paneId = 'questionnaire-section-cp-'.$criterePrincipal->id.'-'.$sc->id;
+                                                @endphp
+                                                <div id="{{ $paneId }}" class="tab-pane fade {{ $loop->parent->first && $loop->first ? 'show active' : '' }}" role="tabpanel">
+                                                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+                                                        <div>
+                                                            <p class="text-uppercase text-muted small fw-semibold mb-1">
+                                                                Sous-critère {{ $loop->iteration }} / {{ $sections->count() }}
+                                                            </p>
+                                                            <h5 class="fw-semibold mb-1 text-success">{{ $sc->name }}</h5>
+                                                            <p class="text-body-secondary mb-0 small">Critère : <strong>{{ $criterePrincipal->name }}</strong> — sélectionnez la réponse la plus adaptée pour chaque question.</p>
+                                                        </div>
+                                                        <span class="badge bg-light text-dark border px-3 py-2" id="criterion-pill-{{ $sc->id }}">{{ $criterionAnswered }} / {{ $criterionTotal }} répondues</span>
+                                                    </div>
+
+                                                    @forelse ($sc->questions as $question)
+                                                        <div class="questionnaire-question-card">
+                                                            <div class="row g-3 align-items-center">
+                                                                <div class="col-lg-7">
+                                                                    <label for="choice_{{ $question->id }}" class="questionnaire-question-label">{{ $question->name }}</label>
+                                                                    <div class="questionnaire-question-meta">
+                                                                        {{ $question->choices->count() }} option(s) disponible(s)
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-5">
+                                                                    <select
+                                                                        data-critere_id="{{ $sc->critere_id }}"
+                                                                        data-sc_id="{{ $sc->id }}"
+                                                                        data-question_id="{{ $question->id }}"
+                                                                        data-criterion-group="{{ $sc->id }}"
+                                                                        name="choice_{{ $question->id }}"
+                                                                        id="choice_{{ $question->id }}"
+                                                                        class="form-select choice questionnaire-choice"
+                                                                    >
+                                                                        <option value="0">Choisir une réponse...</option>
+                                                                        @foreach ($question->choices as $choice)
+                                                                            <option data-value="{{ $choice->value }}" value="{{ $choice->id }}" {{ ($reponses[$question->id] ?? 0) == $choice->id ? 'selected' : '' }}>
+                                                                                {{ $choice->name }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @empty
+                                                        <div class="alert alert-light border mb-0">Aucune question configurée pour cette section.</div>
+                                                    @endforelse
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @empty
+                            <div class="p-4 text-center text-muted">
+                                Aucun critère de questionnaire n’est configuré. Contactez l’administrateur.
+                            </div>
+                        @endforelse
                     </div>
 
                     <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3 px-4 questionnaire-footer">

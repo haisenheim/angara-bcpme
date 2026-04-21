@@ -29,6 +29,9 @@ class DossierEntreeRelation extends Model
 
     public const STATUT_INSTRUCTION_VALIDEE = 'instruction_validee';
 
+    /** Qualification validée par le chef d’agence — inscription programme possible. */
+    public const STATUT_QUALIFICATION_AGENCE_VALIDEE = 'qualification_validee_agence';
+
     protected $connection = 'central_app_mysql';
 
     protected $guarded = [];
@@ -40,6 +43,7 @@ class DossierEntreeRelation extends Model
             'qualification_completed_at' => 'datetime',
             'programmes_submitted_at' => 'datetime',
             'instruction_validated_at' => 'datetime',
+            'qualification_validated_by_agence_at' => 'datetime',
             'besoin_financement' => 'boolean',
             'besoin_accompagnement' => 'boolean',
             'besoin_structuration' => 'boolean',
@@ -74,6 +78,11 @@ class DossierEntreeRelation extends Model
     public function instructionValidatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'instruction_validated_by_user_id');
+    }
+
+    public function qualificationValidatedByAgenceUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'qualification_validated_by_agence_user_id');
     }
 
     public function programmeSelections(): HasMany

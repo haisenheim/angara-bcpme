@@ -4,23 +4,25 @@ namespace App\Http\Controllers\ChefFiliere;
 
 use App\Http\Controllers\Controller;
 use App\Models\DossierEntreeRelation;
-use App\Models\DossierEntreeRelationProgramme;
 use App\Models\Entreprise;
-use App\Models\Programme;
 use App\Services\AnalyseCritiqueService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
 class QualificationController extends Controller
 {
-    public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService)
-    {
-    }
+    public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService) {}
 
     public function index()
     {
+        $agenceId = auth()->user()->agence_id;
         $items = Entreprise::query()
+            ->where('agence_id', $agenceId)
             ->whereNotNull('promu_client_at')
+            ->where(function ($q) {
+                $q->whereDoesntHave('dossierEntreeRelation')
+                    ->orWhereHas('dossierEntreeRelation', fn ($e) => $e->whereNull('programmes_submitted_at'));
+            })
             ->with(['agence', 'dossierEntreeRelation'])
             ->orderByDesc('promu_client_at')
             ->get();
@@ -30,8 +32,14 @@ class QualificationController extends Controller
 
     public function show(string $token)
     {
+        if (! Session::get('chef_filiere_dossier_consulte_'.$token)) {
+            return redirect()->route('chef-filiere.clients.show', $token)
+                ->with('info', 'Veuillez consulter le dossier client complet avant d\'accéder à la qualification.');
+        }
+
         $item = Entreprise::query()
             ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
             ->whereNotNull('promu_client_at')
             ->with([
                 'agence',
@@ -39,24 +47,42 @@ class QualificationController extends Controller
                 'tiers.company',
                 'dossierEntreeRelation.programmeSelections.programme',
                 'programmes',
+                'promuClientUser',
+                'prospectRejectedUser',
             ])
             ->firstOrFail();
 
         $eer = $this->getOrCreateEer($item);
-        $programmes = Programme::orderBy('name')->get(['id', 'name']);
-        $checklist = $item->piecesExigiblesChecklist();
 
-        return view('ChefFiliere.qualifications.show', compact('item', 'eer', 'programmes', 'checklist'));
+        $lockedPendingCa = $eer->programmes_submitted_at && $eer->qualification_validated_by_agence_at === null;
+        $lockedAfterValidation = (bool) $eer->qualification_validated_by_agence_at;
+        $qualificationEditable = ! $lockedPendingCa && ! $lockedAfterValidation;
+
+        return view('ChefFiliere.qualifications.show', compact('item', 'eer', 'qualificationEditable', 'lockedPendingCa', 'lockedAfterValidation'));
     }
 
     public function update(Request $request, string $token)
     {
         $item = Entreprise::query()
             ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
             ->whereNotNull('promu_client_at')
             ->firstOrFail();
 
         $eer = $this->getOrCreateEer($item);
+
+        if ($eer->programmes_submitted_at && $eer->qualification_validated_by_agence_at === null) {
+            Session::flash('info', 'Qualification transmise au chef d\'agence : modification impossible en attendant la validation.');
+
+            return redirect()->route('chef-filiere.qualifications.show', $token);
+        }
+
+        if ($eer->qualification_validated_by_agence_at) {
+            Session::flash('info', 'La qualification a été validée par le chef d\'agence. Les inscriptions aux programmes se font depuis la fiche client.');
+
+            return redirect()->route('chef-filiere.clients.show', $token);
+        }
+
         $data = $request->validate([
             'analyse_strategique' => 'nullable|string|max:20000',
             'analyse_operationnelle' => 'nullable|string|max:20000',
@@ -84,56 +110,17 @@ class QualificationController extends Controller
         return redirect()->route('chef-filiere.qualifications.show', $token);
     }
 
-    public function saveProgrammes(Request $request, string $token)
-    {
-        $item = Entreprise::query()
-            ->where('token', $token)
-            ->whereNotNull('promu_client_at')
-            ->firstOrFail();
-
-        $eer = $this->getOrCreateEer($item);
-        $validated = $request->validate([
-            'programmes' => 'nullable|array',
-            'programmes.*' => 'integer|exists:programmes,id',
-            'type_appui' => 'nullable|array',
-            'type_appui.*' => 'nullable|in:financier,non_financier,mixte',
-            'programme_notes' => 'nullable|array',
-            'programme_notes.*' => 'nullable|string|max:5000',
-        ]);
-
-        $selected = collect($validated['programmes'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
-        $existing = $eer->programmeSelections()->get()->keyBy('programme_id');
-
-        foreach ($existing as $programmeId => $selection) {
-            if (! $selected->contains((int) $programmeId) && $selection->instruction_dossier_id === null) {
-                $selection->delete();
-            }
-        }
-
-        foreach ($selected as $programmeId) {
-            $selection = $existing->get($programmeId) ?? new DossierEntreeRelationProgramme([
-                'dossier_entree_relation_id' => $eer->id,
-                'programme_id' => $programmeId,
-            ]);
-            $selection->type_appui = $validated['type_appui'][$programmeId] ?? DossierEntreeRelationProgramme::TYPE_FINANCIER;
-            $selection->notes = $validated['programme_notes'][$programmeId] ?? null;
-            if (! $selection->exists) {
-                $selection->statut = DossierEntreeRelationProgramme::STATUT_PROPOSE;
-            }
-            $selection->save();
-        }
-
-        Session::flash('success', 'Affectation programme mise à jour.');
-
-        return redirect()->route('chef-filiere.qualifications.show', $token);
-    }
-
     public function submit(string $token)
     {
+        if ($r = $this->redirectIfDossierNonConsulte($token)) {
+            return $r;
+        }
+
         $item = Entreprise::query()
             ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
             ->whereNotNull('promu_client_at')
-            ->with('dossierEntreeRelation.programmeSelections')
+            ->with('dossierEntreeRelation')
             ->firstOrFail();
 
         $eer = $this->getOrCreateEer($item);
@@ -143,8 +130,8 @@ class QualificationController extends Controller
             return redirect()->route('chef-filiere.qualifications.show', $token);
         }
 
-        if ($eer->programmeSelections()->count() === 0) {
-            Session::flash('info', 'Sélectionnez au moins un programme avant soumission.');
+        if ($eer->programmes_submitted_at) {
+            Session::flash('info', 'La qualification a déjà été transmise au chef d\'agence.');
 
             return redirect()->route('chef-filiere.qualifications.show', $token);
         }
@@ -155,16 +142,20 @@ class QualificationController extends Controller
         $eer->instruction_validation_status = DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION;
         $eer->save();
 
-        $eer->programmeSelections()->each(function (DossierEntreeRelationProgramme $selection) {
-            $selection->submitted_at = now();
-            $selection->statut = DossierEntreeRelationProgramme::STATUT_SOUMIS;
-            $selection->save();
-        });
-
         $this->analyseCritiqueService->syncChefFiliereQualification($item, $eer);
-        Session::flash('success', 'Dossier client soumis au chef d\'agence pour validation et creation des dossiers d\'instruction.');
+        Session::flash('success', 'Qualification soumise au chef d\'agence pour validation. Après validation, vous pourrez inscrire le client à un programme depuis sa fiche (un programme à la fois).');
 
         return redirect()->route('chef-filiere.qualifications.show', $token);
+    }
+
+    private function redirectIfDossierNonConsulte(string $token): ?\Illuminate\Http\RedirectResponse
+    {
+        if (! Session::get('chef_filiere_dossier_consulte_'.$token)) {
+            return redirect()->route('chef-filiere.clients.show', $token)
+                ->with('info', 'Veuillez consulter le dossier client complet avant la qualification.');
+        }
+
+        return null;
     }
 
     private function getOrCreateEer(Entreprise $entreprise): DossierEntreeRelation

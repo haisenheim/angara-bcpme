@@ -22,7 +22,6 @@
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
-        <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#">Affecter à un programme</a></li>
         <li><a class="dropdown-item" href="#">Editer des information de l'entreprise</a></li>
     </ul>
  </div>
@@ -100,6 +99,10 @@
 
 @section('content')
 
+    @include('partials.entreprise-chef-agence-decision', ['item' => $item])
+
+    @include('partials.entreprise-qualification-chef-filiere', ['item' => $item, 'qualificationContext' => 'admin'])
+
     <div class="" style="margin-top: -16px;">
         <div class="card">
             <div class="card-body p-0">
@@ -132,7 +135,7 @@
                                 <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Etat des engagements</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">Programmes</button>
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">Dossiers d'instruction par programme</button>
                             </li>
                         </ul>
 
@@ -487,48 +490,6 @@
                        </div>
                     </div>
                  </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="addProgModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Affectation à un programme</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.entreprise.programme.save') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
-                            <div class="">
-                                <div class="form-group">
-                                    <label for="">Programme</label>
-                                    <select required  name="programme_id" id="programme_id" class="form-control cmp">
-                                        <option value="0">Selectionner un programme ...</option>
-                                        @foreach($programmes as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="">Analyste financier</label>
-                                    <select required  name="analyste_id" id="analyste_id" class="form-control cmp">
-                                        <option value="0">Selectionner un analyste ...</option>
-                                        @foreach($analystes as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }}-{{ $it->agence?->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
     </div>

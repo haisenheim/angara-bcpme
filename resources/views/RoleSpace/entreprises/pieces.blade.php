@@ -1,20 +1,48 @@
-@extends('Layouts.app')
+@extends(match ($space['route'] ?? '') {
+    'respexp' => 'Layouts.respexp',
+    'juridique' => 'Layouts.juridique',
+    'analyste-juridique' => 'Layouts.analyste-juridique',
+    'reng' => 'Layouts.reng',
+    'analyste-credit' => 'Layouts.analyste-credit',
+    'analyste-risques' => 'Layouts.analyste-risques',
+    'rerx' => 'Layouts.rerx',
+    default => 'Layouts.app',
+})
 
 @section('title', 'Pièces - '.$entreprise->name)
 
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">Entreprises</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}">{{ Str::limit($entreprise->name, 32) }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Pièces exigibles</li>
+    </ol>
+</nav>
+@endsection
+
+@section('actions')
+<div class="dropdown">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="demo-psi-dot-vertical me-1"></i> Actions
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}"><i class="demo-pli-arrow-left me-2"></i>Retour à l'entreprise</a></li>
+        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}"><i class="demo-pli-building me-2"></i>Liste des entreprises</a></li>
+    </ul>
+</div>
+@endsection
+
 @section('page-header')
-    <div>
-        <h1 class="h3 mb-0">Pièces de {{ $entreprise->name }}</h1>
-        <p class="text-muted mb-0">Checklist documentaire en lecture seule.</p>
-    </div>
+<div>
+    <h5 class="page-title mb-0">Pièces exigibles</h5>
+    <p class="text-body-secondary mb-0 mt-1">{{ $entreprise->name }} — checklist en lecture seule</p>
+</div>
 @endsection
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex gap-2 mb-3">
-            <a href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}" class="btn btn-sm btn-outline-secondary">Retour à l'entreprise</a>
-        </div>
-
         <div class="card shadow-sm border-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">

@@ -1,4 +1,6 @@
-@extends($role === 'juridique' ? 'Layouts.juridique' : 'Layouts.app')
+@extends($role === 'juridique' ? 'Layouts.juridique' : 'Layouts.conformite')
+
+@include('partials.entreprise-fiche-styles')
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css">
@@ -6,6 +8,8 @@
 .summernote-wrapper .note-editor.note-frame {
     border-color: #d8dee6;
     border-radius: 0.75rem;
+    /* Contexte d’empilement : la toolbar doit rester au-dessus de la zone éditable (même colonne, nœud suivant dans le DOM). */
+    isolation: isolate;
 }
 
 .summernote-wrapper .note-toolbar {
@@ -16,11 +20,51 @@
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    position: relative;
+    z-index: 5;
+}
+
+.summernote-wrapper .note-editor.note-frame .note-editing-area {
+    position: relative;
+    z-index: 1;
+}
+
+.summernote-wrapper .note-editor.note-frame .note-btn-group.open .note-dropdown-menu {
+    z-index: 20;
 }
 
 .summernote-wrapper .note-editing-area .note-editable {
     min-height: 240px;
     color: #1f2937;
+}
+
+/*
+ * reset.css impose font: inherit sur b/strong/i/em et list-style: none sur ul/ol/li :
+ * la mise en forme existe dans le HTML mais paraît « inactive ». Rétablir le rendu WYSIWYG.
+ */
+.summernote-wrapper .note-editable strong,
+.summernote-wrapper .note-editable b {
+    font-weight: 700;
+}
+
+.summernote-wrapper .note-editable em,
+.summernote-wrapper .note-editable i {
+    font-style: italic;
+}
+
+.summernote-wrapper .note-editable ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+}
+
+.summernote-wrapper .note-editable ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+}
+
+.summernote-wrapper .note-editable li {
+    display: list-item;
+    list-style: inherit;
 }
 
 .summernote-wrapper .note-editor .note-toolbar,
@@ -64,173 +108,6 @@
     display: inline-block !important;
     visibility: visible !important;
 }
-
-.relation-questionnaire {
-    --accent-color: #88b824;
-    --accent-color-dark: #6f9a1d;
-}
-
-.relation-questionnaire-summary {
-    border: 1px solid rgba(136, 184, 36, 0.16);
-    background: linear-gradient(135deg, rgba(136, 184, 36, 0.12), rgba(255, 255, 255, 0.94));
-}
-
-.relation-questionnaire-progress {
-    height: 0.55rem;
-    border-radius: 999px;
-    background: #e9eef5;
-    overflow: hidden;
-}
-
-.relation-questionnaire-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark));
-}
-
-.relation-questionnaire-shell {
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    overflow: hidden;
-}
-
-.relation-questionnaire-sidebar {
-    background: #f8fafc;
-    border-right: 1px solid #e5e7eb;
-}
-
-.relation-questionnaire-sidebar-header {
-    padding: 1rem 1rem 0.5rem;
-}
-
-.relation-questionnaire-nav {
-    padding: 0 0.75rem 1rem;
-}
-
-.relation-questionnaire-nav .nav-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    width: 100%;
-    margin-bottom: 0.5rem;
-    padding: 0.8rem 0.9rem;
-    border: 1px solid transparent;
-    border-radius: 0.85rem;
-    color: #334155;
-    background: transparent;
-    transition: all 0.2s ease;
-}
-
-.relation-questionnaire-nav .nav-link:hover {
-    border-color: #d9e2ec;
-    background: #fff;
-}
-
-.relation-questionnaire-nav .nav-link.active {
-    color: #17310b;
-    border-color: rgba(136, 184, 36, 0.28);
-    background: rgba(136, 184, 36, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(136, 184, 36, 0.08);
-}
-
-.relation-questionnaire-nav-label {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-width: 0;
-}
-
-.relation-questionnaire-nav-index {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.65rem;
-    height: 1.65rem;
-    border-radius: 999px;
-    background: #e9eef5;
-    color: #475569;
-    font-size: 0.75rem;
-    font-weight: 700;
-    flex: 0 0 auto;
-}
-
-.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-index {
-    color: #fff;
-    background: var(--accent-color);
-}
-
-.relation-questionnaire-nav-title {
-    min-width: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1.25;
-    text-align: left;
-}
-
-.relation-questionnaire-nav-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 3.1rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    background: #fff;
-    color: #64748b;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-count {
-    color: #4e6d14;
-    background: rgba(255, 255, 255, 0.72);
-}
-
-.relation-questionnaire-pane {
-    padding: 1.5rem;
-}
-
-.relation-questionnaire-question-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    padding: 1rem;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.relation-questionnaire-question-card + .relation-questionnaire-question-card {
-    margin-top: 1rem;
-}
-
-.relation-questionnaire-question-label {
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.35rem;
-}
-
-.relation-questionnaire-question-meta {
-    font-size: 0.82rem;
-    color: #64748b;
-}
-
-.rich-text-rendered {
-    color: #1f2937;
-}
-
-.rich-text-rendered p:last-child {
-    margin-bottom: 0;
-}
-
-@media (max-width: 991.98px) {
-    .relation-questionnaire-sidebar {
-        border-right: 0;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .relation-questionnaire-pane {
-        padding: 1rem;
-    }
-}
 </style>
 @endpush
 
@@ -256,6 +133,24 @@
         <div class="alert alert-info">{{ session('info') }}</div>
     @endif
 
+    @if(!empty($avisLocked) && $avisLocked)
+        <div class="alert alert-secondary border mb-4">
+            @if($item->promu_client_at)
+                <strong>Dossier clos.</strong> Ce prospect a été validé comme client par le chef d'agence
+                (<strong>{{ $item->promuClientUser?->name ?? '—' }}</strong>)
+                le {{ \Carbon\Carbon::parse($item->promu_client_at)->format('d/m/Y à H:i') }}.
+                Les avis ne peuvent plus être modifiés.
+            @elseif($item->prospect_rejected_at)
+                <strong>Dossier clos.</strong> Ce prospect a été refusé par le chef d'agence
+                (<strong>{{ $item->prospectRejectedUser?->name ?? '—' }}</strong>)
+                le {{ \Carbon\Carbon::parse($item->prospect_rejected_at)->format('d/m/Y à H:i') }}.
+                Les avis ne peuvent plus être modifiés.
+            @else
+                <strong>Dossier clos.</strong> Les avis ne peuvent plus être modifiés.
+            @endif
+        </div>
+    @endif
+
     @php
         $formatMoney = static fn ($value) => ($value !== null && $value !== '') ? number_format((float) $value, 0, ',', ' ') . ' XAF' : '—';
         $formatNumber = static fn ($value) => ($value !== null && $value !== '') ? number_format((float) $value, 0, ',', ' ') : '—';
@@ -276,7 +171,13 @@
                 <div>
                     <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                         <h4 class="mb-0">{{ $item->name }}</h4>
-                        <span class="badge bg-danger">Prospect</span>
+                        @if(!empty($avisLocked) && $avisLocked && $item->promu_client_at)
+                            <span class="badge bg-success">Validé client</span>
+                        @elseif(!empty($avisLocked) && $avisLocked && $item->prospect_rejected_at)
+                            <span class="badge bg-secondary">Refus chef d'agence</span>
+                        @else
+                            <span class="badge bg-danger">Prospect</span>
+                        @endif
                         <span class="badge bg-info">Soumis {{ $formatDateTime($item->prospect_submitted_at) }}</span>
                     </div>
                     <p class="small text-body-secondary mb-1">Le responsable {{ $role === 'juridique' ? 'juridique' : 'conformité' }} consulte l’intégralité du dossier avant avis.</p>
@@ -675,51 +576,69 @@
 
         <div class="col-12">
             @if($role === 'juridique')
-                @if($pending)
+                @if(!empty($canEditAvis) && $canEditAvis)
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white"><strong>Votre avis juridique</strong></div>
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <strong>Votre avis juridique</strong>
+                            @if($item->juridique_avis_at)
+                                <span class="badge bg-light text-dark">Dernière saisie {{ $formatDateTime($item->juridique_avis_at) }} — modifiable jusqu'à décision du chef d'agence</span>
+                            @endif
+                        </div>
                         <div class="card-body">
                             <form action="{{ route('juridique.prospects.avis', $item->token) }}" method="post">
                                 @csrf
                                 <div class="mb-3">
                                     <label for="juridique_avis" class="form-label">Avis <span class="text-danger">*</span></label>
                                     <div class="summernote-wrapper">
-                                        <textarea name="juridique_avis" id="juridique_avis" rows="8" class="form-control js-summernote-fr @error('juridique_avis') is-invalid @enderror" required>{{ old('juridique_avis') }}</textarea>
+                                        <textarea name="juridique_avis" id="juridique_avis" rows="8" class="form-control js-summernote-fr @error('juridique_avis') is-invalid @enderror" required>{!! old('juridique_avis', $item->juridique_avis ?? '') !!}</textarea>
                                     </div>
                                     @error('juridique_avis')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
-                                <button type="submit" class="btn btn-primary">Enregistrer l’avis</button>
+                                <button type="submit" class="btn btn-primary">{{ $item->juridique_avis_at ? 'Mettre à jour l’avis' : 'Enregistrer l’avis' }}</button>
+                                <a href="{{ route('juridique.prospects.index') }}" class="btn btn-outline-secondary ms-1">Retour à la liste</a>
                             </form>
                         </div>
                     </div>
                 @else
-                    <div class="alert alert-success mb-0">
-                        Avis juridique enregistré le {{ $formatDateTime($item->juridique_avis_at) }}.
-                        <a href="{{ route('juridique.prospects.index') }}" class="alert-link">Retour à la liste</a>
+                    <div class="alert alert-light border mb-0">
+                        <span class="text-body-secondary">Avis juridique figé (décision du chef d'agence).</span>
+                        @if($item->juridique_avis_at)
+                            <span class="d-block small mt-1">Enregistré le {{ $formatDateTime($item->juridique_avis_at) }}.</span>
+                        @endif
+                        <a href="{{ route('juridique.prospects.index') }}" class="alert-link d-inline-block mt-2">Retour à la liste</a>
                     </div>
                 @endif
             @else
-                @if($pending)
+                @if(!empty($canEditAvis) && $canEditAvis)
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white"><strong>Votre avis conformité</strong></div>
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <strong>Votre avis conformité</strong>
+                            @if($item->conformite_avis_at)
+                                <span class="badge bg-light text-dark">Dernière saisie {{ $formatDateTime($item->conformite_avis_at) }} — modifiable jusqu'à décision du chef d'agence</span>
+                            @endif
+                        </div>
                         <div class="card-body">
                             <form action="{{ route('conformite.prospects.avis', $item->token) }}" method="post">
                                 @csrf
                                 <div class="mb-3">
                                     <label for="conformite_avis" class="form-label">Avis <span class="text-danger">*</span></label>
                                     <div class="summernote-wrapper">
-                                        <textarea name="conformite_avis" id="conformite_avis" rows="8" class="form-control js-summernote-fr @error('conformite_avis') is-invalid @enderror" required>{{ old('conformite_avis') }}</textarea>
+                                        <textarea name="conformite_avis" id="conformite_avis" rows="8" class="form-control js-summernote-fr @error('conformite_avis') is-invalid @enderror" required>{!! old('conformite_avis', $item->conformite_avis ?? '') !!}</textarea>
                                     </div>
                                     @error('conformite_avis')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
-                                <button type="submit" class="btn btn-primary">Enregistrer l’avis</button>
+                                <button type="submit" class="btn btn-primary">{{ $item->conformite_avis_at ? 'Mettre à jour l’avis' : 'Enregistrer l’avis' }}</button>
+                                <a href="{{ route('conformite.prospects.index') }}" class="btn btn-outline-secondary ms-1">Retour à la liste</a>
                             </form>
                         </div>
                     </div>
                 @else
-                    <div class="alert alert-success mb-0">
-                        Avis conformité enregistré le {{ $formatDateTime($item->conformite_avis_at) }}.
-                        <a href="{{ route('conformite.prospects.index') }}" class="alert-link">Retour à la liste</a>
+                    <div class="alert alert-light border mb-0">
+                        <span class="text-body-secondary">Avis conformité figé (décision du chef d'agence).</span>
+                        @if($item->conformite_avis_at)
+                            <span class="d-block small mt-1">Enregistré le {{ $formatDateTime($item->conformite_avis_at) }}.</span>
+                        @endif
+                        <a href="{{ route('conformite.prospects.index') }}" class="alert-link d-inline-block mt-2">Retour à la liste</a>
                     </div>
                 @endif
             @endif
@@ -729,14 +648,15 @@
 @endsection
 
 @section('scripts')
+@if(!empty($canEditAvis) && $canEditAvis)
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>
 <script>
     jQuery(document).ready(function($) {
-        console.log('summernote loaded');
         jQuery('.js-summernote-fr').summernote({
             lang: 'fr-FR',
             height: 260,
+            dialogsInBody: true,
             placeholder: 'Saisissez votre avis...',
             toolbar: [
                 ['style', ['style']],
@@ -753,4 +673,5 @@
         });
     });
 </script>
+@endif
 @endsection

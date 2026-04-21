@@ -8,17 +8,16 @@ use App\Models\Instruction\Critere as InstructionCritere;
 use App\Models\QuestionSousCritere;
 use App\Services\AnalyseCritiqueService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
 class ProspectReviewController extends Controller
 {
-    public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService)
-    {
-    }
+    public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService) {}
 
     public function indexJuridique()
     {
-        $items = $this->pendingForJuridique()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
+        $items = $this->openProspectsQuery()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
 
         return view('Prospects.review_index', [
             'title' => 'Prospects — avis juridique',
@@ -29,57 +28,76 @@ class ProspectReviewController extends Controller
 
     public function indexConformite()
     {
-        $items = $this->pendingForConformite()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
+        $items = $this->openProspectsQuery()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
 
         return view('Prospects.review_index', [
             'title' => 'Prospects — avis conformité',
             'role' => 'conformite',
             'items' => $items,
+            'listMode' => 'open',
+        ]);
+    }
+
+    public function indexConformiteTreated()
+    {
+        $items = $this->closedProspectsQuery()->with('agence')->orderByRaw('COALESCE(promu_client_at, prospect_rejected_at) DESC')->get();
+
+        return view('Prospects.review_index', [
+            'title' => 'Dossiers traités — avis conformité',
+            'role' => 'conformite',
+            'items' => $items,
+            'listMode' => 'treated',
         ]);
     }
 
     public function showJuridique(string $token)
     {
-        $item = $this->findSubmittedProspect($token);
+        $item = $this->findProspectForReview($token);
         if (! $item) {
             abort(404);
         }
         [$item, $mr, $checklist] = $this->prepareReviewPayload($item);
+
+        $avisLocked = $item->isProspectAvisCircuitClosed();
 
         return view('Prospects.review_show', [
             'role' => 'juridique',
             'item' => $item,
             'mr' => $mr,
             'checklist' => $checklist,
-            'pending' => $item->juridique_avis_at === null,
+            'avisLocked' => $avisLocked,
+            'canEditAvis' => ! $avisLocked,
         ]);
     }
 
     public function showConformite(string $token)
     {
-        $item = $this->findSubmittedProspect($token);
+        $item = $this->findProspectForReview($token);
         if (! $item) {
             abort(404);
         }
         [$item, $mr, $checklist] = $this->prepareReviewPayload($item);
+
+        $avisLocked = $item->isProspectAvisCircuitClosed();
 
         return view('Prospects.review_show', [
             'role' => 'conformite',
             'item' => $item,
             'mr' => $mr,
             'checklist' => $checklist,
-            'pending' => $item->conformite_avis_at === null,
+            'avisLocked' => $avisLocked,
+            'canEditAvis' => ! $avisLocked,
         ]);
     }
 
     public function storeJuridique(Request $request, string $token)
     {
-        $item = $this->findSubmittedProspect($token);
+        $item = $this->findProspectForReview($token);
         if (! $item) {
             abort(404);
         }
-        if ($item->juridique_avis_at !== null) {
-            Session::flash('info', 'Un avis juridique a déjà été enregistré pour ce prospect.');
+        if ($item->isProspectAvisCircuitClosed()) {
+            Session::flash('info', 'Ce dossier est clos par le chef d\'agence : aucune modification d\'avis n\'est possible.');
 
             return redirect()->route('juridique.prospects.show', $token);
         }
@@ -96,17 +114,17 @@ class ProspectReviewController extends Controller
 
         Session::flash('success', 'Avis juridique enregistré le '.now()->format('d/m/Y à H:i').'.');
 
-        return redirect()->route('juridique.prospects.index');
+        return redirect()->route('juridique.prospects.show', $token);
     }
 
     public function storeConformite(Request $request, string $token)
     {
-        $item = $this->findSubmittedProspect($token);
+        $item = $this->findProspectForReview($token);
         if (! $item) {
             abort(404);
         }
-        if ($item->conformite_avis_at !== null) {
-            Session::flash('info', 'Un avis conformité a déjà été enregistré pour ce prospect.');
+        if ($item->isProspectAvisCircuitClosed()) {
+            Session::flash('info', 'Ce dossier est clos par le chef d\'agence : aucune modification d\'avis n\'est possible.');
 
             return redirect()->route('conformite.prospects.show', $token);
         }
@@ -123,31 +141,49 @@ class ProspectReviewController extends Controller
 
         Session::flash('success', 'Avis conformité enregistré le '.now()->format('d/m/Y à H:i').'.');
 
-        return redirect()->route('conformite.prospects.index');
+        return redirect()->route('conformite.prospects.show', $token);
     }
 
-    private function pendingForJuridique()
+    /**
+     * Prospects encore dans le circuit chef d'agence (modifiables par les deux métiers).
+     */
+    private function openProspectsQuery()
     {
         return Entreprise::query()
             ->where('prospect', true)
-            ->whereNotNull('prospect_submitted_at')
-            ->whereNull('juridique_avis_at');
+            ->whereNotNull('prospect_submitted_at');
     }
 
-    private function pendingForConformite()
+    /**
+     * Prospects dont le circuit chef d'agence est clos (promotion ou refus).
+     */
+    private function closedProspectsQuery()
     {
         return Entreprise::query()
-            ->where('prospect', true)
             ->whereNotNull('prospect_submitted_at')
-            ->whereNull('conformite_avis_at');
+            ->where(function ($q) {
+                $q->whereNotNull('promu_client_at')
+                    ->orWhereNotNull('prospect_rejected_at');
+            });
     }
 
-    private function findSubmittedProspect(string $token): ?Entreprise
+    /**
+     * Fiche consultable : circuit ouvert, ou clos (lecture seule après décision chef d'agence).
+     */
+    private function findProspectForReview(string $token): ?Entreprise
     {
-        return Entreprise::where('token', $token)
-            ->where('prospect', true)
+        $query = Entreprise::query()
+            ->where('token', $token)
             ->whereNotNull('prospect_submitted_at')
-            ->first();
+            ->where(function ($q) {
+                $q->where('prospect', true)
+                    ->orWhereNotNull('promu_client_at');
+                if (Schema::connection('central_app_mysql')->hasColumn('entreprises', 'prospect_rejected_at')) {
+                    $q->orWhereNotNull('prospect_rejected_at');
+                }
+            });
+
+        return $query->first();
     }
 
     /**
@@ -158,6 +194,8 @@ class ProspectReviewController extends Controller
         $item->load([
             'juridiqueAvisUser',
             'conformiteAvisUser',
+            'promuClientUser',
+            'prospectRejectedUser',
             'arrondissement',
             'departement',
             'region',

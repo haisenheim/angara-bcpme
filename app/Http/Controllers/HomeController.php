@@ -5,123 +5,146 @@ namespace App\Http\Controllers;
 use App\Models\Agence;
 use App\Models\Representation;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class HomeController extends ExtendedController
 {
     //
-    public function index(){
+    public function index()
+    {
         $user = auth()->user();
-        //auth()->logout();
-       //return redirect('/login');
-      // dd(auth()->user());
-        if($user){
+        // auth()->logout();
+        // return redirect('/login');
+        // dd(auth()->user());
+        if ($user) {
             $ux = User::find($user->id);
-            Session::put('user',$ux);
+            Session::put('user', $ux);
             $role_id = $user->role_id;
-           if($role_id == 1){
-            return redirect('/admin/dashboard');
-           }
-           if($role_id == 2){
-            return redirect('/pca/dashboard');
-           }
-           if($role_id == 3){
+            if ($role_id == 1) {
+                return redirect('/admin/dashboard');
+            }
+            if ($role_id == 2) {
+                return redirect('/pca/dashboard');
+            }
+            if ($role_id == 3) {
                 return redirect('/administrateur/dashboard');
             }
-           if($role_id == 4){
+            if ($role_id == 4) {
                 return redirect('/dg/dashboard');
             }
-           if($role_id == 5){
+            if ($role_id == 5) {
                 return redirect('/dga/dashboard');
             }
-           if($role_id == 6){
+            if ($role_id == config('angara.role_responsable_exploitation', 6)) {
                 return redirect('/respexp/dashboard');
             }
-           if($role_id == 7){
-                return redirect('/auditeur/dashboard');
+            if ($role_id == config('angara.role_responsable_audit_interne', 7)) {
+                return redirect('/respaud/dashboard');
             }
-           if($role_id == 8){
-                return redirect('/controleur/dashboard');
+            if ($role_id == config('angara.role_responsable_controle_interne', 8)) {
+                return redirect('/respci/dashboard');
             }
-           if($role_id == 9){
-                return redirect('/reri/dashboard');
+            if ($role_id == config('angara.role_responsable_engagements', 9)) {
+                return redirect('/reng/dashboard');
             }
-           if($role_id == config('angara.role_responsable_juridique')){
+            if ($role_id == config('angara.role_responsable_juridique')) {
                 return redirect('/juridique/dashboard');
             }
-           if($role_id == 11){
+            if ($role_id == config('angara.role_responsable_conformite', 11)) {
+                return redirect('/conformite/dashboard');
+            }
+            if ($role_id == config('angara.role_responsable_risques', 12)) {
+                return redirect('/rerx/dashboard');
+            }
+            if ($role_id == config('angara.role_responsable_regional', 14)) {
                 $region = Representation::find($user->representation_id);
-                Session::put('region',$region);
+                Session::put('region', $region);
+
                 return redirect('/regional/dashboard');
-           }
-           if($role_id == 12){
-            $agence = Agence::find($user->agence_id);
-            Session::put('agence',$agence);
-            return redirect('/chef-agence/dashboard');
-           }
-           if($role_id == 13){
-            $agence = Agence::find($user->agence_id);
-            Session::put('agence',$agence);
-            return redirect('/gestionnaire/dashboard');
-           }
-           if($role_id == 14){
-            $agence = Agence::find($user->agence_id);
-            Session::put('agence',$agence);
-            return redirect('/analyste/dashboard');
-           }
+            }
+            if ($role_id == config('angara.role_chef_agence', 15)) {
+                $agence = Agence::find($user->agence_id);
+                Session::put('agence', $agence);
 
-           $roleAnalysteCredit = (int) config('angara.role_analyste_credit', 0);
-           $roleConformite = (int) config('angara.role_responsable_conformite', 0);
-           if($roleAnalysteCredit > 0 && $roleAnalysteCredit !== $roleConformite && $role_id == $roleAnalysteCredit){
-                return redirect('/analyste-credit/dashboard');
-           }
+                return redirect()->route('ca.dashboard');
+            }
+            if ($role_id == config('angara.role_gestionnaire', 16)) {
+                $agence = Agence::find($user->agence_id);
+                Session::put('agence', $agence);
 
-           if($role_id == config('angara.role_analyste_juridique')){
+                return redirect('/gestionnaire/dashboard');
+            }
+            if ($role_id == config('angara.role_analyste_financier', 17)) {
+                $agence = Agence::find($user->agence_id);
+                Session::put('agence', $agence);
+
+                return redirect('/analyste/dashboard');
+            }
+            if ($role_id == config('angara.role_analyste_risques', 18)) {
+                return redirect('/analyste-risques/dashboard');
+            }
+
+            if ($role_id == config('angara.role_analyste_juridique', 19)) {
                 return redirect('/analyste-juridique/dashboard');
-           }
+            }
 
-           if($role_id == config('angara.role_responsable_conformite')){
-            return redirect('/conformite/dashboard');
-           }
+            if ($role_id == config('angara.role_analyste_credit', 20)) {
+                return redirect('/analyste-credit/dashboard');
+            }
 
-           if($role_id == 19){
-            return redirect('/program/dashboard');
-           }
+            if ($role_id == config('angara.role_analyste_conformite', 21)) {
+                return redirect('/analyste-conformite/dashboard');
+            }
 
-           if($role_id == 20){
-            return redirect('/chef-filiere/dashboard');
-           }
+            if ($role_id == config('angara.role_auditeur', 22)) {
+                return redirect('/auditeur/dashboard');
+            }
 
+            if ($role_id == config('angara.role_controleur', 23)) {
+                return redirect('/controleur/dashboard');
+            }
 
-           return redirect('/login');
+            if ($role_id == config('angara.role_chef_filiere', 24)) {
+                $agence = Agence::find($user->agence_id);
+                Session::put('agence', $agence);
+
+                return redirect()->route('chef-filiere.dashboard');
+            }
+
+            return redirect('/login');
         }
     }
 
-    public function profile(){
+    public function profile()
+    {
         $user = User::find(auth()->user()->id);
-        return view('Auth.profile',compact('user'));
+
+        return view('Auth.profile', compact('user'));
     }
 
-    public function storeProfile(){
-        $user = User::where('token',request()->id)->first();
-        if($user){
+    public function storeProfile()
+    {
+        $user = User::where('token', request()->id)->first();
+        if ($user) {
             $photo = request()->photo;
-            if($photo){
-                $user->photo_uri = $this->entityImgCreate($photo,'profil',$user->token);
+            if ($photo) {
+                $user->photo_uri = $this->entityImgCreate($photo, 'profil', $user->token);
             }
             $user->name = request()->name;
             $user->password = bcrypt(request()->password);
             $user->email = request()->email;
             $user->save();
-            Session::flash('success','Mise à jour effectuée avec succès!');
+            Session::flash('success', 'Mise à jour effectuée avec succès!');
         }
+
         return back();
     }
 
-    public function logout(){
+    public function logout()
+    {
         Auth::logout();
+
         return redirect('/login');
     }
 }

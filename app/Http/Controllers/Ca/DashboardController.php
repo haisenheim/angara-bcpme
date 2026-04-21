@@ -4,17 +4,29 @@ namespace App\Http\Controllers\Ca;
 
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-
     public function index()
-	{
-		return view('Ca/dashboard');
-	}
+    {
+        $agenceId = auth()->user()->agence_id;
+
+        return view('Ca/dashboard', [
+            'workflowPendingCount' => Entreprise::query()
+                ->where('prospect', true)
+                ->whereNotNull('prospect_submitted_at')
+                ->where('agence_id', $agenceId)
+                ->count(),
+            'workflowInstructionCount' => DossierEntreeRelation::query()
+                ->where('statut', DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION)
+                ->whereNull('qualification_validated_by_agence_at')
+                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
+                ->count(),
+        ]);
+    }
 
     /**
      * Get dashboard statistics
@@ -27,7 +39,7 @@ class DashboardController extends Controller
         $dossiersEnCours = Dossier::where('agence_id', $agenceId)
             ->whereHas('indicateurs')
             ->count();
-            $users = User::where('agence_id', $agenceId)->where('active', 1)->get();
+        $users = User::where('agence_id', $agenceId)->where('active', 1)->get();
 
         $stats = [
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
@@ -36,7 +48,10 @@ class DashboardController extends Controller
             'total_entites_individuelles' => Entreprise::where('agence_id', $agenceId)->where('prospect', 0)->where('individual', 1)->count(),
 
             'total_users' => $users->count(),
-            'total_prospects' => Entreprise::where('agence_id', $agenceId)->where('prospect', 1)->count(),
+            'total_prospects' => Entreprise::where('agence_id', $agenceId)
+                ->where('prospect', 1)
+                ->whereNotNull('prospect_submitted_at')
+                ->count(),
         ];
 
         return response()->json($stats);
@@ -86,7 +101,7 @@ class DashboardController extends Controller
             ->with('role')
             ->limit(10)
             ->get()
-            ->map(function($member) {
+            ->map(function ($member) {
                 $dossierCount = 0;
                 if (in_array($member->role_id, [3, 4])) { // Gestionnaire or Analyste
                     $column = $member->role_id == 3 ? 'gestionnaire_id' : 'analyste_id';
@@ -117,8 +132,9 @@ class DashboardController extends Controller
             ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get()
-            ->map(function($dossier) {
+            ->map(function ($dossier) {
                 $status = $dossier->status;
+
                 return [
                     'id' => $dossier->id,
                     'token' => $dossier->token,
@@ -154,6 +170,7 @@ class DashboardController extends Controller
                 ->count(),
             'active_prospects' => Entreprise::where('agence_id', $agenceId)
                 ->where('prospect', 1)
+                ->whereNotNull('prospect_submitted_at')
                 ->count(),
         ];
 
@@ -187,5 +204,4 @@ class DashboardController extends Controller
 
         return response()->json($alerts);
     }
-
 }

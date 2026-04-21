@@ -2,7 +2,6 @@
 
 namespace App\Http;
 
-
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -66,27 +65,31 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
-        'admin'=> \App\Http\Middleware\Admin::class,
-        'pca'=> \App\Http\Middleware\Pca::class,
-        'adm'=> \App\Http\Middleware\Adm::class,
-        'dg'=> \App\Http\Middleware\Dg::class,
-        'dga'=> \App\Http\Middleware\Dga::class,
-        'respexp'=> \App\Http\Middleware\RespExp::class,
-        'respaud'=> \App\Http\Middleware\RespAud::class,
-        'respci'=> \App\Http\Middleware\RespCi::class,
-        'reri'=> \App\Http\Middleware\ReRi::class,
-        'reju'=> \App\Http\Middleware\ReJu::class,
-        'reconf'=> \App\Http\Middleware\ResponsableConformite::class,
-        'regional'=> \App\Http\Middleware\Regional::class,
-        'ca'=> \App\Http\Middleware\Ca::class,
-        'gestionnaire'=> \App\Http\Middleware\Gestionnaire::class,
-        'analyste'=> \App\Http\Middleware\Analyste::class,
-        'analyste.credit'=> \App\Http\Middleware\AnalysteCredit::class,
-        'analyste.juridique'=> \App\Http\Middleware\AnalysteJuridique::class,
-        'program'=> \App\Http\Middleware\Program::class,
-        'sectoriel'=> \App\Http\Middleware\Sectoriel::class,
+        'admin' => \App\Http\Middleware\Admin::class,
+        'pca' => \App\Http\Middleware\Pca::class,
+        'adm' => \App\Http\Middleware\Adm::class,
+        'dg' => \App\Http\Middleware\Dg::class,
+        'dga' => \App\Http\Middleware\Dga::class,
+        'respexp' => \App\Http\Middleware\RespExp::class,
+        'respaud' => \App\Http\Middleware\RespAud::class,
+        'respci' => \App\Http\Middleware\RespCi::class,
+        'reri' => \App\Http\Middleware\ReRi::class,
+        'reng' => \App\Http\Middleware\ReRi::class,
+        'reju' => \App\Http\Middleware\ReJu::class,
+        'reconf' => \App\Http\Middleware\ResponsableConformite::class,
+        'rerx' => \App\Http\Middleware\ResponsableRisques::class,
+        'regional' => \App\Http\Middleware\Regional::class,
+        'ca' => \App\Http\Middleware\Ca::class,
+        'gestionnaire' => \App\Http\Middleware\Gestionnaire::class,
+        'analyste' => \App\Http\Middleware\Analyste::class,
+        'analyste.risques' => \App\Http\Middleware\AnalysteRisques::class,
+        'analyste.credit' => \App\Http\Middleware\AnalysteCredit::class,
+        'analyste.juridique' => \App\Http\Middleware\AnalysteJuridique::class,
+        'analyste.conformite' => \App\Http\Middleware\AnalysteConformite::class,
         'chef.agence' => \App\Http\Middleware\Ca::class,
-        'chef.filiere' => \App\Http\Middleware\Sectoriel::class,
+        'chef.filiere' => \App\Http\Middleware\ChefFiliere::class,
+        'auditeur' => \App\Http\Middleware\Auditeur::class,
+        'controleur' => \App\Http\Middleware\Controleur::class,
 
     ];
 }

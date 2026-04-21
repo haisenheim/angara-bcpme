@@ -1,22 +1,20 @@
 @extends('Layouts.app')
 @section('top')
-<?php
-$region = \Illuminate\Support\Facades\Session::get('region');
-?>
-<div class="d-flex gap-3">
-    <div>
-        <span><span class="badge bg-white text-dark fs-6">{{ $region?->name }} </span> </span>
-    </div>
-    <div>
-        <span>Connecté  en tant que :</span>
-        <strong><span class="badge bg-white text-dark fs-6">Responsable regional</span></strong>
-    </div>
-</div>
+@php
+    $region = \Illuminate\Support\Facades\Session::get('region');
+    $primaryBadge = $region?->name ?: 'BC-PME';
+@endphp
+@include('partials.layout-role-header-top', [
+    'roleLabel' => 'Responsable régional',
+    'primaryBadge' => $primaryBadge,
+    'logoutFormId' => 'logout-form-regional',
+])
 @endsection
 @section('navigation')
  <!-- Navigation Category -->
  <?php
     $active = \Illuminate\Support\Facades\Session::get('active');
+    $r = request()->route()?->getName() ?? '';
 ?>
      <!-- Navigation Category -->
      <div class="mainnav__categoriy py-3">
@@ -93,5 +91,7 @@ $region = \Illuminate\Support\Facades\Session::get('region');
             <!-- END : Link with submenu -->
         </ul>
     </div>
+@include('partials.layout-role-nav-compte')
+@yield('modal')
     <!-- END : Navigation Category -->
 @endsection

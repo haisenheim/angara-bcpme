@@ -27,6 +27,10 @@
 
 @section('content')
 
+    @include('partials.entreprise-chef-agence-decision', ['item' => $item])
+
+    @include('partials.entreprise-qualification-chef-filiere', ['item' => $item, 'qualificationContext' => 'regional'])
+
     <div class="d-flex gap-2">
         <div style="height: 80vh; overflow: scroll;" class="card w-400px">
             <div class="card-body">

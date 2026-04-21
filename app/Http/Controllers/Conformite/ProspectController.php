@@ -12,6 +12,11 @@ class ProspectController extends ProspectReviewController
         return $this->indexConformite();
     }
 
+    public function treatedIndex()
+    {
+        return $this->indexConformiteTreated();
+    }
+
     public function show(string $token)
     {
         return $this->showConformite($token);

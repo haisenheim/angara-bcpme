@@ -6,13 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-//use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
+// use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
-   // protected $connection = 'central_app_mysql';
+    // protected $connection = 'central_app_mysql';
 
     protected $fillable = [
         'name',
@@ -30,7 +30,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-
     protected function casts(): array
     {
         return [
@@ -39,49 +38,78 @@ class User extends Authenticatable
         ];
     }
 
-    public function role(){
-        return $this->belongsTo('App\Models\Role','role_id');
+    public function role()
+    {
+        return $this->belongsTo('App\Models\Role', 'role_id');
     }
 
-    public function agence(){
+    public function agence()
+    {
         return $this->belongsTo('App\Models\Agence');
     }
 
-    public function poste(){
+    public function poste()
+    {
         return $this->belongsTo('App\Models\Poste');
     }
 
-
-    public function departement(){
+    public function departement()
+    {
         return $this->belongsTo('App\Models\Departement');
     }
 
-
-    public function getStatusAttribute(){
+    public function getStatusAttribute()
+    {
         $data = [
-            'name'=>'verrouillé',
-            'color'=>'danger'
+            'name' => 'verrouillé',
+            'color' => 'danger',
         ];
-        if($this->active){
+        if ($this->active) {
             $data = [
-                'name'=>'actif',
-                'color'=>'success'
+                'name' => 'actif',
+                'color' => 'success',
             ];
         }
 
         return $data;
     }
 
-    public function getPhotoAttribute(){
+    public function getPhotoAttribute()
+    {
         $host = request()->getSchemeAndHttpHost();
-        if($this->photo_uri){
+        if ($this->photo_uri) {
             $path = $host.'/img/'.$this->photo_uri;
-        }else{
+        } else {
             $path = $host.'/img/avatar.png';
         }
+
         return $path;
 
     }
 
+    /**
+     * Profil d’instruction des dossiers (profils.id 17) : synonymes « analyste financier »,
+     * « analyste financier d’exploitation » (AFE), « analyste » (côté instruction).
+     * Rattachement agence optionnel.
+     *
+     * @see config('angara.role_analyste_financier')
+     */
+    public function isAnalysteFinancierExploitation(): bool
+    {
+        return (int) ($this->role_id ?? 0) === (int) config('angara.role_analyste_financier', 17);
+    }
 
+    /** Équivalent à isAnalysteFinancierExploitation() — libellé métier « analyste financier ». */
+    public function isAnalysteFinancier(): bool
+    {
+        return $this->isAnalysteFinancierExploitation();
+    }
+
+    /**
+     * Même profil 17, sans rattachement agence (périmètre dossiers banque entière côté liste / dashboard analyste).
+     */
+    public function isAnalysteFinancierNational(): bool
+    {
+        return $this->isAnalysteFinancierExploitation() && $this->agence_id === null;
+    }
 }

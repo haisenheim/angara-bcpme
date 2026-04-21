@@ -1,167 +1,6 @@
 @extends('Layouts.gestionnaire')
 
-@push('styles')
-<style>
-.relation-questionnaire {
-    --accent-color: #88b824;
-    --accent-color-dark: #6f9a1d;
-}
-
-.relation-questionnaire-summary {
-    border: 1px solid rgba(136, 184, 36, 0.16);
-    background: linear-gradient(135deg, rgba(136, 184, 36, 0.12), rgba(255, 255, 255, 0.94));
-}
-
-.relation-questionnaire-progress {
-    height: 0.55rem;
-    border-radius: 999px;
-    background: #e9eef5;
-    overflow: hidden;
-}
-
-.relation-questionnaire-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark));
-}
-
-.relation-questionnaire-shell {
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    overflow: hidden;
-}
-
-.relation-questionnaire-sidebar {
-    background: #f8fafc;
-    border-right: 1px solid #e5e7eb;
-}
-
-.relation-questionnaire-sidebar-header {
-    padding: 1rem 1rem 0.5rem;
-}
-
-.relation-questionnaire-nav {
-    padding: 0 0.75rem 1rem;
-}
-
-.relation-questionnaire-nav .nav-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    width: 100%;
-    margin-bottom: 0.5rem;
-    padding: 0.8rem 0.9rem;
-    border: 1px solid transparent;
-    border-radius: 0.85rem;
-    color: #334155;
-    background: transparent;
-    transition: all 0.2s ease;
-}
-
-.relation-questionnaire-nav .nav-link:hover {
-    border-color: #d9e2ec;
-    background: #fff;
-}
-
-.relation-questionnaire-nav .nav-link.active {
-    color: #17310b;
-    border-color: rgba(136, 184, 36, 0.28);
-    background: rgba(136, 184, 36, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(136, 184, 36, 0.08);
-}
-
-.relation-questionnaire-nav-label {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-width: 0;
-}
-
-.relation-questionnaire-nav-index {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.65rem;
-    height: 1.65rem;
-    border-radius: 999px;
-    background: #e9eef5;
-    color: #475569;
-    font-size: 0.75rem;
-    font-weight: 700;
-    flex: 0 0 auto;
-}
-
-.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-index {
-    color: #fff;
-    background: var(--accent-color);
-}
-
-.relation-questionnaire-nav-title {
-    min-width: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1.25;
-    text-align: left;
-}
-
-.relation-questionnaire-nav-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 3.1rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    background: #fff;
-    color: #64748b;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.relation-questionnaire-nav .nav-link.active .relation-questionnaire-nav-count {
-    color: #4e6d14;
-    background: rgba(255, 255, 255, 0.72);
-}
-
-.relation-questionnaire-pane {
-    padding: 1.5rem;
-}
-
-.relation-questionnaire-question-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    padding: 1rem;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.relation-questionnaire-question-card + .relation-questionnaire-question-card {
-    margin-top: 1rem;
-}
-
-.relation-questionnaire-question-label {
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.35rem;
-}
-
-.relation-questionnaire-question-meta {
-    font-size: 0.82rem;
-    color: #64748b;
-}
-
-@media (max-width: 991.98px) {
-    .relation-questionnaire-sidebar {
-        border-right: 0;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .relation-questionnaire-pane {
-        padding: 1rem;
-    }
-}
-</style>
-@endpush
+@include('partials.entreprise-fiche-styles')
 
 @section('title', $item->name)
 @section('breadcrumb')
@@ -224,6 +63,8 @@
 @if(session('info'))
     <div class="alert alert-info alert-dismissible fade show">{{ session('info') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 @endif
+
+@include('partials.entreprise-chef-agence-decision', ['item' => $item])
 
 @php
     $formatMoney = static fn ($value) => ($value !== null && $value !== '') ? number_format((float) $value, 0, ',', ' ') . ' XAF' : '—';
@@ -707,7 +548,7 @@
             <div class="card-body">
                 @if($item->juridique_avis)
                     <p class="mb-2 small text-muted">{{ $item->juridiqueAvisUser?->name ?? '—' }}</p>
-                        <div class="text-body">{!! $item->juridique_avis !!}</div>
+                        <div class="text-body"><div class="rich-text-rendered"> <?php echo $item->juridique_avis; ?></div></div>
                 @else
                     <p class="text-body-secondary mb-0">Aucun avis enregistré pour l’instant.</p>
                 @endif
@@ -727,7 +568,7 @@
             <div class="card-body">
                 @if($item->conformite_avis)
                     <p class="mb-2 small text-muted">{{ $item->conformiteAvisUser?->name ?? '—' }}</p>
-                        <div class="text-body">{!! $item->conformite_avis !!}</div>
+                        <div class="text-body"> <div class="rich-text-rendered"> <?= $item->conformite_avis; ?></div></div>
                 @else
                     <p class="text-body-secondary mb-0">Aucun avis enregistré pour l’instant.</p>
                 @endif

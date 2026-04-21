@@ -1,62 +1,113 @@
-@extends('Layouts.app')
+@extends(match ($space['route'] ?? '') {
+    'respexp' => 'Layouts.respexp',
+    'juridique' => 'Layouts.juridique',
+    'analyste-juridique' => 'Layouts.analyste-juridique',
+    'reng' => 'Layouts.reng',
+    'analyste-credit' => 'Layouts.analyste-credit',
+    'analyste-risques' => 'Layouts.analyste-risques',
+    'rerx' => 'Layouts.rerx',
+    default => 'Layouts.app',
+})
 
-@section('title', $entreprise->name.' - '.$space['title'])
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/chef-filiere.css') }}">
+@endpush
 
-@section('page-header')
-    <div>
-        <h1 class="h3 mb-0">{{ $entreprise->name }}</h1>
-        <p class="text-muted mb-0">Consultation du portefeuille entreprise.</p>
+@include('partials.entreprise-fiche-styles')
+
+@section('title', $item->name.' - '.$space['title'])
+
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">Entreprises</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($item->name, 40) }}</li>
+    </ol>
+</nav>
+@endsection
+
+@section('actions')
+    <div class="dropdown">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="demo-psi-dot-vertical me-1"></i> Actions
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
+            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>
+        </ul>
     </div>
 @endsection
 
-@section('content')
-    <div class="container-fluid">
-        <div class="d-flex gap-2 mb-3">
-            <a href="{{ route($space['route'].'.entreprises.index') }}" class="btn btn-sm btn-outline-secondary">Retour aux entreprises</a>
-            <a href="{{ route($space['route'].'.entreprises.pieces', $entreprise->token) }}" class="btn btn-sm btn-outline-primary">Voir les pièces</a>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted d-block">Statut</small><strong>{{ $entreprise->prospect ? 'Prospect' : 'Client' }}</strong></div></div></div>
-            <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted d-block">Gestionnaire</small><strong>{{ $entreprise->user?->name ?? '—' }}</strong></div></div></div>
-            <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted d-block">Agence</small><strong>{{ $entreprise->agence?->name ?? '—' }}</strong></div></div></div>
-            <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><small class="text-muted d-block">Dossiers</small><strong>{{ $entreprise->dossiers->count() }}</strong></div></div></div>
-        </div>
-
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-transparent"><strong>Dossiers rattachés</strong></div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Programme</th>
-                                <th>Analyste</th>
-                                <th>Gestionnaire</th>
-                                <th>État</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($entreprise->dossiers as $dossier)
-                                <tr>
-                                    <td>{{ $dossier->programme?->name ?? '—' }}</td>
-                                    <td>{{ $dossier->analyste?->name ?? '—' }}</td>
-                                    <td>{{ $dossier->gestionnaire?->name ?? '—' }}</td>
-                                    <td>{{ $dossier->status['name'] ?? '—' }}</td>
-                                    <td class="text-end">
-                                        <a href="{{ route($space['route'].'.dossiers.show', $dossier->token) }}" class="btn btn-sm btn-primary">Voir</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">Aucun dossier rattaché.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+@section('page-header')
+<div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h5 class="page-title mb-0">{{ Str::limit($item->name, 80) }}</h5>
+        @if($item->prospect)
+            <span class="badge bg-warning text-dark">Prospect</span>
+        @else
+            <span class="badge bg-success">Client</span>
+        @endif
+        <span class="badge bg-secondary">{{ $item->taille ?? '—' }}</span>
+        <span class="badge bg-{{ $item->caractere === 'Formel' ? 'success' : 'warning' }}">{{ $item->caractere ?? '—' }}</span>
     </div>
+    <p class="text-body-secondary mb-0 mt-1">Portefeuille — {{ $item->forme?->name ?? '—' }} — {{ $item->agence?->name ?? '—' }}</p>
+</div>
+@endsection
+
+@section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>
+@endif
+@if(session('info'))
+    <div class="alert alert-info alert-dismissible fade show">{{ session('info') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button></div>
+@endif
+
+@php
+    $eer = $item->dossierEntreeRelation;
+    $qualifUrl = null;
+    $isQualifAuthor = $eer && (int) auth()->id() === (int) $eer->qualification_user_id;
+    $hasCompletedQualif = $eer && $eer->qualification_completed_at;
+    $showQualifDetail = $eer && (
+        $eer->qualification_completed_at
+        || $eer->programmes_submitted_at
+        || $eer->qualification_validated_by_agence_at
+        || in_array($eer->statut, [
+            \App\Models\DossierEntreeRelation::STATUT_QUALIFIE,
+            \App\Models\DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION,
+            \App\Models\DossierEntreeRelation::STATUT_QUALIFICATION_AGENCE_VALIDEE,
+            \App\Models\DossierEntreeRelation::STATUT_INSTRUCTION_VALIDEE,
+        ], true)
+    );
+    $qualWorkspace = match ($space['route'] ?? '') {
+        'respexp' => 'respexp',
+        'juridique' => 'juridique',
+        'analyste-juridique' => 'analyste-juridique',
+        default => 'ca',
+    };
+@endphp
+
+@include('partials.qualification-section-compact', [
+    'item' => $item,
+    'eer' => $eer,
+    'qualifUrl' => $qualifUrl,
+    'hasCompletedQualif' => $hasCompletedQualif,
+    'isQualifAuthor' => $isQualifAuthor,
+    'showQualifDetail' => $showQualifDetail,
+    'workspace' => $qualWorkspace,
+])
+
+@php
+    $ficheProgrammeRoute = \Illuminate\Support\Facades\Route::has($space['route'].'.programmes.show')
+        ? $space['route'].'.programmes.show'
+        : false;
+@endphp
+@include('partials.entreprise-fiche-client-ca-body', [
+    'item' => $item,
+    'mr' => $mr,
+    'checklist' => $checklist,
+    'dossierShowRoute' => $space['route'].'.dossiers.show',
+    'programmeShowRoute' => $ficheProgrammeRoute,
+    'tiersEntrepriseShowRoute' => $space['route'].'.entreprises.show',
+])
 @endsection

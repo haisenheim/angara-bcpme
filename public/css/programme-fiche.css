@@ -1,0 +1,101 @@
+/**
+ * Fiche programme (lecture / admin) — hiérarchie visuelle et tableaux.
+ */
+.programme-fiche-hero {
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 50%, #f1f5f9 100%);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+.programme-fiche-hero::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #0d6efd, #88b824);
+    border-radius: 0.75rem 0 0 0.75rem;
+}
+.programme-fiche-kpi {
+    border-radius: 0.65rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: 1rem 1.1rem;
+    height: 100%;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.programme-fiche-kpi__label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+.programme-fiche-kpi__val {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.programme-fiche-info-card {
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+.programme-fiche-info-card .table {
+    margin-bottom: 0;
+}
+.programme-fiche-info-card .table td:first-child {
+    width: 42%;
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+.programme-fiche-main-card {
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+.programme-fiche-tabs .nav-link {
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+.programme-fiche-tabs .nav-link.active {
+    color: #0d6efd !important;
+    border-bottom-color: #0d6efd !important;
+}
+.programme-fiche-table-wrap {
+    overflow-x: auto;
+}
+.programme-fiche-table thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    white-space: nowrap;
+}
+.programme-fiche-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 2.5rem 1rem;
+    font-size: 0.9375rem;
+}
+.programme-fiche-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.75rem;
+}
+.programme-fiche-combotree-wrap .textbox {
+    width: 100% !important;
+    max-width: 100%;
+}

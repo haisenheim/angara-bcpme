@@ -66,7 +66,7 @@
                 <div class="content__wrap">
                     @include('includes.flash-message')
                    <!-- Breadcrumb -->
-                   <div class="d-flex justify-content-between  flex-column flex-md-row align-items-center">
+                   <div class="d-flex justify-content-between flex-column flex-md-row align-items-start gap-2 gap-md-3">
                         @yield('breadcrumb')
                         @yield('actions')
                    </div>

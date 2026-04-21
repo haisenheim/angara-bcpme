@@ -15,4 +15,9 @@ class SousCritere extends Model
         return $this->hasMany(Reponse::class, 'critere_id');
     }
 
+    public function critere()
+    {
+        return $this->belongsTo(Critere::class, 'critere_id');
+    }
+
 }

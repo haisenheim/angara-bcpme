@@ -2,23 +2,21 @@
 
 namespace App\Http\Controllers\Analyste;
 
-use App\Helpers\DossierHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
-use App\Http\Resources\EngagementEntrepriseResource;
-use App\Http\Resources\EngagementResource;
-use App\Imports\DsfImport;
-use App\Models\Banque;
 use App\Models\Dossier;
-use App\Models\Instruction\Critere;
 use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Instruction\IndicateurFinancier;
+use App\Models\User;
+use App\Services\DossierInstructionShowPresenter;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
-use Maatwebsite\Excel\Facades\Excel;
 
 class DossierController extends Controller
 {
@@ -29,15 +27,66 @@ class DossierController extends Controller
         return view('/Analyste/Dossiers/index');
     }
 
-    public function fetchAll(){
+    public function fetchAll()
+    {
         $items = $this->baseQuery()->orderBy('created_at', 'DESC')->get();
         $items = DossierListResource::collection($items);
+
         return response()->json($items);
     }
 
     private function baseQuery()
     {
+        $user = auth()->user();
+        if ($user instanceof User && $user->isAnalysteFinancierNational()) {
+            return Dossier::query();
+        }
+
         return Dossier::where('analyste_id', auth()->user()->id);
+    }
+
+    private function authorizeAnalysteDossier(?Dossier $dossier): void
+    {
+        if (! $dossier) {
+            abort(404);
+        }
+        $user = auth()->user();
+        if ($user instanceof User && $user->isAnalysteFinancierNational()) {
+            return;
+        }
+        if ((int) ($dossier->analyste_id ?? 0) !== (int) auth()->id()) {
+            abort(403);
+        }
+    }
+
+    /**
+     * Soumission au responsable exploitation après instruction terminée (débloque avis / validation côté REXP).
+     */
+    public function soumettreExploitation(Dossier $dossier)
+    {
+        $this->authorizeAnalysteDossier($dossier);
+
+        if (! $dossier->analyste_id) {
+            return redirect()
+                ->back()
+                ->withErrors(['submission' => 'Le dossier doit avoir un analyste affecté avant soumission au responsable exploitation.']);
+        }
+
+        $user = auth()->user();
+        $national = $user instanceof User && $user->isAnalysteFinancierNational();
+        if (! $national && (int) $dossier->analyste_id !== (int) auth()->id()) {
+            abort(403);
+        }
+
+        if ($dossier->isInstructionSubmittedToExploitation()) {
+            return redirect()->back()->with('info', 'Ce dossier a déjà été soumis au responsable exploitation.');
+        }
+
+        $dossier->exploitation_instruction_submitted_at = now();
+        $dossier->exploitation_instruction_submitted_by_user_id = auth()->id();
+        $dossier->save();
+
+        return redirect()->back()->with('success', 'Dossier soumis au responsable exploitation pour validation.');
     }
 
     public function fetchStats(Request $request)
@@ -51,6 +100,7 @@ class DossierController extends Controller
             'avec_analyste' => (clone $query)->whereNotNull('analyste_id')->count(),
             'sans_analyste' => (clone $query)->whereNull('analyste_id')->count(),
         ];
+
         return response()->json($stats);
     }
 
@@ -71,9 +121,9 @@ class DossierController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->whereHas('entreprise', fn($e) => $e->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('programme', fn($p) => $p->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('analyste', fn($a) => $a->where('name', 'like', "%{$search}%"));
+                $q->whereHas('entreprise', fn ($e) => $e->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('programme', fn ($p) => $p->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('analyste', fn ($a) => $a->where('name', 'like', "%{$search}%"));
             });
             $recordsFiltered = $query->count();
         }
@@ -100,224 +150,194 @@ class DossierController extends Controller
 
     private function applyFilters($query, array $filters)
     {
-        if (!empty($filters['programme_id'])) $query->where('programme_id', $filters['programme_id']);
-        if (!empty($filters['analyste_id'])) $query->where('analyste_id', $filters['analyste_id']);
+        if (! empty($filters['programme_id'])) {
+            $query->where('programme_id', $filters['programme_id']);
+        }
+        if (! empty($filters['analyste_id'])) {
+            $query->where('analyste_id', $filters['analyste_id']);
+        }
+
         return $query;
     }
 
     public function fetchFilterOptions()
     {
-        $analysteId = auth()->user()->id;
         $programmes = \App\Models\Programme::orderBy('name')->get(['id', 'name']);
-        $analysteIds = Dossier::where('analyste_id', $analysteId)->whereNotNull('analyste_id')->distinct()->pluck('analyste_id');
-        $analystes = \App\Models\User::whereIn('id', $analysteIds)->get(['id', 'name']);
+        $analysteIds = $this->baseQuery()->whereNotNull('analyste_id')->distinct()->pluck('analyste_id');
+        $analystes = User::query()->whereIn('id', $analysteIds)->orderBy('name')->get(['id', 'name']);
+
         return response()->json(['programmes' => $programmes, 'analystes' => $analystes]);
     }
 
-    public function getGrilleAnalyse($token){
-        $item = Dossier::where('token',$token)->first();
-        return view('Analyste/Dossiers/analyse_critique',compact('item'));
+    public function getGrilleAnalyse($token)
+    {
+        $item = Dossier::where('token', $token)->firstOrFail();
+        $this->authorizeAnalysteDossier($item);
+
+        return view('Analyste/Dossiers/analyse_critique', compact('item'));
     }
 
-    public function setAnalyse(){
-        //dd(request()->all());
+    public function setAnalyse()
+    {
+        // dd(request()->all());
         $sequence = request('sequence');
         $content = request('content');
         $dossier_id = request('dossier_id');
+        $this->authorizeAnalysteDossier(Dossier::query()->find($dossier_id));
         $data = [];
-        if($sequence==1)
-            $data = ['donnees_generales'=>$content];
-        if($sequence==2)
-            $data = ['analyse_ensemble'=>$content];
-        if($sequence==3)
-            $data = ['analyse_financiere'=>$content];
-        if($sequence==4)
-            $data = ['appuis'=>$content];
-        if($sequence==5)
-            $data = ['analyse_risque'=>$content];
-        if($sequence==6)
-            $data = ['analyse_rentabilite'=>$content];
-        if($sequence==7)
-            $data = ['conclusions_analyste'=>$content];
+        if ($sequence == 1) {
+            $data = ['donnees_generales' => $content];
+        }
+        if ($sequence == 2) {
+            $data = ['analyse_ensemble' => $content];
+        }
+        if ($sequence == 3) {
+            $data = ['analyse_financiere' => $content];
+        }
+        if ($sequence == 4) {
+            $data = ['appuis' => $content];
+        }
+        if ($sequence == 5) {
+            $data = ['analyse_risque' => $content];
+        }
+        if ($sequence == 6) {
+            $data = ['analyse_rentabilite' => $content];
+        }
+        if ($sequence == 7) {
+            $data = ['conclusions_analyste' => $content];
+        }
 
-        //dd($data);
+        // dd($data);
 
-        Dossier::updateOrCreate(['id'=>$dossier_id],$data);
+        Dossier::updateOrCreate(['id' => $dossier_id], $data);
+
         return redirect()->back();
 
     }
 
-
-
-    public function loadDsf(Request $request){
+    public function loadDsf(Request $request)
+    {
 
         $dossier_id = $request->dossier_id;
-       // $filename = $request->file('upload')->getClientOriginalName();
-        $getfilePath  = $request->file('upload')->getRealPath();
-        $client = new Client();
-        $resp = $client->request('POST','http://localhost:8080/dossier', [
-            'multipart' => [
-                [
-                    'name'     => 'upload',
-                    'contents' => fopen($getfilePath, 'r')
-                ],
-                [
-                    'name'     => 'dossier_id',
-                    'contents' => $dossier_id,
-                ],
-                [
-                    'name'     => 'annee',
-                    'contents' => $request->annee,
-                ],
-            ],
+        $this->authorizeAnalysteDossier(Dossier::query()->find($dossier_id));
+        // $filename = $request->file('upload')->getClientOriginalName();
+        $getfilePath = $request->file('upload')->getRealPath();
+        $client = new Client;
 
-        ]);
+        $msgServiceIndisponible = 'Le service d’analyse des fichiers DSF est momentanément indisponible : le microservice chargé du traitement du fichier ne répond pas (il est probablement arrêté ou inaccessible). '
+            .'Veuillez réessayer plus tard ou contacter l’administrateur technique pour vérifier que ce service est bien démarré.';
 
-        $data = $resp->getBody()->getContents();
-        $inds = json_decode($data,true);
-        //dd($inds);
-        foreach($inds as $ind){
-            IndicateurFinancier::updateOrCreate(
-                ['dossier_id'=>$dossier_id,'annee'=>$ind['annee']],$ind
-            );
+        $msgFichierInvalide = 'Le fichier transmis ne correspond pas au format ou à la structure attendue par le service d’analyse DSF. '
+            .'Vérifiez l’extension, le modèle de classeur (feuilles, colonnes) et que les données respectent le gabarit prévu. '
+            .'Si besoin, demandez un modèle ou une procédure d’import à votre référent métier.';
+
+        $msgErreurTraitementServeur = 'Une erreur s’est produite lors du traitement du fichier sur le service d’analyse DSF (réponse du microservice). '
+            .'Ce message est distinct d’une simple coupure réseau : réessayez plus tard ou contactez l’administrateur technique si le problème persiste.';
+
+        try {
+            $resp = $client->request('POST', 'http://localhost:8080/dossier', [
+                'multipart' => [
+                    [
+                        'name' => 'upload',
+                        'contents' => fopen($getfilePath, 'r'),
+                    ],
+                    [
+                        'name' => 'dossier_id',
+                        'contents' => $dossier_id,
+                    ],
+                    [
+                        'name' => 'annee',
+                        'contents' => $request->annee,
+                    ],
+                ],
+            ]);
+
+            $data = $resp->getBody()->getContents();
+            $inds = json_decode($data, true);
+            if (! is_array($inds)) {
+                Session::flash('error', $msgFichierInvalide);
+
+                return back();
+            }
+            if ($this->dsfResponseIndiqueFichierInvalide($inds)) {
+                Session::flash('error', $msgFichierInvalide);
+
+                return back();
+            }
+            foreach ($inds as $ind) {
+                IndicateurFinancier::updateOrCreate(
+                    ['dossier_id' => $dossier_id, 'annee' => $ind['annee']], $ind
+                );
+            }
+
+            Session::flash('success', 'Enregistrement effectué avec succès!');
+        } catch (ConnectException $e) {
+            Session::flash('error', $msgServiceIndisponible);
+        } catch (RequestException $e) {
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 0;
+            if (in_array($status, [400, 406, 415, 422], true)) {
+                Session::flash('error', $msgFichierInvalide);
+            } elseif ($status === 413) {
+                Session::flash('error', 'Le fichier est trop volumineux pour être accepté par le service d’analyse. Réduisez la taille ou fractionnez les données, puis réessayez.');
+            } elseif ($status >= 500 && $status < 600) {
+                Session::flash('error', $msgErreurTraitementServeur);
+            } elseif ($status >= 400 && $status < 500) {
+                Session::flash('error', $msgFichierInvalide);
+            } else {
+                Session::flash('error', 'Le service d’analyse des fichiers DSF n’a pas pu traiter votre demande. Réessayez ou contactez l’administrateur technique.');
+            }
+        } catch (GuzzleException $e) {
+            Session::flash('error', 'Le service d’analyse des fichiers DSF n’a pas pu traiter votre demande (échange réseau interrompu ou délai dépassé). '
+                .'Vérifiez que le microservice est disponible, puis réessayez.');
         }
 
-        Session::flash('success','Enregistrement effectué avec succès!');
         return back();
-
-        //return view('Analyste/Dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
     }
 
-    private function parse($eng,$id){
-        $data = [
-            'id'=>$eng->id,
-            'name'=>$eng->name,
-            'montant'=>$eng->montant??0,
-            'encours_montant'=>$eng->encours_montant??0,
-            'encours_impaye'=>$eng->encours_impaye??0,
-            'sollicite_montant'=>$eng->sollicite_montant??0,
-            'parent_id'=>$eng->parent_id,
-            'is_title'=>$eng->is_title,
-            'is_leaf'=>$eng->is_leaf,
-            'niveau'=>$eng->niveau,
-        ];
-        if($data['is_leaf']){
-            $elts = EngagementEntreprise::where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
-            $data['encours_montant'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_montant;
-            },0);
-            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
-                return $carry + $item->sollicite_montant;
-            },0);
-            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
-                return $carry + $item->encours_impaye;
-            },0);
-            $data['elts'] = $elts;
-
-        }else{
-            $data['children'] = $eng->children->map(function($child)use($id){
-                return $this->parse($child,$id);
-            });
-            foreach($data['children'] as $child){
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-            }
+    /**
+     * Réponse JSON du microservice signalant un rejet de fichier (format / structure) plutôt qu’une liste d’indicateurs.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function dsfResponseIndiqueFichierInvalide(array $payload): bool
+    {
+        if ($payload === []) {
+            return false;
         }
-        return $data;
-    }
-
-    private function parseCriteres(Critere $critere){
-        $dsc = [];
-        $note = 0;
-        foreach($critere->souscriteres as $sc){
-            $r = $sc->reponse;
-            $ch = $r?->choice;
-            if($r){
-                $note += $r->value;
-            }
-            $dsc[] = [
-                'id'=>$sc->id,
-                'name'=>$sc->name,
-                'critereId'=>$sc->critere_id,
-                'sequence'=>$sc->sequence,
-                'default'=>$sc->default,
-                'note'=>$r?$r->note:0,
-                'reponse'=>$r?[
-                        'id'=>$r->id,
-                        'dossierId'=>$r->dossier_id,
-                        'critereId'=>$r->critere_id,
-                        'choiceId'=>$r->choice_id,
-                        'note'=>$r->note,
-                        'choice'=>[
-                            'id'=>$ch->id,
-                            'valeur'=>$ch->valeur,
-                            'note'=>$ch->note,
-                            'critereId'=>$sc->critere_id,
-                        ]
-
-                ]:[],
-            ];
+        if (array_is_list($payload)) {
+            return false;
+        }
+        if (array_key_exists('error', $payload) || array_key_exists('errors', $payload)) {
+            return true;
+        }
+        if (array_key_exists('success', $payload) && $payload['success'] === false) {
+            return true;
         }
 
-        return [
-            'id'=>$critere->id,
-            'name'=>$critere->name,
-            'note'=>$note,
-            'souscriteres'=>$dsc,
-        ];
+        return false;
     }
 
-    public function show($token){
+    public function show($token)
+    {
 
-        $item = Dossier::where('token',$token)->first();
-        $engagements = Engagement::where('parent_id',0)->get();
-        $data = [];
-        foreach($engagements as $eng){
-            $data[] = $this->parse($eng,1);
-        }
+        $item = Dossier::query()
+            ->with(['exploitationAnalysteAssignedBy', 'exploitationInstructionSubmittedBy'])
+            ->where('token', $token)
+            ->firstOrFail();
+        $this->authorizeAnalysteDossier($item);
 
-        $engagements = $data;
-
-        $criteres = Critere::all();
-        $id = $item->id;
-        $criteres = $criteres->map(function($critere)use($id){
-            //$critere->indicateurs = IndicateurFinancier::where('dossier_id',$critere->dossier_id)->where('critere_id',$critere->id)->get();
-            $critere->souscriteres = $critere->sousCriteres->map(function($souscritere)use($id){
-                $souscritere->reponse = $souscritere->reponses->where('dossier_id',$id)->first();
-                //$souscritere->reponse->choice = $souscritere->reponse->choice;
-                return $souscritere;
-            });
-            return $critere;
-        });
-
-        $criteres = $criteres->map(function($ct){
-            return $this->parseCriteres($ct);
-        });
-
-        //dd($criteres);
-
-        //$criteres = $resp['criteres'];
-
-        //dd($criteres);
-        $indicateurs = IndicateurFinancier::where('dossier_id',$item->id)->get();
-        $banques = Banque::all();
-        //dd($item->note);
-        $sme = DossierHelper::getSme($item->note); //$resp['sme'];
-
-       // dd($item['variations']);
-
-        return view('Analyste/Dossiers/show',compact('item','indicateurs','criteres','sme','banques','engagements'));
+        return view('Analyste/Dossiers/show', app(DossierInstructionShowPresenter::class)->presentForDossier($item));
     }
 
-    public function show_($token){
+    public function show_($token)
+    {
 
-        $item = Dossier::where('token',$token)->first();
+        $item = Dossier::where('token', $token)->first();
         $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$item->id);
-        dd(json_decode($resp->body(),true));
-        $resp = json_decode($resp->body(),true);
+        dd(json_decode($resp->body(), true));
+        $resp = json_decode($resp->body(), true);
         $dossier = $resp['dossier'];
-        //dd($dossier);
+        // dd($dossier);
         $entreprise = $resp['entreprise'];
         $engagements = $resp['engagements'];
         $criteres = $resp['criteres'];

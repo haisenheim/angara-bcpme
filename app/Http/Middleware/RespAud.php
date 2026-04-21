@@ -16,9 +16,11 @@ class RespAud
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        if($user->role_id!=7){
+        $expected = (int) config('angara.role_responsable_audit_interne', 7);
+        if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
+
         return $next($request);
     }
 }

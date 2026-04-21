@@ -1,225 +1,12 @@
-@once
-    @push('styles')
-    <style>
-    .tiers-section {
-        --tiers-accent: #88b824;
-        --tiers-accent-dark: #6f9a1d;
-        --tiers-accent-soft: rgba(136, 184, 36, 0.12);
-        --tiers-border: #e5e7eb;
-        --tiers-muted: #64748b;
-    }
-
-    .tiers-summary-card {
-        border: 1px solid rgba(136, 184, 36, 0.16);
-        background: linear-gradient(135deg, rgba(136, 184, 36, 0.12), rgba(255, 255, 255, 0.96));
-    }
-
-    .tiers-stat-card {
-        height: 100%;
-        padding: 1rem 1.1rem;
-        border: 1px solid var(--tiers-border);
-        border-radius: 1rem;
-        background: #fff;
-    }
-
-    .tiers-stat-label {
-        display: block;
-        margin-bottom: 0.35rem;
-        color: var(--tiers-muted);
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .tiers-stat-value {
-        font-size: 1.6rem;
-        font-weight: 700;
-        line-height: 1;
-        color: #0f172a;
-    }
-
-    .tiers-group-card {
-        height: 100%;
-        border: 1px solid var(--tiers-border);
-        border-radius: 1rem;
-        background: #fff;
-        overflow: hidden;
-    }
-
-    .tiers-group-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.1rem 1.25rem;
-        border-bottom: 1px solid var(--tiers-border);
-        background: #f8fafc;
-    }
-
-    .tiers-group-header h6 {
-        margin: 0;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .tiers-group-count {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 2rem;
-        padding: 0.3rem 0.65rem;
-        border-radius: 999px;
-        background: var(--tiers-accent-soft);
-        color: #17310b;
-        font-size: 0.85rem;
-        font-weight: 700;
-    }
-
-    .tiers-group-body {
-        padding: 1.25rem;
-    }
-
-    .tiers-list {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .tiers-item-card {
-        padding: 1rem 1.05rem;
-        border: 1px solid var(--tiers-border);
-        border-radius: 1rem;
-        background: #fff;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-    }
-
-    .tiers-item-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 0.75rem;
-        margin-bottom: 0.9rem;
-    }
-
-    .tiers-item-title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .tiers-item-card--linkable {
-        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-    }
-
-    .tiers-item-card--linkable:hover {
-        transform: translateY(-2px);
-        border-color: rgba(136, 184, 36, 0.35);
-        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-    }
-
-    .tiers-item-title-link {
-        color: inherit;
-        text-decoration: none;
-    }
-
-    .tiers-item-title-link:hover,
-    .tiers-item-title-link:focus {
-        color: var(--tiers-accent-dark);
-        text-decoration: underline;
-    }
-
-    .tiers-item-subtitle {
-        margin: 0.2rem 0 0;
-        color: var(--tiers-muted);
-        font-size: 0.9rem;
-    }
-
-    .tiers-link-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.4rem 0.75rem;
-        border-radius: 999px;
-        background: var(--tiers-accent-soft);
-        color: #17310b;
-        font-size: 0.82rem;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .tiers-item-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.8rem 1rem;
-    }
-
-    .tiers-item-meta-label {
-        display: block;
-        margin-bottom: 0.15rem;
-        color: var(--tiers-muted);
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .tiers-item-meta-value {
-        color: #0f172a;
-        font-size: 0.93rem;
-        word-break: break-word;
-    }
-
-    .tiers-comment {
-        margin-top: 0.95rem;
-        padding: 0.85rem 0.95rem;
-        border-radius: 0.85rem;
-        background: #f8fafc;
-        color: #334155;
-        font-size: 0.92rem;
-    }
-
-    .tiers-item-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        margin-top: 0.95rem;
-        padding-top: 0.95rem;
-        border-top: 1px dashed #d7dee7;
-    }
-
-    .tiers-empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.55rem;
-        padding: 1.1rem;
-        border: 1px dashed #cbd5e1;
-        border-radius: 1rem;
-        background: #f8fafc;
-        color: var(--tiers-muted);
-    }
-
-    @media (max-width: 767.98px) {
-        .tiers-item-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .tiers-group-header,
-        .tiers-item-header,
-        .tiers-item-footer {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-    }
-    </style>
-    @endpush
-@endonce
+{{-- Styles tiers : public/css/entreprise-fiche.css (chargé par partials/entreprise-fiche-styles sur les fiches show) --}}
 
 @php
     $tiersPhysiques = $item->tiers->where('person_id', '!=', 0)->values();
     $tiersMorales = $item->tiers->where('company_id', '!=', 0)->values();
     $allTiers = $tiersPhysiques->count() + $tiersMorales->count();
     $prospectTiers = $tiersMorales->filter(fn ($tier) => (bool) ($tier->company?->prospect))->count();
+    $tiersReadonly = $tiers_readonly ?? false;
+    $tiersEntrepriseShowRoute = $tiers_entreprise_show_route ?? 'gestionnaire.entreprises.show';
 @endphp
 
 <div class="tiers-section">
@@ -234,14 +21,16 @@
                         <strong>{{ $item->name }}</strong>.
                     </p>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ route('gestionnaire.entreprise.physique.create', $item->token) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="demo-psi-male me-2"></i>Ajouter un tiers personne physique
-                    </a>
-                    <a href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="demo-psi-building me-2"></i>Ajouter un tiers personne morale
-                    </a>
-                </div>
+                @unless($tiersReadonly)
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('gestionnaire.entreprise.physique.create', $item->token) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="demo-psi-male me-2"></i>Ajouter un tiers personne physique
+                        </a>
+                        <a href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="demo-psi-building me-2"></i>Ajouter un tiers personne morale
+                        </a>
+                    </div>
+                @endunless
             </div>
 
             <div class="row g-3">
@@ -347,7 +136,7 @@
                                         <div>
                                             <h6 class="tiers-item-title">
                                                 @if($tier->company?->token)
-                                                    <a href="{{ route('gestionnaire.entreprises.show', $tier->company->token) }}" class="tiers-item-title-link">
+                                                    <a href="{{ route($tiersEntrepriseShowRoute, $tier->company->token) }}" class="tiers-item-title-link">
                                                         {{ $tier->company?->name ?? 'Denomination non renseignee' }}
                                                     </a>
                                                 @else
@@ -398,7 +187,7 @@
                                     <div class="tiers-item-footer">
                                         <span class="text-body-secondary small">Fiche entreprise rattachee au reseau de {{ $item->name }}</span>
                                         @if($tier->company?->token)
-                                            <a href="{{ route('gestionnaire.entreprises.show', $tier->company->token) }}" class="btn btn-sm btn-light border">
+                                            <a href="{{ route($tiersEntrepriseShowRoute, $tier->company->token) }}" class="btn btn-sm btn-light border">
                                                 Ouvrir la fiche
                                             </a>
                                         @endif

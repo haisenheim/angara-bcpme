@@ -1,0 +1,13 @@
+Traitement Pôle Exploitation (Consultation de tous les dossiers d’instruction, Saisie pour chacun d’un avis de crédit)
+- Consultation des dossiers d’instruction en instance par le Responsable Exploitation (REXP)
+- Cotation （affectation） du dossier d’instruction à un Analyste Financier (AF)
+- Instruction dossier par un Analyste financier  (Grille de notation, État des engagements, Grille ESG, Grille d’analyse critique, Grille de scoring MOE), + Soumission dossier des engagements
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engag par le REXP
+
+Ci dessus une petite description de ce qui est attendu du responsable exploitationet de l'analyste financier
+Travail a faire :
+
+- Faire une refonte du dossier d'instruction
+- Proposer les actions a effectuer sur le dossier d'instruction
+- Implemeter ces actions.
+- Faire une refonte du layout et proposer un menu pour le responsable exploitation

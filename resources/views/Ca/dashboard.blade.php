@@ -123,6 +123,27 @@
             </div>
         </div>
 
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-primary border-opacity-25">
+                    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h6 class="mb-1 text-primary">Décision chef d'agence</h6>
+                            <p class="text-muted small mb-0">
+                                Prospects soumis à arbitrage : <strong>{{ $workflowPendingCount ?? 0 }}</strong>
+                                &nbsp;·&nbsp;
+                                Validations instruction (EER) : <strong>{{ $workflowInstructionCount ?? 0 }}</strong>
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{{ route('ca.workflow.prospects.index') }}" class="btn btn-primary btn-sm">File arbitrage prospects</a>
+                            <a href="{{ route('ca.workflow.instructions.index') }}" class="btn btn-outline-secondary btn-sm">Validations instruction</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Performance Metrics -->
         <div class="row mb-4">
             <div class="col-xl-8">

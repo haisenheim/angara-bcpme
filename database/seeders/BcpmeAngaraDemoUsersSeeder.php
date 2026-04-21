@@ -62,7 +62,7 @@ class BcpmeAngaraDemoUsersSeeder extends Seeder
             ],
             [
                 'name' => 'NGOAH Armelle',
-                'role_id' => 13,
+                'role_id' => 16,
                 'photo_uri' => null,
                 'agence_id' => 1,
                 'representation_id' => 1,
@@ -84,7 +84,7 @@ class BcpmeAngaraDemoUsersSeeder extends Seeder
             ],
             [
                 'name' => 'ELOUNDOU Francis',
-                'role_id' => 13,
+                'role_id' => 16,
                 'photo_uri' => null,
                 'agence_id' => 1,
                 'representation_id' => 1,

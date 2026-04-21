@@ -19,7 +19,8 @@ class Gestionnaire
     {
         $user = auth()->user();
         $agence = Agence::find($user->agence_id);
-        if($user->role_id!=13){
+        $expected = (int) config('angara.role_gestionnaire', 16);
+        if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
         $path = request()->getPathInfo();
@@ -41,8 +42,9 @@ class Gestionnaire
         } elseif (in_array('territoire', $parts)) {
             $active = 701;
         }
-        Session::put('active',$active);
-        Session::put('agence',$agence);
+        Session::put('active', $active);
+        Session::put('agence', $agence);
+
         return $next($request);
     }
 
@@ -54,7 +56,7 @@ class Gestionnaire
         if (in_array('programmes', $parts)) {
             return true;
         }
-        if (!in_array('programme', $parts)) {
+        if (! in_array('programme', $parts)) {
             return false;
         }
         if (in_array('entreprise', $parts) || in_array('entite', $parts) || in_array('entreprises', $parts) || in_array('entites', $parts)) {

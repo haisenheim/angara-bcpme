@@ -11,7 +11,9 @@ use Illuminate\Support\Collection;
 class Entreprise extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
+
     protected $connection = 'central_app_mysql';
 
     protected function casts(): array
@@ -21,6 +23,7 @@ class Entreprise extends Model
             'juridique_avis_at' => 'datetime',
             'conformite_avis_at' => 'datetime',
             'promu_client_at' => 'datetime',
+            'prospect_rejected_at' => 'datetime',
         ];
     }
 
@@ -29,8 +32,9 @@ class Entreprise extends Model
         return 'token';
     }
 
-    public function tiers(){
-        return $this->hasMany('App\Models\Tier','entreprise_id');
+    public function tiers()
+    {
+        return $this->hasMany('App\Models\Tier', 'entreprise_id');
     }
 
     public function engagementEntreprises(): HasMany
@@ -79,55 +83,68 @@ class Entreprise extends Model
         });
     }
 
-    public function reponses(){
-        return $this->hasMany('App\Models\QuestionAnswer','entreprise_id');
+    public function reponses()
+    {
+        return $this->hasMany('App\Models\QuestionAnswer', 'entreprise_id');
     }
 
-    public function answers(){
-        return $this->hasMany('App\Models\Instruction\Scoring\Individual\DossierChoice','dossier_id');
+    public function answers()
+    {
+        return $this->hasMany('App\Models\Instruction\Scoring\Individual\DossierChoice', 'dossier_id');
     }
 
-    public function dossiers(){
-        return $this->hasMany('App\Models\Dossier','entreprise_id');
+    public function dossiers()
+    {
+        return $this->hasMany('App\Models\Dossier', 'entreprise_id');
     }
 
-    public function fichiers(){
-        return $this->hasMany('App\Models\Fichier','entreprise_id');
+    public function fichiers()
+    {
+        return $this->hasMany('App\Models\Fichier', 'entreprise_id');
     }
 
-    public function produit(){
-        return $this->belongsTo('App\Models\Produit'); //produit principale
+    public function produit()
+    {
+        return $this->belongsTo('App\Models\Produit'); // produit principale
     }
 
-    public function produits(){
-        return $this->belongsToMany('App\Models\Produit','entreprise_produits'); //autres produits
+    public function produits()
+    {
+        return $this->belongsToMany('App\Models\Produit', 'entreprise_produits'); // autres produits
     }
 
-    public function appuis(){
-        return $this->belongsToMany('App\Models\Service','entreprise_appuis'); //autres produits
+    public function appuis()
+    {
+        return $this->belongsToMany('App\Models\Service', 'entreprise_appuis'); // autres produits
     }
 
-    public function elements(){
-        return $this->hasMany('App\Models\EntrepriseElementConstitutif','entreprise_id'); //autres produits
+    public function elements()
+    {
+        return $this->hasMany('App\Models\EntrepriseElementConstitutif', 'entreprise_id'); // autres produits
     }
 
-    public function filiere(){
+    public function filiere()
+    {
         return $this->belongsTo('App\Models\Filiere');
     }
 
-    public function branche(){
+    public function branche()
+    {
         return $this->belongsTo('App\Models\Branche');
     }
 
-    public function forme(){
+    public function forme()
+    {
         return $this->belongsTo('App\Models\Forme');
     }
 
-    public function programmes(){
-        return $this->belongsToMany('App\Models\Programme','dossiers');
+    public function programmes()
+    {
+        return $this->belongsToMany('App\Models\Programme', 'dossiers');
     }
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo('App\Models\User');
     }
 
@@ -146,11 +163,26 @@ class Entreprise extends Model
         return $this->belongsTo(User::class, 'promu_client_user_id');
     }
 
-    public function taille(){
+    public function prospectRejectedUser()
+    {
+        return $this->belongsTo(User::class, 'prospect_rejected_user_id');
+    }
+
+    /**
+     * Avis juridique / conformité figés après validation client ou refus par le chef d'agence.
+     */
+    public function isProspectAvisCircuitClosed(): bool
+    {
+        return $this->promu_client_at !== null || $this->prospect_rejected_at !== null;
+    }
+
+    public function taille()
+    {
         return $this->belongsTo('App\Models\Taille');
     }
 
-    public function representation(){
+    public function representation()
+    {
         return $this->belongsTo('App\Models\Representation');
     }
 
@@ -159,36 +191,43 @@ class Entreprise extends Model
         return $this->belongsTo('App\Models\Agence');
     }
 
-    public function region(){
+    public function region()
+    {
         return $this->belongsTo('App\Models\Region');
     }
 
-    public function departement(){
+    public function departement()
+    {
         return $this->belongsTo('App\Models\Departement');
     }
 
-    public function arrondissement(){
+    public function arrondissement()
+    {
         return $this->belongsTo('App\Models\Arrondissement');
     }
 
-    public function village(){
+    public function village()
+    {
         return $this->belongsTo('App\Models\Village');
     }
 
-    public function quartier(){
+    public function quartier()
+    {
         return $this->belongsTo('App\Models\Quartier');
     }
 
-    public function getTpersoAttribute(){
-        if($this->personnel_mixte){
+    public function getTpersoAttribute()
+    {
+        if ($this->personnel_mixte) {
             return 'mixte';
         }
-        if($this->personnel_permanent){
+        if ($this->personnel_permanent) {
             return 'permanent';
         }
-        if($this->personnel_saisonier){
+        if ($this->personnel_saisonier) {
             return 'saisonier';
         }
+
         return 'xxx';
     }
 }

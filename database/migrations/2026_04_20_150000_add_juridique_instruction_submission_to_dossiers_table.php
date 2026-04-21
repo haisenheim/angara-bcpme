@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('dossiers', function (Blueprint $table) {
+            if (! Schema::hasColumn('dossiers', 'juridique_instruction_submitted_at')) {
+                $table->timestamp('juridique_instruction_submitted_at')->nullable();
+            }
+            if (! Schema::hasColumn('dossiers', 'juridique_instruction_submitted_by_user_id')) {
+                $table->unsignedBigInteger('juridique_instruction_submitted_by_user_id')->nullable();
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('dossiers', function (Blueprint $table) {
+            foreach (['juridique_instruction_submitted_by_user_id', 'juridique_instruction_submitted_at'] as $col) {
+                if (Schema::hasColumn('dossiers', $col)) {
+                    $table->dropColumn($col);
+                }
+            }
+        });
+    }
+};

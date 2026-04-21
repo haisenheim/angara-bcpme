@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Gestionnaire;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
 use App\Models\Banque;
-use App\Models\Critere;
+use App\Models\Departement;
 use App\Models\Dossier;
 use App\Models\ElementConstitutif;
 use App\Models\Entreprise;
@@ -19,16 +18,13 @@ use App\Models\Instruction\Critere as InstructionCritere;
 use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
-use App\Models\Programme;
 use App\Models\Produit;
-use App\Models\Question;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
+use App\Models\Region;
 use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
-use App\Models\Departement;
-use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -333,10 +329,11 @@ class CompanyController extends ExtendedController
         return redirect()->route('gestionnaire.entreprises.show', $token);
     }
 
-
-    public function fetchAll(){
-        $items = $this->baseQuery()->orderBy('created_at','DESC')->get();
+    public function fetchAll()
+    {
+        $items = $this->baseQuery()->orderBy('created_at', 'DESC')->get();
         $items = EntrepriseListResource::collection($items);
+
         return response()->json($items);
     }
 
@@ -346,6 +343,7 @@ class CompanyController extends ExtendedController
     private function baseQuery()
     {
         $userId = auth()->user()->id;
+
         return Entreprise::where('prospect', 0)
             ->where(function ($q) use ($userId) {
                 $q->where('user_id', $userId)->orWhere('gestionnaire_id', $userId);
@@ -435,18 +433,19 @@ class CompanyController extends ExtendedController
 
     private function applyFilters($query, array $filters)
     {
-        if (!empty($filters['region_id'])) {
+        if (! empty($filters['region_id'])) {
             $query->where('region_id', $filters['region_id']);
         }
-        if (!empty($filters['taille'])) {
+        if (! empty($filters['taille'])) {
             $query->where('taille', $filters['taille']);
         }
-        if (!empty($filters['forme_id'])) {
+        if (! empty($filters['forme_id'])) {
             $query->where('forme_id', $filters['forme_id']);
         }
-        if (!empty($filters['caractere'])) {
+        if (! empty($filters['caractere'])) {
             $query->where('caractere', $filters['caractere']);
         }
+
         return $query;
     }
 
@@ -463,9 +462,11 @@ class CompanyController extends ExtendedController
         ]);
     }
 
-    public function fetchProspects(){
+    public function fetchProspects()
+    {
         $items = $this->prospectsQuery()->get();
         $items = EntrepriseListResource::collection($items);
+
         return response()->json($items);
     }
 
@@ -501,6 +502,7 @@ class CompanyController extends ExtendedController
                 ->groupBy('regions.id', 'regions.name')
                 ->pluck('count', 'name')->toArray(),
         ];
+
         return response()->json($stats);
     }
 
@@ -589,33 +591,34 @@ class CompanyController extends ExtendedController
         return redirect(route('gestionnaire.entreprises.index'));
     }
 
-    private function parse($eng,$id){
+    private function parse($eng, $id)
+    {
 
         $data = [
-            'id'=>$eng->id,
-            'name'=>$eng->name,
-            'montant'=>$eng->montant??0,
-            'encours_montant'=>$eng->encours_montant??0,
-            'encours_impaye'=>$eng->encours_impaye??0,
-            'sollicite_montant'=>$eng->sollicite_montant??0,
-            'variation'=>$eng->variation,
-            'parent_id'=>$eng->parent_id,
-            'is_title'=>$eng->is_title,
-            'is_leaf'=>$eng->is_leaf,
-            'niveau'=>$eng->niveau,
+            'id' => $eng->id,
+            'name' => $eng->name,
+            'montant' => $eng->montant ?? 0,
+            'encours_montant' => $eng->encours_montant ?? 0,
+            'encours_impaye' => $eng->encours_impaye ?? 0,
+            'sollicite_montant' => $eng->sollicite_montant ?? 0,
+            'variation' => $eng->variation,
+            'parent_id' => $eng->parent_id,
+            'is_title' => $eng->is_title,
+            'is_leaf' => $eng->is_leaf,
+            'niveau' => $eng->niveau,
         ];
-        if($data['is_leaf']){
-            $elts = EngagementEntreprise::with('banque')->where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
-            $data['encours_montant'] = $elts->reduce(function($carry,$item){
+        if ($data['is_leaf']) {
+            $elts = EngagementEntreprise::with('banque')->where('engagement_id', $eng->id)->where('entreprise_id', $id)->get();
+            $data['encours_montant'] = $elts->reduce(function ($carry, $item) {
                 return $carry + ($item->encours_montant ?? 0);
-            },0);
-            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
+            }, 0);
+            $data['sollicite_montant'] = $elts->reduce(function ($carry, $item) {
                 return $carry + ($item->sollicite_montant ?? 0);
-            },0);
-            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
+            }, 0);
+            $data['encours_impaye'] = $elts->reduce(function ($carry, $item) {
                 return $carry + ($item->encours_impaye ?? 0);
-            },0);
-            $data['elts'] = $elts->map(function($elt){
+            }, 0);
+            $data['elts'] = $elts->map(function ($elt) {
                 return [
                     'banque_name' => $elt->banque?->name ?? '—',
                     'encours_montant' => $elt->encours_montant ?? 0,
@@ -627,35 +630,38 @@ class CompanyController extends ExtendedController
             })->values()->toArray();
             $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
 
-        }else{
-            $data['children'] = $eng->children->map(function($child)use($id){
-                return $this->parse($child,$id);
+        } else {
+            $data['children'] = $eng->children->map(function ($child) use ($id) {
+                return $this->parse($child, $id);
             });
-            foreach($data['children'] as $child){
+            foreach ($data['children'] as $child) {
                 $data['encours_montant'] += $child['encours_montant'];
                 $data['sollicite_montant'] += $child['sollicite_montant'];
                 $data['encours_impaye'] += $child['encours_impaye'];
                 $data['variation'] += $child['variation'];
             }
         }
+
         return $data;
     }
 
-    public function getEngagementReport($token){
-        $entreprise = Entreprise::where('token',$token)->first();
-        if($entreprise){
-            $engagements = Engagement::where('parent_id',0)->get();
-             $data = [];
-             foreach($engagements as $eng){
-                 $data[] = $this->parse($eng,$entreprise->id);
-             }
-             //dd($data);
+    public function getEngagementReport($token)
+    {
+        $entreprise = Entreprise::where('token', $token)->first();
+        if ($entreprise) {
+            $engagements = Engagement::where('parent_id', 0)->get();
+            $data = [];
+            foreach ($engagements as $eng) {
+                $data[] = $this->parse($eng, $entreprise->id);
+            }
+            // dd($data);
 
             $engagements = $data;
             $banques = Banque::all();
-            //$engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
-            return view('Gestionnaire.Companies.engagement_report',compact('engagements','entreprise','banques'));
-        }else{
+
+            // $engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
+            return view('Gestionnaire.Companies.engagement_report', compact('engagements', 'entreprise', 'banques'));
+        } else {
             return back();
         }
 
@@ -667,10 +673,11 @@ class CompanyController extends ExtendedController
     public function show(string $token)
     {
         //
-        $item = Entreprise::where('token',$token)->first();
-        if(!$item){
+        $item = Entreprise::where('token', $token)->first();
+        if (! $item) {
             return back();
         }
+        $item->load(['promuClientUser', 'prospectRejectedUser']);
         $mr = $this->buildQuestionnaireResults($item);
         $checklist = $item->piecesExigiblesChecklist();
         if ($item->prospect) {
@@ -691,12 +698,19 @@ class CompanyController extends ExtendedController
 
             return view('Gestionnaire.Companies.show_prospect', compact('item', 'mr', 'checklist'));
         }
-        //dd($item);
-        $analystes = User::where('role_id',14)->where('agence_id',auth()->user()->agence_id)->get();
-        $programmes = Programme::all();
+        // dd($item);
         $appuis = Service::all();
-        $elements = ElementConstitutif::where('active',1)->get();
-        return view('/Gestionnaire/Companies/show',compact('item','mr','programmes','analystes','appuis','elements','checklist'));
+        $elements = ElementConstitutif::where('active', 1)->get();
+
+        $item->load([
+            'dossierEntreeRelation.qualificationUser',
+            'dossierEntreeRelation.programmesSubmittedBy',
+            'dossierEntreeRelation.instructionValidatedBy',
+            'dossierEntreeRelation.programmeSelections.programme',
+            'dossierEntreeRelation.programmeSelections.instructionDossier',
+        ]);
+
+        return view('/Gestionnaire/Companies/show', compact('item', 'mr', 'appuis', 'elements', 'checklist'));
 
     }
 
@@ -723,22 +737,23 @@ class CompanyController extends ExtendedController
 
     public function saveProgramme(Request $request)
     {
-        //$token = $request->token;
-        //dd($request->all());
+        // $token = $request->token;
+        // dd($request->all());
         $data = $request->all();
-        $data['token']=sha1(time().rand(1,100));
+        $data['token'] = sha1(time().rand(1, 100));
         $data['gestionnaire_id'] = auth()->user()->id;
         $data['agence_id'] = auth()->user()->agence_id;
         $data['representation_id'] = auth()->user()->representation_id;
 
         Dossier::updateOrCreate(
             [
-            'entreprise_id'=>$request->entreprise_id,
-            'programme_id'=>$request->programme_id,
+                'entreprise_id' => $request->entreprise_id,
+                'programme_id' => $request->programme_id,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
         return back();
     }
 
@@ -746,44 +761,45 @@ class CompanyController extends ExtendedController
     {
 
         EntrepriseAppui::create([
-            'entreprise_id'=>$request->entreprise_id,
-            'service_id'=>$request->appui_id
+            'entreprise_id' => $request->entreprise_id,
+            'service_id' => $request->appui_id,
         ]);
 
-        Session::flash('success','Enregistrement effectué avec succès!');
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
         return back();
     }
-
 
     public function addElement(Request $request)
     {
         $token = sha1(time().auth()->user()->id);
         EntrepriseElementConstitutif::updateOrCreate(
             [
-                'entreprise_id'=>$request->entreprise_id,
-                'type_id'=>$request->type_id,
+                'entreprise_id' => $request->entreprise_id,
+                'type_id' => $request->type_id,
             ],
             [
-                'entreprise_id'=>$request->entreprise_id,
-                'type_id'=>$request->type_id,
-                'uri'=>$this->entityDocumentCreate($request->fichier,'elements_constitutifs',$token),
-                'token'=>$token
+                'entreprise_id' => $request->entreprise_id,
+                'type_id' => $request->type_id,
+                'uri' => $this->entityDocumentCreate($request->fichier, 'elements_constitutifs', $token),
+                'token' => $token,
             ]
         );
 
-        Session::flash('success','Enregistrement effectué avec succès!');
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
         return back();
     }
-
 
     public function createTiersPhysique(string $token)
     {
         //
-        $item = Entreprise::where('token',$token)->first();
-        if(!$item){
+        $item = Entreprise::where('token', $token)->first();
+        if (! $item) {
             return back();
         }
-        return view('/Gestionnaire/Companies/tiers_physique',compact('item'));
+
+        return view('/Gestionnaire/Companies/tiers_physique', compact('item'));
     }
 
     public function createTiersMorale(string $token)
@@ -856,28 +872,29 @@ class CompanyController extends ExtendedController
     public function saveTiersPhysique(Request $request)
     {
         $token = $request->token;
-        $data = $request->except('lien','entreprise_id','token');
-        $data['token']=sha1(time().rand(1,100));
+        $data = $request->except('lien', 'entreprise_id', 'token');
+        $data['token'] = sha1(time().rand(1, 100));
         $data['user_id'] = auth()->user()->id;
-        $person = Person::where('niu',$data['niu'])->where('phone',$data['phone'])->first();
-        if(!$person){
+        $person = Person::where('niu', $data['niu'])->where('phone', $data['phone'])->first();
+        if (! $person) {
             $person = Person::create($data);
         }
 
         Tier::updateOrCreate(
             [
-            'entreprise_id'=>$request->entreprise_id,
-            'person_id'=>$person->id,
+                'entreprise_id' => $request->entreprise_id,
+                'person_id' => $person->id,
             ],
             [
-                'entreprise_id'=>$request->entreprise_id,
-                'person_id'=>$person->id,
-                'lien'=>$request->lien
+                'entreprise_id' => $request->entreprise_id,
+                'person_id' => $person->id,
+                'lien' => $request->lien,
             ]
         );
 
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.entreprises.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('gestionnaire.entreprises.show', $token));
     }
 
     public function saveTiersMorale(Request $request)
@@ -992,29 +1009,38 @@ class CompanyController extends ExtendedController
         return redirect(route('gestionnaire.entreprises.show', $parentEntreprise->token));
     }
 
-
     public function createQuestionnaire(string $token)
     {
-        $item = Entreprise::where('token',$token)->first();
-        if(!$item){
+        $item = Entreprise::where('token', $token)->first();
+        if (! $item) {
             return back();
         }
-        $criteres = QuestionSousCritere::with(['questions.choices'])->get();
+        $criteresPrincipaux = InstructionCritere::query()
+            ->whereHas('questionnaireSousCriteres')
+            ->with([
+                'questionnaireSousCriteres' => function ($q) {
+                    $q->orderBy('id')->with(['questions.choices']);
+                },
+            ])
+            ->orderBy('id')
+            ->get();
         $reponses = $item->reponses()->pluck('choice_id', 'question_id')->toArray() ?? [];
-        return view('Gestionnaire.Companies.questionnaire', compact('item', 'criteres', 'reponses'));
+
+        return view('Gestionnaire.Companies.questionnaire', compact('item', 'criteresPrincipaux', 'reponses'));
     }
 
     public function saveQuestionnaire(Request $request)
     {
-        //dd($request->choices[1]);
+        // dd($request->choices[1]);
         $choices = $request->choices;
-        foreach($choices as $choice){
+        foreach ($choices as $choice) {
             QuestionAnswer::updateOrCreate([
-                'entreprise_id'=>$choice['entreprise_id'],
-                'choice_id'=>$choice['choice_id']
-            ],$choice);
+                'entreprise_id' => $choice['entreprise_id'],
+                'choice_id' => $choice['choice_id'],
+            ], $choice);
         }
-        //Session::flash('success','Enregistrement effectué avec succès!');
+
+        // Session::flash('success','Enregistrement effectué avec succès!');
         return response()->json('ok');
     }
 

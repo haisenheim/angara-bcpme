@@ -22,7 +22,6 @@
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.questionnaire',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Questionnaire de mise en relation</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.physique.create',$item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entite.morale.create',$item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
-        <li><a class="dropdown-item" data-bs-target="#addProgModal" data-bs-toggle="modal" href="#"><i class="demo-psi-affiliate me-2"></i>Affecter à un programme</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entites.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Modifier les informations</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
@@ -177,10 +176,7 @@
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
-                         </li>
-                         <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">Pièces constitutives</button>
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Dossiers d'instruction par programme</button>
                          </li>
                     </ul>
 
@@ -401,68 +397,8 @@
                                 </tbody>
                             </table>
                        </div>
-                       <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="fichier-tab">
-
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <th>DOCUMENT</th>
-                                    <th>LIEN</th>
-                                    <th></th>
-                                </thead>
-                                <tbody>
-                                    @foreach ($item->elements as $element)
-                                       <tr>
-                                            <td>{{ $element->type?->name }}</td>
-                                            <td><a class="btn-link" href="{{ $element->path }}">Cliquer ici </a></td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                   </div>
                     </div>
                  </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="addProgModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Affectation à un programme</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entite.programme.save') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
-                            <div class="">
-                                <div class="mb-3">
-                                    <label for="programme_id" class="form-label">Programme</label>
-                                    <select required name="programme_id" id="programme_id" class="form-select">
-                                        <option value="0">Selectionner un programme ...</option>
-                                        @foreach($programmes as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="analyste_id" class="form-label">Analyste financier</label>
-                                    <select required name="analyste_id" id="analyste_id" class="form-select">
-                                        <option value="0">Selectionner un analyste ...</option>
-                                        @foreach($analystes as $it)
-                                            <option value="{{ $it->id }}">{{ $it->name }}-{{ $it->agence?->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
     </div>

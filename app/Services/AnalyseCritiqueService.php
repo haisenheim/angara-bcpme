@@ -115,6 +115,28 @@ class AnalyseCritiqueService
         return $dossier;
     }
 
+    /**
+     * Prospect refusé par le chef d'agence (non promu client).
+     */
+    public function syncProspectRejetChefAgence(Entreprise $entreprise, string $message): DossierAnalyseCritique
+    {
+        $dossier = $this->syncProspectWorkflow($entreprise);
+
+        $this->upsertAvis(
+            $dossier,
+            AnalyseCritiqueAvis::SOURCE_CHEF_AGENCE,
+            'Refus chef d\'agence',
+            $message,
+            AnalyseCritiqueAvis::ETAT_INTEGRE,
+            $entreprise->prospect_rejected_at,
+            $entreprise->prospect_rejected_user_id,
+            null,
+            45
+        );
+
+        return $dossier;
+    }
+
     public function syncInstructionDossier(Dossier $instructionDossier, string $message): AnalyseCritiqueAvis
     {
         $entreprise = $instructionDossier->entreprise;

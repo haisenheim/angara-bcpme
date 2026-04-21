@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Gestionnaire;
 
+use App\Concerns\ParsesProgrammeRelationIds;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
 use App\Models\Banque;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Session;
 
 class ProgrammeController extends Controller
 {
+    use ParsesProgrammeRelationIds;
+
     /**
      * Display a listing of the resource.
      */
@@ -27,10 +30,11 @@ class ProgrammeController extends Controller
         return view('/Gestionnaire/Programmes/index');
     }
 
-
-    public function fetchAll(){
+    public function fetchAll()
+    {
         $items = Programme::all();
         $items = ProgrammeListResource::collection($items);
+
         return response()->json($items);
     }
 
@@ -132,45 +136,46 @@ class ProgrammeController extends Controller
     public function store(Request $request)
     {
         //
-        //dd($request->all());
-        $data = $request->except('_token','appuisnf','appuisf','produits','bailleurs','type_entreprise','type_personne');
-        $anfs = explode(',',$request->appuisnf);
-        $afs = explode(',',$request->appuisf);
-        $produits = explode(',',$request->produits);
-        $bailleurs = explode(',',$request->bailleurs);
-        $data['token'] = sha1(time().rand(0,99));
+        // dd($request->all());
+        $data = $request->except('_token', 'appuisnf', 'appuisf', 'produits', 'bailleurs', 'type_entreprise', 'type_personne');
+        $afs = $this->intIdsFromCommaList($request->appuisf);
+        $anfs = $this->intIdsFromCommaList($request->appuisnf);
+        $produits = $this->intIdsFromCommaList($request->produits);
+        $bailleurs = $this->intIdsFromCommaList($request->bailleurs);
+        $data['token'] = sha1(time().rand(0, 99));
         $data['user_id'] = auth()->user()->id;
-        $data['type_pp'] = implode('-',$request->type_personne);
-        $data['type_pm'] = implode('-',$request->type_entreprise);
+        $data['type_pp'] = implode('-', $request->input('type_personne', []));
+        $data['type_pm'] = implode('-', $request->input('type_entreprise', []));
         $item = Programme::create($data);
 
-        foreach($afs as $a){
+        foreach ($afs as $serviceId) {
             ProgrammeAppui::create([
-                'programme_id'=>$item->id,
-                'service_id'=>$a
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
             ]);
         }
-        foreach($anfs as $a){
+        foreach ($anfs as $serviceId) {
             ProgrammeAppui::create([
-                'programme_id'=>$item->id,
-                'service_id'=>$a
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
             ]);
         }
-        foreach($produits as $a){
+        foreach ($produits as $produitId) {
             ProgrammeProduit::create([
-                'programme_id'=>$item->id,
-                'produit_id'=>$a
+                'programme_id' => $item->id,
+                'produit_id' => $produitId,
             ]);
         }
 
-        foreach($bailleurs as $a){
+        foreach ($bailleurs as $organismeId) {
             ProgrammeOrgamisme::create([
-                'programme_id'=>$item->id,
-                'organisme_id'=>$a
+                'programme_id' => $item->id,
+                'organisme_id' => $organismeId,
             ]);
         }
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.programmes.show',$item->token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('gestionnaire.programmes.show', $item->token));
 
     }
 
@@ -180,49 +185,66 @@ class ProgrammeController extends Controller
     public function show(string $token)
     {
         //
-        $item = Programme::where('token',$token)->first();
-        if(!$item){
-            Session::flash('error','Accès non autorisé à ce programme!');
+        $item = Programme::query()
+            ->where('token', $token)
+            ->with([
+                'produits.filiere',
+                'produits.branche',
+                'appuis.type',
+                'composantes',
+                'resultats.indicateur',
+                'entreprises',
+                'dossiers' => function ($q) {
+                    $q->with(['entreprise', 'gestionnaire', 'analyste', 'agence', 'indicateurs'])
+                        ->orderByDesc('created_at');
+                },
+            ])
+            ->first();
+        if (! $item) {
+            Session::flash('error', 'Accès non autorisé à ce programme!');
+
             return back();
         }
         $banques = Banque::all();
         $organismes = Organisme::all();
         $indicateurs = Indicateur::all();
-        return view('Gestionnaire/Programmes/show',compact('item','banques','organismes','indicateurs'));
-    }
 
+        return view('Gestionnaire/Programmes/show', compact('item', 'banques', 'organismes', 'indicateurs'));
+    }
 
     public function saveComposante(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
         $token = $request->token;
         $data = $request->except('token');
         Composante::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'banque_id'=>$request->banque_id??0,
-            'organisme_id'=>$request->organisme_id??0
+                'programme_id' => $request->programme_id,
+                'banque_id' => $request->banque_id ?? 0,
+                'organisme_id' => $request->organisme_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.programmes.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('gestionnaire.programmes.show', $token));
     }
 
     public function saveResultat(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
         $token = $request->token;
         $data = $request->except('token');
         ProgrammeIndicateur::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'indicateur_id'=>$request->banque_id??0,
+                'programme_id' => $request->programme_id,
+                'indicateur_id' => $request->banque_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('gestionnaire.programmes.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('gestionnaire.programmes.show', $token));
     }
 
     /**

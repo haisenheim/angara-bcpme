@@ -38,7 +38,18 @@ class CompanyController extends Controller
     public function show(string $token)
     {
         $item = Entreprise::where('token', $token)->where('prospect', 0)->firstOrFail();
-        $item->load(['agence', 'region', 'arrondissement']);
+        $item->load([
+            'agence',
+            'region',
+            'arrondissement',
+            'promuClientUser',
+            'prospectRejectedUser',
+            'dossierEntreeRelation.qualificationUser',
+            'dossierEntreeRelation.programmesSubmittedBy',
+            'dossierEntreeRelation.instructionValidatedBy',
+            'dossierEntreeRelation.programmeSelections.programme',
+            'dossierEntreeRelation.programmeSelections.instructionDossier',
+        ]);
 
         return view('Juridique.Companies.show', compact('item'));
     }

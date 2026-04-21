@@ -1,10 +1,28 @@
-@extends('Layouts.app')
+@extends(match ($space['route'] ?? '') {
+    'respexp' => 'Layouts.respexp',
+    'juridique' => 'Layouts.juridique',
+    'analyste-juridique' => 'Layouts.analyste-juridique',
+    'reng' => 'Layouts.reng',
+    'analyste-credit' => 'Layouts.analyste-credit',
+    'analyste-risques' => 'Layouts.analyste-risques',
+    'rerx' => 'Layouts.rerx',
+    default => 'Layouts.app',
+})
 
 @section('title', 'Entreprises - '.$space['title'])
 
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Entreprises</li>
+    </ol>
+</nav>
+@endsection
+
 @section('page-header')
     <div>
-        <h1 class="h3 mb-0">Entreprises</h1>
+        <h5 class="page-title mb-0">Entreprises</h5>
         <p class="text-muted mb-0">Vue transverse de toutes les entreprises du portefeuille.</p>
     </div>
 @endsection
@@ -14,7 +32,6 @@
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <a href="{{ route($space['route'].'.dashboard') }}" class="btn btn-sm btn-outline-secondary">Retour au tableau de bord</a>
                     <span class="text-muted small">{{ $entreprises->total() }} entreprise(s)</span>
                 </div>
 

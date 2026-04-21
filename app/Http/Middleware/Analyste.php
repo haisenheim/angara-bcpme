@@ -18,34 +18,34 @@ class Analyste
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        $agence = Agence::find($user->agence_id);
-        $expected = (int) config('angara.role_analyste_financier', 14);
-        if (! $user || (int) $user->role_id !== $expected) {
+        if (! $user || ! $user->isAnalysteFinancier()) {
             return redirect('/login');
         }
+        $agence = Agence::find($user->agence_id);
         $path = request()->getPathInfo();
-        $parts = explode('/',$path);
+        $parts = explode('/', $path);
         $active = 1;
-        if(in_array('dossiers',$parts) || in_array('instruction',$parts)){
+        if (in_array('dossiers', $parts) || in_array('instruction', $parts)) {
             $active = 201;
         }
-        if(in_array('programmes',$parts)){
+        if (in_array('programmes', $parts)) {
             $active = 3;
         }
-        if(in_array('entreprises',$parts)|| in_array('entreprise',$parts)){
+        if (in_array('entreprises', $parts) || in_array('entreprise', $parts)) {
             $active = 4;
         }
-        if(in_array('prospects',$parts)){
+        if (in_array('prospects', $parts)) {
             $active = 5;
         }
-        if(in_array('users',$parts)){
+        if (in_array('users', $parts)) {
             $active = 6;
         }
-        if(in_array('territoire',$parts)){
+        if (in_array('territoire', $parts)) {
             $active = 701;
         }
-        Session::put('active',$active);
-        Session::put('agence',$agence);
+        Session::put('active', $active);
+        Session::put('agence', $agence);
+
         return $next($request);
     }
 }

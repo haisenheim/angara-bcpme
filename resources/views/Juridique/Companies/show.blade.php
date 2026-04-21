@@ -17,6 +17,8 @@
 
 @section('content')
     <div class="container-fluid">
+        @include('partials.entreprise-chef-agence-decision', ['item' => $item])
+        @include('partials.entreprise-qualification-chef-filiere', ['item' => $item, 'qualificationContext' => 'juridique'])
         <div class="card shadow-sm">
             <div class="card-body">
                 <dl class="row mb-0">

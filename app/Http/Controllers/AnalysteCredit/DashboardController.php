@@ -9,10 +9,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $agenceId = auth()->user()?->agence_id;
+        $dossiersCount = Dossier::query()
+            ->where('reng_analyste_credit_user_id', auth()->id())
+            ->whereNotNull('juridique_submitted_to_engagements_at')
+            ->count();
 
         return view('AnalysteCredit.dashboard', [
-            'dossiersCount' => $agenceId ? Dossier::query()->where('agence_id', $agenceId)->count() : 0,
+            'dossiersCount' => $dossiersCount,
         ]);
     }
 }

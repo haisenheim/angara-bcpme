@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\ParsesProgrammeRelationIds;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
 use App\Models\Banque;
 use App\Models\Composante;
 use App\Models\Indicateur;
 use App\Models\Organisme;
-use App\Models\Poste;
 use App\Models\Programme;
 use App\Models\ProgrammeAppui;
 use App\Models\ProgrammeIndicateur;
 use App\Models\ProgrammeOrgamisme;
 use App\Models\ProgrammeProduit;
 use App\Models\Service;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
 class ProgrammeController extends Controller
 {
+    use ParsesProgrammeRelationIds;
+
     /**
      * Display a listing of the resource.
      */
@@ -30,11 +31,96 @@ class ProgrammeController extends Controller
         return view('/Admin/Programmes/index');
     }
 
-
-    public function fetchAll(){
+    public function fetchAll()
+    {
         $items = Programme::all();
         $items = ProgrammeListResource::collection($items);
+
         return response()->json($items);
+    }
+
+    public function fetchFilterOptions()
+    {
+        $signataires = Programme::query()
+            ->whereNotNull('signataire')
+            ->where('signataire', '!=', '')
+            ->distinct()
+            ->orderBy('signataire')
+            ->pluck('signataire')
+            ->values();
+
+        return response()->json(['signataires' => $signataires]);
+    }
+
+    public function fetchStats(Request $request)
+    {
+        $filters = $this->parseProgrammeFilters($request);
+        $query = $this->applyProgrammeFilters(Programme::query(), $filters);
+
+        return response()->json([
+            'total' => (clone $query)->count(),
+            'actifs' => (clone $query)->where('active', true)->count(),
+            'avec_convention' => (clone $query)->whereNotNull('convention')->where('convention', '!=', '')->count(),
+        ]);
+    }
+
+    public function fetchPaginated(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 15);
+        $length = min(max($length, 5), 100);
+        $search = trim((string) $request->input('search.value', ''));
+
+        $filters = $this->parseProgrammeFilters($request);
+        $query = $this->applyProgrammeFilters(Programme::query(), $filters);
+
+        $recordsTotal = Programme::query()->count();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('convention', 'like', "%{$search}%")
+                    ->orWhere('signataire', 'like', "%{$search}%")
+                    ->orWhere('type_pp', 'like', "%{$search}%")
+                    ->orWhere('type_pm', 'like', "%{$search}%");
+            });
+        }
+
+        $recordsFiltered = $query->count();
+
+        $orderColumnIndex = (int) $request->input('order.0.column', 0);
+        $orderDir = $request->input('order.0.dir', 'asc') === 'desc' ? 'desc' : 'asc';
+        $columnMap = ['name', 'convention', 'signataire', 'dt_sig_conv', 'budget', 'type_pp', 'type_pm'];
+        $orderBy = $columnMap[$orderColumnIndex] ?? 'name';
+        $query->orderBy($orderBy, $orderDir);
+
+        $items = $query->skip($start)->take($length)->get();
+        $resolved = ProgrammeListResource::collection($items)->toArray($request);
+        $data = array_values($resolved['data'] ?? $resolved);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    private function parseProgrammeFilters(Request $request): array
+    {
+        return [
+            'signataire' => $request->input('signataire_filter'),
+        ];
+    }
+
+    private function applyProgrammeFilters($query, array $filters)
+    {
+        if (! empty($filters['signataire'])) {
+            $query->where('signataire', $filters['signataire']);
+        }
+
+        return $query;
     }
 
     /**
@@ -51,58 +137,96 @@ class ProgrammeController extends Controller
     public function store(Request $request)
     {
         //
-        //dd($request->all());
-        $data = $request->except('_token','appuisnf','appuisf','produits','bailleurs','type_entreprise','type_personne');
-        $anfs = explode(',',$request->appuisnf);
-        $afs = explode(',',$request->appuisf);
-        $produits = explode(',',$request->produits);
-        $bailleurs = explode(',',$request->bailleurs);
-        $data['token'] = sha1(time().rand(0,99));
+        // dd($request->all());
+        $data = $request->except('_token', 'appuisnf', 'appuisf', 'produits', 'bailleurs', 'type_entreprise', 'type_personne');
+        $afs = $this->intIdsFromCommaList($request->appuisf);
+        $anfs = $this->intIdsFromCommaList($request->appuisnf);
+        $produits = $this->intIdsFromCommaList($request->produits);
+        $bailleurs = $this->intIdsFromCommaList($request->bailleurs);
+        $data['token'] = sha1(time().rand(0, 99));
         $data['user_id'] = auth()->user()->id;
-        $data['type_pp'] = implode('-',$request->type_personne);
-        $data['type_pm'] = implode('-',$request->type_entreprise);
+        $data['type_pp'] = implode('-', $request->input('type_personne', []));
+        $data['type_pm'] = implode('-', $request->input('type_entreprise', []));
         $item = Programme::create($data);
 
-        foreach($afs as $a){
+        foreach ($afs as $serviceId) {
             ProgrammeAppui::create([
-                'programme_id'=>$item->id,
-                'service_id'=>$a
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
             ]);
         }
-        foreach($anfs as $a){
+        foreach ($anfs as $serviceId) {
             ProgrammeAppui::create([
-                'programme_id'=>$item->id,
-                'service_id'=>$a
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
             ]);
         }
-        foreach($produits as $a){
+        foreach ($produits as $produitId) {
             ProgrammeProduit::create([
-                'programme_id'=>$item->id,
-                'produit_id'=>$a
+                'programme_id' => $item->id,
+                'produit_id' => $produitId,
             ]);
         }
 
-        foreach($bailleurs as $a){
+        foreach ($bailleurs as $organismeId) {
             ProgrammeOrgamisme::create([
-                'programme_id'=>$item->id,
-                'organisme_id'=>$a
+                'programme_id' => $item->id,
+                'organisme_id' => $organismeId,
             ]);
         }
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$item->token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('admin.programmes.show', $item->token));
 
     }
 
     public function save(Request $request)
     {
-        $data = $request->except('_token','type_entreprise','type_personne');
+        $data = $request->except('_token', 'id', 'appuisnf', 'appuisf', 'produits', 'bailleurs', 'type_entreprise', 'type_personne');
         $data['user_id'] = auth()->user()->id;
-        $data['type_pp'] = implode('-',$request->type_personne);
-        $data['type_pm'] = implode('-',$request->type_entreprise);
-        $item = Programme::updateOrCreate(['id'=>$request->id],$data);
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$item->token));
+        $data['type_pp'] = implode('-', $request->input('type_personne', []));
+        $data['type_pm'] = implode('-', $request->input('type_entreprise', []));
 
+        $item = Programme::updateOrCreate(['id' => (int) $request->id], $data);
+
+        $afs = $this->intIdsFromCommaList($request->input('appuisf'));
+        $anfs = $this->intIdsFromCommaList($request->input('appuisnf'));
+        $produits = $this->intIdsFromCommaList($request->input('produits'));
+        $bailleurs = $this->intIdsFromCommaList($request->input('bailleurs'));
+
+        ProgrammeAppui::where('programme_id', $item->id)->delete();
+        foreach ($afs as $serviceId) {
+            ProgrammeAppui::create([
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
+            ]);
+        }
+        foreach ($anfs as $serviceId) {
+            ProgrammeAppui::create([
+                'programme_id' => $item->id,
+                'service_id' => $serviceId,
+            ]);
+        }
+
+        ProgrammeProduit::where('programme_id', $item->id)->delete();
+        foreach ($produits as $produitId) {
+            ProgrammeProduit::create([
+                'programme_id' => $item->id,
+                'produit_id' => $produitId,
+            ]);
+        }
+
+        ProgrammeOrgamisme::where('programme_id', $item->id)->delete();
+        foreach ($bailleurs as $organismeId) {
+            ProgrammeOrgamisme::create([
+                'programme_id' => $item->id,
+                'organisme_id' => $organismeId,
+            ]);
+        }
+
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('admin.programmes.show', $item->token));
     }
 
     /**
@@ -111,73 +235,67 @@ class ProgrammeController extends Controller
     public function show(string $token)
     {
         //
-        $item = Programme::where('token',$token)->first();
-        if(!$item){
-            Session::flash('error','Accès non autorisé à ce programme!');
+        $item = Programme::query()
+            ->where('token', $token)
+            ->with([
+                'produits.filiere',
+                'produits.branche',
+                'appuis.type',
+                'composantes',
+                'resultats.indicateur',
+                'entreprises',
+                'dossiers' => function ($q) {
+                    $q->with(['entreprise', 'gestionnaire', 'analyste', 'agence', 'indicateurs'])
+                        ->orderByDesc('created_at');
+                },
+            ])
+            ->first();
+        if (! $item) {
+            Session::flash('error', 'Accès non autorisé à ce programme!');
+
             return back();
         }
         $banques = Banque::all();
         $organismes = Organisme::all();
         $indicateurs = Indicateur::all();
         $services = Service::all();
-        return view('Admin/Programmes/show',compact('item','banques','organismes','indicateurs','services'));
+
+        return view('Admin/Programmes/show', compact('item', 'banques', 'organismes', 'indicateurs', 'services'));
     }
-
-    public function saveUser(Request $request){
-         //dd($request->all());
-         $user = new User();
-         $user->name = $request->name;
-         $user->email = $request->email;
-         $user->phone = $request->phone;
-         $user->password = bcrypt($request->password);
-         $user->token = sha1(time().auth()->user()->id);
-         $user->role_id = 19;
-         $user->programme_id = $request->programme_id;
-        $user->save();
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return back();
-     }
-
-     public function savePoste(Request $request){
-        // dd($request->all());
-        Poste::create($request->all());
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return back();
-     }
-
 
     public function saveComposante(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
         $token = $request->token;
         $data = $request->except('token');
         Composante::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'banque_id'=>$request->banque_id??0,
-            'organisme_id'=>$request->organisme_id??0
+                'programme_id' => $request->programme_id,
+                'banque_id' => $request->banque_id ?? 0,
+                'organisme_id' => $request->organisme_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$token));
-    }
+        Session::flash('success', 'Enregistrement effectué avec succès!');
 
+        return redirect(route('admin.programmes.show', $token));
+    }
 
     public function saveAppui(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
         $token = $request->token;
         $data = $request->except('token');
         ProgrammeAppui::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'service_id'=>$request->service_id??0
+                'programme_id' => $request->programme_id,
+                'service_id' => $request->service_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('admin.programmes.show', $token));
     }
 
     public function saveProduit(Request $request)
@@ -186,29 +304,31 @@ class ProgrammeController extends Controller
         $data = $request->except('token');
         ProgrammeProduit::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'produit_id'=>$request->produit_id??0
+                'programme_id' => $request->programme_id,
+                'produit_id' => $request->produit_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('admin.programmes.show', $token));
     }
 
     public function saveResultat(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
         $token = $request->token;
         $data = $request->except('token');
         ProgrammeIndicateur::updateOrCreate(
             [
-            'programme_id'=>$request->programme_id,
-            'indicateur_id'=>$request->banque_id??0,
+                'programme_id' => $request->programme_id,
+                'indicateur_id' => $request->banque_id ?? 0,
             ],
             $data
         );
-        Session::flash('success','Enregistrement effectué avec succès!');
-        return redirect(route('admin.programmes.show',$token));
+        Session::flash('success', 'Enregistrement effectué avec succès!');
+
+        return redirect(route('admin.programmes.show', $token));
     }
 
     /**
@@ -216,9 +336,42 @@ class ProgrammeController extends Controller
      */
     public function edit(string $token)
     {
-        //
-        $item = Programme::where('token',$token)->first();
-        return view('/Admin/Programmes/edit',compact('item'));
+        $item = Programme::query()
+            ->where('token', $token)
+            ->with(['produits', 'appuis'])
+            ->firstOrFail();
+
+        $organismeIds = ProgrammeOrgamisme::query()
+            ->where('programme_id', $item->id)
+            ->pluck('organisme_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->values()
+            ->all();
+
+        $produitIds = $item->produits->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+
+        $afsIds = [];
+        $anfIds = [];
+        foreach ($item->appuis as $svc) {
+            $sid = (int) $svc->id;
+            if ($sid <= 0) {
+                continue;
+            }
+            if (! empty($svc->financier)) {
+                $afsIds[] = $sid;
+            } else {
+                $anfIds[] = $sid;
+            }
+        }
+
+        return view('/Admin/Programmes/edit', compact(
+            'item',
+            'produitIds',
+            'organismeIds',
+            'afsIds',
+            'anfIds'
+        ));
     }
 
     /**

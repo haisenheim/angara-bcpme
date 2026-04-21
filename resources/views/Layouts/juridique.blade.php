@@ -1,19 +1,9 @@
 @extends('Layouts.app')
 @section('top')
-<?php
-$agence = auth()->user()->agence;
-?>
-<div class="d-flex flex-wrap gap-3 align-items-center">
-    <div>
-        @if($agence)
-            <span class="badge bg-white text-dark fs-6">{{ $agence->name }}@if($agence->representation) — {{ $agence->representation->name }}@endif</span>
-        @endif
-    </div>
-    <div>
-        <span class="text-white-50">Connecté en tant que :</span>
-        <strong><span class="badge bg-white text-dark fs-6">Responsable juridique</span></strong>
-    </div>
-</div>
+@include('partials.layout-role-header-top', [
+    'roleLabel' => 'Responsable juridique',
+    'logoutFormId' => 'logout-form-juridique',
+])
 @endsection
 
 @section('navigation')
@@ -33,6 +23,11 @@ $agence = auth()->user()->agence;
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
     <ul class="mainnav__menu nav flex-column">
         <li class="nav-item">
+            <a href="{{ route('juridique.dossiers.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.dossiers') ? 'active' : '' }}"><i class="demo-psi-folder fs-2 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Dossiers d’instruction</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('juridique.entreprises.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.entreprises') ? 'active' : '' }}"><i class="pli-bank fs-2 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Entreprises</span>
             </a>
@@ -44,5 +39,6 @@ $agence = auth()->user()->agence;
         </li>
     </ul>
 </div>
+@include('partials.layout-role-nav-compte')
 @yield('modal')
 @endsection
