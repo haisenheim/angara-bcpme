@@ -340,13 +340,17 @@
                 ->values();
         @endphp
 
-        {{-- Bloc synthèse : consultation (lecture) --}}
-        @include('partials.instruction-dossier-consultation', ['dossier' => $dossier, 'instructionConsultation' => $instructionConsultation ?? null])
+        {{-- Bloc synthèse : programmes / budgets ; sur les espaces « hub », l’historique détaillé est fusionné avec le parcours sous la chronologie des actes. --}}
+        @include('partials.instruction-dossier-consultation', [
+            'dossier' => $dossier,
+            'instructionConsultation' => $instructionConsultation ?? null,
+            'showConsultationTimeline' => ! $isHubSpace,
+        ])
 
         <div class="card border-0 shadow-sm mt-3">
             <div class="card-header bg-transparent border-0 py-3">
                 <h6 class="mb-0 fw-semibold"><i class="demo-psi-clock me-2 text-primary"></i>Historique (chronologie)</h6>
-                <p class="text-muted small mb-0 mt-1">Affichage linéaire et croissant (du plus ancien au plus récent).</p>
+                <p class="text-muted small mb-0 mt-1">Actes enregistrés uniquement (nature de l’action, date et heure, auteur et profil) — ordre chronologique croissant.@if($isHubSpace) Le détail des contenus saisis figure dans la section <strong>Parcours d’instruction et historique du dossier</strong> ci-dessous.@else Le détail des contenus peut figurer dans la carte <strong>Historique du dossier</strong> ci-dessus.@endif</p>
             </div>
             <div class="card-body pt-0">
                 @if($timelineSorted->isEmpty())
@@ -360,10 +364,14 @@
                                     <div class="small text-muted text-nowrap">{{ $row['at']?->format('d/m/Y H:i') }}</div>
                                 </div>
                                 @if(! empty($row['actor']))
-                                    <div class="small text-muted mt-1 text-break">Par <strong>{{ $row['actor']->name }}</strong></div>
-                                @endif
-                                @if(! empty($row['body_html']))
-                                    <div class="small mt-2 text-break" style="overflow-wrap:anywhere; word-break:break-word;">{!! $row['body_html'] !!}</div>
+                                    <div class="small text-muted mt-1 text-break">
+                                        Par <strong>{{ $row['actor']->name }}</strong>
+                                        @if(! empty($row['actor']->role?->name))
+                                            <span class="text-muted">— {{ $row['actor']->role->name }}</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="small text-muted mt-1">Auteur non renseigné ou non applicable.</div>
                                 @endif
                             </div>
                         @endforeach
@@ -372,92 +380,15 @@
             </div>
         </div>
 
-        {{-- Parcours : sections linéaires par étape (contenus volumineux protégés) --}}
+        {{-- Parcours + historique détaillé (fusion, ordre croissant par étape, fonds subtle) --}}
         @if($isHubSpace)
-            <div class="card border-0 shadow-sm mt-3">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                        <div>
-                            <h6 class="mb-0 fw-semibold"><i class="demo-psi-shuffle me-2 text-primary"></i>Parcours d’instruction (par étapes)</h6>
-                            <p class="text-muted small mb-0 mt-1">Chaque section regroupe les contenus produits au fil du parcours.</p>
-                        </div>
-                        @if($dossier->isInstructionClosed())
-                            <span class="badge bg-dark">Dossier d’instruction clos</span>
-                        @endif
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="border rounded p-3 bg-white mb-3">
-                        <h6 class="mb-2">1) Structuration (chef de filière → chef d’agence)</h6>
-                        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                            <span class="badge bg-light text-dark border">{{ $structurationSvc->closureStatutLabel($dossier) }}</span>
-                            @if($dossier->chef_filiere_submitted_to_agence_at)
-                                <span class="text-muted small">Soumis le {{ $dossier->chef_filiere_submitted_to_agence_at->format('d/m/Y H:i') }}</span>
-                            @endif
-                            @if($dossier->instruction_agence_validated_at)
-                                <span class="text-success small">Validé le {{ $dossier->instruction_agence_validated_at->format('d/m/Y H:i') }}</span>
-                            @elseif($dossier->instruction_agence_rejected_at)
-                                <span class="text-danger small">Rejeté le {{ $dossier->instruction_agence_rejected_at->format('d/m/Y H:i') }}</span>
-                            @endif
-                        </div>
-                        @if($dossier->instruction_agence_reject_motif)
-                            <div class="alert alert-danger py-2 small mb-0 text-break" style="white-space: pre-wrap; overflow-wrap:anywhere; word-break:break-word;">{{ $dossier->instruction_agence_reject_motif }}</div>
-                        @endif
-                        @if($dossier->instruction_agence_closing_note)
-                            <div class="alert alert-secondary py-2 small mb-0 mt-2 text-break" style="white-space: pre-wrap; overflow-wrap:anywhere; word-break:break-word;"><strong>Note :</strong> {{ $dossier->instruction_agence_closing_note }}</div>
-                        @endif
-                    </div>
-
-                    <div class="border rounded p-3 bg-white mb-3">
-                        <h6 class="mb-2">2) Exploitation (analyste financier → REXP)</h6>
-                        <div class="text-break" style="overflow-wrap:anywhere; word-break:break-word;">
-                            @include('RoleSpace.dossiers.partials.respexp_dossier_hub')
-                        </div>
-                    </div>
-
-                    <div class="border rounded p-3 bg-white mb-3">
-                        <h6 class="mb-2">3) Juridique (analyste juridique → responsable juridique)</h6>
-                        <div class="text-break" style="overflow-wrap:anywhere; word-break:break-word;">
-                            @include('RoleSpace.dossiers.partials.juridique_instruction_workflow')
-                        </div>
-                    </div>
-
-                    <div class="border rounded p-3 bg-white mb-3">
-                        <h6 class="mb-2">4) Engagements (analyste crédit → RENG)</h6>
-                        <div class="text-break" style="overflow-wrap:anywhere; word-break:break-word;">
-                            @include('RoleSpace.dossiers.partials.reng_instruction_workflow')
-                        </div>
-                    </div>
-
-                    <div class="border rounded p-3 bg-white mb-3">
-                        <h6 class="mb-2">5) Risques (analyste risques → RERX)</h6>
-                        <div class="text-break" style="overflow-wrap:anywhere; word-break:break-word;">
-                            @include('RoleSpace.dossiers.partials.rerx_risques_workflow')
-                        </div>
-                    </div>
-
-                    <div class="border rounded p-3 bg-white">
-                        <h6 class="mb-2">6) Clôture du dossier d’instruction (délégation de pouvoir)</h6>
-                        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                            <span class="badge bg-light text-dark border">{{ $instructionClosureStatutLabel ?? '—' }}</span>
-                            @if($dossier->instruction_closure_validated_at)
-                                <span class="text-success small">Clos le {{ $dossier->instruction_closure_validated_at->format('d/m/Y H:i') }}</span>
-                            @elseif($dossier->instruction_closure_rejected_at)
-                                <span class="text-danger small">Rejet le {{ $dossier->instruction_closure_rejected_at->format('d/m/Y H:i') }}</span>
-                            @endif
-                        </div>
-                        @if(! empty($instructionClosureRuleDescription))
-                            <p class="text-muted small mb-2 text-break">{{ $instructionClosureRuleDescription }}</p>
-                        @endif
-                        @if($dossier->instruction_closure_reject_motif)
-                            <div class="alert alert-danger py-2 small mb-0 text-break" style="white-space: pre-wrap; overflow-wrap:anywhere; word-break:break-word;">{{ $dossier->instruction_closure_reject_motif }}</div>
-                        @endif
-                        @if($dossier->instruction_closure_note)
-                            <div class="alert alert-secondary py-2 small mb-0 mt-2 text-break" style="white-space: pre-wrap; overflow-wrap:anywhere; word-break:break-word;"><strong>Note :</strong> {{ $dossier->instruction_closure_note }}</div>
-                        @endif
-                    </div>
-                </div>
-            </div>
+            @include('RoleSpace.dossiers.partials.instruction-parcours-historique-unifie', [
+                'dossier' => $dossier,
+                'instructionConsultation' => $instructionConsultation ?? null,
+                'structurationSvc' => $structurationSvc,
+                'instructionClosureStatutLabel' => $instructionClosureStatutLabel ?? null,
+                'instructionClosureRuleDescription' => $instructionClosureRuleDescription ?? null,
+            ])
 
             {{-- Modals d’affectation (inchangées) --}}
             @if($spaceRoute === 'respexp' && isset($analystesExploitation) && $analystesExploitation->isNotEmpty())

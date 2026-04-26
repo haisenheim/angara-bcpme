@@ -2,6 +2,7 @@
 @php
     /** @var \App\Models\Dossier $dossier */
     $c = $instructionConsultation ?? null;
+    $showConsultationTimeline = $showConsultationTimeline ?? true;
 @endphp
 @if($c)
     <div class="instruction-dossier-consultation">
@@ -60,6 +61,7 @@
             </div>
         </div>
 
+        @if($showConsultationTimeline)
         <div class="card mb-3 border-start border-4 border-secondary">
             <div class="card-header bg-transparent border-0 py-3">
                 <h6 class="mb-0 fw-semibold"><i class="demo-psi-clock me-2 text-brand"></i>Historique du dossier</h6>
@@ -123,5 +125,6 @@
                 @endforelse
             </div>
         </div>
+        @endif
     </div>
 @endif
