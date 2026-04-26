@@ -52,7 +52,7 @@
                 @error('juridique_analyste_avis')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('analyste-juridique.dossiers.soumettre-reju', $dossier->token) }}" id="form-analyste-juridique-soumettre">
                     @csrf
-                    <div class="mb-3">
+                    <div class="mb-3 summernote-wrapper">
                         <label for="juridique_analyste_avis" class="form-label">Rédigez votre avis</label>
                         <textarea name="juridique_analyste_avis" id="juridique_analyste_avis" class="form-control js-summernote-juridique @error('juridique_analyste_avis') is-invalid @enderror" rows="10">{!! old('juridique_analyste_avis', $dossier->juridique_analyste_avis) !!}</textarea>
                     </div>
@@ -88,7 +88,7 @@
                 @error('engagements')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('juridique.dossiers.responsable-avis', $dossier->token) }}" class="mb-3">
                     @csrf
-                    <div class="mb-2">
+                    <div class="mb-2 summernote-wrapper">
                         <label for="juridique_responsable_avis" class="form-label">Rédigez votre avis</label>
                         <textarea name="juridique_responsable_avis" id="juridique_responsable_avis" class="form-control js-summernote-juridique @error('juridique_responsable_avis') is-invalid @enderror" rows="10">{!! old('juridique_responsable_avis', $dossier->juridique_responsable_avis) !!}</textarea>
                     </div>

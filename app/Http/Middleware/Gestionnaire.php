@@ -33,8 +33,6 @@ class Gestionnaire
             $active = 404;
         } elseif ($this->isProgrammesNavSection($parts)) {
             $active = 405;
-        } elseif (in_array('entites', $parts) || in_array('entite', $parts) || in_array('entities', $parts)) {
-            $active = 403;
         } elseif (in_array('entreprises', $parts) || in_array('entreprise', $parts)) {
             $active = 401;
         } elseif (in_array('users', $parts)) {
@@ -49,7 +47,7 @@ class Gestionnaire
     }
 
     /**
-     * Menu « programmes » : index /programmes et routes /programme/… sauf entreprise|entite/programme.
+     * Menu « programmes » : index /programmes et routes /programme/… sauf entreprise/programme.
      */
     private function isProgrammesNavSection(array $parts): bool
     {
@@ -59,7 +57,7 @@ class Gestionnaire
         if (! in_array('programme', $parts)) {
             return false;
         }
-        if (in_array('entreprise', $parts) || in_array('entite', $parts) || in_array('entreprises', $parts) || in_array('entites', $parts)) {
+        if (in_array('entreprise', $parts) || in_array('entreprises', $parts)) {
             return false;
         }
 

@@ -24,9 +24,13 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('gestionnaire.entreprises.show', $item->token) }}" class="btn btn-outline-secondary btn-sm">
-        <i class="demo-psi-arrow-left me-2"></i>{{ $backToLabel }}
-    </a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('gestionnaire.entreprises.show', $item->token) }}" class="dropdown-item">
+                <i class="demo-psi-arrow-left me-2"></i>{{ $backToLabel }}
+            </a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

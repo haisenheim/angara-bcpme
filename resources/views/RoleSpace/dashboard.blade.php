@@ -6,6 +6,8 @@
     'analyste-credit' => 'Layouts.analyste-credit',
     'analyste-risques' => 'Layouts.analyste-risques',
     'rerx' => 'Layouts.rerx',
+    'dg' => 'Layouts.dg',
+    'dga' => 'Layouts.dga',
     default => 'Layouts.app',
 })
 
@@ -83,7 +85,15 @@
         <div class="card shadow-sm border-0">
             <div class="card-body d-flex flex-wrap gap-2">
                 <a href="{{ route($space['route'].'.entreprises.index') }}" class="btn btn-primary">Voir les entreprises</a>
-                <a href="{{ route($space['route'].'.dossiers.index') }}" class="btn btn-outline-primary">Voir les dossiers</a>
+                @php
+                    $dashDossiersRoute = in_array($space['route'] ?? '', ['dg', 'dga'], true)
+                        ? $space['route'].'.dossiers.valides-chef-agence'
+                        : $space['route'].'.dossiers.index';
+                @endphp
+                <a href="{{ route($dashDossiersRoute) }}" class="btn btn-outline-primary">Voir les dossiers</a>
+                @if(in_array($space['route'] ?? '', ['dg', 'dga'], true))
+                    <a href="{{ route($space['route'].'.dossiers.en-attente-direction') }}" class="btn btn-outline-warning">Dossiers en attente avis direction</a>
+                @endif
             </div>
         </div>
     </div>

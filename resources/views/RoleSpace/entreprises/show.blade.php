@@ -6,6 +6,8 @@
     'analyste-credit' => 'Layouts.analyste-credit',
     'analyste-risques' => 'Layouts.analyste-risques',
     'rerx' => 'Layouts.rerx',
+    'dg' => 'Layouts.dg',
+    'dga' => 'Layouts.dga',
     default => 'Layouts.app',
 })
 
@@ -15,28 +17,38 @@
 
 @include('partials.entreprise-fiche-styles')
 
+@php
+    $entityListLabel = in_array($space['route'] ?? '', ['dg', 'dga'], true) ? 'Clients' : 'Entreprises';
+    $isAnalysteCreditSpace = (($space['route'] ?? '') === 'analyste-credit')
+        || str_starts_with((string) (request()->route()?->getName() ?? ''), 'analyste-credit.');
+    $engagementsReadRoute = ($space['route'] ?? '').'.entreprises.engagements';
+    $hasEngagementsReadRoute = \Illuminate\Support\Facades\Route::has($engagementsReadRoute);
+@endphp
+
 @section('title', $item->name.' - '.$space['title'])
 
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">Entreprises</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">{{ $entityListLabel }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($item->name, 40) }}</li>
     </ol>
 </nav>
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
-            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="roleSpaceEntrepriseShowActions">
+        @if($isAnalysteCreditSpace)
+            <li><a class="dropdown-item" href="{{ route('analyste-credit.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+            <li><hr class="dropdown-divider"></li>
+        @elseif($hasEngagementsReadRoute)
+            <li><a class="dropdown-item" href="{{ route($engagementsReadRoute, $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+            <li><hr class="dropdown-divider"></li>
+        @endif
+        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
+        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

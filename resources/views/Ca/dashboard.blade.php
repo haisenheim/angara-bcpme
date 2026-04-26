@@ -111,7 +111,7 @@
                                     <span class="spinner-border spinner-border-sm" role="status"></span>
                                 </div>
                                 <div class="text-xs mt-1">
-                                    En cours de qualification
+                                    En cours d’entrée en relation
                                 </div>
                             </div>
                             <div class="col-auto">
@@ -132,12 +132,15 @@
                             <p class="text-muted small mb-0">
                                 Prospects soumis à arbitrage : <strong>{{ $workflowPendingCount ?? 0 }}</strong>
                                 &nbsp;·&nbsp;
-                                Validations instruction (EER) : <strong>{{ $workflowInstructionCount ?? 0 }}</strong>
+                                Validations structuration (EER) : <strong>{{ $workflowInstructionCount ?? 0 }}</strong>
+                                &nbsp;·&nbsp;
+                                Dossiers instruction à valider (chef de filière) : <strong>{{ $workflowInstructionBundleCount ?? 0 }}</strong>
                             </p>
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ route('ca.workflow.prospects.index') }}" class="btn btn-primary btn-sm">File arbitrage prospects</a>
-                            <a href="{{ route('ca.workflow.instructions.index') }}" class="btn btn-outline-secondary btn-sm">Validations instruction</a>
+                            <a href="{{ route('ca.workflow.instructions.index') }}" class="btn btn-outline-secondary btn-sm">Validations structuration</a>
+                            <a href="{{ route('ca.workflow.instruction-dossiers.index') }}" class="btn btn-outline-secondary btn-sm">Dossiers instruction (multi-programmes)</a>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,12 @@
+@php
+    /** @var string $variant lite | bs5 — bs5 requis avec Bootstrap 5 (toolbar / listes / gras) */
+    $summernoteVariant = $variant ?? 'lite';
+@endphp
+@if($summernoteVariant === 'bs5')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs5.min.css">
+@else
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css">
+@endif
 <style>
 .summernote-wrapper .note-editor.note-frame {
     border-color: #d8dee6;
@@ -11,7 +19,14 @@
     border-bottom-color: #e5e7eb;
     border-top-left-radius: 0.75rem;
     border-top-right-radius: 0.75rem;
+    @if($summernoteVariant === 'bs5')
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.35rem;
+    @else
     display: block !important;
+    @endif
     visibility: visible !important;
     opacity: 1 !important;
     position: relative;
@@ -23,8 +38,9 @@
     z-index: 1;
 }
 
-.summernote-wrapper .note-editor.note-frame .note-btn-group.open .note-dropdown-menu {
-    z-index: 20;
+.summernote-wrapper .note-editor.note-frame .note-btn-group.open .note-dropdown-menu,
+.summernote-wrapper .note-dropdown-menu {
+    z-index: 2050;
 }
 
 .summernote-wrapper .note-editing-area .note-editable {
@@ -61,7 +77,7 @@
     list-style: inherit;
 }
 
-.summernote-wrapper .note-editor .note-toolbar,
+{{-- Ne pas forcer display sur .note-toolbar : Summernote BS5 exige flex sur la barre d’outils (gras, listes, menus). --}}
 .summernote-wrapper .note-editor .note-statusbar {
     display: block !important;
 }

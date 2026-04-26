@@ -13,24 +13,19 @@
 </nav>
 @endsection
 @section('actions')
-<div class="dropdown">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="demo-psi-dot-vertical me-1"></i> Actions
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#"><i class="demo-psi-add me-2"></i>Ajouter un appui</a></li>
-        <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#"><i class="demo-psi-file me-2"></i>Ajouter une pièce</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Checklist pièces exigibles</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Questionnaire de mise en relation</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
-        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
-    </ul>
-</div>
+<x-page-actions-dropdown button-id="gestionnaireEntrepriseShowActions">
+    <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#"><i class="demo-psi-add me-2"></i>Ajouter un appui</a></li>
+    <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#"><i class="demo-psi-file me-2"></i>Ajouter une pièce</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Checklist pièces exigibles</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Questionnaire de mise en relation</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create',$item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
+</x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

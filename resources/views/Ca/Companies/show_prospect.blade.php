@@ -14,19 +14,14 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('ca.entreprises.prospects') }}">Retour liste</a></li>
-            <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
-            @if($item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at)
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-success fw-semibold" href="{{ route('ca.workflow.prospects.show', $item->token) }}">Validation / refus prospect (chef d'agence)</a></li>
-            @endif
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="caProspectShowActions">
+        <li><a class="dropdown-item" href="{{ route('ca.entreprises.prospects') }}">Retour liste</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+        @if($item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at)
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-success fw-semibold" href="{{ route('ca.workflow.prospects.show', $item->token) }}">Validation / refus prospect (chef d'agence)</a></li>
+        @endif
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

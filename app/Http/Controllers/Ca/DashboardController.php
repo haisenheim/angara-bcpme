@@ -25,6 +25,13 @@ class DashboardController extends Controller
                 ->whereNull('qualification_validated_by_agence_at')
                 ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
                 ->count(),
+            'workflowInstructionBundleCount' => Dossier::on('central_app_mysql')
+                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
+                ->whereNotNull('chef_filiere_submitted_to_agence_at')
+                ->whereNull('instruction_agence_validated_at')
+                ->whereNull('instruction_agence_rejected_at')
+                ->whereHas('instructionProgrammes')
+                ->count(),
         ]);
     }
 
@@ -45,7 +52,6 @@ class DashboardController extends Controller
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
             'dossiers_en_cours' => $dossiersEnCours,
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
-            'total_entites_individuelles' => Entreprise::where('agence_id', $agenceId)->where('prospect', 0)->where('individual', 1)->count(),
 
             'total_users' => $users->count(),
             'total_prospects' => Entreprise::where('agence_id', $agenceId)
@@ -128,7 +134,7 @@ class DashboardController extends Controller
         $agenceId = auth()->user()->agence_id;
 
         $dossiers = Dossier::where('agence_id', $agenceId)
-            ->with(['entreprise', 'programme', 'gestionnaire'])
+            ->with(['entreprise', 'programme', 'instructionProgrammes.programme', 'gestionnaire'])
             ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get()
@@ -139,7 +145,7 @@ class DashboardController extends Controller
                     'id' => $dossier->id,
                     'token' => $dossier->token,
                     'entreprise_name' => $dossier->entreprise->name ?? 'N/A',
-                    'programme_name' => $dossier->programme->name ?? 'N/A',
+                    'programme_name' => $dossier->programmesLabel(),
                     'gestionnaire_name' => $dossier->gestionnaire->name ?? 'Non assigné',
                     'statut' => $status['code'],
                     'statut_name' => $status['name'],

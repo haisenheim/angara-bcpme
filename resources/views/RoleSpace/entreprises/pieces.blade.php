@@ -6,8 +6,14 @@
     'analyste-credit' => 'Layouts.analyste-credit',
     'analyste-risques' => 'Layouts.analyste-risques',
     'rerx' => 'Layouts.rerx',
+    'dg' => 'Layouts.dg',
+    'dga' => 'Layouts.dga',
     default => 'Layouts.app',
 })
+
+@php
+    $entityListLabel = in_array($space['route'] ?? '', ['dg', 'dga'], true) ? 'Clients' : 'Entreprises';
+@endphp
 
 @section('title', 'Pièces - '.$entreprise->name)
 
@@ -15,7 +21,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">Entreprises</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.index') }}">{{ $entityListLabel }}</a></li>
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}">{{ Str::limit($entreprise->name, 32) }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">Pièces exigibles</li>
     </ol>
@@ -23,15 +29,10 @@
 @endsection
 
 @section('actions')
-<div class="dropdown">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="demo-psi-dot-vertical me-1"></i> Actions
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}"><i class="demo-pli-arrow-left me-2"></i>Retour à l'entreprise</a></li>
-        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}"><i class="demo-pli-building me-2"></i>Liste des entreprises</a></li>
-    </ul>
-</div>
+<x-page-actions-dropdown button-id="roleSpaceEntreprisePiecesActions">
+    <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}"><i class="demo-pli-arrow-left me-2"></i>Retour à l'entreprise</a></li>
+    <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}"><i class="demo-pli-building me-2"></i>Liste des {{ strtolower($entityListLabel) }}</a></li>
+</x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

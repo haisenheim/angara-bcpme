@@ -12,7 +12,7 @@
                      <!-- Toggler -->
                      <button class="header__btn btn btn-icon btn-sm" type="button" data-bs-toggle="dropdown" aria-label="Notification dropdown" aria-expanded="false">
                         <span class="d-block position-relative">
-                           <i class="demo-psi-bell"></i>
+                           <i class="bi bi-bell"></i>
 
                            <span class="badge badge-super rounded-pill bg-danger p-1">
                               <span class="visually-hidden">unread messages</span>
@@ -35,7 +35,7 @@
                            <!-- List item -->
                            <div class="list-group-item list-group-item-action d-flex align-items-center mb-3">
                               <div class="flex-shrink-0 me-3">
-                                 <i class="demo-psi-data-settings text-danger fs-2"></i>
+                                 <i class="bi bi-hdd-stack text-danger fs-2"></i>
                               </div>
                               <div class="flex-grow-1">
                                  <a href="#" class="h6 fw-normal d-block mb-0 stretched-link text-decoration-none">Your storage is full</a>
@@ -47,7 +47,7 @@
                            <!-- List item -->
                            <div class="list-group-item list-group-item-action d-flex align-items-center mb-3">
                               <div class="flex-shrink-0 me-3">
-                                 <i class="demo-psi-pen-5 text-info fs-2"></i>
+                                 <i class="bi bi-pencil-square text-info fs-2"></i>
                               </div>
                               <div class="flex-grow-1">
                                  <a href="#" class="h6 fw-normal d-block mb-0 stretched-link text-decoration-none">Writing a New Article</a>
@@ -59,7 +59,7 @@
                            <!-- List item -->
                            <div class="list-group-item list-group-item-action d-flex align-items-start mb-3">
                               <div class="flex-shrink-0 me-3">
-                                 <i class="demo-psi-speech-bubble-3 text-success fs-2"></i>
+                                 <i class="bi bi-chat-left-text text-success fs-2"></i>
                               </div>
                               <div class="flex-grow-1">
                                  <div class="d-flex justify-content-between align-items-start">
@@ -97,7 +97,7 @@
                            <div class="text-center mb-2">
                               <a href="#" class="btn-link text-primary icon-link icon-link-hover">
                                  Show all Notifications
-                                 <i class="bi demo-psi-arrow-out-right"></i>
+                                 <i class="bi bi-arrow-up-right"></i>
                               </a>
                            </div>
 
@@ -144,7 +144,7 @@
                               <div class="list-group list-group-borderless mb-3">
                                  <div class="list-group-item text-center border-bottom mb-3">
                                     <p class="h1 display-1 text-primary fw-semibold">17</p>
-                                    <p class="h6 mb-0"><i class="demo-pli-basket-coins fs-3 me-2"></i> New orders</p>
+                                    <p class="h6 mb-0"><i class="bi bi-basket3 fs-3 me-2"></i> New orders</p>
                                     <small class="text-body-secondary">You have new orders</small>
                                  </div>
                                  <div class="list-group-item py-0 d-flex justify-content-between align-items-center">
@@ -168,21 +168,21 @@
                               <!-- User menu link -->
                               <div class="list-group list-group-borderless h-100 py-3">
                                  <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                    <span><i class="demo-pli-mail fs-5 me-2"></i> Messages</span>
+                                    <span><i class="bi bi-envelope fs-5 me-2"></i> Messages</span>
                                     <span class="badge bg-danger rounded-pill">14</span>
                                  </a>
                                  <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="demo-pli-male fs-5 me-2"></i> Profile
+                                    <i class="bi bi-person-circle fs-5 me-2"></i> Profile
                                  </a>
                                  <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="demo-pli-gear fs-5 me-2"></i> Settings
+                                    <i class="bi bi-gear fs-5 me-2"></i> Settings
                                  </a>
 
                                  <a href="#" class="list-group-item list-group-item-action mt-auto">
-                                    <i class="demo-pli-computer-secure fs-5 me-2"></i> Lock screen
+                                    <i class="bi bi-shield-lock fs-5 me-2"></i> Lock screen
                                  </a>
                                  <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="demo-pli-unlock fs-5 me-2"></i> Logout
+                                    <i class="bi bi-box-arrow-right fs-5 me-2"></i> Logout
                                  </a>
                               </div>
 
@@ -254,15 +254,6 @@
                     <span class="nav-label mininav-content ms-1">ENTREPRISES</span>
                 </a>
             </li>
-            @if (Route::has('admin.entites.index'))
-                <li class="nav-item">
-                    <a href="{{ route('admin.entites.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}">
-                        {{-- <i class="pli-bank fs-2 me-2"></i> --}}
-                        <span class="icon-nav"><img src="{{ asset('img/new/navigation/enterprises.svg')}}" alt=""></span>
-                        <span class="nav-label mininav-content ms-1">ENTITES INDIV.</span>
-                    </a>
-                </li>
-            @endif
             <li class="nav-item">
                 <a href="{{ route('admin.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}">
                     {{-- <i class="pli-affiliate fs-2 me-2"></i> --}}
@@ -307,6 +298,13 @@
                 <a href="{{ route('admin.pieces-exigibles.index') }}" class="nav-link mininav-toggle">
                     <span class="icon-nav"><img src="{{ asset('img/new/navigation/prospect.svg')}}" alt=""></span>
                     <span class="nav-label mininav-content ms-1">Pieces exigibles</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('admin.fichiers-types.index') }}" class="nav-link mininav-toggle {{ $active==807?'active':'' }}">
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/prospect.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">Repertoire pieces &amp; documents</span>
                 </a>
             </li>
 
@@ -355,6 +353,11 @@
                     @if (Route::has('admin.operateurs.index'))
                         <li class="nav-item">
                             <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
+                        </li>
+                    @endif
+                    @if (Route::has('admin.delegation-pouvoirs.index'))
+                        <li class="nav-item">
+                            <a href="{{ route('admin.delegation-pouvoirs.index') }}" class="nav-link {{ $active==804?'active':'' }}">Délégation de pouvoir (instruction)</a>
                         </li>
                     @endif
                 </ul>

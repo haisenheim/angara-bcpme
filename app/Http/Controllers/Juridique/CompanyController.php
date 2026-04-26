@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\Juridique;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Controller;
+use App\Models\Agence;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
+    use AppliesEntrepriseListIndexFilters;
+
     /**
      * Liste des entreprises (hors prospect) — vue portefeuille responsable juridique.
      */
@@ -15,7 +21,7 @@ class CompanyController extends Controller
     {
         $query = Entreprise::query()
             ->where('prospect', 0)
-            ->with(['agence'])
+            ->with(['agence', 'dossierEntreeRelation', 'gestionnaire'])
             ->orderBy('name');
 
         $q = trim((string) $request->query('q', ''));
@@ -27,9 +33,22 @@ class CompanyController extends Controller
             });
         }
 
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        if ($structurationStatus) {
+            $query->whereClientStructurationStatus($structurationStatus);
+        }
+
+        $filters = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+        $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
+
         $items = $query->paginate(25)->withQueryString();
 
-        return view('Juridique.Companies.index', compact('items', 'q'));
+        $agenceIds = Entreprise::query()->where('prospect', 0)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = Entreprise::query()->where('prospect', 0)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+        $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
+        $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
+
+        return view('Juridique.Companies.index', compact('items', 'q', 'structurationStatus', 'agences', 'gestionnaires'));
     }
 
     /**

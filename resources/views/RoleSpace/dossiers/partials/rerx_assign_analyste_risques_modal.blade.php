@@ -14,8 +14,8 @@
                 </div>
                 <div class="modal-body">
                     <p class="small text-muted mb-3">
-                        Profil analyste risques (config. <code>role_analyste_risques</code>, id {{ (int) config('angara.role_analyste_risques', 18) }}).
-                        L’affectation est tracée (date, heure et auteur).
+                        Sélectionnez l’analyste risques en charge de l’étude de ce dossier.
+                        L’affectation (ou la réaffectation) est tracée avec la date, l’heure et l’auteur.
                     </p>
                     <div class="mb-0">
                         <label class="form-label fw-semibold" for="modal_rerx_analyste_risques_user_id">Analyste risques</label>

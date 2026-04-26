@@ -19,15 +19,9 @@
 @endsection
 
 @section('actions')
-    <div class="btn-group">
-        <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-        Actions
-        <span class="vr"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li><a data-bs-toggle="modal" data-bs-target="#addModal" class="dropdown-item" href="#">Associer un libellé</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2">
+        <li><a data-bs-toggle="modal" data-bs-target="#addModal" class="dropdown-item" href="#">Associer un libellé</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')

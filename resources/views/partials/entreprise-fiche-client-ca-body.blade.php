@@ -471,10 +471,71 @@
             </div>
         </div>
     </div>
+    @php
+        $eerCa = $item->dossierEntreeRelation;
+        $caInstructionDossiers = $item->dossiers->filter(fn ($d) => $d->instructionProgrammes->isNotEmpty())->sortByDesc('created_at')->values();
+    @endphp
+    @if($eerCa && $eerCa->qualification_validated_by_agence_at)
+        <div class="col-12">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary">
+                <div class="card-header bg-white border-bottom py-3">
+                    <strong>Dossiers d’instruction (chef de filière → chef d’agence)</strong>
+                    <p class="text-body-secondary small mb-0 mt-1">Plusieurs dossiers peuvent être en cours ; chaque transmission est traitée séparément.</p>
+                </div>
+                <div class="card-body">
+                    @forelse($caInstructionDossiers as $dCa)
+                        @php
+                            $borderClass = $dCa->isInstructionPendingAgenceValidation() ? 'border-warning' : ($dCa->isInstructionValidatedByAgence() ? 'border-success' : ($dCa->isInstructionRejectedByAgence() ? 'border-danger' : 'border-secondary'));
+                        @endphp
+                        <div class="border rounded mb-3 p-3 border-start border-4 {{ $borderClass }}">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                <strong class="small">{{ $dCa->programmesLabel() }}</strong>
+                                @if($dCa->isInstructionPendingAgenceValidation())
+                                    <span class="badge bg-warning text-dark">Validation requise</span>
+                                @elseif($dCa->isInstructionValidatedByAgence())
+                                    <span class="badge bg-success">Validé</span>
+                                @elseif($dCa->isInstructionRejectedByAgence())
+                                    <span class="badge bg-danger">Rejeté</span>
+                                @else
+                                    <span class="badge bg-secondary">—</span>
+                                @endif
+                            </div>
+                            <p class="small mb-2">Transmis le {{ $dCa->chef_filiere_submitted_to_agence_at?->format('d/m/Y H:i') ?? '—' }}@if($dCa->chefFiliereSubmittedToAgenceBy) — {{ $dCa->chefFiliereSubmittedToAgenceBy->name }} @endif</p>
+                            @if($dCa->instructionProgrammes->isNotEmpty())
+                                <div class="table-responsive mb-2">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light"><tr><th>Programme</th><th class="text-end">Appui financier</th><th class="text-end">Appui non financier</th></tr></thead>
+                                        <tbody>
+                                            @foreach($dCa->instructionProgrammes as $dip)
+                                                <tr>
+                                                    <td>{{ $dip->programme?->name ?? '—' }}</td>
+                                                    <td class="text-end">{{ number_format((float) $dip->budget_appui_financier, 0, ',', ' ') }}</td>
+                                                    <td class="text-end">{{ number_format((float) $dip->budget_appui_non_financier, 0, ',', ' ') }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                            @if($dCa->isInstructionRejectedByAgence() && $dCa->instruction_agence_reject_motif)
+                                <p class="small mb-2 text-danger" style="white-space: pre-wrap;"><strong>Motif :</strong> {{ $dCa->instruction_agence_reject_motif }}</p>
+                            @endif
+                            <a href="{{ route('ca.workflow.instruction-dossiers.show', $dCa->token) }}" class="btn btn-sm {{ $dCa->isInstructionPendingAgenceValidation() ? 'btn-primary' : 'btn-outline-secondary' }}">@if($dCa->isInstructionPendingAgenceValidation()) Traiter @else Consulter @endif</a>
+                            @if($dCa->isInstructionValidatedByAgence())
+                                <a href="{{ route($dossierShowRoute, $dCa->token) }}" class="btn btn-sm btn-outline-primary ms-1">Fiche dossier</a>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-body-secondary small mb-0">En attente de la soumission par le chef de filière (fiche client).</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
-                <strong>Dossiers d'instruction par programme</strong>
+                <strong>Dossiers d’instruction</strong>
             </div>
             <div class="card-body">
                 @if($item->dossiers->isEmpty())
@@ -484,9 +545,9 @@
                         <table class="table table-striped mb-0 align-middle">
                             <thead>
                                 <tr>
-                                    <th>Programme</th>
-                                    <th>Signataire</th>
-                                    <th>Budget</th>
+                                    <th>Programme(s) &amp; budgets d’appui</th>
+                                    <th>Signataire (réf.)</th>
+                                    <th>Budget programme (réf.)</th>
                                     <th>Date signature conv.</th>
                                     <th class="text-end"></th>
                                 </tr>
@@ -494,14 +555,27 @@
                             <tbody>
                                 @foreach($item->dossiers as $dossier)
                                     <tr>
-                                        <th>
-                                            @if($programmeShowRoute && $dossier->programme?->token)
-                                                <a href="{{ route($programmeShowRoute, $dossier->programme->token) }}">{{ $dossier->programme?->name }}</a>
+                                        <td>
+                                            @if($dossier->instructionProgrammes->isNotEmpty())
+                                                <ul class="list-unstyled mb-0 small">
+                                                    @foreach($dossier->instructionProgrammes as $dip)
+                                                        <li class="mb-1">
+                                                            <strong>{{ $dip->programme?->name ?? '—' }}</strong>
+                                                            — fin. {{ number_format((float) $dip->budget_appui_financier, 0, ',', ' ') }} XAF ;
+                                                            non fin. {{ number_format((float) $dip->budget_appui_non_financier, 0, ',', ' ') }} XAF
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
                                             @else
-                                                {{ $dossier->programme?->name ?? '—' }}
+                                                @if($programmeShowRoute && $dossier->programme?->token)
+                                                    <a href="{{ route($programmeShowRoute, $dossier->programme->token) }}">{{ $dossier->programme?->name }}</a>
+                                                @else
+                                                    {{ $dossier->programme?->name ?? '—' }}
+                                                @endif
+                                                <span class="text-muted small d-block">Dossier historique (un programme)</span>
                                             @endif
-                                        </th>
-                                        <td>{{ $dossier->programme?->signataire ?? '—' }}</td>
+                                        </td>
+                                        <td>{{ $dossier->signatairesLabel() }}</td>
                                         <td>{{ $dossier->programme?->budget !== null ? number_format((float) $dossier->programme->budget, 0, ',', '.') . ' XAF' : '—' }}</td>
                                         <td>{{ $dossier->programme?->dt_sig_conv ? \Carbon\Carbon::parse($dossier->programme->dt_sig_conv)->format('d/m/Y') : '—' }}</td>
                                         <td class="text-end">
@@ -510,7 +584,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li><a class="dropdown-item" href="{{ route($dossierShowRoute, $dossier->token) }}">Afficher le dossier</a></li>
                                                     @if($programmeShowRoute && $dossier->programme?->token)
-                                                        <li><a class="dropdown-item" href="{{ route($programmeShowRoute, $dossier->programme->token) }}">Afficher le programme</a></li>
+                                                        <li><a class="dropdown-item" href="{{ route($programmeShowRoute, $dossier->programme->token) }}">Afficher le programme (réf.)</a></li>
                                                     @endif
                                                 </ul>
                                             </div>

@@ -7,6 +7,8 @@ use App\Models\Entreprise;
 use App\Models\Instruction\Critere as InstructionCritere;
 use App\Models\QuestionSousCritere;
 use App\Services\AnalyseCritiqueService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
@@ -23,6 +25,7 @@ class ProspectReviewController extends Controller
             'title' => 'Prospects — avis juridique',
             'role' => 'juridique',
             'items' => $items,
+            'exportRoute' => route('juridique.prospects.export'),
         ]);
     }
 
@@ -35,6 +38,7 @@ class ProspectReviewController extends Controller
             'role' => 'conformite',
             'items' => $items,
             'listMode' => 'open',
+            'exportRoute' => route('conformite.prospects.export'),
         ]);
     }
 
@@ -47,7 +51,38 @@ class ProspectReviewController extends Controller
             'role' => 'conformite',
             'items' => $items,
             'listMode' => 'treated',
+            'exportRoute' => null,
         ]);
+    }
+
+    public function exportOpenProspectsJuridique(Request $request)
+    {
+        return $this->exportOpenProspectsList($request, 'juridique', 'juridique-prospects-circuit', 'Juridique — prospects en circuit d\'avis');
+    }
+
+    public function exportOpenProspectsConformite(Request $request)
+    {
+        return $this->exportOpenProspectsList($request, 'conformite', 'conformite-prospects-circuit', 'Conformité — prospects en circuit d\'avis');
+    }
+
+    private function exportOpenProspectsList(Request $request, string $role, string $filenameSlug, string $documentTitle): mixed
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $items = $this->openProspectsQuery()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
+        $rows = ProspectEntrepriseTableExportService::rowsReviewOpen($items, $role);
+
+        return TableDocumentExportService::downloadFormatted(
+            $rows,
+            ProspectEntrepriseTableExportService::headersReviewOpen($role),
+            $format,
+            $filenameSlug,
+            $documentTitle,
+            'Liste des dossiers soumis (circuit ouvert)',
+        );
     }
 
     public function showJuridique(string $token)

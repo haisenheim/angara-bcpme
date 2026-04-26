@@ -19,10 +19,27 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role_id' => ['required', 'integer', 'exists:profils,id'],
+            'organisation_type' => ['required', 'in:agence,entite'],
             'agence_id' => ['nullable', 'integer', 'min:0'],
+            'organisation_entite_id' => ['nullable', 'integer', 'min:1', 'exists:organisation_entites,id'],
             'active' => ['nullable', 'boolean'],
         ];
 
         return $rules;
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($v) {
+            $type = (string) ($this->input('organisation_type') ?? '');
+            $agenceId = (int) ($this->input('agence_id') ?? 0);
+            $entiteId = (int) ($this->input('organisation_entite_id') ?? 0);
+            if ($type === 'agence' && $agenceId < 1) {
+                $v->errors()->add('agence_id', 'Selectionnez une agence.');
+            }
+            if ($type === 'entite' && $entiteId < 1) {
+                $v->errors()->add('organisation_entite_id', 'Selectionnez une entite.');
+            }
+        });
     }
 }

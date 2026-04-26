@@ -1,20 +1,20 @@
 @extends('Layouts.chef_filiere')
 
-@section('title', 'Qualifications en attente')
+@section('title', 'Structurations en attente')
 
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route('chef-filiere.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Qualifications en attente</li>
+        <li class="breadcrumb-item active" aria-current="page">Structurations en attente</li>
     </ol>
 </nav>
 @endsection
 
 @section('page-header')
 <div>
-    <h5 class="page-title mb-0">Qualifications en attente</h5>
-    <p class="text-body-secondary mb-0 mt-1 small">Clients promus dont la qualification n’est pas encore soumise au chef d’agence.</p>
+    <h5 class="page-title mb-0">Structurations en attente</h5>
+    <p class="text-body-secondary mb-0 mt-1 small">Clients promus dont la structuration n’est pas encore soumise au chef d’agence.</p>
 </div>
 @endsection
 
@@ -22,7 +22,7 @@
 <div class="cf-page">
     <div class="cf-hero mb-4">
         <h1 class="cf-hero__title">À traiter</h1>
-        <p class="cf-hero__lead">Ouvrez le dossier client depuis cette liste pour compléter la qualification et l’affectation programme.</p>
+        <p class="cf-hero__lead">Ouvrez le dossier client depuis cette liste pour compléter la structuration et l’affectation programme.</p>
         <div class="cf-hero__meta">
             <span class="cf-kpi"><span class="text-muted fw-normal">Dossiers</span> <span class="cf-kpi__val">{{ $items->count() }}</span></span>
         </div>
@@ -39,7 +39,7 @@
                         <th scope="col">Client</th>
                         <th scope="col">Agence</th>
                         <th scope="col">Promu client</th>
-                        <th scope="col">EER</th>
+                        <th scope="col">État structuration</th>
                         <th scope="col" class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -49,7 +49,7 @@
                             <td class="fw-semibold text-dark">{{ $item->name }}</td>
                             <td>{{ $item->agence?->name ?? '—' }}</td>
                             <td><span class="text-nowrap">{{ optional($item->promu_client_at)->format('d/m/Y H:i') ?? '—' }}</span></td>
-                            <td><span class="badge rounded-pill bg-light text-dark border">{{ $item->dossierEntreeRelation?->statut ?? 'non initialisé' }}</span></td>
+                            <td>@include('partials.client-structuration-badge', ['eer' => $item->dossierEntreeRelation])</td>
                             <td class="text-end text-nowrap">
                                 <a href="{{ route('chef-filiere.clients.show', $item->token) }}" class="btn btn-sm btn-primary">Consulter</a>
                             </td>
@@ -58,7 +58,7 @@
                         <tr>
                             <td colspan="5" class="cf-empty border-0">
                                 <i class="cf-empty__icon demo-psi-check-mark" aria-hidden="true"></i>
-                                Aucune qualification en attente.
+                                Aucune structuration en attente.
                             </td>
                         </tr>
                     @endforelse

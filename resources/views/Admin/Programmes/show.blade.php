@@ -19,19 +19,14 @@
 @endsection
 
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        Actions
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2">
         <li><a class="dropdown-item" data-bs-target="#addModal" data-bs-toggle="modal" href="#">Ajouter une composante</a></li>
         <li><a class="dropdown-item" data-bs-target="#addIndModal" data-bs-toggle="modal" href="#">Ajouter un objectif</a></li>
         <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#">Ajouter un appui</a></li>
         <li><a class="dropdown-item" data-bs-target="#addProdModal" data-bs-toggle="modal" href="#">Ajouter un secteur</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route('admin.programmes.edit', $item->token) }}">Modifier le programme</a></li>
-    </ul>
-</div>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

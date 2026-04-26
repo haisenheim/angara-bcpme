@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Analyste;
 
+use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
 use App\Models\Dossier;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Session;
 
 class DossierController extends Controller
 {
+    use StoresDossierPieces;
+
     //
     public function index()
     {
@@ -60,9 +63,41 @@ class DossierController extends Controller
     }
 
     /**
-     * Soumission au responsable exploitation après instruction terminée (débloque avis / validation côté REXP).
+     * Enregistrement du brouillon des rubriques d’analyse (Summernote), sans soumission au REXP.
      */
-    public function soumettreExploitation(Dossier $dossier)
+    public function saveInstructionAvisDraft(Request $request, Dossier $dossier)
+    {
+        $this->authorizeAnalysteDossier($dossier);
+
+        if (! $dossier->analyste_id) {
+            return redirect()
+                ->back()
+                ->withErrors(['submission' => 'Le dossier doit avoir un analyste affecté.']);
+        }
+
+        $user = auth()->user();
+        $national = $user instanceof User && $user->isAnalysteFinancierNational();
+        if (! $national && (int) $dossier->analyste_id !== (int) auth()->id()) {
+            abort(403);
+        }
+
+        if ($dossier->isInstructionSubmittedToExploitation()) {
+            return redirect()->back()->with('info', 'Vous avez déjà soumis ce dossier au responsable exploitation : les rubriques d’analyse ne sont plus modifiables depuis cet écran.');
+        }
+
+        $this->fillExploitationAfInstructionSectionsFromRequest($dossier, $request);
+        $dossier->syncExploitationAnalysteInstructionAvisFromAfSections();
+        $dossier->exploitation_analyste_instruction_avis_saved_at = now();
+        $dossier->save();
+
+        return redirect()->back()->with('success', 'Brouillon des rubriques d’analyse enregistré. Vous pourrez continuer plus tard avant de soumettre au responsable exploitation.');
+    }
+
+    /**
+     * Soumission au responsable exploitation après instruction terminée (débloque avis / validation côté REXP).
+     * Exige les sept rubriques d’analyse rédigées (contenu non vide hors balises HTML).
+     */
+    public function soumettreExploitation(Request $request, Dossier $dossier)
     {
         $this->authorizeAnalysteDossier($dossier);
 
@@ -79,11 +114,24 @@ class DossierController extends Controller
         }
 
         if ($dossier->isInstructionSubmittedToExploitation()) {
-            return redirect()->back()->with('info', 'Ce dossier a déjà été soumis au responsable exploitation.');
+            return redirect()->back()->with('info', 'Ce dossier a déjà été soumis au responsable exploitation par vous.');
         }
 
-        $dossier->exploitation_instruction_submitted_at = now();
-        $dossier->exploitation_instruction_submitted_by_user_id = auth()->id();
+        $this->fillExploitationAfInstructionSectionsFromRequest($dossier, $request);
+        $dossier->syncExploitationAnalysteInstructionAvisFromAfSections();
+
+        if (! $dossier->canSubmitAnalysteInstructionToExploitation()) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors([
+                    'submission' => 'Renseignez les sept rubriques de saisie (Summernote) sous « Saisie analyste financier », puis soumettez au responsable exploitation.',
+                ]);
+        }
+
+        $dossier->exploitation_analyste_instruction_avis_saved_at = now();
+        $dossier->exploitation_analyste_transmitted_to_exploitation_at = now();
+        $dossier->exploitation_analyste_transmitted_to_exploitation_by_user_id = auth()->id();
         $dossier->save();
 
         return redirect()->back()->with('success', 'Dossier soumis au responsable exploitation pour validation.');
@@ -123,12 +171,13 @@ class DossierController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereHas('entreprise', fn ($e) => $e->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('programme', fn ($p) => $p->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('instructionProgrammes.programme', fn ($p) => $p->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('analyste', fn ($a) => $a->where('name', 'like', "%{$search}%"));
             });
             $recordsFiltered = $query->count();
         }
 
-        $items = $query->with(['entreprise', 'programme', 'analyste', 'agence'])->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $items = $query->with(['entreprise', 'programme', 'instructionProgrammes.programme', 'analyste', 'agence'])->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
         $resolved = DossierListResource::collection($items)->toArray($request);
         $data = array_values($resolved['data'] ?? $resolved);
 
@@ -145,16 +194,24 @@ class DossierController extends Controller
         return [
             'programme_id' => $request->input('programme_id'),
             'analyste_id' => $request->input('analyste_id'),
+            'entity_route' => $request->input('entity_route'),
         ];
     }
 
     private function applyFilters($query, array $filters)
     {
         if (! empty($filters['programme_id'])) {
-            $query->where('programme_id', $filters['programme_id']);
+            $pid = $filters['programme_id'];
+            $query->where(function ($q) use ($pid) {
+                $q->where('programme_id', $pid)
+                    ->orWhereHas('instructionProgrammes', fn ($q2) => $q2->where('programme_id', $pid));
+            });
         }
         if (! empty($filters['analyste_id'])) {
             $query->where('analyste_id', $filters['analyste_id']);
+        }
+        if (! empty($filters['entity_route'])) {
+            $query->inCurrentEntity((string) $filters['entity_route']);
         }
 
         return $query;
@@ -166,13 +223,22 @@ class DossierController extends Controller
         $analysteIds = $this->baseQuery()->whereNotNull('analyste_id')->distinct()->pluck('analyste_id');
         $analystes = User::query()->whereIn('id', $analysteIds)->orderBy('name')->get(['id', 'name']);
 
-        return response()->json(['programmes' => $programmes, 'analystes' => $analystes]);
+        $entities = [
+            ['route' => 'respexp', 'label' => 'Pôle exploitation'],
+            ['route' => 'juridique', 'label' => 'Pôle juridique'],
+            ['route' => 'reng', 'label' => 'Pôle engagements'],
+            ['route' => 'rerx', 'label' => 'Pôle risques'],
+            ['route' => 'dg', 'label' => 'Direction générale'],
+        ];
+
+        return response()->json(['programmes' => $programmes, 'analystes' => $analystes, 'entities' => $entities]);
     }
 
     public function getGrilleAnalyse($token)
     {
         $item = Dossier::where('token', $token)->firstOrFail();
         $this->authorizeAnalysteDossier($item);
+        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
 
         return view('Analyste/Dossiers/analyse_critique', compact('item'));
     }
@@ -208,6 +274,9 @@ class DossierController extends Controller
         }
 
         // dd($data);
+
+        $data['instruction_grille_last_edited_at'] = now();
+        $data['instruction_grille_last_edited_by_user_id'] = auth()->id();
 
         Dossier::updateOrCreate(['id' => $dossier_id], $data);
 
@@ -321,12 +390,20 @@ class DossierController extends Controller
     {
 
         $item = Dossier::query()
-            ->with(['exploitationAnalysteAssignedBy', 'exploitationInstructionSubmittedBy'])
+            ->with(['exploitationAnalysteAssignedBy', 'exploitationAnalysteTransmittedToExploitationBy'])
             ->where('token', $token)
             ->firstOrFail();
         $this->authorizeAnalysteDossier($item);
 
         return view('Analyste/Dossiers/show', app(DossierInstructionShowPresenter::class)->presentForDossier($item));
+    }
+
+    public function storeDossierPiece(Request $request, string $token)
+    {
+        $dossier = Dossier::query()->where('token', $token)->first();
+        $this->authorizeAnalysteDossier($dossier);
+
+        return $this->completeDossierPieceUpload($request, $dossier, 'analyste.dossiers.show', $dossier);
     }
 
     public function show_($token)
@@ -346,5 +423,12 @@ class DossierController extends Controller
         $sme = $resp['sme'];
 
         return view('Analyste/Dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
+    }
+
+    private function fillExploitationAfInstructionSectionsFromRequest(Dossier $dossier, Request $request): void
+    {
+        foreach (Dossier::exploitationAfInstructionSectionColumns() as $column) {
+            $dossier->{$column} = (string) $request->input($column, $dossier->{$column} ?? '');
+        }
     }
 }

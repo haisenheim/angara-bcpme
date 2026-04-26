@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Agence;
+use App\Models\OrganisationEntite;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -148,6 +149,7 @@ class UserController extends Controller
         return [
             'roles' => Role::where('metier', 1)->orderBy('name')->get(),
             'agences' => Agence::query()->orderBy('name')->get(),
+            'organisationEntites' => OrganisationEntite::query()->where('active', true)->orderBy('type')->orderBy('name')->get(),
         ];
     }
 
@@ -155,7 +157,7 @@ class UserController extends Controller
     {
         return User::query()
             ->where('role_id', '>', 1)
-            ->with(['role', 'agence.representation'])
+            ->with(['role', 'agence.representation', 'organisationEntite'])
             ->orderByDesc('id');
     }
 
@@ -168,12 +170,33 @@ class UserController extends Controller
 
     protected function normalizePayload(array $validated, bool $withPassword = true): array
     {
+        $organisationType = $validated['organisation_type'] ?? null;
+        $agenceId = (int) ($validated['agence_id'] ?? 0);
+        $entiteId = $validated['organisation_entite_id'] ?? null;
+        $entiteId = filled($entiteId) ? (int) $entiteId : null;
+
+        if ($organisationType === 'agence') {
+            $entiteId = null;
+        } elseif ($organisationType === 'entite') {
+            $agenceId = 0;
+        } else {
+            // fallback compat: si agence_id présent => agence, sinon entité
+            $organisationType = $agenceId > 0 ? 'agence' : 'entite';
+            if ($organisationType === 'agence') {
+                $entiteId = null;
+            } else {
+                $agenceId = 0;
+            }
+        }
+
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
             'role_id' => (int) $validated['role_id'],
-            'agence_id' => (int) ($validated['agence_id'] ?? 0),
+            'agence_id' => $agenceId,
+            'organisation_type' => $organisationType,
+            'organisation_entite_id' => $entiteId,
         ];
 
         if ($withPassword || array_key_exists('password', $validated)) {

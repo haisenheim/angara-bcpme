@@ -1,24 +1,32 @@
 :root {
-    /* Angara — déploiement BC-PME (vert institutionnel logo) */
-    --bcpme-green: #88b824;
-    --bcpme-green-dark: #6f9a1c;
-    --bcpme-green-subtle: #e8f5d9;
-    --bg-color: #f5f5f5;
-    --gray-1: #e0e0e0;
-    /* Rouge logo BC-PME (flèche / cartouche) — actions primaires */
-    --primary-color: #c41e3a;
-    --primary-dark: #9e1830;
-    --primary-light: #fce8ec;
-    --on-primary: #ffffff;
-    --dark-color: #1a1a1a;
+    /* Angara — identité BC‑PME (logo) + rendu banque sobre */
+    --bcpme-green: #91BD47; /* vert logo (accent) */
+    --bcpme-green-dark: #506926; /* dérivé assombri (nav / contrastes) */
+    --bcpme-green-subtle: #EDF6DE; /* fond 6–8% */
+    --bcpme-red: #D0362E; /* rouge logo (danger / risque) */
+    --bcpme-red-dark: #B92B24;
+    --bcpme-red-subtle: #FDE9E8;
+
+    /* Surfaces & texte (quiet luxury) */
+    --bg-color: #F7F8FA;
+    --gray-1: #E6E8EC;
+    --border-color-bcpme: #E6E8EC;
     --ligth-color: #ffffff;
-    --text-body: #3a3a3a;
-    --text-muted-custom: #6b6b6b;
-    --border-color-bcpme: #e0e0e0;
-    --green-color: #2e7d32;
-    --blue-color: #1294de;
-    --orange-color: rgb(255, 136, 0);
-    --semantic-danger: #c62828;
+    --dark-color: #111827; /* anthracite banque */
+    --text-body: #111827;
+    --text-muted-custom: #4B5563;
+
+    /* Actions primaires = anthracite (CTA) */
+    --primary-color: #111827;
+    --primary-dark: #0B1220;
+    --primary-light: #EEF2FF;
+    --on-primary: #ffffff;
+
+    /* Sémantique */
+    --green-color: #1F7A3E;
+    --blue-color: #2563EB;
+    --orange-color: #B45309;
+    --semantic-danger: var(--bcpme-red);
     --common-padding: 15px;
     --nf-header-bg: var(--bs-component-bg);
     --nf-header-color: var(--bs-component-color);

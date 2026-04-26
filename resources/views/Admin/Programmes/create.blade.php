@@ -77,7 +77,11 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('admin.programmes.index') }}" class="btn btn-outline-secondary btn-sm">Retour à la liste</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.programmes.index') }}" class="dropdown-item"><i class="demo-pli-arrow-left me-2"></i>Retour à la liste</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

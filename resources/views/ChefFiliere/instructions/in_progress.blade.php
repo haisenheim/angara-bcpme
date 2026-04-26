@@ -37,7 +37,7 @@
                 <thead>
                     <tr>
                         <th scope="col">Client</th>
-                        <th scope="col">Programme</th>
+                        <th scope="col">Programme(s)</th>
                         <th scope="col">Gestionnaire</th>
                         <th scope="col">Analyste</th>
                         <th scope="col">Statut</th>
@@ -49,7 +49,7 @@
                         @php $st = $dossier->status; @endphp
                         <tr>
                             <td class="fw-semibold text-dark">{{ $dossier->entreprise?->name ?? '—' }}</td>
-                            <td>{{ $dossier->programme?->name ?? '—' }}</td>
+                            <td class="small">{{ $dossier->programmesLabel() }}</td>
                             <td>{{ $dossier->gestionnaire?->name ?? '—' }}</td>
                             <td>{{ $dossier->analyste?->name ?? '—' }}</td>
                             <td><span class="badge rounded-pill bg-secondary bg-opacity-75">{{ $st['name'] ?? '—' }}</span></td>

@@ -21,14 +21,20 @@
 @endsection
 
 @section('actions')
-    <div class="d-flex gap-2">
-        <a href="{{ route('admin.users.show', $item->token) }}" class="btn btn-outline-secondary btn-sm">Voir la fiche</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.users.show', $item->token) }}" class="dropdown-item">Voir la fiche</a>
+        </li>
         @if($item->active)
-            <a href="{{ route('admin.user.disable', $item->token) }}" class="btn btn-outline-danger btn-sm">Verrouiller</a>
+            <li>
+                <a href="{{ route('admin.user.disable', $item->token) }}" class="dropdown-item text-danger">Verrouiller</a>
+            </li>
         @else
-            <a href="{{ route('admin.user.enable', $item->token) }}" class="btn btn-outline-success btn-sm">Activer</a>
+            <li>
+                <a href="{{ route('admin.user.enable', $item->token) }}" class="dropdown-item text-success">Activer</a>
+            </li>
         @endif
-    </div>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')

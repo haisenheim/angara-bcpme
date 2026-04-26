@@ -1,4 +1,5 @@
-@extends('Layouts.ca')
+@php $rp = $routePrefix ?? 'ca'; @endphp
+@extends($layout ?? 'Layouts.ca')
 
 @section('title', 'Accueil')
 @section('breadcrumb')
@@ -55,9 +56,9 @@
                                         </button>
                                         <ul class="dropdown-menu">
                                             @if($item->active)
-                                                <li><a class="dropdown-item" href="{{ route('ca.user.disable',$item->token) }}">Verrouiller</a></li>
+                                                <li><a class="dropdown-item" href="{{ route($rp.'.user.disable', $item->token) }}">Verrouiller</a></li>
                                             @else
-                                                <li><a class="dropdown-item" href="{{ route('ca.user.enable',$item->token) }}">Activer</a></li>
+                                                <li><a class="dropdown-item" href="{{ route($rp.'.user.enable', $item->token) }}">Activer</a></li>
                                             @endif
 
                                             @if($item->role_id==4)

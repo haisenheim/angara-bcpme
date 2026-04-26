@@ -1,5 +1,5 @@
 {{--
-    Qualification chef de filière (EER) — affiché sur les fiches client lorsque la qualification a été engagée.
+    Structuration chef de filière (EER) — affiché sur les fiches client lorsque la structuration a été engagée.
     Variables attendues : $item (Entreprise), $qualificationContext (chef-filiere|gestionnaire|ca|regional|juridique|analyste|admin|...)
     stripOuterCard (optionnel) : si true, n’affiche que le corps (sans carte ni en-tête), pour l’intégrer dans une section personnalisée.
     hideMetaRow (optionnel) : si true, masque la ligne des 4 colonnes (statut / dates) — utile quand le bandeau parent affiche déjà le résumé.
@@ -26,8 +26,8 @@
     @if(!$stripOuterCard)
     <div class="card border-0 shadow-sm mb-4 border-start border-primary border-4">
         <div class="card-header bg-white py-3">
-            <h2 class="h5 mb-0">Qualification (chef de filière)</h2>
-            <p class="text-muted small mb-0 mt-1">Synthèse de la qualification (une par client). Les inscriptions programme et dossiers d’instruction suivent la validation du chef d’agence.</p>
+            <h2 class="h5 mb-0">Structuration (chef de filière)</h2>
+            <p class="text-muted small mb-0 mt-1">Synthèse de la structuration (une par client). Les inscriptions programme et dossiers d’instruction suivent la validation du chef d’agence.</p>
         </div>
         <div class="card-body">
     @endif
@@ -35,22 +35,22 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-3">
                     <small class="text-muted text-uppercase">Statut EER</small>
-                    <p class="mb-0 fw-medium"><span class="badge bg-secondary">{{ $eer->statut }}</span></p>
+                    <p class="mb-0 fw-medium"><span class="badge bg-secondary">{{ $eer->statut_libelle }}</span></p>
                 </div>
                 <div class="col-md-3">
-                    <small class="text-muted text-uppercase">Qualification enregistrée</small>
+                    <small class="text-muted text-uppercase">Dernière sauvegarde (structuration)</small>
                     <p class="mb-0">{{ $fmtDt($eer->qualification_completed_at) }}</p>
-                    <p class="small text-muted mb-0">{{ $eer->qualificationUser?->name ?? '—' }}</p>
+                    <p class="small text-muted mb-0">Auteur : {{ $eer->qualificationUser?->name ?? '—' }}</p>
                 </div>
                 <div class="col-md-3">
                     <small class="text-muted text-uppercase">Soumission au chef d’agence</small>
                     <p class="mb-0">{{ $fmtDt($eer->programmes_submitted_at) }}</p>
-                    <p class="small text-muted mb-0">{{ $eer->programmesSubmittedBy?->name ?? '—' }}</p>
+                    <p class="small text-muted mb-0">Auteur : {{ $eer->programmesSubmittedBy?->name ?? '—' }}</p>
                 </div>
                 <div class="col-md-3">
-                    <small class="text-muted text-uppercase">Validation qualification (CA)</small>
+                    <small class="text-muted text-uppercase">Validation structuration (chef d’agence)</small>
                     <p class="mb-0">{{ $fmtDt($eer->qualification_validated_by_agence_at) }}</p>
-                    <p class="small text-muted mb-0">{{ $eer->qualificationValidatedByAgenceUser?->name ?? '—' }}</p>
+                    <p class="small text-muted mb-0">Auteur : {{ $eer->qualificationValidatedByAgenceUser?->name ?? '—' }}</p>
                 </div>
             </div>
             @endif
@@ -68,7 +68,7 @@
 
             @if($eer->qualification_validated_by_agence_at && $eer->programmeSelections->isEmpty())
                 <div class="alert alert-success border-0 mb-4">
-                    <strong>Qualification validée par le chef d’agence.</strong> Inscrivez le client aux programmes depuis la fiche client (chef de filière).
+                    <strong>Structuration validée par le chef d’agence.</strong> Inscrivez le client aux programmes depuis la fiche client (chef de filière).
                 </div>
             @endif
 
@@ -97,7 +97,7 @@
 
             @if($eer->analyse_strategique || $eer->analyse_operationnelle || $eer->analyse_eligibilite || $eer->identification_besoins || $eer->qualification_notes)
                 <div class="mb-4">
-                    <h6 class="text-uppercase text-muted small mb-2">Contenu de la qualification</h6>
+                    <h6 class="text-uppercase text-muted small mb-2">Contenu de la structuration</h6>
                     @if($eer->analyse_strategique)
                         <p class="small text-muted mb-1">Analyse stratégique</p>
                         <div class="border rounded p-3 bg-light mb-3 rich-text-rendered">{!! $eer->analyse_strategique !!}</div>

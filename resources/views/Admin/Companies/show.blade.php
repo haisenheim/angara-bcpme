@@ -11,20 +11,14 @@
  </nav>
 @endsection
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn- dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-       Actions
-       <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu">
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2">
         <li><a class="dropdown-item" href="#">Ajouter un appui</a></li>
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.questionnaire',$item->token) }}">Editer le questionnaire de mise en relation</a></li>
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.physique.create',$item->token) }}">Ajouter un tiers personne physique</a></li>
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" href="#">Editer des information de l'entreprise</a></li>
-    </ul>
- </div>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

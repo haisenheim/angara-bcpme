@@ -6,7 +6,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route('chef-filiere.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('chef-filiere.qualifications.show', $item->token) }}">Qualification</a></li>
+        <li class="breadcrumb-item"><a href="{{ route('chef-filiere.qualifications.show', $item->token) }}">Structuration</a></li>
         <li class="breadcrumb-item active" aria-current="page">Analyse critique</li>
     </ol>
 </nav>
@@ -22,7 +22,7 @@
 @section('content')
 <div class="cf-page">
     <a href="{{ route('chef-filiere.qualifications.show', $item->token) }}" class="cf-back-link">
-        <i class="demo-pli-arrow-left" aria-hidden="true"></i> Retour à la qualification
+        <i class="demo-pli-arrow-left" aria-hidden="true"></i> Retour à la structuration
     </a>
 
     <div class="cf-hero mb-4">

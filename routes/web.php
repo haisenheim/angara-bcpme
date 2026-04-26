@@ -73,13 +73,21 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
     Route::prefix($prefix)
         ->middleware(['auth', $middleware])
         ->name($name.'.')
-        ->group(function () {
+        ->group(function () use ($name) {
             Route::get('dashboard', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'index'])->name('dashboard');
             Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+            Route::get('entreprises-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
+            Route::get('entreprises/{token}/engagements', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
             Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
             Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
-            Route::get('dossiers', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
-            Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
+            if (in_array($name, ['dg', 'dga'], true)) {
+                Route::get('dossiers/en-attente-direction', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.en-attente-direction');
+                Route::get('dossiers/valides-chef-agence', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.valides-chef-agence');
+            }
+            Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+            Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
+            Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
+            Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         });
 };
 
@@ -98,6 +106,8 @@ Route::prefix('respexp')
         Route::post('dossiers/{token}/validation-engagements', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'storeExploitationEngagementsDecision'])->name('dossiers.validation-engagements');
         Route::post('dossiers/{token}/soumettre-juridique', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'storeSoumettreJuridique'])->name('dossiers.soumettre-juridique');
         Route::get('dossiers/{token}/instruction', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
     });
 
@@ -114,6 +124,8 @@ Route::prefix('reng')
         Route::post('dossiers/{token}/responsable-avis', [PortfolioController::class, 'storeRengResponsableAvis'])->name('dossiers.responsable-avis');
         Route::post('dossiers/{token}/soumettre-risques', [PortfolioController::class, 'submitRengToRisques'])->name('dossiers.soumettre-risques');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
     });
 
@@ -125,6 +137,8 @@ Route::prefix('rerx')
         Route::post('dossiers/{token}/responsable-avis', [PortfolioController::class, 'storeRerxResponsableAvis'])->name('dossiers.responsable-avis');
         Route::post('dossiers/{token}/soumettre-direction', [PortfolioController::class, 'submitRerxToDirection'])->name('dossiers.soumettre-direction');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
     });
 
@@ -133,7 +147,15 @@ Route::prefix('dg')
     ->name('dg.')
     ->group(function () {
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
+        Route::get('programmes', [\App\Http\Controllers\Ca\ProgrammeController::class, 'index'])->name('programmes.index');
+        Route::get('programmes/{token}', [\App\Http\Controllers\Ca\ProgrammeController::class, 'show'])->name('programmes.show');
+        Route::get('programs/data', [\App\Http\Controllers\Ca\ProgrammeController::class, 'fetchAll'])->name('programmes.all');
+        Route::get('users', [\App\Http\Controllers\Ca\UserController::class, 'index'])->name('users.index');
+        Route::get('user/disable/{token}', [\App\Http\Controllers\Ca\UserController::class, 'disable'])->name('user.disable');
+        Route::get('user/enable/{token}', [\App\Http\Controllers\Ca\UserController::class, 'enable'])->name('user.enable');
     });
 
 Route::prefix('dga')
@@ -141,7 +163,15 @@ Route::prefix('dga')
     ->name('dga.')
     ->group(function () {
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
+        Route::get('programmes', [\App\Http\Controllers\Ca\ProgrammeController::class, 'index'])->name('programmes.index');
+        Route::get('programmes/{token}', [\App\Http\Controllers\Ca\ProgrammeController::class, 'show'])->name('programmes.show');
+        Route::get('programs/data', [\App\Http\Controllers\Ca\ProgrammeController::class, 'fetchAll'])->name('programmes.all');
+        Route::get('users', [\App\Http\Controllers\Ca\UserController::class, 'index'])->name('users.index');
+        Route::get('user/disable/{token}', [\App\Http\Controllers\Ca\UserController::class, 'disable'])->name('user.disable');
+        Route::get('user/enable/{token}', [\App\Http\Controllers\Ca\UserController::class, 'enable'])->name('user.enable');
     });
 $registerGovernanceSpace('controleur', 'controleur', 'controleur');
 $registerGovernanceSpace('auditeur', 'auditeur', 'auditeur');
@@ -170,6 +200,7 @@ Route::namespace('App\Http\Controllers\Admin')
     ->middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
+        Route::get('entreprises-export', 'CompanyController@exportEntreprisesClients')->name('entreprises.export');
         Route::resource('entreprises', 'CompanyController');
         Route::resource('secteurs', 'SecteurController');
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
@@ -185,7 +216,10 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('entreprise/questionnaire/{token}', 'CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire', 'CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
+        Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::resource('dossiers', 'DossierController');
+
+        Route::resource('delegation-pouvoirs', 'DelegationPouvoirController')->except(['show']);
 
         Route::resource('programmes', 'ProgrammeController');
         Route::post('programme/composante', 'ProgrammeController@saveComposante')->name('programme.composante.save');
@@ -197,8 +231,16 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::resource('users', 'UserController');
         Route::get('territoire', 'TerritoireController@index')->name('territoire');
         Route::resource('pieces-exigibles', 'PieceExigibleDefinitionController')->except(['destroy']);
+        Route::resource('fichiers-types', 'FichierTypeController');
+        Route::get('fichiers-types/{fichiers_type}/enable', 'FichierTypeController@enable')->name('fichiers-types.enable');
+        Route::get('fichiers-types/{fichiers_type}/disable', 'FichierTypeController@disable')->name('fichiers-types.disable');
+        Route::get('fichiers-types/data/paginated', 'FichierTypeController@fetchPaginated')->name('fichiers-types.paginated');
         Route::get('companies/data', 'CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/all/prospects', 'CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('companies/prospects/paginated', 'CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
+        Route::get('companies/prospects/stats', 'CompanyController@fetchProspectsStats')->name('prospects.stats');
+        Route::get('companies/prospects/export', 'CompanyController@exportProspects')->name('prospects.export');
+        Route::get('companies/prospects/filter-options', 'CompanyController@fetchProspectsFilterOptions')->name('prospects.filter-options');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('programs/data/paginated', 'ProgrammeController@fetchPaginated')->name('programmes.paginated');
         Route::get('programs/stats', 'ProgrammeController@fetchStats')->name('programmes.stats');
@@ -249,9 +291,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('entreprises/{token}/analyse-critique', 'AnalyseCritiqueController@show')->name('entreprises.analyse-critique.show');
         Route::post('entreprises/{token}/analyse-critique', 'AnalyseCritiqueController@update')->name('entreprises.analyse-critique.update');
         Route::resource('entreprises', 'CompanyController');
-        Route::resource('entites', 'EntiteController');
         Route::post('entreprise/save', 'CompanyController@save')->name('entreprises.save');
-        Route::post('entite/save', 'EntiteController@save')->name('entites.save');
 
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
@@ -268,21 +308,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('entreprise/questionnaire', 'CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
         Route::get('entreprise/engagements/{token}', 'CompanyController@getEngagementReport')->name('entreprise.get.engagements');
 
-        // entites individuelles
-
-        Route::post('entite/programme', 'EntiteController@saveProgramme')->name('entite.programme.save');
-        Route::post('entite/appui', 'EntiteController@saveAppui')->name('entite.appui.save');
-        Route::post('entite/element', 'EntiteController@addElement')->name('entite.element.save');
-        Route::get('entite/tiers/physique/{token}', 'EntiteController@createTiersPhysique')->name('entite.physique.create');
-        Route::post('entite/tiers/physique', 'EntiteController@saveTiersPhysique')->name('entite.physique.save');
-
-        Route::get('entite/tiers/morale/{token}', 'EntiteController@createTiersMorale')->name('entite.morale.create');
-        Route::post('entite/tiers/morale', 'EntiteController@saveTiersMorale')->name('entite.morale.save');
-
-        Route::get('entite/questionnaire/{token}', 'EntiteController@createQuestionnaire')->name('entite.questionnaire');
-        Route::post('entite/questionnaire', 'EntiteController@saveQuestionnaire')->name('entite.questionnaire.save');
-        Route::get('entities/data', 'EntiteController@fetchAll')->name('entites.all');
-
+        Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::resource('dossiers', 'DossierController');
 
         Route::resource('programmes', 'ProgrammeController', ['except' => ['create', 'store']]);
@@ -295,9 +321,12 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::get('companies/data/paginated', 'CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::get('companies/stats', 'CompanyController@fetchStats')->name('entreprises.stats');
         Route::get('companies/filter-options', 'CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
+        Route::get('companies/clients-export', 'CompanyController@exportClients')->name('entreprises.export');
         Route::get('companies/all/prospects', 'CompanyController@fetchProspects')->name('prospects.all');
         Route::get('companies/prospects/paginated', 'CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
         Route::get('companies/prospects/stats', 'CompanyController@fetchProspectsStats')->name('prospects.stats');
+        Route::get('companies/prospects/export', 'CompanyController@exportProspects')->name('prospects.export');
+        Route::get('companies/prospects/filter-options', 'CompanyController@fetchProspectsFilterOptions')->name('prospects.filter-options');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('programs/data/paginated', 'ProgrammeController@fetchPaginated')->name('programmes.paginated');
         Route::get('programs/stats', 'ProgrammeController@fetchStats')->name('programmes.stats');
@@ -343,12 +372,17 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('dashboard/programmes', 'DashboardController@getProgrammes')->name('dashboard.programmes');
         Route::get('entreprises/data/paginated', 'CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::get('entreprises/stats', 'CompanyController@fetchEntreprisesIndexStats')->name('entreprises.stats');
+        Route::get('entreprises/clients-export', 'CompanyController@exportClients')->name('entreprises.export');
         Route::resource('entreprises', 'CompanyController');
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/tiers/physique/{token}', 'CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique', 'CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
         Route::get('entreprise/engagements/{token}', 'EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
+        Route::get('entreprise/engagements/{token}/data', 'EntrepriseController@fetchEngagementReport')->name('entreprise.engagements.data');
+        Route::get('entreprise/engagements/{token}/stats', 'EntrepriseController@fetchEngagementReportStats')->name('entreprise.engagements.stats');
+        Route::get('entreprise/engagements/{token}/filter-options', 'EntrepriseController@fetchEngagementReportFilterOptions')->name('entreprise.engagements.filter-options');
+        Route::get('entreprise/engagements/{token}/export', 'EntrepriseController@exportEngagementReport')->name('entreprise.engagements.export');
         Route::get('grille/analyse/{token}', 'DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
 
         Route::get('entreprise/tiers/morale/{token}', 'CompanyController@createTiersMorale')->name('entreprise.morale.create');
@@ -357,7 +391,9 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('entreprise/questionnaire/{token}', 'CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire', 'CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
+        Route::post('dossiers/{dossier}/instruction-avis-brouillon', 'DossierController@saveInstructionAvisDraft')->name('dossiers.instruction-avis-brouillon');
         Route::post('dossiers/{dossier}/soumettre-exploitation', 'DossierController@soumettreExploitation')->name('dossiers.soumettre-exploitation');
+        Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::resource('dossiers', 'DossierController');
         Route::post('dossier/dsf', 'DossierController@loadDsf')->name('dossier.dsf');
         Route::resource('programmes', 'ProgrammeController', ['except' => ['create', 'store']]);
@@ -371,6 +407,8 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('companies/all/prospects', 'CompanyController@fetchProspects')->name('prospects.all');
         Route::get('companies/prospects/paginated', 'CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
         Route::get('companies/prospects/stats', 'CompanyController@fetchProspectsStats')->name('prospects.stats');
+        Route::get('companies/prospects/export', 'CompanyController@exportProspects')->name('prospects.export');
+        Route::get('companies/prospects/filter-options', 'CompanyController@fetchProspectsFilterOptions')->name('prospects.filter-options');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('programs/data/paginated', 'ProgrammeController@fetchPaginated')->name('programmes.paginated');
         Route::get('programs/stats', 'ProgrammeController@fetchStats')->name('programmes.stats');
@@ -404,12 +442,23 @@ Route::namespace('App\Http\Controllers\AnalysteCredit')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+        Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
         Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+        Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
         Route::post('dossiers/{token}/brouillon', 'DossierController@saveDraft')->name('dossiers.brouillon');
         Route::post('dossiers/{token}/soumettre-reng', 'DossierController@submitToReng')->name('dossiers.soumettre-reng');
+        Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
+        Route::get('entreprise/engagements/{token}', 'EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
+        Route::get('entreprise/engagements/{token}/data', 'EntrepriseController@fetchEngagementReport')->name('entreprise.engagements.data');
+        Route::get('entreprise/engagements/{token}/stats', 'EntrepriseController@fetchEngagementReportStats')->name('entreprise.engagements.stats');
+        Route::get('entreprise/engagements/{token}/filter-options', 'EntrepriseController@fetchEngagementReportFilterOptions')->name('entreprise.engagements.filter-options');
+        Route::get('entreprise/engagements/{token}/export', 'EntrepriseController@exportEngagementReport')->name('entreprise.engagements.export');
+        Route::post('entreprise/engagement', 'EntrepriseController@setEngagement')->name('entreprise.set.engagement');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
     });
@@ -421,12 +470,18 @@ Route::namespace('App\Http\Controllers\AnalysteRisques')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+        Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
         Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+        Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
         Route::post('dossiers/{token}/brouillon', 'DossierController@saveDraft')->name('dossiers.brouillon');
         Route::post('dossiers/{token}/soumettre-rerx', 'DossierController@submitToRerx')->name('dossiers.soumettre-rerx');
+        Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
+        Route::get('entreprises/{token}/engagements', [PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
     });
@@ -438,11 +493,17 @@ Route::namespace('App\Http\Controllers\AnalysteJuridique')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+        Route::get('entreprises-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
         Route::get('dossiers', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+        Route::get('dossiers-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
         Route::get('dossiers/{token}/instruction', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
         Route::post('dossiers/{token}/soumettre-reju', 'DossierController@submitToReju')->name('dossiers.soumettre-reju');
+        Route::post('dossiers/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
+        Route::get('entreprises/{token}/engagements', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
     });
@@ -474,12 +535,6 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/engagements/{token}', 'CompanyController@getEngagementReport')->name('entreprise.get.engagements');
-        // entites individuelles
-        Route::get('entites', 'EntiteController@index')->name('entites.index');
-        Route::get('entites/{token}', 'EntiteController@show')->name('entites.show');
-        Route::post('entite/programme', 'EntiteController@saveProgramme')->name('entite.programme.save');
-        Route::get('entities/data', 'EntiteController@fetchAll')->name('entites.all');
-        //
 
         Route::resource('dossiers', 'DossierController');
         Route::get('programmes', 'ProgrammeController@index')->name('programmes.index');
@@ -492,9 +547,12 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('companies/data/paginated', 'CompanyController@fetchPaginated')->name('entreprises.paginated');
         Route::get('companies/stats', 'CompanyController@fetchStats')->name('entreprises.stats');
         Route::get('companies/filter-options', 'CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
+        Route::get('companies/clients-export', 'CompanyController@exportClients')->name('entreprises.export');
         Route::get('companies/all/prospects', 'CompanyController@fetchProspects')->name('prospects.all');
         Route::get('companies/prospects/paginated', 'CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
         Route::get('companies/prospects/stats', 'CompanyController@fetchProspectsStats')->name('prospects.stats');
+        Route::get('companies/prospects/export', 'CompanyController@exportProspects')->name('prospects.export');
+        Route::get('companies/prospects/filter-options', 'CompanyController@fetchProspectsFilterOptions')->name('prospects.filter-options');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data', 'DossierController@fetchAll')->name('dossiers.all');
         Route::get('folders/data/paginated', 'DossierController@fetchPaginated')->name('dossiers.paginated');
@@ -503,7 +561,12 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('instruction/critere/choices', [\App\Http\Controllers\Gestionnaire\InstructionController::class, 'getChoices'])->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse', [\App\Http\Controllers\Gestionnaire\InstructionController::class, 'saveCritereReponse'])->name('instruction.critere.reponse');
         Route::post('dossier/analyse', 'DossierController@setAnalyse')->name('dossier.set.analyse');
+        Route::post('dossier/{token}/instruction-agence-avis', 'DossierController@saveInstructionAgenceCaAvis')->name('dossier.instruction-agence-avis.save');
+        Route::post('dossier/{token}/transmit-exploitation', 'DossierController@transmitInstructionCaToExploitation')->name('dossier.transmit-exploitation');
         Route::get('dossier/grille/analyse/{token}', 'DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
+        Route::get('dossier/{token}/analyse-critique', 'DossierController@dossierAnalyseCritiqueSyntheseShow')->name('dossier.analyse-critique.synthese');
+        Route::get('dossier/{token}/analyse-critique/pdf', 'DossierController@dossierAnalyseCritiqueSynthesePdf')->name('dossier.analyse-critique.synthese.pdf');
+        Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
 
         Route::get('workflow/prospects', [\App\Http\Controllers\Ca\WorkflowController::class, 'prospectIndex'])->name('workflow.prospects.index');
         Route::get('workflow/prospects/{token}', [\App\Http\Controllers\Ca\WorkflowController::class, 'prospectShow'])->name('workflow.prospects.show');
@@ -512,6 +575,11 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('workflow/instructions', [\App\Http\Controllers\Ca\WorkflowController::class, 'instructionIndex'])->name('workflow.instructions.index');
         Route::get('workflow/instructions/{token}', [\App\Http\Controllers\Ca\WorkflowController::class, 'instructionShow'])->name('workflow.instructions.show');
         Route::post('workflow/instructions/{token}/approve', [\App\Http\Controllers\Ca\WorkflowController::class, 'approveInstruction'])->name('workflow.instructions.approve');
+        Route::post('workflow/instructions/{token}/reject-qualification', [\App\Http\Controllers\Ca\WorkflowController::class, 'rejectQualification'])->name('workflow.instructions.reject-qualification');
+        Route::get('workflow/instruction-dossiers', [\App\Http\Controllers\Ca\WorkflowController::class, 'instructionDossierBundleIndex'])->name('workflow.instruction-dossiers.index');
+        Route::get('workflow/instruction-dossiers/{token}', [\App\Http\Controllers\Ca\WorkflowController::class, 'instructionDossierBundleShow'])->name('workflow.instruction-dossiers.show');
+        Route::post('workflow/instruction-dossiers/{token}/approve', [\App\Http\Controllers\Ca\WorkflowController::class, 'approveInstructionBundle'])->name('workflow.instruction-dossiers.approve');
+        Route::post('workflow/instruction-dossiers/{token}/reject', [\App\Http\Controllers\Ca\WorkflowController::class, 'rejectInstructionBundle'])->name('workflow.instruction-dossiers.reject');
 
     });
 
@@ -521,9 +589,11 @@ Route::namespace('App\Http\Controllers\Regional')
     ->name('regional.')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+        Route::get('entreprises-export', 'CompanyController@exportEntreprisesClients')->name('entreprises.export');
         Route::get('entreprises', 'CompanyController@index')->name('entreprises.index');
         Route::get('entreprises/{token}', 'CompanyController@show')->name('entreprises.show');
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
+        Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::resource('dossiers', 'DossierController');
         Route::get('programmes', 'ProgrammeController@index')->name('programmes.index');
         Route::get('programmes/{token}', 'ProgrammeController@show')->name('programmes.show');
@@ -533,6 +603,10 @@ Route::namespace('App\Http\Controllers\Regional')
         Route::get('territoire', 'TerritoireController@index')->name('territoire');
         Route::get('companies/data', 'CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/all/prospects', 'CompanyController@fetchProspects')->name('prospects.all');
+        Route::get('companies/prospects/paginated', 'CompanyController@fetchProspectsPaginated')->name('prospects.paginated');
+        Route::get('companies/prospects/stats', 'CompanyController@fetchProspectsStats')->name('prospects.stats');
+        Route::get('companies/prospects/export', 'CompanyController@exportProspects')->name('prospects.export');
+        Route::get('companies/prospects/filter-options', 'CompanyController@fetchProspectsFilterOptions')->name('prospects.filter-options');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('folders/data', 'DossierController@fetchAll')->name('dossiers.all');
     });
@@ -547,9 +621,13 @@ Route::namespace('App\Http\Controllers\ChefFiliere')
         Route::get('programmes/{token}', 'ProgrammeController@show')->name('programmes.show');
         Route::get('programs/data', 'ProgrammeController@fetchAll')->name('programmes.all');
         Route::get('clients', 'ClientController@index')->name('clients.index');
+        Route::get('clients-export', 'ClientController@exportClients')->name('clients.export');
         Route::get('clients/{token}', 'ClientController@show')->name('clients.show');
+        Route::get('clients/{token}/besoins-produits/modifier', 'ClientController@editBesoinsProduits')->name('clients.besoins-produits.edit');
+        Route::post('clients/{token}/besoins-produits', 'ClientController@updateBesoinsProduits')->name('clients.besoins-produits.update');
         Route::get('instructions/en-attente', 'InstructionController@pending')->name('instructions.pending');
         Route::get('instructions/en-cours', 'InstructionController@inProgress')->name('instructions.in-progress');
+        Route::post('instructions/dossiers/{token}/pieces', 'InstructionController@storeDossierPiece')->name('instructions.dossier.pieces.store');
         Route::get('instructions/dossiers/{token}', 'InstructionController@showDossier')->name('instructions.dossier.show');
         Route::get('entreprises/{token}/pieces-exigibles', 'PieceExigibleController@index')->name('entreprises.pieces-exigibles.index');
         Route::post('entreprises/{token}/pieces-exigibles/{definition}', 'PieceExigibleController@store')->name('entreprises.pieces-exigibles.store');
@@ -558,7 +636,16 @@ Route::namespace('App\Http\Controllers\ChefFiliere')
         Route::get('qualifications/{token}', 'QualificationController@show')->name('qualifications.show');
         Route::post('qualifications/{token}', 'QualificationController@update')->name('qualifications.update');
         Route::post('qualifications/{token}/submit', 'QualificationController@submit')->name('qualifications.submit');
-        Route::post('clients/{token}/programmes/inscrire', 'ClientController@enrollProgramme')->name('clients.programmes.enroll');
+        Route::post('clients/{token}/dossier-instruction/soumettre', 'ClientController@submitInstructionBundle')->name('clients.dossier-instruction.submit');
+    });
+
+// Clôture du dossier d’instruction (fin de parcours) — dépend de la délégation de pouvoir.
+Route::middleware(['auth'])
+    ->prefix('instruction')
+    ->name('instruction.')
+    ->group(function () {
+        Route::post('dossiers/{token}/closure/approve', [\App\Http\Controllers\InstructionClosureController::class, 'approve'])->name('dossiers.closure.approve');
+        Route::post('dossiers/{token}/closure/reject', [\App\Http\Controllers\InstructionClosureController::class, 'reject'])->name('dossiers.closure.reject');
     });
 
 Route::middleware(['auth', 'ca'])->group(function () {
@@ -580,16 +667,23 @@ Route::namespace('App\Http\Controllers\Juridique')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+        Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
         Route::post('dossiers/{token}/assign-juridique-analyste', [PortfolioController::class, 'assignJuridiqueAnalyste'])->name('dossiers.assign-juridique-analyste');
         Route::post('dossiers/{token}/responsable-avis', [PortfolioController::class, 'storeJuridiqueResponsableAvis'])->name('dossiers.responsable-avis');
         Route::post('dossiers/{token}/soumettre-engagements', [PortfolioController::class, 'submitJuridiqueToEngagements'])->name('dossiers.soumettre-engagements');
+        Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+        Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
+        Route::get('entreprises/{token}/engagements', [PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
         Route::get('prospects', 'ProspectController@index')->name('prospects.index');
+        Route::get('prospects/export', 'ProspectController@exportOpenProspectsJuridique')->name('prospects.export');
         Route::get('prospects/{token}', 'ProspectController@show')->name('prospects.show');
         Route::post('prospects/{token}/avis', 'ProspectController@store')->name('prospects.avis');
     });
@@ -601,6 +695,7 @@ Route::namespace('App\Http\Controllers\Conformite')
     ->group(function () {
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('prospects', 'ProspectController@index')->name('prospects.index');
+        Route::get('prospects/export', 'ProspectController@exportOpenProspectsConformite')->name('prospects.export');
         Route::get('dossiers-traites', 'ProspectController@treatedIndex')->name('prospects.treated');
         Route::get('prospects/{token}', 'ProspectController@show')->name('prospects.show');
         Route::post('prospects/{token}/avis', 'ProspectController@store')->name('prospects.avis');

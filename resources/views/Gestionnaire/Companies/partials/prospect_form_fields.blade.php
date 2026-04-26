@@ -516,7 +516,7 @@
                             <summary class="form-select">
                                 <span id="autres-label">Selectionner les produits secondaires</span>
                             </summary>
-                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2 mt-2">
+                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2">
                                 @foreach($produitsCatalogue as $produit)
                                     <label class="check-option">
                                         <input
@@ -534,7 +534,9 @@
                         </details>
                         <div class="mt-2">
                             <small class="text-body-secondary d-block mb-1">Selection actuelle</small>
-                            <div id="autres-preview" class="d-flex flex-wrap gap-2"></div>
+                            <div class="multi-check-dropdown-preview">
+                                <div id="autres-preview" class="d-flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -568,7 +570,7 @@
                             <summary class="form-select">
                                 <span id="appuisf-label">Selectionner les appuis financiers</span>
                             </summary>
-                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2 mt-2">
+                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2">
                                 @foreach($appuisFinanciers as $service)
                                     <label class="check-option">
                                         <input
@@ -586,7 +588,9 @@
                         </details>
                         <div class="mt-2">
                             <small class="text-body-secondary d-block mb-1">Selection actuelle</small>
-                            <div id="appuisf-preview" class="d-flex flex-wrap gap-2"></div>
+                            <div class="multi-check-dropdown-preview">
+                                <div id="appuisf-preview" class="d-flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -595,7 +599,7 @@
                             <summary class="form-select">
                                 <span id="appuisnf-label">Selectionner les appuis non financiers</span>
                             </summary>
-                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2 mt-2">
+                            <div class="multi-check-dropdown__menu border rounded shadow-sm bg-white p-2">
                                 @foreach($appuisNonFinanciers as $service)
                                     <label class="check-option">
                                         <input
@@ -613,7 +617,9 @@
                         </details>
                         <div class="mt-2">
                             <small class="text-body-secondary d-block mb-1">Selection actuelle</small>
-                            <div id="appuisnf-preview" class="d-flex flex-wrap gap-2"></div>
+                            <div class="multi-check-dropdown-preview">
+                                <div id="appuisnf-preview" class="d-flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -833,6 +839,15 @@
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
+.multi-check-dropdown {
+    position: relative;
+    z-index: 1;
+}
+
+.multi-check-dropdown[open] {
+    z-index: 30;
+}
+
 .multi-check-dropdown summary {
     list-style: none;
     cursor: pointer;
@@ -842,9 +857,29 @@
     display: none;
 }
 
+/* Liste deroulante hors flux : n'etire pas la carte / le wizard a l'ouverture */
 .multi-check-dropdown__menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.35rem);
     max-height: 260px;
     overflow-y: auto;
+    z-index: 31;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Previsualisation des choix : hauteur fixe, scroll interne si debordement (le flex est sur l'enfant, pas sur la zone scroll) */
+.multi-check-dropdown-preview {
+    box-sizing: border-box;
+    height: 7.5rem;
+    max-height: 7.5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    background: #f8fafc;
 }
 
 .check-option {
@@ -983,6 +1018,16 @@ document.addEventListener('DOMContentLoaded', function () {
         dropdown.querySelectorAll('.multi-check-dropdown__checkbox').forEach((checkbox) => {
             checkbox.addEventListener('change', function () {
                 renderCheckboxDropdown(dropdown);
+            });
+        });
+        dropdown.addEventListener('toggle', function () {
+            if (!dropdown.open) {
+                return;
+            }
+            document.querySelectorAll('.multi-check-dropdown').forEach((other) => {
+                if (other !== dropdown) {
+                    other.removeAttribute('open');
+                }
             });
         });
     });

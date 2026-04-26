@@ -12,15 +12,15 @@
 @endsection
 
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-    Actions
-    <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2 analyse">
         <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées et recommandations</a></li>
-    </ul>
-</div>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#dossierPieceUploadModal_regional">
+                <i class="demo-psi-upload me-2"></i> Ajouter une pièce au dossier
+            </button>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
@@ -31,6 +31,25 @@
 
 
 @section('content')
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0 ps-3">@foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach</ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @include('partials.instruction-dossier-consultation', ['dossier' => $item, 'instructionConsultation' => $instructionConsultation ?? null])
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'routePiecesStore' => 'regional.dossier.pieces.store',
+        'modalId' => 'dossierPieceUploadModal_regional',
+        'fichierTypes' => $fichierTypes ?? collect(),
+    ])
     <div class="d-flex gap-1">
         <div class="card w-400px">
             <div class="card-header">

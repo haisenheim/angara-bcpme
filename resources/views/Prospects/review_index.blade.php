@@ -5,6 +5,7 @@
 @section('content')
 @php
     $listMode = $listMode ?? 'open';
+    $exportRoute = $exportRoute ?? null;
 @endphp
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -16,7 +17,18 @@
                 <p class="text-body-secondary mb-0 small">Prospects soumis par les gestionnaires — vous pouvez saisir ou modifier votre avis tant que le chef d'agence n'a pas validé ou refusé le dossier.</p>
             @endif
         </div>
-        <form action="{{ route('logout') }}" method="post" class="m-0">@csrf<button type="submit" class="btn btn-outline-secondary btn-sm">Déconnexion</button></form>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if ($exportRoute)
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Exporter</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ $exportRoute }}?format=xlsx"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel</a></li>
+                        <li><a class="dropdown-item" href="{{ $exportRoute }}?format=pdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
+                    </ul>
+                </div>
+            @endif
+            <form action="{{ route('logout') }}" method="post" class="m-0">@csrf<button type="submit" class="btn btn-outline-secondary btn-sm">Déconnexion</button></form>
+        </div>
     </div>
 
     @if (session('success'))

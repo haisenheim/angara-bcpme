@@ -12,24 +12,25 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-            <i class="demo-psi-dot-vertical"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#report1Modal"><i class="demo-psi-pen-5 me-2"></i> Saisir recommandations</a></li>
-            @if($item->entreprise)
-                <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
-            @endif
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.dossier.get.grille.analyse', $item->token) }}"><i class="demo-psi-magnifi-glass me-2"></i> Grille d'analyse critique</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="gestionnaireDossierShowActions">
+        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#report1Modal"><i class="demo-psi-pen-5 me-2"></i> Saisir recommandations</a></li>
+        @if($item->entreprise)
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
+        @endif
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.dossier.get.grille.analyse', $item->token) }}"><i class="demo-psi-magnifi-glass me-2"></i> Grille d'analyse critique</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#dossierPieceUploadModal_gestionnaire">
+                <i class="demo-psi-upload me-2"></i> Ajouter une pièce au dossier
+            </button>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
     <div>
         <h5 class="page-title mb-0 mt-2">Dossier d'instruction</h5>
-        <p class="lead mb-0">{{ $item->entreprise?->name }} — {{ $item->programme?->name }}</p>
+        <p class="lead mb-0">{{ $item->entreprise?->name }} — {{ $item->programmesLabel() }}</p>
     </div>
 @endsection
 
@@ -37,6 +38,22 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0 ps-3">
+                @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
         </div>
     @endif
@@ -54,8 +71,8 @@
         <div class="col-md-3 col-sm-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body py-3">
-                    <small class="text-muted text-uppercase d-block mb-1">Programme</small>
-                    <p class="mb-0 fw-semibold">{{ $item->programme?->name ?? '—' }}</p>
+                    <small class="text-muted text-uppercase d-block mb-1">Programme(s)</small>
+                    <p class="mb-0 fw-semibold small">{{ $item->programmesLabel() }}</p>
                 </div>
             </div>
         </div>
@@ -81,6 +98,17 @@
             </div>
         @endif
     </div>
+
+    @include('partials.dossier-engagements-totaux-cards', ['dossier' => $item])
+
+    @include('partials.instruction-dossier-consultation', ['dossier' => $item, 'instructionConsultation' => $instructionConsultation ?? null])
+
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'routePiecesStore' => 'gestionnaire.dossier.pieces.store',
+        'modalId' => 'dossierPieceUploadModal_gestionnaire',
+        'fichierTypes' => $fichierTypes ?? collect(),
+    ])
 
     <div class="row g-3">
         {{-- Colonne gauche : DSF et notation PME --}}

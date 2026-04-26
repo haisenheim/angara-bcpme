@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Gestionnaire;
 
 use App\Helpers\DossierHelper;
+use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
 use App\Models\Banque;
 use App\Models\Dossier;
+use App\Models\FichierType;
 use App\Models\Instruction\Critere;
 use App\Models\Instruction\IndicateurFinancier;
 use Illuminate\Http\Request;
 
 class DossierController extends Controller
 {
+    use StoresDossierPieces;
+
     public function index()
     {
         return view('/Gestionnaire/Dossiers/index');
@@ -64,6 +68,8 @@ class DossierController extends Controller
                     $e->where('name', 'like', "%{$search}%");
                 })->orWhereHas('programme', function ($p) use ($search) {
                     $p->where('name', 'like', "%{$search}%");
+                })->orWhereHas('instructionProgrammes.programme', function ($p) use ($search) {
+                    $p->where('name', 'like', "%{$search}%");
                 })->orWhereHas('analyste', function ($a) use ($search) {
                     $a->where('name', 'like', "%{$search}%");
                 });
@@ -71,7 +77,7 @@ class DossierController extends Controller
             $recordsFiltered = $query->count();
         }
 
-        $items = $query->with(['entreprise','programme','analyste','agence'])->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $items = $query->with(['entreprise','programme','instructionProgrammes.programme','analyste','agence'])->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
         $resolved = DossierListResource::collection($items)->toArray($request);
         $data = array_values($resolved['data'] ?? $resolved);
 
@@ -88,13 +94,23 @@ class DossierController extends Controller
         return [
             'programme_id' => $request->input('programme_id'),
             'analyste_id' => $request->input('analyste_id'),
+            'entity_route' => $request->input('entity_route'),
         ];
     }
 
     private function applyFilters($query, array $filters)
     {
-        if (!empty($filters['programme_id'])) $query->where('programme_id', $filters['programme_id']);
+        if (! empty($filters['programme_id'])) {
+            $pid = $filters['programme_id'];
+            $query->where(function ($q) use ($pid) {
+                $q->where('programme_id', $pid)
+                    ->orWhereHas('instructionProgrammes', fn ($q2) => $q2->where('programme_id', $pid));
+            });
+        }
         if (!empty($filters['analyste_id'])) $query->where('analyste_id', $filters['analyste_id']);
+        if (! empty($filters['entity_route'])) {
+            $query->inCurrentEntity((string) $filters['entity_route']);
+        }
         return $query;
     }
 
@@ -103,15 +119,28 @@ class DossierController extends Controller
         $programmes = \App\Models\Programme::orderBy('name')->get(['id', 'name']);
         $analysteIds = Dossier::where('gestionnaire_id', auth()->user()->id)->whereNotNull('analyste_id')->distinct()->pluck('analyste_id');
         $analystes = \App\Models\User::whereIn('id', $analysteIds)->get(['id', 'name']);
-        return response()->json(['programmes' => $programmes, 'analystes' => $analystes]);
+        $entities = [
+            ['route' => 'respexp', 'label' => 'Pôle exploitation'],
+            ['route' => 'juridique', 'label' => 'Pôle juridique'],
+            ['route' => 'reng', 'label' => 'Pôle engagements'],
+            ['route' => 'rerx', 'label' => 'Pôle risques'],
+            ['route' => 'dg', 'label' => 'Direction générale'],
+        ];
+
+        return response()->json(['programmes' => $programmes, 'analystes' => $analystes, 'entities' => $entities]);
     }
 
     public function getGrilleAnalyse($token)
     {
-        $item = Dossier::where('token', $token)->first();
-        if (!$item || $item->gestionnaire_id != auth()->user()->id) {
+        $item = Dossier::query()
+            ->where('token', $token)
+            ->where('gestionnaire_id', auth()->id())
+            ->with(['fichiersDossier.type', 'fichiersDossier.uploadedBy'])
+            ->first();
+        if (! $item) {
             return back();
         }
+
         return view('Gestionnaire/Dossiers/analyse_critique', compact('item'));
     }
 
@@ -130,10 +159,22 @@ class DossierController extends Controller
     }
 
     public function show($token){
-        $item = Dossier::where('token', $token)->first();
-        if (!$item || $item->gestionnaire_id != auth()->user()->id) {
-            abort(404);
-        }
+        $item = Dossier::query()
+            ->where('token', $token)
+            ->where('gestionnaire_id', auth()->user()->id)
+            ->with([
+                'entreprise',
+                'programme',
+                'instructionProgrammes.programme',
+                'analyste',
+                'agence',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+                'fichiersDossier.type',
+                'fichiersDossier.uploadedBy',
+            ])
+            ->firstOrFail();
         $criteres = Critere::all();
         $id = $item->id;
         $criteres = $criteres->map(function($critere)use($id){
@@ -151,9 +192,23 @@ class DossierController extends Controller
         $indicateurs = IndicateurFinancier::where('dossier_id',$item->id)->get();
         $banques = Banque::all();
         $sme = DossierHelper::getSme($item->note);
+        $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($item);
 
-        return view('Gestionnaire/Dossiers/show',compact('item','indicateurs','criteres','sme','banques'));
+        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+
+        return view('Gestionnaire/Dossiers/show', compact('item', 'indicateurs', 'criteres', 'sme', 'banques', 'instructionConsultation', 'fichierTypes'));
     }
+
+    public function storeDossierPiece(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->where('gestionnaire_id', auth()->id())
+            ->firstOrFail();
+
+        return $this->completeDossierPieceUpload($request, $dossier, 'gestionnaire.dossiers.show', $dossier);
+    }
+
     private function parseCriteres(Critere $critere){
         $dsc = [];
         $note = 0;

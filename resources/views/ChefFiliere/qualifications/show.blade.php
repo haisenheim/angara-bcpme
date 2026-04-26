@@ -4,7 +4,7 @@
 @include('partials.summernote-fr-styles')
 @endpush
 
-@section('title', 'Qualification — '.$item->name)
+@section('title', 'Structuration — '.$item->name)
 
 @section('content')
     <div class="qualification-page cf-page container-fluid py-3 py-md-4">
@@ -17,19 +17,19 @@
             <nav aria-label="breadcrumb" class="mb-2">
                 <ol class="breadcrumb mb-0 small">
                     <li class="breadcrumb-item"><a href="{{ route('chef-filiere.dashboard') }}">Tableau de bord</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('chef-filiere.qualifications.index') }}">Qualifications</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('chef-filiere.qualifications.index') }}">Structurations</a></li>
                     <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($item->name, 40) }}</li>
                 </ol>
             </nav>
-            <h1 class="h3 mb-2">Qualification — {{ $item->name }}</h1>
+            <h1 class="h3 mb-2">Structuration — {{ $item->name }}</h1>
             <p class="text-muted small mb-0 mb-md-2" style="max-width: 42rem;">
-                Une seule qualification par client : analyses et besoins, puis soumission au chef d’agence.
+                Une seule structuration par client : analyses et besoins, puis soumission au chef d’agence.
                 Les <strong>inscriptions aux programmes</strong> (une à la fois, dossier d’instruction créé automatiquement) se font sur la <a href="{{ route('chef-filiere.clients.show', $item->token) }}">fiche client</a> après validation du chef d’agence.
             </p>
             <a href="{{ route('chef-filiere.clients.show', $item->token) }}" class="btn btn-outline-secondary btn-sm mt-2 mt-md-3">
                 <i class="demo-pli-arrow-left me-1"></i> Retour au dossier client
             </a>
-            @if($item->promu_client_at || $item->prospect_rejected_at || $eer->programmes_submitted_at || $eer->qualification_validated_by_agence_at)
+            @if($item->promu_client_at || $item->prospect_rejected_at || $eer->programmes_submitted_at || $eer->qualification_validated_by_agence_at || ($eer->qualification_rejected_by_agence_at && $eer->programmes_submitted_at === null))
                 <div class="qualification-hero-badges d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">
                     @if($item->promu_client_at)
                         <span class="badge rounded-pill text-bg-success">Client validé (chef d'agence)</span>
@@ -41,12 +41,16 @@
                         <span class="badge rounded-pill bg-light text-dark border">{{ $item->prospectRejectedUser?->name ?? '—' }}</span>
                     @endif
                     @if($eer->programmes_submitted_at)
-                        <span class="badge rounded-pill text-bg-info text-dark">Qualification soumise au chef d'agence</span>
+                        <span class="badge rounded-pill text-bg-info text-dark">Structuration soumise au chef d'agence</span>
                         <span class="badge rounded-pill bg-light text-dark border">{{ $fmtShort($eer->programmes_submitted_at) }}</span>
                     @endif
                     @if($eer->qualification_validated_by_agence_at)
-                        <span class="badge rounded-pill text-bg-success">Qualification validée (chef d'agence)</span>
+                        <span class="badge rounded-pill text-bg-success">Structuration validée (chef d'agence)</span>
                         <span class="badge rounded-pill bg-light text-dark border">{{ $fmtShort($eer->qualification_validated_by_agence_at) }}</span>
+                    @endif
+                    @if($eer->qualification_rejected_by_agence_at && $eer->programmes_submitted_at === null && ! $eer->qualification_validated_by_agence_at)
+                        <span class="badge rounded-pill text-bg-danger">Structuration refusée par le chef d'agence</span>
+                        <span class="badge rounded-pill bg-light text-dark border">{{ $fmtShort($eer->qualification_rejected_by_agence_at) }}</span>
                     @endif
                 </div>
             @endif
@@ -71,18 +75,27 @@
                 </li>
                 <li class="qf-stepper__item qf-stepper__item--on">
                     <span class="qf-stepper__num" aria-hidden="true">3</span>
-                    <span>Soumission CA</span>
+                    <span>Soumission chef d'agence</span>
                 </li>
             </ol>
+
+            @if($eer->qualification_rejected_by_agence_at && $eer->programmes_submitted_at === null && ! $eer->qualification_validated_by_agence_at)
+                <div class="alert alert-danger border-0 shadow-sm mb-3">
+                    <strong>Structuration rejetée par le chef d’agence.</strong> Corrigez le contenu puis enregistrez et soumettez à nouveau.
+                    @if($eer->qualification_reject_motif)
+                        <div class="small mt-2 mb-0" style="white-space: pre-wrap;">{{ e($eer->qualification_reject_motif) }}</div>
+                    @endif
+                </div>
+            @endif
 
             @if(!$qualificationEditable)
                 @if($lockedPendingCa)
                     <div class="alert alert-warning border-0 shadow-sm">
-                        <strong>En attente du chef d'agence.</strong> La qualification a été transmise ; vous ne pouvez plus la modifier tant que le chef d'agence n'a pas statué.
+                        <strong>En attente du chef d'agence.</strong> La structuration a été transmise ; vous ne pouvez plus la modifier tant que le chef d'agence n'a pas statué.
                     </div>
                 @elseif($lockedAfterValidation)
                     <div class="alert alert-success border-0 shadow-sm">
-                        <strong>Qualification validée.</strong> Inscrivez le client aux programmes depuis la
+                        <strong>Structuration validée.</strong> Inscrivez le client aux programmes depuis la
                         <a href="{{ route('chef-filiere.clients.show', $item->token) }}" class="alert-link">fiche client</a> (un programme à la fois).
                     </div>
                 @endif
@@ -149,7 +162,7 @@
                             @error('identification_besoins')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                         <div class="qf-field mb-0">
-                            <label class="qf-field__label" for="qualification_notes">Notes de qualification</label>
+                            <label class="qf-field__label" for="qualification_notes">Notes de structuration</label>
                             <p class="qf-field__hint">Remarques complémentaires (non visibles côté entreprise si applicable).</p>
                             <div class="summernote-wrapper">
                                 <textarea name="qualification_notes" id="qualification_notes" class="form-control js-summernote-fr @error('qualification_notes') is-invalid @enderror" rows="3">{!! old('qualification_notes', $eer->qualification_notes) !!}</textarea>
@@ -193,7 +206,7 @@
                         </div>
                         <div class="qf-actions-bar mb-0 mt-3">
                             <button type="submit" class="btn btn-primary px-4">
-                                <i class="demo-psi-check-mark me-1"></i> Enregistrer la qualification
+                                <i class="demo-psi-check-mark me-1"></i> Enregistrer la structuration
                             </button>
                         </div>
                     </div>
@@ -207,10 +220,10 @@
                             <span class="qf-section__badge">4</span>
                             Transmission au chef d'agence
                         </h2>
-                        <p class="qf-section__lead mb-0">Soumettez la qualification pour validation. Les programmes seront choisis ensuite sur la fiche client.</p>
+                        <p class="qf-section__lead mb-0">Soumettez la structuration pour validation. Les programmes seront choisis ensuite sur la fiche client.</p>
                     </div>
                     <div class="qf-section__body pt-3">
-                        <form method="post" action="{{ route('chef-filiere.qualifications.submit', $item->token) }}" onsubmit="return confirm('Soumettre cette qualification au chef d\'agence pour validation ?');">
+                        <form method="post" action="{{ route('chef-filiere.qualifications.submit', $item->token) }}" onsubmit="return confirm('Soumettre cette structuration au chef d\'agence pour validation ?');">
                             @csrf
                             <button type="submit" class="btn btn-success">
                                 <i class="demo-psi-upload me-1"></i> Soumettre au chef d'agence pour validation

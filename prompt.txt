@@ -1,0 +1,38 @@
+On va mettre en place une fonctionnalite appelee delagation de pouvoir.
+Le principe
+Au sein de la banque le dossier d'instruction doit connaitre un validation ou un rejet pour cloture l'instruction.
+Cette validation ou ce rejet doit se faire par un profil specifique de la chaine d'instruction.
+Ce profil est generalement un responsable de pole, le DG ou le DGA
+Le critere generalement prix en coup pour determiner ce niveau est le total des engagements sollicites.
+
+TAF:
+1/ Creer deux nouveaux champs dans le dossier d'instruction pour renseigner :
+    - total des en engagements sollicités
+    - total des engagements en cours
+    Ces champs sont renseigner par le chef de filiere au moment de la creation
+    du dossier d'instruction (au moment du choix des programmes)
+
+2/ Implemter dans l'espace admin le parametrage de la delagation de pouvoir:
+    - Il sera presenter sous forme d'un tableau fixant le seuil maximal (du total des engagements) et le profil habileté a valider ou rejeter
+
+3/ Ajouter dans la vue du dossier des actions de validation ou de rejet accompagnee du'une note finale optionnelle.
+   Ces actions vont apparaitre en fonction du parametrage de la delagation de pouvoir
+   Le DGA et DGA sont les profil qui cloturent par defaut les dossiers en cas de non parametrage de la delegation de pouvoir
+   L'heure et l'identité de l'auteur de la cloture doivent etre enregistrées
+
+Pour tout dossier nous aurons besoin d'afficher son etat qui est soit:
+a/ validé
+b/ rejeté
+c/en cours d'instruction
+d/ a+b
+
+
+Creer des statuts (etats) aux clients.
+Un client peut etre dans les etats suivants:
+1- structuré : lorsque sa structuration (effectuee par le chef de filiere) est terminee c'est-a-dire validee par le chef d'agence
+2- structuration en cours : c'est-a-dire deja present chef le chef de filiere ou alors structuration soumise mais non encore validee par le chef d'agence
+3- en attente structuration: c'est a dire pas encore chez le chef de filiere
+4- structuration rejetée : non validee (rejetee) par le chef d'agence.
+5- non structuré: les cas 2,3 et 4
+
+

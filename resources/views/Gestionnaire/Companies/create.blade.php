@@ -18,7 +18,11 @@
 @endsection
 
 @section('actions')
-<a href="{{ route('gestionnaire.entreprises.index') }}" class="btn btn-outline-secondary btn-sm"><i class="demo-pli-arrow-left me-2"></i>Annuler</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('gestionnaire.entreprises.index') }}" class="dropdown-item"><i class="demo-pli-arrow-left me-2"></i>Annuler</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

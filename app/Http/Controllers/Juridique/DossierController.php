@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Juridique;
 
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
+use App\Services\InstructionDossierConsultationService;
 
 class DossierController extends Controller
 {
@@ -26,16 +27,24 @@ class DossierController extends Controller
             ->with([
                 'entreprise',
                 'programme',
+                'instructionProgrammes.programme',
                 'analyste',
                 'gestionnaire',
                 'agence',
                 'exploitationAvisCreditUser',
                 'exploitationEngagementsDecisionUser',
                 'juridiqueInstructionSubmittedBy',
-                'exploitationInstructionSubmittedBy',
+                'exploitationAnalysteTransmittedToExploitationBy',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+                'fichiersDossier.type',
+                'fichiersDossier.uploadedBy',
             ])
             ->firstOrFail();
 
-        return view('Juridique.Dossiers.show', compact('dossier'));
+        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
+
+        return view('Juridique.Dossiers.show', compact('dossier', 'instructionConsultation'));
     }
 }

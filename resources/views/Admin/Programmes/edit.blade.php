@@ -84,8 +84,14 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('admin.programmes.show', $item->token) }}" class="btn btn-outline-secondary btn-sm">Fiche programme</a>
-    <a href="{{ route('admin.programmes.index') }}" class="btn btn-outline-secondary btn-sm">Liste</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.programmes.show', $item->token) }}" class="dropdown-item">Fiche programme</a>
+        </li>
+        <li>
+            <a href="{{ route('admin.programmes.index') }}" class="dropdown-item">Liste des programmes</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

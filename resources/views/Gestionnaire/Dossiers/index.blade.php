@@ -1,7 +1,6 @@
 @extends('Layouts.gestionnaire')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap5.min.css">
 <style>
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
@@ -130,8 +129,6 @@
 @endsection
 
 @section('script')
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap5.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = "{{ url('gestionnaire/dossiers') }}";
@@ -139,7 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const statsUrl = "{{ route('gestionnaire.dossiers.stats') }}";
     const filterOptionsUrl = "{{ route('gestionnaire.dossiers.filter-options') }}";
 
-    let table;
     let filterTimeout;
 
     fetch(filterOptionsUrl)
@@ -178,50 +174,75 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Stats:', err));
     }
 
-    table = new DataTable('#dossiersTable', AngaraDataTables.mergeDefaults({
-        serverSide: true,
-        ajax: {
-            url: paginatedUrl,
-            data: function(d) {
-                d.programme_id = document.getElementById('filter-programme').value;
-                d.analyste_id = document.getElementById('filter-analyste').value;
-            }
-        },
+    const table = new AngaraTable(document.getElementById('dossiersTable'), {
+        ajaxUrl: paginatedUrl,
+        pageLength: 25,
+        searchDelay: 350,
+        filters: { programme_id: 'filter-programme', analyste_id: 'filter-analyste' },
         columns: [
-            { data: 'programme', name: 'programme', defaultContent: '-' },
-            { data: 'signataire', name: 'signataire', defaultContent: '-' },
-            { data: 'entreprise', name: 'entreprise', render: function(d, t, row) {
+            { data: 'programme', name: 'programme' },
+            { data: 'signataire', name: 'signataire' },
+            { data: 'entreprise', name: 'entreprise', render: function(d, _t, row) {
                 return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>';
             }},
-            { data: 'analyste', name: 'analyste', defaultContent: '-' },
-            { data: 'agence', name: 'agence', defaultContent: '-' },
-            { data: 'produit', name: 'produit', defaultContent: '-', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
-            { data: 'created', name: 'created', defaultContent: '-' },
-            { data: 'token', orderable: false, className: 'text-end', width: '100px', render: function(token) {
-                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn btn-sm btn-outline-primary"><i class="demo-psi-eye"></i> Voir</a>';
-            }}
+            { data: 'analyste', name: 'analyste' },
+            { data: 'agence', name: 'agence' },
+            { data: 'produit', name: 'produit', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
+            { data: 'created', name: 'created' },
+            { data: 'token', name: 'token', orderable: false, className: 'text-end angara-table-actions', width: '64px', render: function(token) {
+                const href = baseUrl + '/' + (token||'');
+                return ''
+                    + '<div class="dropdown">'
+                    + '  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">'
+                    + '    <i class="bi bi-three-dots-vertical"></i>'
+                    + '  </button>'
+                    + '  <ul class="dropdown-menu dropdown-menu-end">'
+                    + '    <li><a class="dropdown-item" href="' + href + '"><i class="bi bi-eye me-2"></i>Ouvrir</a></li>'
+                    + '    <li><button class="dropdown-item" type="button" data-copy-text="' + href + '"><i class="bi bi-link-45deg me-2"></i>Copier le lien</button></li>'
+                    + '  </ul>'
+                    + '</div>';
+            }},
         ],
-        order: [[6, 'desc']],
-        pageLength: 15,
-        lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+        order: [6, 'desc'],
         drawCallback: function() { loadStats(); },
-        pagingType: 'simple_numbers'
-    }));
+    });
 
     document.getElementById('filter-search').addEventListener('input', function() {
         clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(() => table.search(this.value).draw(), 350);
-    });
-
-    ['filter-programme','filter-analyste'].forEach(id => {
-        document.getElementById(id).addEventListener('change', () => table.ajax.reload());
+        const v = this.value || '';
+        filterTimeout = setTimeout(() => {
+            table.state.search = v;
+            table.state.page = 0;
+            table.reload();
+        }, 350);
     });
 
     document.getElementById('btn-reset-filters').addEventListener('click', function() {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-programme').value = '';
         document.getElementById('filter-analyste').value = '';
-        table.search('').ajax.reload();
+        table.state.search = '';
+        table.state.page = 0;
+        table.reload();
+    });
+
+    document.addEventListener('click', async function(e) {
+        const btn = e.target.closest('[data-copy-text]');
+        if (!btn) return;
+        const text = btn.getAttribute('data-copy-text') || '';
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (_) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
     });
 
     loadStats();

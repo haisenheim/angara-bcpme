@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Instruction\EngagementEntreprise;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -148,6 +149,11 @@ class Entreprise extends Model
         return $this->belongsTo('App\Models\User');
     }
 
+    public function gestionnaire()
+    {
+        return $this->belongsTo(User::class, 'gestionnaire_id');
+    }
+
     public function juridiqueAvisUser()
     {
         return $this->belongsTo(User::class, 'juridique_avis_user_id');
@@ -229,5 +235,56 @@ class Entreprise extends Model
         }
 
         return 'xxx';
+    }
+
+    /**
+     * Filtre les entreprises **promues client** selon le statut métier de structuration (EER).
+     *
+     * @param  Builder<\App\Models\Entreprise>  $query
+     * @return Builder<\App\Models\Entreprise>
+     */
+    public function scopeWhereClientStructurationStatus(Builder $query, string $status): Builder
+    {
+        $code = DossierEntreeRelation::normalizeClientStructurationFilter($status);
+        if ($code === null) {
+            return $query;
+        }
+
+        $query->whereNotNull('promu_client_at');
+
+        return match ($code) {
+            DossierEntreeRelation::CLIENT_STRUCT_STATUS_STRUCTURE => $query->whereHas('dossierEntreeRelation', function ($q) {
+                $q->whereNotNull('qualification_validated_by_agence_at');
+            }),
+            DossierEntreeRelation::CLIENT_STRUCT_STATUS_REJETEE => $query->whereHas('dossierEntreeRelation', function ($q) {
+                $q->whereNotNull('qualification_rejected_by_agence_at')
+                    ->whereNull('programmes_submitted_at')
+                    ->whereNull('qualification_validated_by_agence_at');
+            }),
+            DossierEntreeRelation::CLIENT_STRUCT_STATUS_EN_COURS => $query->where(function ($outer) {
+                $outer->whereHas('dossierEntreeRelation', function ($q) {
+                    $q->whereNotNull('programmes_submitted_at')
+                        ->whereNull('qualification_validated_by_agence_at');
+                })->orWhereHas('dossierEntreeRelation', function ($q) {
+                    $q->whereNotNull('qualification_completed_at')
+                        ->whereNull('programmes_submitted_at')
+                        ->whereNull('qualification_validated_by_agence_at')
+                        ->whereNull('qualification_rejected_by_agence_at');
+                });
+            }),
+            DossierEntreeRelation::CLIENT_STRUCT_STATUS_ATTENTE => $query->where(function ($outer) {
+                $outer->whereDoesntHave('dossierEntreeRelation')
+                    ->orWhereHas('dossierEntreeRelation', function ($q) {
+                        $q->whereNull('qualification_completed_at')
+                            ->whereNull('programmes_submitted_at')
+                            ->whereNull('qualification_validated_by_agence_at')
+                            ->whereNull('qualification_rejected_by_agence_at');
+                    });
+            }),
+            'non_structure' => $query->whereDoesntHave('dossierEntreeRelation', function ($q) {
+                $q->whereNotNull('qualification_validated_by_agence_at');
+            }),
+            default => $query,
+        };
     }
 }

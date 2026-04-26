@@ -35,3 +35,6 @@ if (isset($accessToken['refresh_token'])) {
         echo "Vérifie que tu as bien coché l'option 'accès hors ligne' dans Google Cloud et que tu as bien autorisé l'application.\n";
     }
 }
+
+
+

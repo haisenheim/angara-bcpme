@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Agence;
 use App\Models\Representation;
 use App\Models\User;
@@ -118,25 +119,43 @@ class HomeController extends ExtendedController
 
     public function profile()
     {
-        $user = User::find(auth()->user()->id);
+        $user = User::with(['role', 'agence', 'organisationEntite'])
+            ->findOrFail(auth()->id());
 
         return view('Auth.profile', compact('user'));
     }
 
-    public function storeProfile()
+    public function storeProfile(UpdateProfileRequest $request)
     {
-        $user = User::where('token', request()->id)->first();
-        if ($user) {
-            $photo = request()->photo;
-            if ($photo) {
-                $user->photo_uri = $this->entityImgCreate($photo, 'profil', $user->token);
+        $user = $request->user();
+
+        if ($request->hasFile('photo')) {
+            $uri = $this->entityImgCreate($request->file('photo'), 'profil', $user->token);
+            if ($uri) {
+                $user->photo_uri = $uri;
+            } else {
+                return back()
+                    ->withInput()
+                    ->with('warning', 'Le format de la photo n’est pas accepté (JPEG, PNG ou GIF).');
             }
-            $user->name = request()->name;
-            $user->password = bcrypt(request()->password);
-            $user->email = request()->email;
-            $user->save();
-            Session::flash('success', 'Mise à jour effectuée avec succès!');
         }
+
+        $user->name = $request->validated('name');
+        $user->email = $request->validated('email');
+
+        if ($request->filled('password')) {
+            $user->password = $request->input('password');
+        }
+
+        $user->save();
+
+        $fresh = $user->fresh(['role', 'agence', 'organisationEntite']);
+        $sessionUser = Session::get('user');
+        if ($fresh && is_object($sessionUser) && (int) ($sessionUser->id ?? 0) === (int) $fresh->id) {
+            Session::put('user', $fresh);
+        }
+
+        Session::flash('success', 'Votre profil a été mis à jour.');
 
         return back();
     }

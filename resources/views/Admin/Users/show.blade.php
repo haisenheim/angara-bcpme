@@ -20,14 +20,20 @@
 @endsection
 
 @section('actions')
-    <div class="d-flex gap-2">
-        <a href="{{ route('admin.users.edit', $item->token) }}" class="btn btn-primary btn-sm">Modifier</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.users.edit', $item->token) }}" class="dropdown-item">Modifier</a>
+        </li>
         @if($item->active)
-            <a href="{{ route('admin.user.disable', $item->token) }}" class="btn btn-outline-danger btn-sm">Verrouiller</a>
+            <li>
+                <a href="{{ route('admin.user.disable', $item->token) }}" class="dropdown-item text-danger">Verrouiller</a>
+            </li>
         @else
-            <a href="{{ route('admin.user.enable', $item->token) }}" class="btn btn-outline-success btn-sm">Activer</a>
+            <li>
+                <a href="{{ route('admin.user.enable', $item->token) }}" class="dropdown-item text-success">Activer</a>
+            </li>
         @endif
-    </div>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')
@@ -51,14 +57,26 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="border rounded p-3 h-100">
-                                <small class="text-body-secondary d-block">Agence</small>
-                                <div class="fw-semibold">{{ $item->agence?->name ?? '-' }}</div>
+                                <small class="text-body-secondary d-block">{{ ($item->organisation_type ?? null) === 'entite' ? 'Entite' : 'Agence' }}</small>
+                                <div class="fw-semibold">
+                                    @if(($item->organisation_type ?? null) === 'entite')
+                                        {{ $item->organisationEntite?->name ?? '-' }}
+                                    @else
+                                        {{ $item->agence?->name ?? '-' }}
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="border rounded p-3 h-100">
-                                <small class="text-body-secondary d-block">Direction</small>
-                                <div class="fw-semibold">{{ $item->agence?->representation?->name ?? '-' }}</div>
+                                <small class="text-body-secondary d-block">{{ ($item->organisation_type ?? null) === 'entite' ? 'Type' : 'Direction' }}</small>
+                                <div class="fw-semibold">
+                                    @if(($item->organisation_type ?? null) === 'entite')
+                                        {{ $item->organisationEntite?->type ?? '-' }}
+                                    @else
+                                        {{ $item->agence?->representation?->name ?? '-' }}
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>

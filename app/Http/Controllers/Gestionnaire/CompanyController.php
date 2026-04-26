@@ -2,22 +2,28 @@
 
 namespace App\Http\Controllers\Gestionnaire;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
+use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
+use App\Services\ClientEntrepriseTableExportService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
+use App\Models\Agence;
 use App\Models\Arrondissement;
 use App\Models\Banque;
 use App\Models\Departement;
 use App\Models\Dossier;
 use App\Models\ElementConstitutif;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Models\EntrepriseAppui;
 use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
 use App\Models\Instruction\Critere as InstructionCritere;
-use App\Models\Instruction\Engagement;
-use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
+use App\Services\EngagementReportService;
 use App\Models\Produit;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
@@ -33,6 +39,9 @@ use Illuminate\Validation\Rule;
 
 class CompanyController extends ExtendedController
 {
+    use AppliesEntrepriseListIndexFilters;
+    use AppliesProspectListIndexFilters;
+
     /**
      * Display a listing of the resource.
      */
@@ -358,7 +367,7 @@ class CompanyController extends ExtendedController
         $base = $this->baseQuery();
         $filters = $this->parseFilters($request);
 
-        $query = $this->applyFilters($base->clone(), $filters);
+        $query = $this->applyFilters($base->clone(), $filters, true);
 
         $stats = [
             'total' => (clone $query)->count(),
@@ -387,7 +396,7 @@ class CompanyController extends ExtendedController
 
         $base = $this->baseQuery();
         $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $query = $this->applyFilters($base->clone(), $filters, true);
 
         $recordsTotal = $this->baseQuery()->count();
         $recordsFiltered = $query->count();
@@ -404,7 +413,8 @@ class CompanyController extends ExtendedController
             $recordsFiltered = $query->count();
         }
 
-        $items = $query->orderBy('created_at', 'DESC')
+        $items = $query->with('dossierEntreeRelation')
+            ->orderBy('created_at', 'DESC')
             ->skip($start)
             ->take($length)
             ->get();
@@ -421,17 +431,59 @@ class CompanyController extends ExtendedController
         ]);
     }
 
-    private function parseFilters(Request $request): array
+    public function exportClients(Request $request)
     {
-        return [
-            'region_id' => $request->input('region_id'),
-            'taille' => $request->input('taille'),
-            'forme_id' => $request->input('forme_id'),
-            'caractere' => $request->input('caractere'),
-        ];
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $search = trim((string) $request->input('search.value', ''));
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters, true);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->with(['dossierEntreeRelation', 'agence', 'gestionnaire', 'region', 'arrondissement'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = ClientEntrepriseTableExportService::rowsCaGestionnaireAnalyste($items);
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersCaGestionnaireAnalyste(),
+            $format,
+            'gestionnaire-clients',
+            'Gestionnaire — portefeuille clients',
+        );
     }
 
-    private function applyFilters($query, array $filters)
+    private function parseFilters(Request $request): array
+    {
+        return array_merge(
+            [
+                'region_id' => $request->input('region_id'),
+                'taille' => $request->input('taille'),
+                'forme_id' => $request->input('forme_id'),
+                'caractere' => $request->input('caractere'),
+                'client_structuration_status' => DossierEntreeRelation::normalizeClientStructurationFilter($request->input('client_structuration_status')),
+            ],
+            $this->parsePromuClientAndAgenceGestionnaireFilters($request, false),
+        );
+    }
+
+    private function applyFilters($query, array $filters, bool $applyPromuPeriod = true)
     {
         if (! empty($filters['region_id'])) {
             $query->where('region_id', $filters['region_id']);
@@ -444,6 +496,13 @@ class CompanyController extends ExtendedController
         }
         if (! empty($filters['caractere'])) {
             $query->where('caractere', $filters['caractere']);
+        }
+        if (! empty($filters['client_structuration_status'])) {
+            $query->whereClientStructurationStatus($filters['client_structuration_status']);
+        }
+
+        if ($applyPromuPeriod) {
+            $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, false);
         }
 
         return $query;
@@ -459,6 +518,20 @@ class CompanyController extends ExtendedController
             'formes' => Forme::orderBy('name')->get(['id', 'name']),
             'tailles' => ['GRANDE', 'MOYENNE', 'PETITE', 'TRES PETITE', 'COOPERATIVE', 'ASSOCIATION'],
             'caracteres' => ['Formel', 'Informel'],
+        ]);
+    }
+
+    public function fetchProspectsFilterOptions()
+    {
+        $base = $this->prospectsQuery();
+        $agenceIds = (clone $base)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = (clone $base)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+
+        return response()->json([
+            'regions' => Region::orderBy('name')->get(['id', 'name']),
+            'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'agences' => Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']),
+            'gestionnaires' => User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -489,8 +562,8 @@ class CompanyController extends ExtendedController
     public function fetchProspectsStats(Request $request)
     {
         $base = $this->prospectsQuery();
-        $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
 
         $stats = [
             'total' => (clone $query)->count(),
@@ -518,8 +591,8 @@ class CompanyController extends ExtendedController
         $search = trim($request->input('search.value', ''));
 
         $base = $this->prospectsQuery();
-        $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
 
         $recordsTotal = $this->prospectsQuery()->count();
         $recordsFiltered = $query->count();
@@ -546,6 +619,45 @@ class CompanyController extends ExtendedController
             'recordsFiltered' => $recordsFiltered,
             'data' => $data,
         ]);
+    }
+
+    public function exportProspects(Request $request)
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $search = trim((string) $request->input('search.value', ''));
+        $base = $this->prospectsQuery();
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->with(['agence', 'gestionnaire', 'user', 'region', 'arrondissement'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = ProspectEntrepriseTableExportService::rowsGestionnaire($items);
+
+        return TableDocumentExportService::downloadFormatted(
+            $rows,
+            ProspectEntrepriseTableExportService::headersGestionnaire(),
+            $format,
+            'gestionnaire-prospects',
+            'Gestionnaire — liste des prospects',
+            'Brouillons et dossiers soumis pour avis',
+        );
     }
 
     /**
@@ -591,80 +703,20 @@ class CompanyController extends ExtendedController
         return redirect(route('gestionnaire.entreprises.index'));
     }
 
-    private function parse($eng, $id)
-    {
-
-        $data = [
-            'id' => $eng->id,
-            'name' => $eng->name,
-            'montant' => $eng->montant ?? 0,
-            'encours_montant' => $eng->encours_montant ?? 0,
-            'encours_impaye' => $eng->encours_impaye ?? 0,
-            'sollicite_montant' => $eng->sollicite_montant ?? 0,
-            'variation' => $eng->variation,
-            'parent_id' => $eng->parent_id,
-            'is_title' => $eng->is_title,
-            'is_leaf' => $eng->is_leaf,
-            'niveau' => $eng->niveau,
-        ];
-        if ($data['is_leaf']) {
-            $elts = EngagementEntreprise::with('banque')->where('engagement_id', $eng->id)->where('entreprise_id', $id)->get();
-            $data['encours_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->encours_montant ?? 0);
-            }, 0);
-            $data['sollicite_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->sollicite_montant ?? 0);
-            }, 0);
-            $data['encours_impaye'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->encours_impaye ?? 0);
-            }, 0);
-            $data['elts'] = $elts->map(function ($elt) {
-                return [
-                    'banque_name' => $elt->banque?->name ?? '—',
-                    'encours_montant' => $elt->encours_montant ?? 0,
-                    'encours_impaye' => $elt->encours_impaye ?? 0,
-                    'encours_dt_validite' => $elt->encours_dt_validite ?? '—',
-                    'sollicite_montant' => $elt->sollicite_montant ?? 0,
-                    'sollicite_dt_validite' => $elt->sollicite_dt_validite ?? '—',
-                ];
-            })->values()->toArray();
-            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
-
-        } else {
-            $data['children'] = $eng->children->map(function ($child) use ($id) {
-                return $this->parse($child, $id);
-            });
-            foreach ($data['children'] as $child) {
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-                $data['variation'] += $child['variation'];
-            }
-        }
-
-        return $data;
-    }
-
     public function getEngagementReport($token)
     {
         $entreprise = Entreprise::where('token', $token)->first();
-        if ($entreprise) {
-            $engagements = Engagement::where('parent_id', 0)->get();
-            $data = [];
-            foreach ($engagements as $eng) {
-                $data[] = $this->parse($eng, $entreprise->id);
-            }
-            // dd($data);
-
-            $engagements = $data;
-            $banques = Banque::all();
-
-            // $engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
-            return view('Gestionnaire.Companies.engagement_report', compact('engagements', 'entreprise', 'banques'));
-        } else {
+        if (! $entreprise) {
             return back();
         }
 
+        $service = app(EngagementReportService::class);
+        $engagements = $service->buildRowsForEntreprise($entreprise->id);
+        $banques = Banque::all();
+        $canEdit = false;
+        $setEngagementUrl = null;
+
+        return view('Gestionnaire.Companies.engagement_report', compact('engagements', 'entreprise', 'banques', 'canEdit', 'setEngagementUrl'));
     }
 
     /**

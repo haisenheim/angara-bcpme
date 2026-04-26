@@ -19,9 +19,13 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
-        <i class="demo-pli-add me-2 fs-5"></i> Nouveau compte
-    </a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.users.create') }}" class="dropdown-item">
+                <i class="demo-pli-add me-2 fs-5"></i> Nouveau compte
+            </a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')
@@ -114,8 +118,13 @@
                                     </td>
                                     <td>{{ $item->role?->name ?? '-' }}</td>
                                     <td>
-                                        <div class="small">Agence: {{ $item->agence?->name ?? '-' }}</div>
-                                        <div class="small">Direction: {{ $item->agence?->representation?->name ?? '-' }}</div>
+                                        @if(($item->organisation_type ?? null) === 'entite')
+                                            <div class="small">Entite: {{ $item->organisationEntite?->name ?? '-' }}</div>
+                                            <div class="small text-body-secondary">Type: {{ $item->organisationEntite?->type ?? '-' }}</div>
+                                        @else
+                                            <div class="small">Agence: {{ $item->agence?->name ?? '-' }}</div>
+                                            <div class="small">Direction: {{ $item->agence?->representation?->name ?? '-' }}</div>
+                                        @endif
                                     </td>
                                     <td>
                                         <span class="badge bg-{{ $item->status['color'] }}">{{ $item->status['name'] }}</span>

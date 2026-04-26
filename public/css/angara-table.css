@@ -1,0 +1,120 @@
+/* AngaraTable — style “banque sobre” (sans DataTables) */
+:root {
+  --angara-table-border: var(--bs-border-color, #E6E8EC);
+  --angara-table-fg: var(--bs-body-color, #111827);
+  --angara-table-muted: var(--bs-secondary-color, #4B5563);
+  --angara-table-accent: var(--bcpme-red, #D0362E); /* rouge logo, usage subtil */
+  --angara-table-accent-soft: rgba(208, 54, 46, 0.12);
+}
+
+.angara-table .card {
+  border-radius: 12px;
+  border-color: var(--angara-table-border);
+  box-shadow: none;
+}
+
+.angara-table .table-responsive {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.angara-table table thead th {
+  background: #fff;
+  color: var(--angara-table-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-color: var(--angara-table-border) !important;
+  vertical-align: middle;
+}
+
+.angara-table table thead tr {
+  border-bottom: 2px solid var(--angara-table-accent-soft);
+}
+
+.angara-table table tbody td {
+  font-size: 0.875rem;
+  color: var(--angara-table-fg);
+  border-color: var(--angara-table-border);
+}
+
+.angara-table table.table > :not(caption) > * > * {
+  padding: 0.65rem 0.75rem;
+}
+
+.angara-table .angara-table-topbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.angara-table .angara-table-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.angara-table .angara-table-controls label {
+  margin-bottom: 0 !important;
+}
+
+.angara-table input.angara-table-search,
+.angara-table select.angara-table-length {
+  border: 1px solid var(--angara-table-border);
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.875rem;
+}
+
+.angara-table input.angara-table-search:focus,
+.angara-table select.angara-table-length:focus {
+  border-color: rgba(208, 54, 46, 0.45);
+  box-shadow: 0 0 0 0.2rem rgba(208, 54, 46, 0.12);
+  outline: none;
+}
+
+.angara-table [data-angara-table-info] {
+  color: var(--angara-table-muted);
+  font-size: 0.875rem;
+}
+
+.angara-table .pagination .page-link {
+  border-color: var(--angara-table-border);
+  color: var(--angara-table-fg);
+  background: #fff;
+}
+
+.angara-table .pagination .page-item.active .page-link {
+  background: var(--angara-table-accent);
+  border-color: var(--angara-table-accent);
+  color: #fff;
+}
+
+.angara-table .pagination .page-link:hover {
+  background: var(--angara-table-accent);
+  border-color: var(--angara-table-accent);
+  color: #fff;
+}
+
+.angara-table .angara-table-empty {
+  padding: 1rem;
+  color: var(--angara-table-muted);
+}
+
+.angara-table.is-loading {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.angara-table .angara-table-actions .dropdown-toggle {
+  border-radius: 10px;
+}
+
+.angara-table .dropdown-menu {
+  border-radius: 12px;
+  border-color: var(--angara-table-border);
+}
+

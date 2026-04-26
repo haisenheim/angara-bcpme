@@ -9,12 +9,33 @@ use App\Models\DossierEntreeRelation;
 use App\Models\DossierEntreeRelationProgramme;
 use App\Models\Entreprise;
 use App\Services\AnalyseCritiqueService;
+use App\Services\InstructionDelegationService;
+use App\Services\InstructionDossierConsultationService;
+use App\Services\StructurationClosureService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
 class WorkflowController extends Controller
 {
-    public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService) {}
+    public function __construct(
+        private readonly AnalyseCritiqueService $analyseCritiqueService,
+        private readonly InstructionDelegationService $delegationService,
+        private readonly StructurationClosureService $structurationClosureService,
+    ) {}
+
+    /** Dossiers d’instruction : périmètre agence pour le chef d’agence ; tous les dossiers pour DG / DGA. */
+    private function baseInstructionDossierQuery(): Builder
+    {
+        $user = auth()->user();
+        $q = Dossier::on('central_app_mysql')->whereHas('instructionProgrammes');
+        if (! $this->delegationService->isDirectionRole($user)) {
+            $q->whereHas('entreprise', fn ($q2) => $q2->where('agence_id', $user->agence_id));
+        }
+
+        return $q;
+    }
 
     public function prospectIndex()
     {
@@ -171,10 +192,23 @@ class WorkflowController extends Controller
                 'entreprise.dossierAnalyseCritique.avis.emisPar',
                 'programmeSelections.programme',
                 'qualificationValidatedByAgenceUser',
+                'qualificationRejectedByAgenceUser',
             ])
             ->firstOrFail();
 
-        return view('Ca.Workflow.instruction_show', compact('eer'));
+        $instructionDossiersChefFiliere = Dossier::on('central_app_mysql')
+            ->where('entreprise_id', $eer->entreprise_id)
+            ->whereHas('instructionProgrammes')
+            ->with([
+                'instructionProgrammes.programme',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+            ])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('Ca.Workflow.instruction_show', compact('eer', 'instructionDossiersChefFiliere'));
     }
 
     public function approveInstruction(Request $request, string $token)
@@ -186,7 +220,7 @@ class WorkflowController extends Controller
             ->firstOrFail();
 
         if ($eer->qualification_validated_by_agence_at) {
-            Session::flash('info', 'La qualification a déjà été validée.');
+            Session::flash('info', 'La structuration a déjà été validée.');
 
             return redirect()->route('ca.workflow.instructions.show', $token);
         }
@@ -197,7 +231,7 @@ class WorkflowController extends Controller
             return redirect()->route('ca.workflow.instructions.show', $token);
         }
 
-        /** @deprecated Ancien flux : programmes sélectionnés à la qualification — création groupée de dossiers. */
+        /** @deprecated Ancien flux : programmes sélectionnés à la structuration — création groupée de dossiers. */
         if ($eer->programmeSelections->isNotEmpty()) {
             $created = collect();
             foreach ($eer->programmeSelections as $selection) {
@@ -233,6 +267,9 @@ class WorkflowController extends Controller
             $eer->statut = DossierEntreeRelation::STATUT_INSTRUCTION_VALIDEE;
             $eer->qualification_validated_by_agence_at = $eer->qualification_validated_by_agence_at ?? now();
             $eer->qualification_validated_by_agence_user_id = $eer->qualification_validated_by_agence_user_id ?? auth()->id();
+            $eer->qualification_rejected_by_agence_at = null;
+            $eer->qualification_rejected_by_agence_user_id = null;
+            $eer->qualification_reject_motif = null;
             $eer->save();
 
             $message = 'Dossier EER validé par le chef d\'agence. Dossiers d\'instruction créés pour : '.$eer->programmeSelections->pluck('programme.name')->filter()->implode(', ');
@@ -251,7 +288,7 @@ class WorkflowController extends Controller
         }
 
         if ($eer->qualification_completed_at === null) {
-            Session::flash('info', 'La qualification du chef de filière est incomplète.');
+            Session::flash('info', 'La structuration du chef de filière est incomplète.');
 
             return redirect()->route('ca.workflow.instructions.show', $token);
         }
@@ -260,15 +297,18 @@ class WorkflowController extends Controller
         $eer->qualification_validated_by_agence_user_id = auth()->id();
         $eer->statut = DossierEntreeRelation::STATUT_QUALIFICATION_AGENCE_VALIDEE;
         $eer->instruction_validation_status = DossierEntreeRelation::STATUT_QUALIFICATION_AGENCE_VALIDEE;
+        $eer->qualification_rejected_by_agence_at = null;
+        $eer->qualification_rejected_by_agence_user_id = null;
+        $eer->qualification_reject_motif = null;
         $eer->save();
 
         $this->analyseCritiqueService->syncChefAgenceValidation(
             $eer->entreprise,
             $eer,
-            'Qualification validée par le chef d\'agence. Le chef de filière inscrit le client aux programmes depuis la fiche client (un programme à la fois, dossier d\'instruction créé automatiquement).'
+            'Structuration validée par le chef d\'agence. Le chef de filière compose ensuite le dossier d\'instruction (plusieurs programmes et budgets d\'appui) sur la fiche client et le soumet pour validation.'
         );
 
-        Session::flash('success', 'Qualification validée. Les inscriptions aux programmes se font sur la fiche client (chef de filière).');
+        Session::flash('success', 'Structuration validée. Le chef de filière peut constituer le dossier d\'instruction multi-programmes sur la fiche client.');
 
         return $this->redirectAfterQualificationApprove($request, $eer, $token);
     }
@@ -284,5 +324,291 @@ class WorkflowController extends Controller
         }
 
         return redirect()->route('ca.workflow.instructions.show', $eerToken);
+    }
+
+    /**
+     * Refus de la structuration (EER) par le chef d’agence : le chef de filière peut corriger et resoumettre.
+     */
+    public function rejectQualification(Request $request, string $token)
+    {
+        $eer = DossierEntreeRelation::query()
+            ->where('token', $token)
+            ->whereHas('entreprise', fn ($q) => $q->where('agence_id', auth()->user()->agence_id))
+            ->with('entreprise')
+            ->firstOrFail();
+
+        if ($eer->qualification_validated_by_agence_at) {
+            Session::flash('info', 'La structuration est déjà validée.');
+
+            return redirect()->route('ca.workflow.instructions.show', $token);
+        }
+
+        if ($eer->programmes_submitted_at === null) {
+            Session::flash('info', 'Aucune structuration transmise par le chef de filière à refuser.');
+
+            return redirect()->route('ca.workflow.instructions.show', $token);
+        }
+
+        $data = $request->validate([
+            'reject_motif' => 'nullable|string|max:5000',
+        ]);
+
+        $eer->qualification_rejected_by_agence_at = now();
+        $eer->qualification_rejected_by_agence_user_id = auth()->id();
+        $eer->qualification_reject_motif = $data['reject_motif'] ?? null;
+        $eer->programmes_submitted_at = null;
+        $eer->programmes_submitted_by_user_id = null;
+        $eer->statut = DossierEntreeRelation::STATUT_QUALIFICATION_AGENCE_REJETEE;
+        $eer->instruction_validation_status = DossierEntreeRelation::STATUT_QUALIFICATION_AGENCE_REJETEE;
+        $eer->save();
+
+        $message = 'Structuration refusée par le chef d\'agence. Le chef de filière peut la corriger et la resoumettre.';
+        if (! empty($data['reject_motif'])) {
+            $message .= "\n\nMotif : ".$data['reject_motif'];
+        }
+        $this->analyseCritiqueService->syncChefAgenceRejetStructuration($eer->entreprise, $eer, $message);
+
+        Session::flash('success', 'Structuration refusée. Le chef de filière a été informé et peut modifier la structuration puis la resoumettre.');
+
+        return $this->redirectAfterQualificationApprove($request, $eer, $token);
+    }
+
+    /**
+     * Dossiers d’instruction (multi-programmes) soumis par le chef de filière, en attente de validation (un ou plusieurs par client).
+     */
+    public function instructionDossierBundleIndex()
+    {
+        $items = $this->baseInstructionDossierQuery()
+            ->whereNotNull('chef_filiere_submitted_to_agence_at')
+            ->whereNull('instruction_agence_validated_at')
+            ->whereNull('instruction_agence_rejected_at')
+            ->with(['entreprise.agence', 'instructionProgrammes.programme', 'chefFiliereSubmittedToAgenceBy'])
+            ->orderByDesc('chef_filiere_submitted_to_agence_at')
+            ->get();
+
+        return view('Ca.Workflow.instruction_dossiers_index', compact('items'));
+    }
+
+    /**
+     * @param  string  $token  Jeton du dossier d’instruction (pas celui de l’EER).
+     */
+    public function instructionDossierBundleShow(string $token)
+    {
+        $dossier = $this->baseInstructionDossierQuery()
+            ->where('token', $token)
+            ->with([
+                'entreprise.agence',
+                'instructionProgrammes.programme',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+                'fichiersDossier.type',
+                'fichiersDossier.uploadedBy',
+            ])
+            ->firstOrFail();
+
+        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
+        $canApproveRejectInstructionTransmission = $this->structurationClosureService->canChefAgenceDecide(auth()->user(), $dossier);
+        $closureStatutLabel = $this->structurationClosureService->closureStatutLabel($dossier);
+
+        return view('Ca.Workflow.instruction_dossier_bundle_show', compact(
+            'dossier',
+            'instructionConsultation',
+            'canApproveRejectInstructionTransmission',
+            'closureStatutLabel',
+        ));
+    }
+
+    public function approveInstructionBundle(Request $request, string $token)
+    {
+        $request->validate([
+            'closing_note' => 'nullable|string|max:5000',
+        ]);
+
+        $central = 'central_app_mysql';
+        $dossier = $this->baseInstructionDossierQuery()
+            ->where('token', $token)
+            ->with(['entreprise', 'instructionProgrammes.programme'])
+            ->firstOrFail();
+
+        if (! $this->structurationClosureService->canChefAgenceDecide(auth()->user(), $dossier)) {
+            Session::flash('info', 'Votre profil n’est pas habilité à valider cette structuration : seul le chef d’agence de l’agence du dossier peut décider.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $eer = DossierEntreeRelation::query()->where('entreprise_id', $dossier->entreprise_id)->first();
+
+        if ($dossier->chef_filiere_submitted_to_agence_at === null) {
+            Session::flash('info', 'Ce dossier n’a pas été transmis par le chef de filière.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        if ($dossier->instruction_agence_rejected_at !== null) {
+            Session::flash('info', 'Ce dossier a été rejeté. Le chef de filière peut soumettre une nouvelle proposition.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        if ($dossier->instruction_agence_validated_at !== null) {
+            Session::flash('info', 'Ce dossier d’instruction a déjà été validé.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        if ($dossier->instructionProgrammes->isEmpty()) {
+            Session::flash('info', 'Le dossier d’instruction est incomplet (aucun programme).');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $validatedNow = false;
+
+        DB::connection($central)->transaction(function () use ($eer, $dossier, &$validatedNow, $central, $request) {
+            $dLocked = Dossier::on($central)->whereKey($dossier->id)->lockForUpdate()->firstOrFail();
+            if ($dLocked->instruction_agence_validated_at !== null || $dLocked->instruction_agence_rejected_at !== null) {
+                return;
+            }
+
+            if ($eer) {
+                DossierEntreeRelationProgramme::query()
+                    ->where('dossier_entree_relation_id', $eer->id)
+                    ->where('instruction_dossier_id', $dLocked->id)
+                    ->update([
+                        'statut' => DossierEntreeRelationProgramme::STATUT_VALIDE,
+                        'validated_at' => now(),
+                    ]);
+            }
+
+            $dLocked->instruction_agence_validated_at = now();
+            $dLocked->instruction_agence_validated_by_user_id = auth()->id();
+            $dLocked->instruction_agence_closing_note = $request->input('closing_note');
+            $dLocked->save();
+            $validatedNow = true;
+        });
+
+        if (! $validatedNow) {
+            $dFresh = $dossier->fresh();
+            if ($dFresh?->instruction_agence_rejected_at !== null) {
+                Session::flash('info', 'Ce dossier a été rejeté entre-temps. Rechargez la page.');
+            } else {
+                Session::flash('info', 'Ce dossier d’instruction a déjà été traité.');
+            }
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $dossier->refresh();
+        $label = $dossier->loadMissing('instructionProgrammes.programme')->programmesLabel();
+
+        if ($eer) {
+            $this->analyseCritiqueService->syncChefAgenceValidation(
+                $dossier->entreprise,
+                $eer->fresh(),
+                'Dossier d’instruction multi-programmes validé par le chef d’agence. Programmes : '.$label.'.'
+            );
+        }
+
+        $this->analyseCritiqueService->syncInstructionDossier(
+            $dossier,
+            'Dossier d’instruction validé par le chef d’agence (programmes : '.$label.').'
+        );
+
+        Session::flash('success', 'Dossier d’instruction validé. Les programmes et budgets d’appui sont enregistrés.');
+
+        return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+    }
+
+    public function rejectInstructionBundle(Request $request, string $token)
+    {
+        $central = 'central_app_mysql';
+        $data = $request->validate([
+            'reject_motif' => 'nullable|string|max:5000',
+            'closing_note' => 'nullable|string|max:5000',
+        ]);
+
+        $dossier = $this->baseInstructionDossierQuery()
+            ->where('token', $token)
+            ->with(['entreprise', 'instructionProgrammes.programme'])
+            ->firstOrFail();
+
+        if (! $this->structurationClosureService->canChefAgenceDecide(auth()->user(), $dossier)) {
+            Session::flash('info', 'Votre profil n’est pas habilité à rejeter cette structuration : seul le chef d’agence de l’agence du dossier peut décider.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $eer = DossierEntreeRelation::query()->where('entreprise_id', $dossier->entreprise_id)->first();
+
+        if (! $dossier->isInstructionPendingAgenceValidation()) {
+            if ($dossier->instruction_agence_validated_at !== null) {
+                Session::flash('info', 'Ce dossier d’instruction a déjà été validé.');
+            } elseif ($dossier->instruction_agence_rejected_at !== null) {
+                Session::flash('info', 'Ce dossier a déjà été rejeté.');
+            } else {
+                Session::flash('info', 'Aucune soumission en attente de validation pour ce dossier.');
+            }
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        if ($dossier->instructionProgrammes->isEmpty()) {
+            Session::flash('info', 'Le dossier d’instruction est incomplet.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $rejectedNow = false;
+
+        DB::connection($central)->transaction(function () use ($eer, $dossier, $data, &$rejectedNow, $central) {
+            $dLocked = Dossier::on($central)->whereKey($dossier->id)->lockForUpdate()->firstOrFail();
+            if (! $dLocked->isInstructionPendingAgenceValidation()) {
+                return;
+            }
+
+            if ($eer) {
+                DossierEntreeRelationProgramme::query()
+                    ->where('dossier_entree_relation_id', $eer->id)
+                    ->where('instruction_dossier_id', $dLocked->id)
+                    ->update([
+                        'statut' => DossierEntreeRelationProgramme::STATUT_REJETE,
+                        'validated_at' => null,
+                    ]);
+            }
+
+            $dLocked->instruction_agence_rejected_at = now();
+            $dLocked->instruction_agence_rejected_by_user_id = auth()->id();
+            $dLocked->instruction_agence_reject_motif = $data['reject_motif'] ?? null;
+            $dLocked->instruction_agence_closing_note = $data['closing_note'] ?? null;
+            $dLocked->save();
+            $rejectedNow = true;
+        });
+
+        if (! $rejectedNow) {
+            Session::flash('info', 'La demande n’a pas pu être traitée (état modifié). Rechargez la page.');
+
+            return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
+        }
+
+        $dossier->refresh();
+        $label = $dossier->loadMissing('instructionProgrammes.programme')->programmesLabel();
+        $message = 'Dossier d’instruction multi-programmes rejeté par le chef d’agence. Programmes concernés : '.$label.'.';
+        if (! empty($data['reject_motif'])) {
+            $message .= "\n\nMotif : ".$data['reject_motif'];
+        }
+
+        if ($eer) {
+            $this->analyseCritiqueService->syncChefAgenceValidation($dossier->entreprise, $eer->fresh(), $message);
+        }
+        $this->analyseCritiqueService->syncInstructionDossier(
+            $dossier,
+            'Dossier d’instruction non validé par le chef d’agence (rejet). Programmes : '.$label.'.'
+            .(! empty($data['reject_motif']) ? "\n\nMotif : ".$data['reject_motif'] : '')
+        );
+
+        Session::flash('success', 'Le dossier d’instruction a été rejeté. Le chef de filière peut le corriger et le soumettre à nouveau.');
+
+        return redirect()->route('ca.workflow.instruction-dossiers.show', $token);
     }
 }

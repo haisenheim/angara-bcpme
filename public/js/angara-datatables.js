@@ -36,6 +36,16 @@
         var base = {
             language: frLanguage(),
             pagingType: 'simple_numbers',
+            searchDelay: 250,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            // DataTables 2 layout (fallback-friendly; ignored by DT1)
+            layout: {
+                topStart: 'pageLength',
+                topEnd: 'search',
+                bottomStart: 'info',
+                bottomEnd: 'paging',
+            },
         };
         if (!options || typeof options !== 'object') {
             return base;

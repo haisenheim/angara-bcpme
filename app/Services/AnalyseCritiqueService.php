@@ -76,14 +76,14 @@ class AnalyseCritiqueService
             $eer->analyse_operationnelle ? "Analyse operationnelle:\n".$eer->analyse_operationnelle : null,
             $eer->analyse_eligibilite ? "Eligibilite:\n".$eer->analyse_eligibilite : null,
             $eer->identification_besoins ? "Identification des besoins:\n".$eer->identification_besoins : null,
-            $eer->qualification_notes ? "Notes de qualification:\n".$eer->qualification_notes : null,
+            $eer->qualification_notes ? "Notes de structuration:\n".$eer->qualification_notes : null,
         ])));
 
         if ($content !== '') {
             $this->upsertAvis(
                 $dossier,
                 AnalyseCritiqueAvis::SOURCE_CHEF_FILIERE,
-                'Qualification chef de filiere',
+                'Structuration chef de filière',
                 $content,
                 AnalyseCritiqueAvis::ETAT_INTEGRE,
                 $eer->qualification_completed_at,
@@ -132,6 +132,28 @@ class AnalyseCritiqueService
             $entreprise->prospect_rejected_user_id,
             null,
             45
+        );
+
+        return $dossier;
+    }
+
+    /**
+     * Structuration (EER) refusée par le chef d’agence — le chef de filière peut corriger et resoumettre.
+     */
+    public function syncChefAgenceRejetStructuration(Entreprise $entreprise, DossierEntreeRelation $eer, string $message): DossierAnalyseCritique
+    {
+        $dossier = $this->syncChefFiliereQualification($entreprise, $eer);
+
+        $this->upsertAvis(
+            $dossier,
+            AnalyseCritiqueAvis::SOURCE_CHEF_AGENCE,
+            'Refus structuration (chef d\'agence)',
+            $message,
+            AnalyseCritiqueAvis::ETAT_INTEGRE,
+            $eer->qualification_rejected_by_agence_at,
+            $eer->qualification_rejected_by_agence_user_id,
+            null,
+            46
         );
 
         return $dossier;

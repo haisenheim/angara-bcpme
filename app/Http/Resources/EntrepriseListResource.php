@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\DossierEntreeRelation;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -48,12 +49,18 @@ class EntrepriseListResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $structRow = $this->clientStructurationRow();
+
         return [
             'id'=>$this->id,
             'name'=>$this->name,
             'cnps'=>$this->cnps,
             'rccm'=>$this->rccm,
             'niu'=>$this->niu,
+            'agence_id' => $this->agence_id,
+            'gestionnaire_id' => $this->gestionnaire_id,
+            'gestionnaire_name' => $this->gestionnaire?->name,
+            'promu_client_at' => $this->toIso8601Date($this->promu_client_at),
             'agence'=>$this->agence?->name,
             'representation'=>$this->representation?->name,
             'commune'=>$this->arrondissement?->name,
@@ -73,6 +80,22 @@ class EntrepriseListResource extends JsonResource
             'juridique_avis_at' => $this->toIso8601Date($this->juridique_avis_at),
             'conformite_avis_at' => $this->toIso8601Date($this->conformite_avis_at),
             'prospect_workflow_status' => $this->prospectWorkflowStatusLabel(),
+            'client_structuration_code' => $structRow['code'],
+            'client_structuration_label' => $structRow['label'],
         ];
+    }
+
+    /**
+     * @return array{code: ?string, label: string}
+     */
+    private function clientStructurationRow(): array
+    {
+        if (! $this->promu_client_at) {
+            return ['code' => null, 'label' => '—'];
+        }
+
+        $pres = DossierEntreeRelation::clientStructurationPresentation($this->dossierEntreeRelation);
+
+        return ['code' => $pres['code'], 'label' => $pres['label']];
     }
 }

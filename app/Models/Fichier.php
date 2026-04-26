@@ -8,15 +8,35 @@ use Illuminate\Database\Eloquent\Model;
 class Fichier extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
+    protected $connection = 'central_app_mysql';
+
     protected $guarded = [];
 
-    public function type(){
-        return $this->belongsTo('App\Models\FichierType','type_id');
+    protected $casts = [
+        'uploaded_at' => 'datetime',
+    ];
+
+    public function type()
+    {
+        return $this->belongsTo(FichierType::class, 'type_id');
     }
 
-    public function entreprise(){
-        return $this->belongsTo('App\Models\Entreprise','entreprise_id');
+    public function entreprise()
+    {
+        return $this->belongsTo(Entreprise::class, 'entreprise_id');
+    }
+
+    public function dossier()
+    {
+        return $this->belongsTo(Dossier::class, 'dossier_id');
+    }
+
+    public function uploadedBy()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by_user_id');
     }
 
     public function getPathAttribute(): ?string

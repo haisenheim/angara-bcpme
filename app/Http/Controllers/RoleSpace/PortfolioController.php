@@ -2,30 +2,89 @@
 
 namespace App\Http\Controllers\RoleSpace;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
+use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
+use App\Models\Agence;
+use App\Models\Banque;
 use App\Models\Dossier;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
+use App\Models\FichierType;
 use App\Models\User;
+use App\Services\ClientEntrepriseTableExportService;
 use App\Services\DossierInstructionShowPresenter;
+use App\Services\DossierTableExportService;
+use App\Services\EngagementReportService;
+use App\Services\InstructionDossierAnalyseCritiqueSyntheseService;
+use App\Services\InstructionDossierConsultationService;
+use Dompdf\Canvas;
+use Dompdf\FontMetrics;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class PortfolioController extends Controller
 {
+    use AppliesEntrepriseListIndexFilters;
     use BuildsEntrepriseQuestionnaireResults;
     use ResolvesRoleSpace;
+    use StoresDossierPieces;
 
-    public function entreprisesIndex()
+    /**
+     * Requête liste entreprises avec les mêmes filtres que la page index (export inclus).
+     *
+     * @return Builder<\App\Models\Entreprise>
+     */
+    protected function entreprisesFilteredListQuery(Request $request): Builder
+    {
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        $filters = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+
+        $query = Entreprise::query()
+            ->with(['forme', 'user', 'dossierEntreeRelation', 'agence', 'gestionnaire'])
+            ->withCount('dossiers')
+            ->when($structurationStatus, fn ($q) => $q->whereClientStructurationStatus($structurationStatus));
+        $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
+
+        return $query;
+    }
+
+    public function entreprisesIndex(Request $request)
     {
         $space = $this->resolveSpace();
-        $entreprises = Entreprise::query()
-            ->with(['forme', 'user'])
-            ->withCount('dossiers')
-            ->orderByDesc('id')
-            ->paginate(25);
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
 
-        return view('RoleSpace.entreprises.index', compact('space', 'entreprises'));
+        $entreprises = $this->entreprisesFilteredListQuery($request)->orderByDesc('id')->paginate(25)->withQueryString();
+
+        $agenceIds = Entreprise::query()->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = Entreprise::query()->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+        $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
+        $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
+
+        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires'));
+    }
+
+    public function entreprisesExport(Request $request)
+    {
+        $space = $this->resolveSpace();
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $items = $this->entreprisesFilteredListQuery($request)->orderByDesc('id')->get();
+        $rows = ClientEntrepriseTableExportService::rowsPortfolio($items);
+        $title = ($space['title'] ?? 'Angara').' — liste entreprises / clients';
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersPortfolio(),
+            $format,
+            'entreprises-'.($space['route'] ?? 'espace'),
+            $title,
+        );
     }
 
     public function entrepriseShow(string $token)
@@ -48,48 +107,7 @@ class PortfolioController extends Controller
             abort(404);
         }
 
-        if (($space['route'] ?? '') === 'analyste-juridique') {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $item->id)
-                ->where('juridique_analyste_user_id', auth()->id())
-                ->whereNotNull('juridique_instruction_submitted_at')
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
-
-        if (($space['route'] ?? '') === 'analyste-credit') {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $item->id)
-                ->where('reng_analyste_credit_user_id', auth()->id())
-                ->whereNotNull('juridique_submitted_to_engagements_at')
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
-
-        if (($space['route'] ?? '') === 'analyste-risques') {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $item->id)
-                ->where('rerx_analyste_risques_user_id', auth()->id())
-                ->whereNotNull('reng_submitted_to_risques_at')
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
-
-        if (in_array($space['route'] ?? '', ['dg', 'dga'], true)) {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $item->id)
-                ->whereNotNull('rerx_submitted_to_direction_at')
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
+        $this->assertPortfolioEntrepriseAccess($item, $space);
 
         $item->load([
             'user',
@@ -128,6 +146,92 @@ class PortfolioController extends Controller
         $checklist = $item->piecesExigiblesChecklist();
 
         return view('RoleSpace.entreprises.show', compact('space', 'item', 'mr', 'checklist'));
+    }
+
+    /**
+     * État des engagements (répartition) — lecture seule, données au niveau entreprise.
+     */
+    public function entrepriseEngagementReport(string $token)
+    {
+        $space = $this->resolveSpace();
+
+        $entreprise = Entreprise::query()->where('token', $token)->first();
+
+        if (! $entreprise) {
+            $dossier = Dossier::query()
+                ->where('token', $token)
+                ->with('entreprise')
+                ->first();
+            $entrepriseToken = $dossier?->entreprise?->token;
+            if ($entrepriseToken) {
+                return redirect()->route($space['route'].'.entreprises.engagements', $entrepriseToken);
+            }
+
+            abort(404);
+        }
+
+        $this->assertPortfolioEntrepriseAccess($entreprise, $space);
+
+        $service = app(EngagementReportService::class);
+        $engagements = $service->buildRowsForEntreprise($entreprise->id);
+        $banques = Banque::all();
+        $canEdit = false;
+        $setEngagementUrl = null;
+
+        return view('RoleSpace.entreprises.engagement_report', compact(
+            'space',
+            'entreprise',
+            'engagements',
+            'banques',
+            'canEdit',
+            'setEngagementUrl'
+        ));
+    }
+
+    protected function assertPortfolioEntrepriseAccess(Entreprise $item, array $space): void
+    {
+        if (($space['route'] ?? '') === 'analyste-juridique') {
+            $allowed = Dossier::query()
+                ->where('entreprise_id', $item->id)
+                ->where('juridique_analyste_user_id', auth()->id())
+                ->whereNotNull('juridique_instruction_submitted_at')
+                ->exists();
+            if (! $allowed) {
+                abort(403);
+            }
+        }
+
+        if (($space['route'] ?? '') === 'analyste-credit') {
+            $allowed = Dossier::query()
+                ->where('entreprise_id', $item->id)
+                ->where('reng_analyste_credit_user_id', auth()->id())
+                ->whereNotNull('juridique_submitted_to_engagements_at')
+                ->exists();
+            if (! $allowed) {
+                abort(403);
+            }
+        }
+
+        if (($space['route'] ?? '') === 'analyste-risques') {
+            $allowed = Dossier::query()
+                ->where('entreprise_id', $item->id)
+                ->where('rerx_analyste_risques_user_id', auth()->id())
+                ->whereNotNull('reng_submitted_to_risques_at')
+                ->exists();
+            if (! $allowed) {
+                abort(403);
+            }
+        }
+
+        if (in_array($space['route'] ?? '', ['dg', 'dga'], true)) {
+            $allowed = Dossier::query()
+                ->where('entreprise_id', $item->id)
+                ->instructionValidesParChefAgence()
+                ->exists();
+            if (! $allowed) {
+                abort(403);
+            }
+        }
     }
 
     public function entreprisePieces(string $token)
@@ -179,7 +283,7 @@ class PortfolioController extends Controller
         if (in_array($space['route'] ?? '', ['dg', 'dga'], true)) {
             $allowed = Dossier::query()
                 ->where('entreprise_id', $entreprise->id)
-                ->whereNotNull('rerx_submitted_to_direction_at')
+                ->instructionValidesParChefAgence()
                 ->exists();
             if (! $allowed) {
                 abort(403);
@@ -194,7 +298,35 @@ class PortfolioController extends Controller
     public function dossiersIndex()
     {
         $space = $this->resolveSpace();
+        if (in_array($space['route'], ['dg', 'dga'], true)) {
+            $rn = (string) (request()->route()?->getName() ?? '');
+            if ($rn === $space['route'].'.dossiers.index') {
+                return redirect()->route($space['route'].'.dossiers.valides-chef-agence');
+            }
+        }
         $dossiersFilter = null;
+        $routeName = (string) (request()->route()?->getName() ?? '');
+        $dossiersVue = 'default';
+        if (in_array($space['route'], ['dg', 'dga'], true)) {
+            $dossiersVue = match ($routeName) {
+                $space['route'].'.dossiers.en-attente-direction' => 'direction_pending',
+                default => 'valides_chef_agence',
+            };
+        }
+        $query = $this->dossiersFilteredListQuery(request(), $space, $dossiersVue, $dossiersFilter);
+        $dossiers = $query->orderByDesc('id')->paginate(25)->withQueryString();
+
+        return view('RoleSpace.dossiers.index', compact('space', 'dossiers', 'dossiersFilter', 'dossiersVue'));
+    }
+
+    /**
+     * Requête liste dossiers avec filtres (export inclus).
+     *
+     * @param  array<string, mixed>  $space
+     * @return Builder<Dossier>
+     */
+    protected function dossiersFilteredListQuery(Request $request, array $space, string $dossiersVue, ?string &$dossiersFilter): Builder
+    {
         $with = ['entreprise', 'programme', 'analyste', 'gestionnaire'];
         if ($space['route'] === 'respexp') {
             $with[] = 'exploitationAnalysteAssignedBy';
@@ -211,47 +343,105 @@ class PortfolioController extends Controller
         if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga'], true)) {
             $with[] = 'rerxAnalysteRisquesUser';
         }
+        if (in_array($space['route'], ['dg', 'dga'], true)) {
+            $with[] = 'instructionProgrammes.programme';
+        }
+
         $query = Dossier::query()->with($with);
 
-        if ($space['route'] === 'respexp' && request('filter') === 'a_affecter') {
+        // Contraintes de périmètre (workflow par espace)
+        if ($space['route'] === 'respexp' && $request->query('filter') === 'a_affecter') {
             $query->whereNull('analyste_id');
             $dossiersFilter = 'a_affecter';
         }
-
         if ($space['route'] === 'juridique') {
             $query->whereNotNull('juridique_instruction_submitted_at');
         }
-
         if ($space['route'] === 'analyste-juridique') {
             $query->where('juridique_analyste_user_id', auth()->id())
                 ->whereNotNull('juridique_instruction_submitted_at');
         }
-
         if ($space['route'] === 'reng') {
             $query->whereNotNull('juridique_submitted_to_engagements_at');
         }
-
         if ($space['route'] === 'analyste-credit') {
             $query->where('reng_analyste_credit_user_id', auth()->id())
                 ->whereNotNull('juridique_submitted_to_engagements_at');
         }
-
         if ($space['route'] === 'rerx') {
             $query->whereNotNull('reng_submitted_to_risques_at');
         }
-
         if ($space['route'] === 'analyste-risques') {
             $query->where('rerx_analyste_risques_user_id', auth()->id())
                 ->whereNotNull('reng_submitted_to_risques_at');
         }
-
         if (in_array($space['route'], ['dg', 'dga'], true)) {
-            $query->whereNotNull('rerx_submitted_to_direction_at');
+            if ($dossiersVue === 'direction_pending') {
+                $query->awaitingDirectionGeneralConclusion();
+            } else {
+                $query->instructionValidesParChefAgence();
+            }
         }
 
-        $dossiers = $query->orderByDesc('id')->paginate(25);
+        // Filtres UI
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where(function (Builder $q) use ($search) {
+                $q->whereHas('entreprise', fn (Builder $qq) => $qq->where('name', 'like', '%'.$search.'%'))
+                    ->orWhereHas('programme', fn (Builder $qq) => $qq->where('name', 'like', '%'.$search.'%'));
+            });
+        }
 
-        return view('RoleSpace.dossiers.index', compact('space', 'dossiers', 'dossiersFilter'));
+        if ($programmeId = $request->query('programme_id')) {
+            $query->where('programme_id', $programmeId);
+        }
+        if ($gestionnaireId = $request->query('gestionnaire_id')) {
+            $query->where('gestionnaire_id', $gestionnaireId);
+        }
+        if ($analysteId = $request->query('analyste_id')) {
+            $query->where('analyste_id', $analysteId);
+        }
+        if ($state = $request->query('instruction_state')) {
+            if ($state === 'pending') {
+                $query->doesntHave('indicateurs');
+            } elseif ($state === 'in_progress') {
+                $query->whereHas('indicateurs');
+            }
+        }
+        if ($createdFrom = $request->query('created_from')) {
+            $query->where('created_at', '>=', \Carbon\Carbon::parse($createdFrom)->startOfDay());
+        }
+        if ($createdTo = $request->query('created_to')) {
+            $query->where('created_at', '<=', \Carbon\Carbon::parse($createdTo)->endOfDay());
+        }
+
+        return $query;
+    }
+
+    public function dossiersExport(Request $request)
+    {
+        $space = $this->resolveSpace();
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $dossiersVue = (string) $request->query('vue', 'default');
+        if (! in_array($dossiersVue, ['default', 'direction_pending', 'valides_chef_agence'], true)) {
+            $dossiersVue = 'default';
+        }
+        $dossiersFilter = null;
+        $items = $this->dossiersFilteredListQuery($request, $space, $dossiersVue, $dossiersFilter)->orderByDesc('id')->get();
+
+        $rows = DossierTableExportService::rowsRoleSpace($items);
+        $title = ($space['title'] ?? 'Angara').' — liste dossiers';
+
+        return DossierTableExportService::download(
+            $rows,
+            $format,
+            'dossiers-'.($space['route'] ?? 'espace'),
+            $title,
+        );
     }
 
     public function dossierShow(string $token)
@@ -260,18 +450,23 @@ class PortfolioController extends Controller
         $with = [
             'entreprise',
             'programme',
+            'instructionProgrammes.programme',
             'analyste',
             'gestionnaire',
             'agence',
             'indicateurs',
             'reponses',
+            'chefFiliereSubmittedToAgenceBy',
+            'instructionAgenceValidatedBy',
+            'instructionAgenceRejectedBy',
         ];
         $hubSpace = in_array($space['route'], ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga'], true);
         if ($hubSpace) {
             $with[] = 'exploitationAvisCreditUser';
             $with[] = 'exploitationEngagementsDecisionUser';
             $with[] = 'exploitationAnalysteAssignedBy';
-            $with[] = 'exploitationInstructionSubmittedBy';
+            $with[] = 'exploitationAnalysteTransmittedToExploitationBy';
+            $with[] = 'instructionCaTransmittedToExploitationBy';
             $with[] = 'juridiqueInstructionSubmittedBy';
         }
         if (in_array($space['route'], ['juridique', 'analyste-juridique'], true)) {
@@ -303,45 +498,12 @@ class PortfolioController extends Controller
             $with[] = 'rerxSubmittedToDirectionBy';
         }
 
-        $dossierQuery = Dossier::query()
-            ->with($with)
-            ->where('token', $token);
+        $with[] = 'fichiersDossier.type';
+        $with[] = 'fichiersDossier.uploadedBy';
 
-        if ($space['route'] === 'juridique') {
-            $dossierQuery->whereNotNull('juridique_instruction_submitted_at');
-        }
+        $dossier = $this->dossierQueryForCurrentSpace($token)->with($with)->firstOrFail();
 
-        if ($space['route'] === 'analyste-juridique') {
-            $dossierQuery
-                ->where('juridique_analyste_user_id', auth()->id())
-                ->whereNotNull('juridique_instruction_submitted_at');
-        }
-
-        if ($space['route'] === 'reng') {
-            $dossierQuery->whereNotNull('juridique_submitted_to_engagements_at');
-        }
-
-        if ($space['route'] === 'analyste-credit') {
-            $dossierQuery
-                ->where('reng_analyste_credit_user_id', auth()->id())
-                ->whereNotNull('juridique_submitted_to_engagements_at');
-        }
-
-        if ($space['route'] === 'rerx') {
-            $dossierQuery->whereNotNull('reng_submitted_to_risques_at');
-        }
-
-        if ($space['route'] === 'analyste-risques') {
-            $dossierQuery
-                ->where('rerx_analyste_risques_user_id', auth()->id())
-                ->whereNotNull('reng_submitted_to_risques_at');
-        }
-
-        if (in_array($space['route'], ['dg', 'dga'], true)) {
-            $dossierQuery->whereNotNull('rerx_submitted_to_direction_at');
-        }
-
-        $dossier = $dossierQuery->firstOrFail();
+        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
 
         $analystesExploitation = collect();
         $analystesJuridique = collect();
@@ -424,9 +586,93 @@ class PortfolioController extends Controller
 
         $respexpInstructionLocked = $space['route'] === 'respexp'
             && (bool) $dossier->analyste_id
-            && ! $dossier->isInstructionSubmittedToExploitation();
+            && ! $dossier->isInstructionVisibleToResponsableExploitation();
 
-        return view('RoleSpace.dossiers.show', compact('space', 'dossier', 'analystesExploitation', 'analystesJuridique', 'analystesCredit', 'analystesRisques', 'exploitationSteps', 'respexpInstructionLocked'));
+        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+
+        $piecesModalId = 'dossierPieceUploadModal_'.preg_replace('/\W+/', '_', $space['route']);
+
+        $delegation = app(\App\Services\InstructionDelegationService::class);
+        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
+        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
+        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
+
+        return view('RoleSpace.dossiers.show', compact(
+            'space',
+            'dossier',
+            'analystesExploitation',
+            'analystesJuridique',
+            'analystesCredit',
+            'analystesRisques',
+            'exploitationSteps',
+            'respexpInstructionLocked',
+            'instructionConsultation',
+            'fichierTypes',
+            'piecesModalId',
+            'canCloseInstruction',
+            'instructionClosureRuleDescription',
+            'instructionClosureStatutLabel',
+        ));
+    }
+
+    /**
+     * Requête dossier filtrée comme pour l’affichage (périmètre par espace).
+     */
+    protected function dossierQueryForCurrentSpace(string $token): Builder
+    {
+        $space = $this->resolveSpace();
+        $dossierQuery = Dossier::query()->where('token', $token);
+
+        if ($space['route'] === 'juridique') {
+            $dossierQuery->whereNotNull('juridique_instruction_submitted_at');
+        }
+
+        if ($space['route'] === 'analyste-juridique') {
+            $dossierQuery
+                ->where('juridique_analyste_user_id', auth()->id())
+                ->whereNotNull('juridique_instruction_submitted_at');
+        }
+
+        if ($space['route'] === 'reng') {
+            $dossierQuery->whereNotNull('juridique_submitted_to_engagements_at');
+        }
+
+        if ($space['route'] === 'analyste-credit') {
+            $dossierQuery
+                ->where('reng_analyste_credit_user_id', auth()->id())
+                ->whereNotNull('juridique_submitted_to_engagements_at');
+        }
+
+        if ($space['route'] === 'rerx') {
+            $dossierQuery->whereNotNull('reng_submitted_to_risques_at');
+        }
+
+        if ($space['route'] === 'analyste-risques') {
+            $dossierQuery
+                ->where('rerx_analyste_risques_user_id', auth()->id())
+                ->whereNotNull('reng_submitted_to_risques_at');
+        }
+
+        if (in_array($space['route'], ['dg', 'dga'], true)) {
+            $dossierQuery->instructionValidesParChefAgence();
+        }
+
+        return $dossierQuery;
+    }
+
+    public function storeDossierPiece(Request $request, string $token): RedirectResponse
+    {
+        $space = $this->resolveSpace();
+        $dossier = $this->dossierQueryForCurrentSpace($token)->firstOrFail();
+        $redirectRoute = $space['route'].'.dossiers.show';
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route($redirectRoute, $dossier->token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
+        return $this->completeDossierPieceUpload($request, $dossier, $redirectRoute, $dossier->token);
     }
 
     public function assignRerxAnalysteRisques(Request $request, string $token)
@@ -435,6 +681,12 @@ class PortfolioController extends Controller
             ->where('token', $token)
             ->whereNotNull('reng_submitted_to_risques_at')
             ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
 
         if ($dossier->isSubmittedToDirectionFromRerx()) {
             return redirect()
@@ -486,6 +738,12 @@ class PortfolioController extends Controller
             ->whereNotNull('reng_submitted_to_risques_at')
             ->firstOrFail();
 
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
         if (! $dossier->isRerxAnalysteRisquesSubmittedToRerx()) {
             return redirect()
                 ->route('rerx.dossiers.show', $token)
@@ -502,6 +760,8 @@ class PortfolioController extends Controller
         ]);
 
         $dossier->rerx_responsable_avis = $validated['rerx_responsable_avis'] ?? null;
+        $dossier->rerx_responsable_avis_at = now();
+        $dossier->rerx_responsable_avis_by_user_id = auth()->id();
         $dossier->save();
 
         return redirect()
@@ -515,6 +775,12 @@ class PortfolioController extends Controller
             ->where('token', $token)
             ->whereNotNull('reng_submitted_to_risques_at')
             ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
 
         if (! $dossier->isRerxAnalysteRisquesSubmittedToRerx()) {
             return redirect()
@@ -616,6 +882,8 @@ class PortfolioController extends Controller
         ]);
 
         $dossier->juridique_responsable_avis = $validated['juridique_responsable_avis'] ?? null;
+        $dossier->juridique_responsable_avis_at = now();
+        $dossier->juridique_responsable_avis_by_user_id = auth()->id();
         $dossier->save();
 
         return redirect()
@@ -661,6 +929,12 @@ class PortfolioController extends Controller
             ->where('token', $token)
             ->whereNotNull('juridique_submitted_to_engagements_at')
             ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
 
         if ($dossier->isSubmittedToRisquesFromReng()) {
             return redirect()
@@ -712,6 +986,12 @@ class PortfolioController extends Controller
             ->whereNotNull('juridique_submitted_to_engagements_at')
             ->firstOrFail();
 
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
         if (! $dossier->isRengAnalysteCreditSubmittedToReng()) {
             return redirect()
                 ->route('reng.dossiers.show', $token)
@@ -728,6 +1008,8 @@ class PortfolioController extends Controller
         ]);
 
         $dossier->reng_responsable_avis = $validated['reng_responsable_avis'] ?? null;
+        $dossier->reng_responsable_avis_at = now();
+        $dossier->reng_responsable_avis_by_user_id = auth()->id();
         $dossier->save();
 
         return redirect()
@@ -741,6 +1023,12 @@ class PortfolioController extends Controller
             ->where('token', $token)
             ->whereNotNull('juridique_submitted_to_engagements_at')
             ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
 
         if (! $dossier->isRengAnalysteCreditSubmittedToReng()) {
             return redirect()
@@ -772,16 +1060,16 @@ class PortfolioController extends Controller
      */
     private function respexpInstructionGate(Dossier $dossier): ?\Illuminate\Http\RedirectResponse
     {
-        if (! $dossier->analyste_id) {
+        if (! $dossier->analyste_id && ! $dossier->isInstructionCaTransmittedToExploitation()) {
             return redirect()
                 ->route('respexp.dossiers.show', $dossier->token)
                 ->withErrors(['exploitation_avis_credit' => 'Affectez d’abord un analyste financier au dossier.']);
         }
-        if (! $dossier->isInstructionSubmittedToExploitation()) {
+        if (! $dossier->isInstructionVisibleToResponsableExploitation()) {
             return redirect()
                 ->route('respexp.dossiers.show', $dossier->token)
                 ->withErrors([
-                    'exploitation_avis_credit' => 'L’analyste n’a pas encore soumis le dossier pour validation : vous ne pouvez pas saisir d’avis ni de décision sur les engagements tant que l’instruction n’est pas transmise.',
+                    'exploitation_avis_credit' => 'L’instruction n’a pas encore été transmise au responsable exploitation (par l’analyste financier ou par le chef d’agence) : vous ne pouvez pas saisir d’avis ni de décision sur les engagements.',
                 ]);
         }
 
@@ -791,6 +1079,13 @@ class PortfolioController extends Controller
     public function storeExploitationAvisCredit(Request $request, string $token)
     {
         $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
         if ($redirect = $this->respexpInstructionGate($dossier)) {
             return $redirect;
         }
@@ -818,15 +1113,21 @@ class PortfolioController extends Controller
     {
         $dossier = Dossier::query()->where('token', $token)->firstOrFail();
 
-        if (! $dossier->analyste_id) {
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
+        if (! $dossier->analyste_id && ! $dossier->isInstructionCaTransmittedToExploitation()) {
             return redirect()
                 ->route('respexp.dossiers.show', $token)
                 ->withErrors(['decision' => 'Affectez d’abord un analyste financier au dossier.']);
         }
-        if (! $dossier->isInstructionSubmittedToExploitation()) {
+        if (! $dossier->isInstructionVisibleToResponsableExploitation()) {
             return redirect()
                 ->route('respexp.dossiers.show', $token)
-                ->withErrors(['decision' => 'L’analyste n’a pas encore soumis le dossier pour validation : vous ne pouvez pas statuer tant que l’instruction n’est pas transmise.']);
+                ->withErrors(['decision' => 'L’instruction n’a pas encore été transmise au responsable exploitation (par l’analyste financier ou par le chef d’agence) : vous ne pouvez pas statuer.']);
         }
         if ($dossier->isSubmittedToJuridique()) {
             return redirect()
@@ -863,6 +1164,12 @@ class PortfolioController extends Controller
     {
         $dossier = Dossier::query()->where('token', $token)->firstOrFail();
 
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
         if (! $dossier->canRespexpSoumettreAuJuridique()) {
             return redirect()
                 ->route('respexp.dossiers.show', $token)
@@ -886,6 +1193,12 @@ class PortfolioController extends Controller
     public function assignAnalyste(Request $request, string $token)
     {
         $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
 
         if ($dossier->isSubmittedToJuridique()) {
             return redirect()
@@ -935,6 +1248,12 @@ class PortfolioController extends Controller
         if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
             return $redirect;
         }
+        $dossier->loadMissing([
+            'exploitationAnalysteTransmittedToExploitationBy',
+            'instructionCaTransmittedToExploitationBy',
+            'fichiersDossier.type',
+            'fichiersDossier.uploadedBy',
+        ]);
         $space = $this->resolveSpace();
         $data = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
 
@@ -950,6 +1269,7 @@ class PortfolioController extends Controller
         if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
             return $redirect;
         }
+        $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
         $space = $this->resolveSpace();
         $item = $dossier;
 
@@ -1023,24 +1343,89 @@ class PortfolioController extends Controller
         }
 
         if (in_array($space['route'], ['dg', 'dga'], true)) {
-            if (! $dossier->rerx_submitted_to_direction_at) {
+            if (! $dossier->isInstructionValidatedByAgence() || $dossier->isInstructionRejectedByAgence()) {
                 return redirect()
                     ->route($back, $dossier->token)
-                    ->with('error', 'Ce dossier n’a pas encore été transmis par le responsable risques.');
+                    ->with('error', 'Ce dossier n’est pas accessible : validation du chef d’agence sur le dossier d’instruction requise.');
             }
         }
 
-        if (! $dossier->analyste_id) {
+        if (! $dossier->isInstructionVisibleToResponsableExploitation()) {
+            return redirect()
+                ->route($back, $dossier->token)
+                ->with('error', 'Le dossier doit d’abord être transmis au responsable exploitation (par l’analyste financier ou par le chef d’agence) avant consultation de la grille et du travail d’instruction.');
+        }
+
+        if (! $dossier->analyste_id && ! $dossier->isInstructionCaTransmittedToExploitation()) {
             return redirect()
                 ->route($back, $dossier->token)
                 ->with('error', 'Aucun analyste n’est affecté à ce dossier : le contenu d’instruction n’est pas disponible.');
         }
-        if (! $dossier->isInstructionSubmittedToExploitation()) {
-            return redirect()
-                ->route($back, $dossier->token)
-                ->with('error', 'Le chargé d’instruction doit d’abord soumettre le dossier pour validation avant que vous puissiez consulter la grille de notation et l’ensemble du travail réalisé.');
-        }
 
         return null;
+    }
+
+    /**
+     * Dossier d’analyse critique : synthèse chronologique des avis (même accès que l’instruction).
+     */
+    public function dossierAnalyseCritiqueSyntheseShow(string $token)
+    {
+        $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+        if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
+            return $redirect;
+        }
+        $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
+        $space = $this->resolveSpace();
+        $item = $dossier;
+        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($dossier);
+
+        return view('RoleSpace.dossiers.dossier_analyse_critique', compact('space', 'item', 'entries'));
+    }
+
+    public function dossierAnalyseCritiqueSynthesePdf(string $token)
+    {
+        $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+        if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
+            return $redirect;
+        }
+        $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
+        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($dossier);
+
+        $logoData = '';
+        $logoPath = public_path('img/logo-bcpme.png');
+        if (is_readable($logoPath)) {
+            $logoData = base64_encode((string) file_get_contents($logoPath));
+        }
+
+        $generatedAt = now();
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->loadView('RoleSpace.dossiers.dossier_analyse_critique_pdf', [
+            'item' => $dossier,
+            'entries' => $entries,
+            'logoData' => $logoData,
+            'generatedAt' => $generatedAt,
+        ]);
+        $pdf->setCallbacks([
+            [
+                'event' => 'end_document',
+                'f' => function (int $pageNumber, int $pageCount, Canvas $canvas, FontMetrics $fontMetrics): void {
+                    $font = $fontMetrics->get_font('DejaVu Sans', 'normal');
+                    $size = 8;
+                    $color = [0.35, 0.35, 0.35];
+                    $w = $canvas->get_width();
+                    $h = $canvas->get_height();
+                    $y = $h - 28;
+                    $pageLabel = 'Page '.$pageNumber.' / '.$pageCount;
+                    $tw = $canvas->get_text_width($pageLabel, $font, $size);
+                    $canvas->text($w - $tw - 18, $y, $pageLabel, $font, $size, $color);
+                    $canvas->text(18, $y, 'BC-PME — Angara', $font, $size, $color);
+                },
+            ],
+        ]);
+        $filename = 'dossier-analyse-critique-'.preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) $dossier->token).'.pdf';
+
+        return $pdf->download($filename);
     }
 }

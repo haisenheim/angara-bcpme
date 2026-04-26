@@ -12,12 +12,7 @@
 @endsection
 
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-    Actions
-    <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2 analyse">
         <li><a data-sequence="1" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Brèves données générales actualisées sur l'emprunteur</a></li>
         <li><a data-sequence="2" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse critique d'ensemble</a></li>
         <li><a data-sequence="3" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse financière de l'emprunteur</a></li>
@@ -25,10 +20,13 @@
         <li><a data-sequence="5" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse du risque et de la capacité de remboursement de l'emprunteur</a></li>
         <li><a data-sequence="6" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Rentabilité de la relation pour l’établissement</a></li>
         <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations de l’Analyste Financier</a></li>
-    </ul>
-</div>
+    </x-page-actions-dropdown>
 @endsection
 @section('content')
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'showUpload' => false,
+    ])
     <div class="container">
         <div class="d-flex justify-content-center">
             <div style="width:800px" class="card">

@@ -100,11 +100,9 @@ class EntrepriseController extends Controller
         return view('/Admin/Entreprises/show')->with(compact('item','engagements','banques'));
 	}
 
-    public function setEngagement(){
-        $data = request()->except('_token');
-        //dd($data);
-        $resp = Http::post('http://localhost:8080/entreprise/engagement',$data);
-        return back();
+    public function setEngagement()
+    {
+        abort(403, 'Seuls l’analyste financier et l’analyste crédit peuvent modifier l’état des engagements.');
     }
 
     public function setAnalyse(){

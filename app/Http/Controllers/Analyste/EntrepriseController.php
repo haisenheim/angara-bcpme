@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Analyste;
 use App\Http\Controllers\Controller;
 use App\Models\Banque;
 use App\Models\Entreprise;
-use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
+use App\Services\EngagementReportService;
+use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\JsonResponse;
 
 class EntrepriseController extends Controller
 {
@@ -51,76 +53,100 @@ class EntrepriseController extends Controller
 
 
 
-    private function parse($eng,$id){
-
-        $data = [
-            'id'=>$eng->id,
-            'name'=>$eng->name,
-            'montant'=>$eng->montant??0,
-            'encours_montant'=>$eng->encours_montant??0,
-            'encours_impaye'=>$eng->encours_impaye??0,
-            'sollicite_montant'=>$eng->sollicite_montant??0,
-            'variation'=>$eng->variation,
-            'parent_id'=>$eng->parent_id,
-            'is_title'=>$eng->is_title,
-            'is_leaf'=>$eng->is_leaf,
-            'niveau'=>$eng->niveau,
-        ];
-        if($data['is_leaf']){
-            $elts = EngagementEntreprise::with('banque')->where('engagement_id',$eng->id)->where('entreprise_id',$id)->get();
-            $data['encours_montant'] = $elts->reduce(function($carry,$item){
-                return $carry + ($item->encours_montant ?? 0);
-            },0);
-            $data['sollicite_montant']= $elts->reduce(function($carry,$item){
-                return $carry + ($item->sollicite_montant ?? 0);
-            },0);
-            $data['encours_impaye'] = $elts->reduce(function($carry,$item){
-                return $carry + ($item->encours_impaye ?? 0);
-            },0);
-            $data['elts'] = $elts->map(function($elt){
-                return [
-                    'banque_name' => $elt->banque?->name ?? '—',
-                    'encours_montant' => $elt->encours_montant ?? 0,
-                    'encours_impaye' => $elt->encours_impaye ?? 0,
-                    'encours_dt_validite' => $elt->encours_dt_validite ?? '—',
-                    'sollicite_montant' => $elt->sollicite_montant ?? 0,
-                    'sollicite_dt_validite' => $elt->sollicite_dt_validite ?? '—',
-                ];
-            })->values()->toArray();
-            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
-
-        }else{
-            $data['children'] = $eng->children->map(function($child)use($id){
-                return $this->parse($child,$id);
-            });
-            foreach($data['children'] as $child){
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-                $data['variation'] += $child['variation'];
-            }
-        }
-        return $data;
-    }
-
-    public function getEngagementReport($token){
-        $entreprise = Entreprise::where('token',$token)->first();
-        if($entreprise){
-            $engagements = Engagement::where('parent_id',0)->get();
-             $data = [];
-             foreach($engagements as $eng){
-                 $data[] = $this->parse($eng,$entreprise->id);
-             }
-             //dd($data);
-
-            $engagements = $data;
-            $banques = Banque::all();
-            //$engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
-            return view('Analyste.Companies.engagement_report',compact('engagements','entreprise','banques'));
-        }else{
+    public function getEngagementReport($token)
+    {
+        $entreprise = Entreprise::query()->where('token', $token)->first();
+        if (! $entreprise) {
             return back();
         }
 
+        $banques = Banque::all();
+        $canEdit = true;
+        $setEngagementUrl = route('analyste.entreprise.set.engagement');
+
+        return view('Analyste.Companies.engagement_report', [
+            'engagements' => [],
+            'entreprise' => $entreprise,
+            'banques' => $banques,
+            'canEdit' => $canEdit,
+            'setEngagementUrl' => $setEngagementUrl,
+        ]);
+    }
+
+    public function fetchEngagementReport(Request $request, string $token): JsonResponse
+    {
+        $entreprise = Entreprise::query()->where('token', $token)->firstOrFail();
+
+        $draw = (int) $request->query('draw', 1);
+        $start = max(0, (int) $request->query('start', 0));
+        $length = max(1, min(200, (int) $request->query('length', 25)));
+
+        $banqueId = $request->integer('banque_id') ?: null;
+        $search = trim((string) $request->input('search.value', $request->query('search', '')));
+
+        $service = app(EngagementReportService::class);
+        $all = $service->buildUiRowsForEntreprise($entreprise->id, null, '');
+        $filtered = $service->buildUiRowsForEntreprise($entreprise->id, $banqueId, $search);
+
+        $page = array_slice($filtered, $start, $length);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => count($all),
+            'recordsFiltered' => count($filtered),
+            'data' => $page,
+        ]);
+    }
+
+    public function fetchEngagementReportFilterOptions(Request $request, string $token): JsonResponse
+    {
+        // token is kept for a consistent URL shape; no entreprise-specific options yet.
+        Entreprise::query()->where('token', $token)->firstOrFail();
+
+        $banques = Banque::query()->select(['id', 'name'])->orderBy('name')->get();
+
+        return response()->json([
+            'banques' => $banques->map(fn (Banque $b) => ['id' => $b->id, 'label' => $b->name])->values(),
+        ]);
+    }
+
+    public function fetchEngagementReportStats(Request $request, string $token): JsonResponse
+    {
+        $entreprise = Entreprise::query()->where('token', $token)->firstOrFail();
+
+        $banqueId = $request->integer('banque_id') ?: null;
+        $search = trim((string) $request->input('search.value', $request->query('search', '')));
+
+        $service = app(EngagementReportService::class);
+        $stats = $service->buildUiStatsForEntreprise($entreprise->id, $banqueId, $search);
+
+        return response()->json($stats);
+    }
+
+    public function exportEngagementReport(Request $request, string $token)
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $entreprise = Entreprise::query()->where('token', $token)->firstOrFail();
+        $banqueId = $request->integer('banque_id') ?: null;
+        $search = trim((string) $request->input('search.value', $request->query('search', '')));
+
+        $service = app(EngagementReportService::class);
+        $table = $service->buildExportTableForEntreprise($entreprise->id, $banqueId, $search);
+
+        $subtitle = $entreprise->name;
+
+        return TableDocumentExportService::downloadFormatted(
+            $table['rows'],
+            $table['headers'],
+            $format,
+            'analyste-engagements_'.$entreprise->token,
+            'Analyste — état des engagements',
+            $subtitle
+        );
     }
 
     public function setEngagement(Request $request){

@@ -48,11 +48,11 @@
 
                 <form method="post" id="form-analyste-risques-rerx" class="mb-0">
                     @csrf
-                    <div class="mb-3">
+                    <div class="mb-3 summernote-wrapper">
                         <label class="form-label" for="rerx_analyse_risques">Analyse des risques</label>
                         <textarea name="rerx_analyse_risques" id="rerx_analyse_risques" class="form-control js-summernote-rerx" rows="8">{!! old('rerx_analyse_risques', $dossier->rerx_analyse_risques) !!}</textarea>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 summernote-wrapper">
                         <label class="form-label" for="rerx_analyste_risques_avis">Avis</label>
                         <textarea name="rerx_analyste_risques_avis" id="rerx_analyste_risques_avis" class="form-control js-summernote-rerx" rows="8">{!! old('rerx_analyste_risques_avis', $dossier->rerx_analyste_risques_avis) !!}</textarea>
                     </div>
@@ -88,7 +88,7 @@
                 @error('direction')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('rerx.dossiers.responsable-avis', $dossier->token) }}" class="mb-3">
                     @csrf
-                    <div class="mb-2">
+                    <div class="mb-2 summernote-wrapper">
                         <label for="rerx_responsable_avis" class="form-label">Rédigez votre avis</label>
                         <textarea name="rerx_responsable_avis" id="rerx_responsable_avis" class="form-control js-summernote-rerx @error('rerx_responsable_avis') is-invalid @enderror" rows="10">{!! old('rerx_responsable_avis', $dossier->rerx_responsable_avis) !!}</textarea>
                     </div>

@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         if (filter_var(env('BCPME_SEED_REFERENCE', false), FILTER_VALIDATE_BOOLEAN)) {
             $this->call(BcpmeAngaraDemoReferenceSeeder::class);
+            $this->call(OrganisationEntitesSeeder::class);
         }
     }
 }

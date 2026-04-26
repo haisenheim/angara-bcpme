@@ -35,7 +35,7 @@ const CADashboard = {
                 document.getElementById('total-dossiers').textContent = data.total_dossiers;
                 document.getElementById('dossiers-en-cours').textContent = data.dossiers_en_cours;
                 document.getElementById('total-portfolio').textContent = data.total_entreprises;
-                document.getElementById('portfolio-detail').textContent = `${data.total_entreprises} entreprises, ${data.total_entites_individuelles} entités individuelles`;
+                document.getElementById('portfolio-detail').textContent = `${data.total_entreprises} entreprises`;
                 document.getElementById('total-users').textContent = data.total_users;
                 document.getElementById('total-prospects').textContent = data.total_prospects;
 

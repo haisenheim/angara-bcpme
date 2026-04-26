@@ -2,34 +2,96 @@
 
 namespace App\Http\Controllers\ChefFiliere;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\DossierEntreeRelation;
 use App\Models\DossierEntreeRelationProgramme;
+use App\Models\DossierInstructionProgramme;
 use App\Models\Entreprise;
+use App\Models\EntrepriseAppui;
+use App\Models\EntrepriseProduit;
 use App\Models\Instruction\Critere as InstructionCritere;
+use App\Models\Produit;
 use App\Models\Programme;
 use App\Models\QuestionSousCritere;
+use App\Models\Service;
+use App\Models\User;
 use App\Services\AnalyseCritiqueService;
+use App\Services\ClientEntrepriseTableExportService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
 class ClientController extends Controller
 {
+    use AppliesEntrepriseListIndexFilters;
     use AuthorizesAgenceEntreprise;
 
-    public function index()
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\Entreprise>
+     */
+    private function filteredChefFiliereClientsQuery(Request $request)
     {
-        $items = Entreprise::query()
-            ->where('agence_id', auth()->user()->agence_id)
-            ->whereNotNull('promu_client_at')
-            ->with(['agence', 'dossierEntreeRelation'])
-            ->orderByDesc('promu_client_at')
-            ->get();
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        $filters = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+        $agenceAuthId = (int) auth()->user()->agence_id;
 
-        return view('ChefFiliere.clients.index', compact('items'));
+        $query = Entreprise::query()
+            ->where('agence_id', $agenceAuthId)
+            ->whereNotNull('promu_client_at')
+            ->with(['agence', 'dossierEntreeRelation', 'gestionnaire'])
+            ->when($structurationStatus, fn ($q) => $q->whereClientStructurationStatus($structurationStatus));
+
+        $this->applyPromuAgenceGestionnaireFiltersToQuery(
+            $query,
+            $filters,
+            true,
+            static fn (?int $id) => ($id && (int) $id === $agenceAuthId) ? $id : null,
+        );
+
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        $items = $this->filteredChefFiliereClientsQuery($request)->orderByDesc('promu_client_at')->get();
+
+        $agenceAuthId = (int) auth()->user()->agence_id;
+        $gestionnaireIds = Entreprise::query()
+            ->where('agence_id', $agenceAuthId)
+            ->whereNotNull('promu_client_at')
+            ->whereNotNull('gestionnaire_id')
+            ->distinct()
+            ->pluck('gestionnaire_id');
+        $gestionnaires = User::query()
+            ->whereIn('id', $gestionnaireIds)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('ChefFiliere.clients.index', compact('items', 'structurationStatus', 'gestionnaires'));
+    }
+
+    public function exportClients(Request $request)
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $items = $this->filteredChefFiliereClientsQuery($request)->orderByDesc('promu_client_at')->get();
+        $rows = ClientEntrepriseTableExportService::rowsChefFiliereClients($items);
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersChefFiliere(),
+            $format,
+            'chef-filiere-clients',
+            'Chef de filière — clients',
+        );
     }
 
     public function show(string $token)
@@ -40,6 +102,7 @@ class ClientController extends Controller
             'dossierEntreeRelation.programmesSubmittedBy',
             'dossierEntreeRelation.instructionValidatedBy',
             'dossierEntreeRelation.qualificationValidatedByAgenceUser',
+            'dossierEntreeRelation.instructionBundleRejectedBy',
             'dossierEntreeRelation.programmeSelections.programme',
             'dossierEntreeRelation.programmeSelections.instructionDossier',
             'promuClientUser',
@@ -51,6 +114,10 @@ class ClientController extends Controller
             'produits.branche',
             'appuis.type',
             'dossiers.programme',
+            'dossiers.instructionProgrammes.programme',
+            'dossiers.chefFiliereSubmittedToAgenceBy',
+            'dossiers.instructionAgenceValidatedBy',
+            'dossiers.instructionAgenceRejectedBy',
             'arrondissement',
             'departement',
             'region',
@@ -68,10 +135,10 @@ class ClientController extends Controller
         $checklist = $item->piecesExigiblesChecklist();
 
         $eer = $item->dossierEntreeRelation;
-        $enrollableProgrammes = collect();
+        $bundleAvailableProgrammes = collect();
         if ($eer && $eer->qualification_validated_by_agence_at) {
-            $taken = $item->dossiers->pluck('programme_id')->filter()->all();
-            $enrollableProgrammes = Programme::query()
+            $taken = $this->assignedProgrammeIdsForEntreprise($item, null);
+            $bundleAvailableProgrammes = Programme::query()
                 ->orderBy('name')
                 ->when(count($taken) > 0, fn ($q) => $q->whereNotIn('id', $taken))
                 ->get(['id', 'name']);
@@ -79,93 +146,276 @@ class ClientController extends Controller
 
         Session::put('chef_filiere_dossier_consulte_'.$token, true);
 
-        return view('ChefFiliere.clients.show', compact('item', 'mr', 'checklist', 'enrollableProgrammes'));
+        return view('ChefFiliere.clients.show', compact('item', 'mr', 'checklist', 'bundleAvailableProgrammes'));
     }
 
-    public function enrollProgramme(Request $request, string $token, AnalyseCritiqueService $analyseCritiqueService)
+    public function editBesoinsProduits(string $token)
     {
         $item = $this->entrepriseForAgence($token);
+        $item->load(['produit', 'produits', 'appuis.type']);
+
+        $produitsListe = Produit::query()
+            ->with(['filiere', 'branche'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'filiere_id', 'branche_id']);
+
+        $appuisFinanciers = Service::query()->with('type')->where('financier', 1)->orderBy('name')->get();
+        $appuisNonFinanciers = Service::query()->with('type')->where('financier', 0)->orderBy('name')->get();
+
+        $selectedFinanciers = $item->appuis->where('financier', 1)->pluck('id')->all();
+        $selectedNonFinanciers = $item->appuis->where('financier', 0)->pluck('id')->all();
+        $selectedSecondaires = $item->produits->pluck('id')->all();
+
+        return view('ChefFiliere.clients.besoins_produits_edit', compact(
+            'item',
+            'produitsListe',
+            'appuisFinanciers',
+            'appuisNonFinanciers',
+            'selectedFinanciers',
+            'selectedNonFinanciers',
+            'selectedSecondaires',
+        ));
+    }
+
+    public function updateBesoinsProduits(Request $request, string $token)
+    {
+        $item = $this->entrepriseForAgence($token);
+
+        $request->merge([
+            'produit_id' => $request->filled('produit_id') ? (int) $request->input('produit_id') : null,
+        ]);
+
+        $validated = $request->validate([
+            'produit_id' => 'nullable|integer',
+            'produit_year_start' => 'nullable|integer|min:0|max:200',
+            'autres' => 'nullable|array',
+            'autres.*' => 'integer',
+            'appuisf' => 'nullable|array',
+            'appuisf.*' => 'integer',
+            'appuisnf' => 'nullable|array',
+            'appuisnf.*' => 'integer',
+        ]);
+
+        $mainId = isset($validated['produit_id']) ? (int) $validated['produit_id'] : null;
+        $central = 'central_app_mysql';
+
+        if ($mainId && ! Produit::on($central)->whereKey($mainId)->exists()) {
+            return redirect()
+                ->back()
+                ->withErrors(['produit_id' => 'Produit principal invalide.'])
+                ->withInput();
+        }
+
+        $autres = $this->normalizeSelectionInput($request->input('autres', []));
+        foreach ($autres as $pid) {
+            if (! Produit::on($central)->whereKey($pid)->exists()) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['autres' => 'Un produit secondaire est invalide.'])
+                    ->withInput();
+            }
+        }
+        if ($mainId) {
+            $autres = array_values(array_unique(array_filter($autres, fn (int $id) => $id !== $mainId)));
+        }
+
+        $afs = $this->normalizeSelectionInput($request->input('appuisf', []));
+        foreach ($afs as $sid) {
+            if (! Service::on($central)->whereKey($sid)->where('financier', 1)->exists()) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['appuisf' => 'Un besoin (appui financier) est invalide.'])
+                    ->withInput();
+            }
+        }
+        $anfs = $this->normalizeSelectionInput($request->input('appuisnf', []));
+        foreach ($anfs as $sid) {
+            if (! Service::on($central)->whereKey($sid)->where('financier', 0)->exists()) {
+                return redirect()
+                    ->back()
+                    ->withErrors(['appuisnf' => 'Un besoin (appui non financier) est invalide.'])
+                    ->withInput();
+            }
+        }
+
+        DB::connection($central)->transaction(function () use ($item, $validated, $mainId, $autres, $request, $central) {
+            $entreprise = Entreprise::on($central)->whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+            $entreprise->produit_id = $mainId ?: null;
+            $entreprise->produit_year_start = $validated['produit_year_start'] ?? null;
+
+            if ($mainId) {
+                $produit = Produit::on($central)->find($mainId);
+                if ($produit && Schema::connection($central)->hasColumn('entreprises', 'filiere_id')) {
+                    $entreprise->filiere_id = $produit->filiere_id;
+                }
+                if ($produit && Schema::connection($central)->hasColumn('entreprises', 'branche_id')) {
+                    $entreprise->branche_id = $produit->branche_id;
+                }
+            }
+
+            $entreprise->save();
+
+            $this->syncAppuisEtProduitsSecondaires($entreprise, $request, $autres, $central);
+        });
+
+        return redirect()
+            ->route('chef-filiere.clients.show', $token)
+            ->with('success', 'Besoins, produit principal et produits secondaires ont été mis à jour.');
+    }
+
+    /**
+     * Création / mise à jour d’un dossier d’instruction multi-programmes et soumission au chef d’agence.
+     */
+    public function submitInstructionBundle(Request $request, string $token, AnalyseCritiqueService $analyseCritiqueService)
+    {
+        $item = $this->entrepriseForAgence($token);
+        $item->load(['dossiers.instructionProgrammes']);
 
         $eer = DossierEntreeRelation::query()->where('entreprise_id', $item->id)->first();
         if (! $eer || $eer->qualification_validated_by_agence_at === null) {
             return redirect()
                 ->route('chef-filiere.clients.show', $token)
-                ->with('info', 'La qualification doit être validée par le chef d\'agence avant toute inscription à un programme.');
+                ->with('info', 'La structuration doit être validée par le chef d\'agence avant la composition du dossier d\'instruction.');
         }
 
         $validated = $request->validate([
-            'programme_id' => 'required|integer|exists:programmes,id',
-            'type_appui' => 'nullable|in:financier,non_financier,mixte',
-            'notes' => 'nullable|string|max:5000',
+            'lignes' => 'required|array|min:1',
+            'lignes.*.programme_id' => 'required|integer|exists:programmes,id',
+            'lignes.*.budget_appui_financier' => 'nullable|numeric|min:0',
+            'lignes.*.budget_appui_non_financier' => 'nullable|numeric|min:0',
+            'engagements_sollicites_total' => 'required|numeric|min:0',
+            'engagements_en_cours_total' => 'required|numeric|min:0',
         ]);
 
-        $pid = (int) $validated['programme_id'];
+        $lignes = collect($validated['lignes'])
+            ->map(function (array $row) {
+                return [
+                    'programme_id' => (int) $row['programme_id'],
+                    'budget_appui_financier' => isset($row['budget_appui_financier']) ? (float) $row['budget_appui_financier'] : 0.0,
+                    'budget_appui_non_financier' => isset($row['budget_appui_non_financier']) ? (float) $row['budget_appui_non_financier'] : 0.0,
+                ];
+            })
+            ->unique('programme_id')
+            ->values();
 
-        $central = 'central_app_mysql';
-
-        if (Dossier::on($central)->where('entreprise_id', $item->id)->where('programme_id', $pid)->exists()) {
+        if ($lignes->count() !== count($validated['lignes'])) {
             return redirect()
                 ->route('chef-filiere.clients.show', $token)
-                ->with('info', 'Ce client possède déjà un dossier d\'instruction pour ce programme.');
+                ->with('info', 'Chaque programme ne peut figurer qu\'une seule fois.');
         }
 
-        if ($eer->programmeSelections()->where('programme_id', $pid)->exists()) {
+        foreach ($lignes as $l) {
+            $existingSel = DossierEntreeRelationProgramme::query()
+                ->where('dossier_entree_relation_id', $eer->id)
+                ->where('programme_id', $l['programme_id'])
+                ->first();
+            if ($existingSel && $existingSel->statut === DossierEntreeRelationProgramme::STATUT_VALIDE) {
+                return redirect()
+                    ->route('chef-filiere.clients.show', $token)
+                    ->with('info', 'Un programme sélectionné est déjà validé sur un autre dossier d\'instruction.');
+            }
+        }
+
+        $central = 'central_app_mysql';
+        $taken = $this->assignedProgrammeIdsForEntreprise($item, null);
+        $conflict = $lignes->pluck('programme_id')->first(fn (int $pid) => in_array($pid, $taken, true));
+        if ($conflict !== null) {
             return redirect()
                 ->route('chef-filiere.clients.show', $token)
-                ->with('info', 'Ce programme est déjà lié à l\'entrée en relation.');
+                ->with('info', 'Un ou plusieurs programmes sont déjà associés à un autre dossier d\'instruction pour ce client.');
+        }
+
+        foreach ($lignes as $l) {
+            if ($l['budget_appui_financier'] <= 0 && $l['budget_appui_non_financier'] <= 0) {
+                return redirect()
+                    ->route('chef-filiere.clients.show', $token)
+                    ->with('info', 'Renseignez au moins un budget (appui financier ou non financier) pour chaque programme.');
+            }
         }
 
         $dossier = null;
         $abortInfo = null;
 
+        $submittedAt = now();
+        $submittedByUserId = (int) auth()->id();
+
         $maxAttempts = 3;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
-                DB::connection($central)->transaction(function () use ($item, $validated, $pid, &$dossier, &$abortInfo, $central) {
+                DB::connection($central)->transaction(function () use ($item, $lignes, $eer, &$dossier, &$abortInfo, $central, $submittedAt, $submittedByUserId, $validated) {
                     $eerLocked = DossierEntreeRelation::query()
                         ->where('entreprise_id', $item->id)
                         ->lockForUpdate()
                         ->first();
 
                     if (! $eerLocked || $eerLocked->qualification_validated_by_agence_at === null) {
-                        $abortInfo = 'La qualification doit être validée par le chef d\'agence avant toute inscription à un programme.';
+                        $abortInfo = 'La structuration doit être validée par le chef d\'agence.';
 
                         return;
                     }
 
-                    if (Dossier::on($central)->where('entreprise_id', $item->id)->where('programme_id', $pid)->exists()) {
-                        $abortInfo = 'Ce client possède déjà un dossier d\'instruction pour ce programme.';
-
-                        return;
-                    }
-
-                    if (DossierEntreeRelationProgramme::query()
-                        ->where('dossier_entree_relation_id', $eerLocked->id)
-                        ->where('programme_id', $pid)
-                        ->exists()) {
-                        $abortInfo = 'Ce programme est déjà lié à l\'entrée en relation.';
-
-                        return;
-                    }
+                    $sorted = $lignes->sortBy('programme_id')->values();
 
                     $dossier = Dossier::on($central)->create([
                         'entreprise_id' => $item->id,
-                        'programme_id' => $pid,
-                        'token' => sha1('instruction-'.$item->id.'-'.$pid.'-'.microtime(true)),
+                        'programme_id' => null,
+                        'token' => sha1('instruction-bundle-'.$item->id.'-'.microtime(true)),
                         'gestionnaire_id' => $item->gestionnaire_id ?: $item->user_id ?: auth()->id(),
                         'agence_id' => $item->agence_id,
                         'representation_id' => $item->representation_id,
                         'active' => 0,
+                        'engagements_sollicites_total' => $validated['engagements_sollicites_total'],
+                        'engagements_en_cours_total' => $validated['engagements_en_cours_total'],
                     ]);
 
-                    DossierEntreeRelationProgramme::query()->create([
-                        'dossier_entree_relation_id' => $eerLocked->id,
-                        'programme_id' => $pid,
-                        'type_appui' => $validated['type_appui'] ?? DossierEntreeRelationProgramme::TYPE_FINANCIER,
-                        'notes' => $validated['notes'] ?? null,
-                        'statut' => DossierEntreeRelationProgramme::STATUT_VALIDE,
-                        'instruction_dossier_id' => $dossier->id,
-                        'validated_at' => now(),
+                    foreach ($sorted as $idx => $l) {
+                        $pid = (int) $l['programme_id'];
+                        DossierInstructionProgramme::query()->create([
+                            'dossier_id' => $dossier->id,
+                            'programme_id' => $pid,
+                            'budget_appui_financier' => $l['budget_appui_financier'],
+                            'budget_appui_non_financier' => $l['budget_appui_non_financier'],
+                            'sort_order' => $idx,
+                        ]);
+
+                        $bf = $l['budget_appui_financier'];
+                        $bnf = $l['budget_appui_non_financier'];
+                        $type = ($bf > 0 && $bnf > 0)
+                            ? DossierEntreeRelationProgramme::TYPE_MIXTE
+                            : ($bf > 0 ? DossierEntreeRelationProgramme::TYPE_FINANCIER : DossierEntreeRelationProgramme::TYPE_NON_FINANCIER);
+                        $notes = sprintf(
+                            'Budgets d\'appui proposés — financier : %s XAF ; non financier : %s XAF',
+                            number_format($bf, 0, ',', ' '),
+                            number_format($bnf, 0, ',', ' ')
+                        );
+
+                        DossierEntreeRelationProgramme::query()->updateOrCreate(
+                            [
+                                'dossier_entree_relation_id' => $eerLocked->id,
+                                'programme_id' => $pid,
+                            ],
+                            [
+                                'type_appui' => $type,
+                                'notes' => $notes,
+                                'statut' => DossierEntreeRelationProgramme::STATUT_SOUMIS,
+                                'instruction_dossier_id' => $dossier->id,
+                                'submitted_at' => now(),
+                                'validated_at' => null,
+                            ]
+                        );
+                    }
+
+                    $pids = $sorted->pluck('programme_id')->all();
+                    DossierEntreeRelationProgramme::query()
+                        ->where('dossier_entree_relation_id', $eerLocked->id)
+                        ->where('instruction_dossier_id', $dossier->id)
+                        ->whereNotIn('programme_id', $pids)
+                        ->delete();
+
+                    $dossier->update([
+                        'chef_filiere_submitted_to_agence_at' => $submittedAt,
+                        'chef_filiere_submitted_to_agence_by_user_id' => $submittedByUserId,
                     ]);
                 });
 
@@ -188,15 +438,57 @@ class ClientController extends Controller
         }
 
         if ($dossier) {
+            $dossier->loadMissing('instructionProgrammes.programme');
             $analyseCritiqueService->syncInstructionDossier(
                 $dossier,
-                'Dossier d\'instruction créé suite à l\'inscription du client au programme (chef de filière).'
+                'Dossier d\'instruction multi-programmes créé et soumis au chef d\'agence (chef de filière). Programmes : '.$dossier->programmesLabel().'.'
             );
         }
 
         return redirect()
             ->route('chef-filiere.clients.show', $token)
-            ->with('success', 'Client inscrit au programme : un dossier d\'instruction a été créé.');
+            ->with('success', 'Dossier d\'instruction enregistré et transmis au chef d\'agence pour validation.');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignedProgrammeIdsForEntreprise(Entreprise $item, ?int $excludeDossierId): array
+    {
+        $ids = collect();
+        foreach ($item->dossiers as $d) {
+            if ($excludeDossierId !== null && (int) $d->id === (int) $excludeDossierId) {
+                continue;
+            }
+            if ($d->instruction_agence_rejected_at !== null) {
+                continue;
+            }
+
+            $hasDip = $d->relationLoaded('instructionProgrammes')
+                ? $d->instructionProgrammes->isNotEmpty()
+                : $d->instructionProgrammes()->exists();
+
+            if ($hasDip) {
+                if (! $d->locksInstructionProgrammesForComposition()) {
+                    continue;
+                }
+                if ($d->relationLoaded('instructionProgrammes')) {
+                    $ids = $ids->merge($d->instructionProgrammes->pluck('programme_id'));
+                } else {
+                    $ids = $ids->merge(
+                        DossierInstructionProgramme::query()->where('dossier_id', $d->id)->pluck('programme_id')
+                    );
+                }
+
+                continue;
+            }
+
+            if ($d->programme_id) {
+                $ids->push((int) $d->programme_id);
+            }
+        }
+
+        return $ids->unique()->filter()->values()->all();
     }
 
     /**
@@ -228,5 +520,59 @@ class ClientController extends Controller
                 }),
             ];
         });
+    }
+
+    /**
+     * @param  list<int>  $produitsSecondairesIds  déjà exclus du produit principal
+     */
+    private function syncAppuisEtProduitsSecondaires(Entreprise $entreprise, Request $request, array $produitsSecondairesIds, string $central = 'central_app_mysql'): void
+    {
+        $anfs = $this->normalizeSelectionInput($request->input('appuisnf', []));
+        $afs = $this->normalizeSelectionInput($request->input('appuisf', []));
+
+        EntrepriseAppui::on($central)->where('entreprise_id', $entreprise->id)->delete();
+        EntrepriseProduit::on($central)->where('entreprise_id', $entreprise->id)->delete();
+
+        foreach ($afs as $a) {
+            EntrepriseAppui::on($central)->create([
+                'entreprise_id' => $entreprise->id,
+                'service_id' => $a,
+            ]);
+        }
+        foreach ($anfs as $a) {
+            EntrepriseAppui::on($central)->create([
+                'entreprise_id' => $entreprise->id,
+                'service_id' => $a,
+            ]);
+        }
+        foreach ($produitsSecondairesIds as $a) {
+            EntrepriseProduit::on($central)->create([
+                'entreprise_id' => $entreprise->id,
+                'produit_id' => $a,
+            ]);
+        }
+    }
+
+    /**
+     * @param  array<string|int>|string|null  $raw
+     * @return list<int>
+     */
+    private function normalizeSelectionInput(array|string|null $raw): array
+    {
+        if (is_string($raw)) {
+            $raw = $raw === '' ? [] : explode(',', $raw);
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($value) {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return (int) $value;
+        }, $raw), fn ($value) => $value !== null && $value > 0));
     }
 }

@@ -34,7 +34,7 @@ class QualificationController extends Controller
     {
         if (! Session::get('chef_filiere_dossier_consulte_'.$token)) {
             return redirect()->route('chef-filiere.clients.show', $token)
-                ->with('info', 'Veuillez consulter le dossier client complet avant d\'accéder à la qualification.');
+                ->with('info', 'Veuillez consulter le dossier client complet avant d\'accéder à la structuration.');
         }
 
         $item = Entreprise::query()
@@ -72,13 +72,13 @@ class QualificationController extends Controller
         $eer = $this->getOrCreateEer($item);
 
         if ($eer->programmes_submitted_at && $eer->qualification_validated_by_agence_at === null) {
-            Session::flash('info', 'Qualification transmise au chef d\'agence : modification impossible en attendant la validation.');
+            Session::flash('info', 'Structuration transmise au chef d\'agence : modification impossible en attendant la validation.');
 
             return redirect()->route('chef-filiere.qualifications.show', $token);
         }
 
         if ($eer->qualification_validated_by_agence_at) {
-            Session::flash('info', 'La qualification a été validée par le chef d\'agence. Les inscriptions aux programmes se font depuis la fiche client.');
+            Session::flash('info', 'La structuration a été validée par le chef d\'agence. Les inscriptions aux programmes se font depuis la fiche client.');
 
             return redirect()->route('chef-filiere.clients.show', $token);
         }
@@ -105,7 +105,7 @@ class QualificationController extends Controller
 
         $this->analyseCritiqueService->syncChefFiliereQualification($item, $eer);
 
-        Session::flash('success', 'Qualification et identification des besoins enregistrées.');
+        Session::flash('success', 'Structuration et identification des besoins enregistrées.');
 
         return redirect()->route('chef-filiere.qualifications.show', $token);
     }
@@ -125,13 +125,13 @@ class QualificationController extends Controller
 
         $eer = $this->getOrCreateEer($item);
         if ($eer->qualification_completed_at === null) {
-            Session::flash('info', 'Complétez d’abord la qualification du client.');
+            Session::flash('info', 'Complétez d’abord la structuration du client.');
 
             return redirect()->route('chef-filiere.qualifications.show', $token);
         }
 
         if ($eer->programmes_submitted_at) {
-            Session::flash('info', 'La qualification a déjà été transmise au chef d\'agence.');
+            Session::flash('info', 'La structuration a déjà été transmise au chef d\'agence.');
 
             return redirect()->route('chef-filiere.qualifications.show', $token);
         }
@@ -140,10 +140,13 @@ class QualificationController extends Controller
         $eer->programmes_submitted_by_user_id = auth()->id();
         $eer->statut = DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION;
         $eer->instruction_validation_status = DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION;
+        $eer->qualification_rejected_by_agence_at = null;
+        $eer->qualification_rejected_by_agence_user_id = null;
+        $eer->qualification_reject_motif = null;
         $eer->save();
 
         $this->analyseCritiqueService->syncChefFiliereQualification($item, $eer);
-        Session::flash('success', 'Qualification soumise au chef d\'agence pour validation. Après validation, vous pourrez inscrire le client à un programme depuis sa fiche (un programme à la fois).');
+        Session::flash('success', 'Structuration soumise au chef d\'agence pour validation. Après validation, vous constituerez le dossier d\'instruction (plusieurs programmes et budgets d\'appui) depuis la fiche client.');
 
         return redirect()->route('chef-filiere.qualifications.show', $token);
     }
@@ -152,7 +155,7 @@ class QualificationController extends Controller
     {
         if (! Session::get('chef_filiere_dossier_consulte_'.$token)) {
             return redirect()->route('chef-filiere.clients.show', $token)
-                ->with('info', 'Veuillez consulter le dossier client complet avant la qualification.');
+                ->with('info', 'Veuillez consulter le dossier client complet avant la structuration.');
         }
 
         return null;

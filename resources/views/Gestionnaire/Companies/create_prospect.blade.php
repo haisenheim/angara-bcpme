@@ -13,7 +13,11 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('gestionnaire.entreprises.prospects') }}" class="btn btn-outline-secondary btn-sm"><i class="demo-pli-arrow-left me-2"></i>Retour à la liste</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('gestionnaire.entreprises.prospects') }}" class="dropdown-item"><i class="demo-pli-arrow-left me-2"></i>Retour à la liste</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

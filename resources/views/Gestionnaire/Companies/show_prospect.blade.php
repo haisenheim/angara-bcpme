@@ -14,31 +14,26 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.prospects') }}">Retour liste</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Repondre au questionnaire</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create', $item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Pieces exigibles</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Analyse critique</a></li>
-            @if(! $item->prospect_submitted_at)
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form action="{{ route('gestionnaire.entreprises.prospects.submit', $item->token) }}" method="post" onsubmit="return confirm('Soumettre ce prospect pour avis juridique et conformité ?');">
-                        @csrf
-                        <button type="submit" class="dropdown-item">
-                            <i class="demo-psi-upload me-2"></i>Soumettre pour avis
-                        </button>
-                    </form>
-                </li>
-            @endif
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="gestionnaireProspectShowActions">
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.prospects') }}">Retour liste</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Repondre au questionnaire</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create', $item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Pieces exigibles</a></li>
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Analyse critique</a></li>
+        @if(! $item->prospect_submitted_at)
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form action="{{ route('gestionnaire.entreprises.prospects.submit', $item->token) }}" method="post" onsubmit="return confirm('Soumettre ce prospect pour avis juridique et conformité ?');">
+                    @csrf
+                    <button type="submit" class="dropdown-item">
+                        <i class="demo-psi-upload me-2"></i>Soumettre pour avis
+                    </button>
+                </form>
+            </li>
+        @endif
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

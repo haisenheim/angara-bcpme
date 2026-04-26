@@ -12,14 +12,15 @@
 @endsection
 
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-dark mr-3"  data-bs-target="#importDsfModal" data-bs-toggle="modal">
-    Importer DSF</button>
-    <button type="button" class="btn btn-xs btn-primary dropdown-toggle hstack gap-3" data-bs-toggle="dropdown" aria-expanded="false">
-    Actions
-    <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
+    <x-page-actions-dropdown
+        button-id="adminDossierActionsDropdown"
+        menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2 analyse"
+        menu-style="min-width: 22rem;"
+    >
+        <li>
+            <button type="button" class="dropdown-item" data-bs-target="#importDsfModal" data-bs-toggle="modal">Importer DSF</button>
+        </li>
+        <li><hr class="dropdown-divider"></li>
         <li><a data-sequence="1" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Brèves données générales actualisées sur l'emprunteur</a></li>
         <li><a data-sequence="2" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse critique d'ensemble</a></li>
         <li><a data-sequence="3" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse financière de l'emprunteur</a></li>
@@ -27,8 +28,13 @@
         <li><a data-sequence="5" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Analyse du risque et de la capacité de remboursement de l'emprunteur</a></li>
         <li><a data-sequence="6" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Rentabilité de la relation pour l’établissement</a></li>
         <li><a data-sequence="7" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations de l’Analyste Financier</a></li>
-    </ul>
-</div>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#dossierPieceUploadModal_admin">
+                <i class="demo-psi-upload me-2"></i> Ajouter une pièce au dossier
+            </button>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
@@ -86,6 +92,25 @@
 
 
 @section('content')
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0 ps-3">@foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach</ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @include('partials.instruction-dossier-consultation', ['dossier' => $item, 'instructionConsultation' => $instructionConsultation ?? null])
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'routePiecesStore' => 'admin.dossier.pieces.store',
+        'modalId' => 'dossierPieceUploadModal_admin',
+        'fichierTypes' => $fichierTypes ?? collect(),
+    ])
     <div class="" style="margin-top: -16px;">
         <div class="card">
             <div class="card-body p-0">

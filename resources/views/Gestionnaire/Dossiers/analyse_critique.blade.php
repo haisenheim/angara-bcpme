@@ -13,15 +13,9 @@
 @endsection
 
 @section('actions')
-<div class="btn-group">
-    <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-        Actions
-        <span class="vr"></span>
-    </button>
-    <ul class="dropdown-menu analyse">
+    <x-page-actions-dropdown menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2 analyse">
         <li><a data-sequence="8" class="dropdown-item" data-bs-target="#report1Modal" data-bs-toggle="modal" href="#">Conclusions motivées, recommandations du gestionnaire</a></li>
-    </ul>
-</div>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')
@@ -31,6 +25,11 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
         </div>
     @endif
+
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'showUpload' => false,
+    ])
 
     <div class="container">
         <div class="d-flex justify-content-center">

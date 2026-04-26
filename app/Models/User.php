@@ -23,6 +23,8 @@ class User extends Authenticatable
         'token',
         'active',
         'agence_id',
+        'organisation_type',
+        'organisation_entite_id',
     ];
 
     protected $hidden = [
@@ -46,6 +48,11 @@ class User extends Authenticatable
     public function agence()
     {
         return $this->belongsTo('App\Models\Agence');
+    }
+
+    public function organisationEntite()
+    {
+        return $this->belongsTo(OrganisationEntite::class, 'organisation_entite_id');
     }
 
     public function poste()

@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\ChefFiliere;
 
+use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\DossierEntreeRelation;
+use App\Models\FichierType;
+use App\Services\InstructionDossierConsultationService;
+use Illuminate\Http\Request;
 
 class InstructionController extends Controller
 {
+    use StoresDossierPieces;
+
     public function pending()
     {
         $items = DossierEntreeRelation::query()
@@ -25,7 +31,7 @@ class InstructionController extends Controller
     {
         $items = Dossier::query()
             ->where('agence_id', auth()->user()->agence_id)
-            ->with(['entreprise', 'programme', 'gestionnaire', 'analyste'])
+            ->with(['entreprise', 'programme', 'instructionProgrammes.programme', 'gestionnaire', 'analyste'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -37,9 +43,34 @@ class InstructionController extends Controller
         $dossier = Dossier::query()
             ->where('token', $token)
             ->where('agence_id', auth()->user()->agence_id)
-            ->with(['entreprise.agence', 'programme', 'gestionnaire', 'analyste', 'agence'])
+            ->with([
+                'entreprise.agence',
+                'programme',
+                'instructionProgrammes.programme',
+                'gestionnaire',
+                'analyste',
+                'agence',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+                'fichiersDossier.type',
+                'fichiersDossier.uploadedBy',
+            ])
             ->firstOrFail();
 
-        return view('ChefFiliere.instructions.dossier_show', compact('dossier'));
+        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
+        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+
+        return view('ChefFiliere.instructions.dossier_show', compact('dossier', 'instructionConsultation', 'fichierTypes'));
+    }
+
+    public function storeDossierPiece(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
+            ->firstOrFail();
+
+        return $this->completeDossierPieceUpload($request, $dossier, 'chef-filiere.instructions.dossier.show', $dossier->token);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Helpers\DossierHelper;
 use App\Models\Banque;
 use App\Models\Dossier;
+use App\Models\FichierType;
 use App\Models\Instruction\Critere;
 use App\Models\Instruction\Engagement;
 use App\Models\Instruction\EngagementEntreprise;
@@ -17,10 +18,12 @@ use App\Models\Instruction\IndicateurFinancier;
 class DossierInstructionShowPresenter
 {
     /**
-     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, criteres: array, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>}
+     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, criteres: array, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>, instructionConsultation: array, fichierTypes: \Illuminate\Support\Collection}
      */
     public function presentForDossier(Dossier $item): array
     {
+        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
+
         $engagements = Engagement::where('parent_id', 0)->get();
         $data = [];
         foreach ($engagements as $eng) {
@@ -45,6 +48,8 @@ class DossierInstructionShowPresenter
         $banques = Banque::all();
         $sme = DossierHelper::getSme($item->note);
 
+        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($item);
+
         return [
             'item' => $item,
             'indicateurs' => $indicateurs,
@@ -52,6 +57,8 @@ class DossierInstructionShowPresenter
             'sme' => $sme,
             'banques' => $banques,
             'engagements' => $data,
+            'instructionConsultation' => $instructionConsultation,
+            'fichierTypes' => FichierType::query()->orderBy('name')->get(['id', 'name']),
         ];
     }
 

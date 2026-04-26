@@ -22,7 +22,7 @@
 <div class="cf-page">
     <div class="cf-hero mb-4">
         <h1 class="cf-hero__title">En attente de validation</h1>
-        <p class="cf-hero__lead">Dossiers soumis après qualification — le chef d'agence valide avant instruction.</p>
+        <p class="cf-hero__lead">Dossiers soumis après structuration — le chef d'agence valide avant instruction.</p>
         <div class="cf-hero__meta">
             <span class="cf-kpi"><span class="text-muted fw-normal">Dossiers</span> <span class="cf-kpi__val">{{ $items->count() }}</span></span>
         </div>

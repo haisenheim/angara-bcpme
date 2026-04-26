@@ -17,11 +17,18 @@ class Ca
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        $expected = (int) config('angara.role_chef_agence', 15);
-        if (! $user || (int) $user->role_id !== $expected) {
+        $path = request()->getPathInfo();
+        $chefAgence = (int) config('angara.role_chef_agence', 15);
+        $dg = (int) config('angara.role_dg', 4);
+        $dga = (int) config('angara.role_dga', 5);
+        $allowedForInstructionDossiers = [$chefAgence, $dg, $dga];
+        if (str_contains($path, 'workflow/instruction-dossiers')) {
+            if (! $user || ! in_array((int) $user->role_id, $allowedForInstructionDossiers, true)) {
+                return redirect('/login');
+            }
+        } elseif (! $user || (int) $user->role_id !== $chefAgence) {
             return redirect('/login');
         }
-        $path = request()->getPathInfo();
         $parts = explode('/', $path);
         $active = 1;
         if (in_array('dossiers', $parts) || in_array('instruction', $parts)) {
@@ -41,6 +48,13 @@ class Ca
         }
         if (in_array('territoire', $parts)) {
             $active = 701;
+        }
+        if (in_array('workflow', $parts)) {
+            if (in_array('instruction-dossiers', $parts)) {
+                $active = 408;
+            } elseif (in_array('instructions', $parts)) {
+                $active = 407;
+            }
         }
         Session::put('active', $active);
 

@@ -1,7 +1,6 @@
 @extends('Layouts.ca')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap5.min.css">
 <style>
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
@@ -135,51 +134,94 @@
                         <option value="Informel">Informel</option>
                     </select>
                 </div>
-                <div class="col-12 col-md-1">
-                    <button type="button" id="btn-reset-filters" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="demo-psi-arrow-left"></i> Réinit.
-                    </button>
+                <div class="col-12 col-md-3">
+                    @include('partials.client-structuration-filter-select', ['id' => 'filter-client-structuration'])
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-gestionnaire" class="form-label small text-muted">Gestionnaire</label>
+                    <select id="filter-gestionnaire" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-promu-from" class="form-label small text-muted">Promu client du</label>
+                    <input type="date" id="filter-promu-from" class="form-control form-control-sm">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-promu-to" class="form-label small text-muted">au</label>
+                    <input type="date" id="filter-promu-to" class="form-control form-control-sm">
+                </div>
+                <div class="col-12 col-md-auto ms-md-auto pt-1 pt-md-0">
+                    <label class="form-label small text-muted d-block mb-1">&nbsp;</label>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="ca-entreprises-actions" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ca-entreprises-actions">
+                            <li><button type="button" class="dropdown-item" id="btn-export-xlsx-ca"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exporter en Excel</button></li>
+                            <li><button type="button" class="dropdown-item" id="btn-export-pdf-ca"><i class="bi bi-file-earmark-pdf me-2"></i>Exporter en PDF</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="btn-reset-filters"><i class="bi bi-arrow-counterclockwise me-2"></i>Réinitialiser</button></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Tableau avec pagination AJAX --}}
-    <div class="card border-0 shadow-sm angara-dt-card" id="entreprises-card">
+    {{-- Tableau (AngaraTable) --}}
+    <div class="angara-table" id="entreprises-card">
+        <div class="card">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
                     <thead>
                         <tr>
-                            <th>Dénomination</th>
-                            <th>RCCM</th>
-                            <th>NIU</th>
-                            <th>Dirigeant</th>
-                            <th>Localisation</th>
-                            <th>Taille</th>
-                            <th>Capital</th>
+                            <th data-angara-sort-col="0">Dénomination</th>
+                            <th data-angara-sort-col="1">RCCM</th>
+                            <th data-angara-sort-col="2">NIU</th>
+                            <th data-angara-sort-col="3">Dirigeant</th>
+                            <th data-angara-sort-col="4">Localisation</th>
+                            <th data-angara-sort-col="5">Taille</th>
+                            <th data-angara-sort-col="6">Capital</th>
+                            <th>Structuration client</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                <div data-angara-table-info></div>
+                <div data-angara-table-paging></div>
+            </div>
+            <div class="angara-table-empty d-none" data-angara-table-empty>Aucune donnée.</div>
+        </div>
         </div>
     </div>
 @endsection
 
 @section('script')
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap5.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = "{{ url('ca/entreprises') }}";
     const paginatedUrl = "{{ route('ca.entreprises.paginated') }}";
     const statsUrl = "{{ route('ca.entreprises.stats') }}";
     const filterOptionsUrl = "{{ route('ca.entreprises.filter-options') }}";
+    const exportUrl = "{{ route('ca.entreprises.export') }}";
 
-    let table;
     let filterTimeout;
+
+    function buildClientsExportQuery(format) {
+        const params = new URLSearchParams();
+        params.set('format', format);
+        const filters = { region_id: 'filter-region', taille: 'filter-taille', forme_id: 'filter-forme', caractere: 'filter-caractere', client_structuration_status: 'filter-client-structuration', gestionnaire_id: 'filter-gestionnaire', promu_client_from: 'filter-promu-from', promu_client_to: 'filter-promu-to' };
+        Object.entries(filters).forEach(([k, id]) => {
+            const v = document.getElementById(id)?.value;
+            if (v) params.append(k, v);
+        });
+        const s = document.getElementById('filter-search')?.value;
+        if (s) params.append('search[value]', s);
+        return params;
+    }
 
     fetch(filterOptionsUrl)
         .then(r => r.json())
@@ -198,12 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 opt.textContent = f.name;
                 formeSelect.appendChild(opt);
             });
+            const gestSelect = document.getElementById('filter-gestionnaire');
+            (data.gestionnaires || []).forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.name;
+                gestSelect.appendChild(opt);
+            });
         })
         .catch(err => console.error('Filter options:', err));
 
     function loadStats() {
         const params = new URLSearchParams();
-        const filters = { region_id: 'filter-region', taille: 'filter-taille', forme_id: 'filter-forme', caractere: 'filter-caractere' };
+        const filters = { region_id: 'filter-region', taille: 'filter-taille', forme_id: 'filter-forme', caractere: 'filter-caractere', client_structuration_status: 'filter-client-structuration', gestionnaire_id: 'filter-gestionnaire', promu_client_from: 'filter-promu-from', promu_client_to: 'filter-promu-to' };
         Object.entries(filters).forEach(([k, id]) => {
             const v = document.getElementById(id)?.value;
             if (v) params.append(k, v);
@@ -222,43 +271,53 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Stats:', err));
     }
 
-    table = new DataTable('#entreprisesTable', AngaraDataTables.mergeDefaults({
-        serverSide: true,
-        ajax: {
-            url: paginatedUrl,
-            data: function(d) {
-                d.region_id = document.getElementById('filter-region').value;
-                d.taille = document.getElementById('filter-taille').value;
-                d.forme_id = document.getElementById('filter-forme').value;
-                d.caractere = document.getElementById('filter-caractere').value;
-            }
-        },
+    const table = new AngaraTable(document.getElementById('entreprisesTable'), {
+        ajaxUrl: paginatedUrl,
+        pageLength: 25,
+        searchDelay: 350,
+        filters: { region_id: 'filter-region', taille: 'filter-taille', forme_id: 'filter-forme', caractere: 'filter-caractere', client_structuration_status: 'filter-client-structuration', gestionnaire_id: 'filter-gestionnaire', promu_client_from: 'filter-promu-from', promu_client_to: 'filter-promu-to' },
         columns: [
-            { data: 'name', name: 'name', render: function(d, t, row) { return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>'; } },
-            { data: 'rccm', name: 'rccm', defaultContent: '-' },
-            { data: 'niu', name: 'niu', defaultContent: '-' },
-            { data: 'manager', name: 'manager', defaultContent: '-' },
-            { data: null, orderable: false, render: function(d, t, row) { return (row?.commune || '-') + (row?.region ? ' / ' + row.region : ''); } },
-            { data: 'taille', name: 'taille', defaultContent: '-', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
-            { data: 'capital', name: 'capital', defaultContent: '-', render: function(d) { return d != null ? new Intl.NumberFormat('fr-FR').format(d) : '-'; } },
-            { data: 'token', orderable: false, className: 'text-end', width: '100px', render: function(token) {
-                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn-action btn-action-view"><i class="demo-psi-eye"></i> Voir</a>';
+            { data: 'name', name: 'name', render: function(d, _t, row) { return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>'; } },
+            { data: 'rccm', name: 'rccm' },
+            { data: 'niu', name: 'niu' },
+            { data: 'manager', name: 'manager' },
+            { data: null, name: 'localisation', orderable: false, render: function(_d, _t, row) { return (row?.commune || '-') + (row?.region ? ' / ' + row.region : ''); } },
+            { data: 'taille', name: 'taille', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
+            { data: 'capital', name: 'capital', render: function(d) { return d != null ? new Intl.NumberFormat('fr-FR').format(d) : '-'; } },
+            { data: 'client_structuration_label', name: 'client_structuration_label', orderable: false, render: function(d) { return d ? '<span class="badge text-bg-light text-dark border">' + d + '</span>' : '—'; } },
+            { data: 'token', name: 'token', orderable: false, className: 'text-end angara-table-actions', width: '64px', render: function(token) {
+                const href = baseUrl + '/' + (token||'');
+                return ''
+                    + '<div class="dropdown">'
+                    + '  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">'
+                    + '    <i class="bi bi-three-dots-vertical"></i>'
+                    + '  </button>'
+                    + '  <ul class="dropdown-menu dropdown-menu-end">'
+                    + '    <li><a class="dropdown-item" href="' + href + '"><i class="bi bi-eye me-2"></i>Ouvrir</a></li>'
+                    + '    <li><button class="dropdown-item" type="button" data-copy-text="' + href + '"><i class="bi bi-link-45deg me-2"></i>Copier le lien</button></li>'
+                    + '  </ul>'
+                    + '</div>';
             }}
         ],
-        order: [[0, 'asc']],
-        pageLength: 15,
-        lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+        order: [0, 'asc'],
         drawCallback: function() { loadStats(); },
-        pagingType: 'simple_numbers'
-    }));
+    });
 
     document.getElementById('filter-search').addEventListener('input', function() {
         clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(() => table.search(this.value).draw(), 350);
+        const v = this.value || '';
+        filterTimeout = setTimeout(() => {
+            table.state.search = v;
+            table.state.page = 0;
+            table.reload();
+        }, 350);
     });
 
-    ['filter-region','filter-taille','filter-forme','filter-caractere'].forEach(id => {
-        document.getElementById(id).addEventListener('change', () => table.ajax.reload());
+    document.getElementById('btn-export-xlsx-ca')?.addEventListener('click', function() {
+        window.location = exportUrl + '?' + buildClientsExportQuery('xlsx').toString();
+    });
+    document.getElementById('btn-export-pdf-ca')?.addEventListener('click', function() {
+        window.location = exportUrl + '?' + buildClientsExportQuery('pdf').toString();
     });
 
     document.getElementById('btn-reset-filters').addEventListener('click', function() {
@@ -267,7 +326,32 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('filter-taille').value = '';
         document.getElementById('filter-forme').value = '';
         document.getElementById('filter-caractere').value = '';
-        table.search('').ajax.reload();
+        document.getElementById('filter-client-structuration').value = '';
+        document.getElementById('filter-gestionnaire').value = '';
+        document.getElementById('filter-promu-from').value = '';
+        document.getElementById('filter-promu-to').value = '';
+        table.state.search = '';
+        table.state.page = 0;
+        table.reload();
+    });
+
+    document.addEventListener('click', async function(e) {
+        const btn = e.target.closest('[data-copy-text]');
+        if (!btn) return;
+        const text = btn.getAttribute('data-copy-text') || '';
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (_) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
     });
 
     loadStats();

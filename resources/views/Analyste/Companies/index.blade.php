@@ -1,7 +1,6 @@
 @extends('Layouts.analyste')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap5.min.css">
 <style>
     .stats-card { transition: transform 0.2s; }
     .stats-card:hover { transform: translateY(-2px); }
@@ -113,48 +112,129 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-2">
-                    <button type="button" id="btn-reset-filters" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="demo-psi-arrow-left"></i> Réinitialiser
-                    </button>
+                <div class="col-12 col-md-3">
+                    @include('partials.client-structuration-filter-select', ['id' => 'filter-client-structuration'])
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-agence" class="form-label small text-muted">Agence</label>
+                    <select id="filter-agence" class="form-select form-select-sm">
+                        <option value="">Toutes</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-gestionnaire" class="form-label small text-muted">Gestionnaire</label>
+                    <select id="filter-gestionnaire" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-promu-from" class="form-label small text-muted">Promu client du</label>
+                    <input type="date" id="filter-promu-from" class="form-control form-control-sm">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="filter-promu-to" class="form-label small text-muted">au</label>
+                    <input type="date" id="filter-promu-to" class="form-control form-control-sm">
+                </div>
+                <div class="col-12 col-md-auto ms-md-auto pt-1 pt-md-0">
+                    <label class="form-label small text-muted d-block mb-1">&nbsp;</label>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="analyste-entreprises-actions" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="analyste-entreprises-actions">
+                            <li><button type="button" class="dropdown-item" id="btn-export-xlsx-analyste"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exporter en Excel</button></li>
+                            <li><button type="button" class="dropdown-item" id="btn-export-pdf-analyste"><i class="bi bi-file-earmark-pdf me-2"></i>Exporter en PDF</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="btn-reset-filters"><i class="bi bi-arrow-counterclockwise me-2"></i>Réinitialiser</button></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm angara-dt-card" id="entreprises-card">
+    <div class="angara-table" id="entreprises-card">
+        <div class="card">
         <div class="card-body p-4">
             <div class="table-responsive">
-                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0 angara-dt-table" style="width:100%">
+                <table id="entreprisesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
                     <thead>
                         <tr>
-                            <th>Désignation</th>
-                            <th>RCCM</th>
-                            <th>NIU</th>
-                            <th>Dirigeant</th>
-                            <th>Région</th>
-                            <th>Forme</th>
+                            <th data-angara-sort-col="0">Désignation</th>
+                            <th data-angara-sort-col="1">RCCM</th>
+                            <th data-angara-sort-col="2">NIU</th>
+                            <th data-angara-sort-col="3">Dirigeant</th>
+                            <th data-angara-sort-col="4">Région</th>
+                            <th data-angara-sort-col="5">Forme</th>
+                            <th>Structuration client</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                <div data-angara-table-info></div>
+                <div data-angara-table-paging></div>
+            </div>
+            <div class="angara-table-empty d-none" data-angara-table-empty>Aucune donnée.</div>
+        </div>
         </div>
     </div>
 @endsection
 
 @section('script')
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap5.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = "{{ url('analyste/entreprises') }}";
     const paginatedUrl = "{{ route('analyste.entreprises.paginated') }}";
     const statsUrl = "{{ route('analyste.entreprises.stats') }}";
+    const filterOptionsUrl = "{{ route('analyste.entreprises.filter-options') }}";
+    const exportUrl = "{{ route('analyste.entreprises.export') }}";
 
-    let table;
     let filterTimeout;
+
+    function buildClientsExportQuery(format) {
+        const params = new URLSearchParams();
+        params.set('format', format);
+        const rid = document.getElementById('filter-region')?.value;
+        if (rid) params.append('region_id', rid);
+        const did = document.getElementById('filter-departement')?.value;
+        if (did) params.append('departement_id', did);
+        const fid = document.getElementById('filter-forme')?.value;
+        if (fid) params.append('forme_id', fid);
+        const sid = document.getElementById('filter-client-structuration')?.value;
+        if (sid) params.append('client_structuration_status', sid);
+        const aid = document.getElementById('filter-agence')?.value;
+        if (aid) params.append('agence_id', aid);
+        const gid = document.getElementById('filter-gestionnaire')?.value;
+        if (gid) params.append('gestionnaire_id', gid);
+        const pf = document.getElementById('filter-promu-from')?.value;
+        if (pf) params.append('promu_client_from', pf);
+        const pt = document.getElementById('filter-promu-to')?.value;
+        if (pt) params.append('promu_client_to', pt);
+        const s = document.getElementById('filter-search')?.value;
+        if (s) params.append('search[value]', s);
+        return params;
+    }
+
+    fetch(filterOptionsUrl)
+        .then(r => r.json())
+        .then(data => {
+            const agenceSelect = document.getElementById('filter-agence');
+            (data.agences || []).forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                agenceSelect.appendChild(opt);
+            });
+            const gestSelect = document.getElementById('filter-gestionnaire');
+            (data.gestionnaires || []).forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.name;
+                gestSelect.appendChild(opt);
+            });
+        })
+        .catch(err => console.error('Filter options:', err));
 
     function filterDepartementsByRegion() {
         const regionId = document.getElementById('filter-region').value;
@@ -177,6 +257,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (rid) params.append('region_id', rid);
         if (did) params.append('departement_id', did);
         if (fid) params.append('forme_id', fid);
+        const sid = document.getElementById('filter-client-structuration')?.value;
+        if (sid) params.append('client_structuration_status', sid);
+        const aid = document.getElementById('filter-agence')?.value;
+        if (aid) params.append('agence_id', aid);
+        const gid = document.getElementById('filter-gestionnaire')?.value;
+        if (gid) params.append('gestionnaire_id', gid);
+        const pf = document.getElementById('filter-promu-from')?.value;
+        if (pf) params.append('promu_client_from', pf);
+        const pt = document.getElementById('filter-promu-to')?.value;
+        if (pt) params.append('promu_client_to', pt);
         fetch(statsUrl + (params.toString() ? '?' + params : ''))
             .then(r => r.json())
             .then(data => {
@@ -187,55 +277,79 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => console.error('Stats:', err));
     }
 
-    table = new DataTable('#entreprisesTable', AngaraDataTables.mergeDefaults({
-        serverSide: true,
-        ajax: {
-            url: paginatedUrl,
-            data: function(d) {
-                d.region_id = document.getElementById('filter-region').value;
-                d.departement_id = document.getElementById('filter-departement').value;
-                d.forme_id = document.getElementById('filter-forme').value;
-            }
-        },
+    const table = new AngaraTable(document.getElementById('entreprisesTable'), {
+        ajaxUrl: paginatedUrl,
+        pageLength: 25,
+        searchDelay: 350,
+        filters: { region_id: 'filter-region', departement_id: 'filter-departement', forme_id: 'filter-forme', client_structuration_status: 'filter-client-structuration', agence_id: 'filter-agence', gestionnaire_id: 'filter-gestionnaire', promu_client_from: 'filter-promu-from', promu_client_to: 'filter-promu-to' },
         columns: [
-            { data: 'name', name: 'name', render: function(d, t, row) {
+            { data: 'name', name: 'name', render: function(d, _t, row) {
                 return '<a href="' + baseUrl + '/' + (row?.token||'') + '" class="fw-medium text-decoration-none">' + (d || '-') + '</a>';
             }},
-            { data: 'rccm', name: 'rccm', defaultContent: '-' },
-            { data: 'niu', name: 'niu', defaultContent: '-' },
-            { data: 'manager', name: 'manager', defaultContent: '-' },
-            { data: 'region', name: 'region', defaultContent: '-' },
-            { data: 'forme', name: 'forme', defaultContent: '-' },
-            { data: 'token', orderable: false, className: 'text-end', width: '100px', render: function(token) {
-                return '<a href="' + baseUrl + '/' + (token||'') + '" class="btn-action btn-action-view"><i class="demo-psi-eye"></i> Voir</a>';
+            { data: 'rccm', name: 'rccm' },
+            { data: 'niu', name: 'niu' },
+            { data: 'manager', name: 'manager' },
+            { data: 'region', name: 'region' },
+            { data: 'forme', name: 'forme' },
+            { data: 'client_structuration_label', name: 'client_structuration_label', orderable: false, render: function(d) { return d ? '<span class="badge text-bg-light text-dark border">' + d + '</span>' : '—'; } },
+            { data: 'token', name: 'token', orderable: false, className: 'text-end angara-table-actions', width: '64px', render: function(token) {
+                const href = baseUrl + '/' + (token||'');
+                return ''
+                    + '<div class="dropdown">'
+                    + '  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">'
+                    + '    <i class="bi bi-three-dots-vertical"></i>'
+                    + '  </button>'
+                    + '  <ul class="dropdown-menu dropdown-menu-end">'
+                    + '    <li><a class="dropdown-item" href="' + href + '"><i class="bi bi-eye me-2"></i>Ouvrir</a></li>'
+                    + '    <li><button class="dropdown-item" type="button" data-copy-text="' + href + '"><i class="bi bi-link-45deg me-2"></i>Copier le lien</button></li>'
+                    + '  </ul>'
+                    + '</div>';
             }}
         ],
-        order: [[0, 'asc']],
-        pageLength: 15,
-        lengthMenu: [[10, 15, 25, 50], [10, 15, 25, 50]],
+        order: [0, 'asc'],
         drawCallback: function() { loadStats(); }
-    }));
+    });
 
     document.getElementById('filter-search').addEventListener('input', function() {
         clearTimeout(filterTimeout);
-        filterTimeout = setTimeout(() => table.search(this.value).draw(), 350);
+        const v = this.value || '';
+        filterTimeout = setTimeout(() => {
+            table.state.search = v;
+            table.state.page = 0;
+            table.reload();
+        }, 350);
     });
 
     document.getElementById('filter-region').addEventListener('change', function() {
         filterDepartementsByRegion();
-        table.ajax.reload();
+        table.state.page = 0;
+        table.reload();
     });
 
-    document.getElementById('filter-departement').addEventListener('change', () => table.ajax.reload());
-    document.getElementById('filter-forme').addEventListener('change', () => table.ajax.reload());
+    document.getElementById('filter-departement').addEventListener('change', () => table.reload());
+    document.getElementById('filter-forme').addEventListener('change', () => table.reload());
+
+    document.getElementById('btn-export-xlsx-analyste')?.addEventListener('click', function() {
+        window.location = exportUrl + '?' + buildClientsExportQuery('xlsx').toString();
+    });
+    document.getElementById('btn-export-pdf-analyste')?.addEventListener('click', function() {
+        window.location = exportUrl + '?' + buildClientsExportQuery('pdf').toString();
+    });
 
     document.getElementById('btn-reset-filters').addEventListener('click', function() {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-region').value = '';
         document.getElementById('filter-departement').value = '';
         document.getElementById('filter-forme').value = '';
+        document.getElementById('filter-client-structuration').value = '';
+        document.getElementById('filter-agence').value = '';
+        document.getElementById('filter-gestionnaire').value = '';
+        document.getElementById('filter-promu-from').value = '';
+        document.getElementById('filter-promu-to').value = '';
         document.querySelectorAll('#filter-departement option').forEach(o => { o.style.display = ''; });
-        table.search('').ajax.reload();
+        table.state.search = '';
+        table.state.page = 0;
+        table.reload();
     });
 
     loadStats();

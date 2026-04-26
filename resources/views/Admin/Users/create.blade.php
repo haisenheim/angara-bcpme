@@ -20,7 +20,11 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-sm">Retour</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.users.index') }}" class="dropdown-item"><i class="demo-pli-arrow-left me-2"></i>Retour</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')

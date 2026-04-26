@@ -1,13 +1,38 @@
-Traitement Pôle Exploitation (Consultation de tous les dossiers d’instruction, Saisie pour chacun d’un avis de crédit)
-- Consultation des dossiers d’instruction en instance par le Responsable Exploitation (REXP)
-- Cotation （affectation） du dossier d’instruction à un Analyste Financier (AF)
-- Instruction dossier par un Analyste financier  (Grille de notation, État des engagements, Grille ESG, Grille d’analyse critique, Grille de scoring MOE), + Soumission dossier des engagements
-- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engag par le REXP
+Le workflow global se décompose en trois sous‑processus :
 
-Ci dessus une petite description de ce qui est attendu du responsable exploitationet de l'analyste financier
-Travail a faire :
+- Le processus d’entrée en relation (EER) : de la création du prospect jusqu’à sa validation en client par le chef d’agence, en passant par les avis du responsable juridique et du responsable conformité.
 
-- Faire une refonte du dossier d'instruction
-- Proposer les actions a effectuer sur le dossier d'instruction
-- Implemeter ces actions.
-- Faire une refonte du layout et proposer un menu pour le responsable exploitation
+- Le processus de structuration (anciennement « qualification ») : la structuration d’un client (et non d’un prospect) est réalisée par le chef de filière, qui la soumet au chef d’agence pour validation.
+  - Une fois validée par le chef d’agence, la structuration est terminée.
+  - Avant validation, le client est en cours de structuration.
+
+- L’instruction : mise en relation d’un client structuré avec un ou plusieurs programmes. Le dossier d’instruction passe de pôle en pôle jusqu’au conseil d’administration, en passant par la direction générale.
+  - Dans chaque pôle, le dossier d’instruction est transmis au responsable du pôle, qui l’affecte à un analyste pour avis.
+  - L’analyste soumet le dossier au responsable, qui saisit également son avis avant de le soumettre au pôle suivant.
+
+À chaque action, pour chaque étape, l’heure et l’identité de l’auteur sont enregistrées.
+
+Lorsque le dossier est soumis à un analyste financier par le responsable du pôle exploitation, l’analyste procède à l’élaboration de la grille de notation en chargeant au préalable la DSF et en effectuant les saisies suivantes (Summernote) :
+
+
+Ajouter des actions pour la saisie des zones de texte (summernote)
+suivantes :
+1) Brèves données générales actualisées sur le client
+2) Analyse critique d’ensemble
+3) Analyse financière du client
+4) Appuis financiers et non financiers proposés
+5) Analyse du risque et de la capacité de remboursement du client
+6) Rentabilité de la relation pour l’établissement
+7) Conclusions motivées, recommandations de l’analyste financier
+
+L’analyste financier ne saisit pas un avis comme les autres profils : il peut d’abord enregistrer son travail en mode brouillon (pour le continuer plus tard) avant de le soumettre au responsable exploitation.
+
+Le DG et le DGA saisissent également leur avis et peuvent rejeter ou valider un dossier. Les administrateurs (membres du conseil d’administration) saisissent également leur avis et peuvent rejeter ou valider un dossier, de même que le PCA.
+
+TAF
+- Parcourir toute la structure du projet et s’assurer que les choses sont implémentées suivant la description.
+- Faire des mises à niveau et des corrections lorsque c’est nécessaire.
+- Créer les espaces pour les profils qui manquent encore d’espace.
+
+
+

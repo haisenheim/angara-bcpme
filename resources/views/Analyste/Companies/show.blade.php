@@ -18,17 +18,12 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-            <i class="demo-psi-dot-vertical"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
-            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i> Questionnaire de mise en relation</a></li>
-            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.physique.create', $item->token) }}"><i class="demo-psi-add-user me-2"></i> Tiers personne physique</a></li>
-            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i> Tiers personne morale</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="analysteEntrepriseShowActions">
+        <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
+        <li><a class="dropdown-item" href="{{ route('analyste.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i> Questionnaire de mise en relation</a></li>
+        <li><a class="dropdown-item" href="{{ route('analyste.entreprise.physique.create', $item->token) }}"><i class="demo-psi-add-user me-2"></i> Tiers personne physique</a></li>
+        <li><a class="dropdown-item" href="{{ route('analyste.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i> Tiers personne morale</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

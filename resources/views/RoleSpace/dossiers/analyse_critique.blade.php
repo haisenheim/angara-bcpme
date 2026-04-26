@@ -6,6 +6,8 @@
     'analyste-credit' => 'Layouts.analyste-credit',
     'analyste-risques' => 'Layouts.analyste-risques',
     'rerx' => 'Layouts.rerx',
+    'dg' => 'Layouts.dg',
+    'dga' => 'Layouts.dga',
     default => 'Layouts.app',
 })
 
@@ -15,7 +17,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dossiers.index') }}">Dossiers</a></li>
+        <li class="breadcrumb-item"><a href="{{ route(in_array($space['route'] ?? '', ['dg', 'dga'], true) ? $space['route'].'.dossiers.valides-chef-agence' : $space['route'].'.dossiers.index') }}">Dossiers</a></li>
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dossiers.show', $item->token) }}">{{ Str::limit($item->programme?->name ?? 'Dossier', 42) }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">Grille d’analyse critique</li>
     </ol>
@@ -23,12 +25,20 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route($space['route'].'.dossiers.instruction', $item->token) }}" class="btn btn-sm btn-outline-primary">
-        Grille de notation
-    </a>
-    <a href="{{ route($space['route'].'.dossiers.show', $item->token) }}" class="btn btn-sm btn-outline-secondary">
-        <i class="demo-pli-arrow-left me-1"></i> Retour au dossier
-    </a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique</a>
+        </li>
+        <li>
+            <a href="{{ route($space['route'].'.dossiers.instruction', $item->token) }}" class="dropdown-item">Grille de notation</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a href="{{ route($space['route'].'.dossiers.show', $item->token) }}" class="dropdown-item">
+                <i class="demo-pli-arrow-left me-1"></i> Retour au dossier
+            </a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
@@ -40,6 +50,10 @@
 
 @section('content')
 <div class="container-fluid">
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'showUpload' => false,
+    ])
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
             <div class="card border-0 shadow-sm">

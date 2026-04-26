@@ -39,6 +39,8 @@ class DossierController extends Controller
         $alreadyTransmisAuReju = $dossier->isJuridiqueAnalysteAvisSubmittedToReju();
 
         $dossier->juridique_analyste_avis = $validated['juridique_analyste_avis'];
+        $dossier->juridique_analyste_avis_saved_at = now();
+        $dossier->juridique_analyste_avis_saved_by_user_id = auth()->id();
 
         if (! $alreadyTransmisAuReju) {
             $dossier->juridique_analyste_submitted_to_reju_at = now();

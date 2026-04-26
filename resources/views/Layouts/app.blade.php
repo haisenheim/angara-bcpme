@@ -12,8 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
-
-	<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Bootstrap CSS [ REQUIRED ] -->
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.css') }}">
@@ -29,7 +28,7 @@
         <!-- Angara Custom Style -->
         <link rel="stylesheet" href="{{ asset('css/angara-style.css') }}">
         <link rel="stylesheet" href="{{ asset('css/nifty-override.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/angara-datatables.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/angara-table.css') }}">
 
         <!-- Demo purpose CSS [ DEMO ] -->
         <link rel="stylesheet" href="{{ asset('assets/css/demo-purpose/demo-settings.min.css') }}">
@@ -40,6 +39,7 @@
         <link rel="stylesheet" href="{{ asset('assets/vendors/loader.css/loader.min.css') }}">
         <script src="{{ asset('js/jquery.min.js') }}"></script>
         <script src="{{ asset('js/quill.min.js') }}"></script>
+        <script src="{{ asset('js/angara-table.js') }}" defer></script>
 
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
@@ -68,7 +68,9 @@
                    <!-- Breadcrumb -->
                    <div class="d-flex justify-content-between flex-column flex-md-row align-items-start gap-2 gap-md-3">
                         @yield('breadcrumb')
-                        @yield('actions')
+                        <div class="angara-page-actions ms-md-auto">
+                            @yield('actions')
+                        </div>
                    </div>
 
                    <!-- END : Breadcrumb -->
@@ -127,7 +129,7 @@
 
                      <!-- Navigation Toggler -->
                      <button type="button" class="nav-toggler header__btn btn btn-icon btn-sm" aria-label="Nav Toggler">
-                        <i class="demo-psi-list-view"></i>
+                        <i class="bi bi-list"></i>
                      </button>
 
                      <div class="vr mx-1 d-none d-md-block"></div>
@@ -137,7 +139,7 @@
 
                         <!-- Searchbox toggler for small devices -->
                         <label for="header-search-input" class="header__btn d-md-none btn btn-icon rounded shadow-none border-0 btn-sm" type="button">
-                           <i class="demo-psi-magnifi-glass"></i>
+                           <i class="bi bi-search"></i>
                         </label>
 
                         <!-- Searchbox input -->
@@ -145,7 +147,7 @@
                            <input id="header-search-input" class="searchbox__input form-control bg-transparent" type="search" placeholder="Rechercher ..."  oninput="onFilterTextBoxChanged()" aria-label="Search">
                            <div class="searchbox__backdrop">
                               <button class="searchbox__btn header__btn btn btn-icon rounded shadow-none border-0 btn-sm" type="button">
-                                 <i class="demo-pli-magnifi-glass"></i>
+                                 <i class="bi bi-search"></i>
                               </button>
                            </div>
                         </form>
@@ -198,12 +200,12 @@
                                 <div id="usernav" class="nav flex-column collapse">
 
                                     <a href="{{ route('profile') }}" class="nav-link">
-                                        <i class="demo-pli-male fs-5 me-2"></i>
+                                        <i class="bi bi-person-circle fs-5 me-2"></i>
                                         <span class="ms-1">Profile</span>
                                     </a>
                                     <form id="logout-form" method="POST" action="{{ route('logout') }}">
                                         @csrf
-                                        <a role="button" class="nav-link" onclick="this.parentNode.submit();"><i class="demo-pli-unlock fs-5 me-2"></i><span class="ms-1">Se déconnecter</span></a>
+                                        <a role="button" class="nav-link" onclick="this.parentNode.submit();"><i class="bi bi-box-arrow-right fs-5 me-2"></i><span class="ms-1">Se déconnecter</span></a>
                                     </form>
                                 </div>
 
@@ -214,7 +216,6 @@
                     <!-- End - Profile widget -->
      <!-- Navigation Category -->
      @yield('navigation')
-     <script src="{{ asset('js/angara-datatables.js') }}"></script>
      @yield('script')
      <!-- END : Navigation Category -->
  </div>

@@ -5,7 +5,7 @@
 @section('page-header')
     <div>
         <h1 class="h3 mb-0">Dossier d’instruction</h1>
-        <p class="text-muted mb-0">{{ $dossier->entreprise?->name ?? '—' }} — {{ $dossier->programme?->name ?? '—' }}</p>
+        <p class="text-muted mb-0">{{ $dossier->entreprise?->name ?? '—' }} — {{ $dossier->programmesLabel() }}</p>
     </div>
 @endsection
 
@@ -50,14 +50,25 @@
             </div>
         </div>
 
-        @if($dossier->exploitation_instruction_submitted_at)
+        @include('partials.dossier-engagements-totaux-cards', ['dossier' => $dossier])
+
+        @if($dossier->exploitation_analyste_transmitted_to_exploitation_at)
             <p class="small text-muted mb-3">
-                Instruction transmise à l’exploitation le {{ $dossier->exploitation_instruction_submitted_at->format('d/m/Y H:i') }}
-                @if($dossier->exploitationInstructionSubmittedBy)
-                    — {{ $dossier->exploitationInstructionSubmittedBy->name }}
+                Transmission analyste à l’exploitation le {{ $dossier->exploitation_analyste_transmitted_to_exploitation_at->format('d/m/Y H:i') }}
+                @if($dossier->exploitationAnalysteTransmittedToExploitationBy)
+                    — {{ $dossier->exploitationAnalysteTransmittedToExploitationBy->name }}
                 @endif
             </p>
         @endif
+
+        <div class="mb-4">
+            @include('partials.instruction-dossier-consultation', ['dossier' => $dossier, 'instructionConsultation' => $instructionConsultation ?? null])
+        </div>
+
+        @include('partials.dossier-pieces-jointes', [
+            'dossier' => $dossier,
+            'showUpload' => false,
+        ])
 
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white"><strong>Décision exploitation (validation du dossier d’instruction)</strong></div>

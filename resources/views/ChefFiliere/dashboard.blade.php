@@ -13,7 +13,7 @@
 @section('page-header')
 <div>
     <h5 class="page-title mb-0">Tableau de bord</h5>
-    <p class="text-body-secondary mb-0 mt-1 small">Pilotage de la qualification et des dossiers d'instruction de votre agence.</p>
+    <p class="text-body-secondary mb-0 mt-1 small">Pilotage de la structuration et des dossiers d'instruction de votre agence.</p>
 </div>
 @endsection
 
@@ -29,7 +29,7 @@
             <div class="cf-dash-card h-100">
                 <div class="cf-dash-card__body">
                     <div class="cf-dash-card__metric">{{ $pendingQualif }}</div>
-                    <p class="cf-dash-card__label">Qualifications en attente</p>
+                    <p class="cf-dash-card__label">Structurations en attente</p>
                     <a href="{{ route('chef-filiere.qualifications.index') }}" class="btn btn-primary btn-sm align-self-start">Ouvrir la file</a>
                 </div>
             </div>

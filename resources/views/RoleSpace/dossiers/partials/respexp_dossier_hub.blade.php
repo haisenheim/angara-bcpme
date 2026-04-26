@@ -11,14 +11,14 @@
 @if($isRespexp)
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-light border-0 py-3">
-        <strong class="text-primary">Parcours dossier d'instruction</strong>
+        <strong class="text-brand">Parcours dossier d'instruction</strong>
         <p class="small text-muted mb-0 mt-1">Cotation, instruction, soumission analyste, avis de crédit et validation par le REXP, puis transmission au pôle juridique.</p>
     </div>
     <div class="card-body">
         <div class="row g-2 row-cols-2 row-cols-md-3 row-cols-xl-6">
             @foreach($steps as $i => $step)
                 <div class="col">
-                    <div class="rounded border p-2 h-100 {{ $step['done'] ? 'border-success bg-light' : 'border-light bg-light' }}">
+                    <div class="rounded border p-2 h-100 {{ $step['done'] ? 'border-success bg-body-tertiary' : 'border-light bg-body-tertiary' }}">
                         <div class="small text-muted">Étape {{ $i + 1 }}</div>
                         <div class="fw-semibold small">{{ $step['label'] }}</div>
                         <div class="mt-1">
@@ -64,11 +64,19 @@
                     @elseif($dossier->analyste_id)
                         <p class="small text-muted mb-0 mt-2">Historique d’affectation non renseigné (dossier antérieur à l’enregistrement de la trace).</p>
                     @endif
-                    @if($dossier->isInstructionSubmittedToExploitation() && $dossier->exploitation_instruction_submitted_at)
+                    @if($dossier->isInstructionTransmittedToExploitationByAnalysteFinancier() && $dossier->exploitation_analyste_transmitted_to_exploitation_at)
                         <p class="small mb-0 mt-2 text-success">
-                            <strong>Instruction transmise</strong> — le {{ $dossier->exploitation_instruction_submitted_at->format('d/m/Y') }} à {{ $dossier->exploitation_instruction_submitted_at->format('H:i') }}
-                            @if($dossier->exploitationInstructionSubmittedBy)
-                                <span class="text-muted"> — par</span> <strong>{{ $dossier->exploitationInstructionSubmittedBy->name }}</strong>
+                            <strong>Transmission analyste financier</strong> — le {{ $dossier->exploitation_analyste_transmitted_to_exploitation_at->format('d/m/Y') }} à {{ $dossier->exploitation_analyste_transmitted_to_exploitation_at->format('H:i') }}
+                            @if($dossier->exploitationAnalysteTransmittedToExploitationBy)
+                                <span class="text-muted"> — par</span> <strong>{{ $dossier->exploitationAnalysteTransmittedToExploitationBy->name }}</strong>
+                            @endif
+                        </p>
+                    @endif
+                    @if($dossier->isInstructionCaTransmittedToExploitation() && $dossier->instruction_ca_transmitted_to_exploitation_at)
+                        <p class="small mb-0 mt-2 text-success">
+                            <strong>Transmission chef d’agence</strong> — le {{ $dossier->instruction_ca_transmitted_to_exploitation_at->format('d/m/Y') }} à {{ $dossier->instruction_ca_transmitted_to_exploitation_at->format('H:i') }}
+                            @if($dossier->instructionCaTransmittedToExploitationBy)
+                                <span class="text-muted"> — par</span> <strong>{{ $dossier->instructionCaTransmittedToExploitationBy->name }}</strong>
                             @endif
                         </p>
                     @endif
@@ -92,7 +100,7 @@
 @endif
 
 <div class="row g-4 mb-4">
-    <div class="col-lg-6">
+    <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white"><strong>Synthèse instruction</strong></div>
             <div class="card-body">
@@ -101,29 +109,27 @@
                 @else
                     <p class="mb-2">Indicateurs financiers saisis : <strong>{{ $dossier->indicateurs->count() }}</strong></p>
                     <p class="mb-2">Réponses critères d’instruction : <strong>{{ $dossier->reponses->count() }}</strong></p>
-                    <p class="mb-3 text-muted small">Accédez à la <strong>grille de notation</strong>, aux indicateurs DSF et à la <strong>grille d’analyse critique</strong> tels que renseignés par l’analyste.</p>
+                    <p class="mb-3 text-muted small">Accédez à la <strong>grille de notation</strong>, aux indicateurs DSF et au <strong>dossier d’analyse critique</strong> (synthèse chronologique des avis) tels que renseignés par l’analyste.</p>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{{ route($spaceRoute.'.dossiers.instruction', $dossier->token) }}" class="btn btn-sm btn-primary">
                             <i class="demo-psi-bar-chart me-1"></i> Ouvrir le contenu d’instruction (grille de notation)
                         </a>
-                        <a href="{{ route($spaceRoute.'.dossiers.analyse-critique', $dossier->token) }}" class="btn btn-sm btn-outline-primary">
-                            Grille d’analyse critique
+                        <a href="{{ route($spaceRoute.'.dossiers.dossier-analyse-critique', $dossier->token) }}" class="btn btn-sm btn-outline-primary">
+                            Dossier d’analyse critique
                         </a>
                     </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white"><strong>Entreprise &amp; agence</strong></div>
-            <div class="card-body">
-                <p class="mb-2">Entreprise : <strong>{{ $dossier->entreprise?->name ?? '—' }}</strong></p>
-                <p class="mb-2">Agence : <strong>{{ $dossier->agence?->name ?? '—' }}</strong></p>
-                @if($respexpInstructionLocked)
-                    <p class="mb-0 text-muted small">Note agrégée : non affichée tant que l’instruction n’est pas soumise.</p>
-                @else
-                    <p class="mb-0">Note agrégée (indicateurs + critères) : <strong>{{ number_format((float) ($dossier->note ?? 0), 2, ',', ' ') }}</strong></p>
+                    @if($dossier->isInstructionSubmittedToExploitation() && $dossier->exploitation_analyste_instruction_avis)
+                        <div class="mt-3 pt-3 border-top">
+                            <p class="small fw-semibold mb-2 text-uppercase text-muted">Avis du chargé d’instruction (analyste financier)</p>
+                            <div class="rich-text-rendered small border rounded p-3 bg-body-tertiary">{!! $dossier->exploitation_analyste_instruction_avis !!}</div>
+                        </div>
+                    @endif
+                    @if($dossier->isInstructionCaTransmittedToExploitation() && strlen(trim(strip_tags((string) ($dossier->instruction_agence_ca_avis ?? '')))) > 0)
+                        <div class="mt-3 pt-3 border-top">
+                            <p class="small fw-semibold mb-2 text-uppercase text-muted">Avis du chef d’agence</p>
+                            <div class="rich-text-rendered small border rounded p-3 bg-body-tertiary">{!! $dossier->instruction_agence_ca_avis !!}</div>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>
@@ -144,7 +150,7 @@
                     @endif
                 </p>
             @endif
-            <div class="border rounded p-3 bg-light small rich-text-rendered">{!! $dossier->exploitation_avis_credit !!}</div>
+            <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered">{!! $dossier->exploitation_avis_credit !!}</div>
             <p class="text-muted small mb-0 mt-2">Lecture seule — saisie réservée au responsable exploitation.</p>
         @elseif($transmisJuridique)
             @if($dossier->exploitation_avis_credit_at)
@@ -155,7 +161,7 @@
                     @endif
                 </p>
             @endif
-            <div class="border rounded p-3 bg-light small rich-text-rendered">{!! $dossier->exploitation_avis_credit !!}</div>
+            <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered">{!! $dossier->exploitation_avis_credit !!}</div>
             <p class="text-muted small mb-0 mt-2">Dossier transmis au pôle juridique — l’avis n’est plus modifiable.</p>
         @else
             @if($dossier->exploitation_avis_credit_at)

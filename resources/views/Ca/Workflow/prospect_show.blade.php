@@ -71,14 +71,18 @@
 @endsection
 
 @section('actions')
-<div class="d-flex gap-2 flex-wrap">
-    <a href="{{ route('ca.workflow.prospects.index') }}" class="btn btn-sm btn-outline-secondary">
-        <i class="demo-psi-back me-1"></i> File d'arbitrage
-    </a>
-    <a href="{{ route('ca.entreprises.show', $item->token) }}" class="btn btn-sm btn-outline-primary">
-        <i class="demo-psi-information me-1"></i> Fiche prospect complète
-    </a>
-</div>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('ca.workflow.prospects.index') }}" class="dropdown-item">
+                <i class="demo-psi-back me-1"></i> File d'arbitrage
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('ca.entreprises.show', $item->token) }}" class="dropdown-item">
+                <i class="demo-psi-information me-1"></i> Fiche prospect complète
+            </a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

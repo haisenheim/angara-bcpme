@@ -2,26 +2,35 @@
 
 namespace App\Http\Controllers\Ca;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
+use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
 use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Banque;
 use App\Models\Dossier;
+use App\Models\DossierEntreeRelation;
+use App\Models\Agence;
 use App\Models\Entreprise;
 use App\Models\Forme;
-use App\Models\Instruction\Engagement;
-use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Person;
+use App\Services\ClientEntrepriseTableExportService;
+use App\Services\EngagementReportService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Region;
 use App\Models\Tier;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
 class CompanyController extends Controller
 {
+    use AppliesEntrepriseListIndexFilters;
+    use AppliesProspectListIndexFilters;
     use BuildsEntrepriseQuestionnaireResults;
 
     /**
@@ -56,7 +65,7 @@ class CompanyController extends Controller
     {
         $base = $this->baseQuery();
         $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $query = $this->applyFilters($base->clone(), $filters, true);
 
         $stats = [
             'total' => (clone $query)->count(),
@@ -78,7 +87,7 @@ class CompanyController extends Controller
 
         $base = $this->baseQuery();
         $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $query = $this->applyFilters($base->clone(), $filters, true);
 
         $recordsTotal = $this->baseQuery()->count();
         $recordsFiltered = $query->count();
@@ -95,7 +104,7 @@ class CompanyController extends Controller
             $recordsFiltered = $query->count();
         }
 
-        $items = $query->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
+        $items = $query->with('dossierEntreeRelation')->orderBy('created_at', 'DESC')->skip($start)->take($length)->get();
         $resolved = EntrepriseListResource::collection($items)->toArray($request);
         $data = $resolved['data'] ?? $resolved;
         $data = array_values($data);
@@ -108,17 +117,65 @@ class CompanyController extends Controller
         ]);
     }
 
-    private function parseFilters(Request $request): array
+    /**
+     * Export Excel / PDF du portefeuille clients (mêmes filtres et recherche que le tableau).
+     */
+    public function exportClients(Request $request)
     {
-        return [
-            'region_id' => $request->input('region_id'),
-            'taille' => $request->input('taille'),
-            'forme_id' => $request->input('forme_id'),
-            'caractere' => $request->input('caractere'),
-        ];
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $search = trim((string) $request->input('search.value', ''));
+        $base = $this->baseQuery();
+        $filters = $this->parseFilters($request);
+        $query = $this->applyFilters($base->clone(), $filters, true);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->with(['dossierEntreeRelation', 'agence', 'gestionnaire', 'region', 'arrondissement'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = ClientEntrepriseTableExportService::rowsCaGestionnaireAnalyste($items);
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersCaGestionnaireAnalyste(),
+            $format,
+            'ca-clients',
+            'Chef d\'agence — portefeuille clients',
+        );
     }
 
-    private function applyFilters($query, array $filters)
+    private function parseFilters(Request $request): array
+    {
+        $promuGestionnaire = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+        $promuGestionnaire['agence_id'] = null;
+
+        return array_merge(
+            [
+                'region_id' => $request->input('region_id'),
+                'taille' => $request->input('taille'),
+                'forme_id' => $request->input('forme_id'),
+                'caractere' => $request->input('caractere'),
+                'client_structuration_status' => DossierEntreeRelation::normalizeClientStructurationFilter($request->input('client_structuration_status')),
+            ],
+            $promuGestionnaire,
+        );
+    }
+
+    private function applyFilters($query, array $filters, bool $applyPromuAgenceGestionnaire = true)
     {
         if (! empty($filters['region_id'])) {
             $query->where('region_id', $filters['region_id']);
@@ -132,15 +189,34 @@ class CompanyController extends Controller
         if (! empty($filters['caractere'])) {
             $query->where('caractere', $filters['caractere']);
         }
+        if (! empty($filters['client_structuration_status'])) {
+            $query->whereClientStructurationStatus($filters['client_structuration_status']);
+        }
+
+        if ($applyPromuAgenceGestionnaire) {
+            $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
+        }
 
         return $query;
     }
 
     public function fetchFilterOptions()
     {
+        $agenceId = (int) auth()->user()->agence_id;
+        $gestionnaireIds = Entreprise::query()
+            ->where('prospect', 0)
+            ->where('agence_id', $agenceId)
+            ->whereNotNull('gestionnaire_id')
+            ->distinct()
+            ->pluck('gestionnaire_id');
+
         return response()->json([
             'regions' => Region::orderBy('name')->get(['id', 'name']),
             'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'gestionnaires' => User::query()
+                ->whereIn('id', $gestionnaireIds)
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -150,6 +226,28 @@ class CompanyController extends Controller
         $items = EntrepriseListResource::collection($items);
 
         return response()->json($items);
+    }
+
+    /**
+     * Listes déroulantes pour la page prospects (agence périmètre, gestionnaires ayant des prospects, etc.).
+     */
+    public function fetchProspectsFilterOptions()
+    {
+        $agenceId = (int) auth()->user()->agence_id;
+        $gestionnaireIds = $this->prospectsQuery()
+            ->whereNotNull('gestionnaire_id')
+            ->distinct()
+            ->pluck('gestionnaire_id');
+
+        return response()->json([
+            'regions' => Region::orderBy('name')->get(['id', 'name']),
+            'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'agences' => Agence::query()->where('id', $agenceId)->orderBy('name')->get(['id', 'name']),
+            'gestionnaires' => User::query()
+                ->whereIn('id', $gestionnaireIds)
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ]);
     }
 
     private function prospectsQuery()
@@ -163,8 +261,8 @@ class CompanyController extends Controller
     public function fetchProspectsStats(Request $request)
     {
         $base = $this->prospectsQuery();
-        $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, ['apply_submission' => false]);
 
         $stats = [
             'total' => (clone $query)->count(),
@@ -185,8 +283,8 @@ class CompanyController extends Controller
         $search = trim($request->input('search.value', ''));
 
         $base = $this->prospectsQuery();
-        $filters = $this->parseFilters($request);
-        $query = $this->applyFilters($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, ['apply_submission' => false]);
 
         $recordsTotal = $this->prospectsQuery()->count();
         $recordsFiltered = $query->count();
@@ -217,6 +315,48 @@ class CompanyController extends Controller
     }
 
     /**
+     * Export Excel / PDF des prospects soumis (mêmes filtres et recherche que le tableau).
+     */
+    public function exportProspects(Request $request)
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $search = trim((string) $request->input('search.value', ''));
+        $base = $this->prospectsQuery();
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, ['apply_submission' => false]);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->with(['agence', 'gestionnaire', 'user', 'region', 'arrondissement'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = ProspectEntrepriseTableExportService::rowsCa($items);
+
+        return TableDocumentExportService::downloadFormatted(
+            $rows,
+            ProspectEntrepriseTableExportService::headersCa(),
+            $format,
+            'ca-prospects',
+            'Chef d\'agence — liste des prospects',
+            'Prospects soumis pour avis — périmètre agence',
+        );
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -227,80 +367,20 @@ class CompanyController extends Controller
         return view('/Ca/Companies/create', compact('formes'));
     }
 
-    private function parse($eng, $id)
-    {
-
-        $data = [
-            'id' => $eng->id,
-            'name' => $eng->name,
-            'montant' => $eng->montant ?? 0,
-            'encours_montant' => $eng->encours_montant ?? 0,
-            'encours_impaye' => $eng->encours_impaye ?? 0,
-            'sollicite_montant' => $eng->sollicite_montant ?? 0,
-            'variation' => $eng->variation,
-            'parent_id' => $eng->parent_id,
-            'is_title' => $eng->is_title,
-            'is_leaf' => $eng->is_leaf,
-            'niveau' => $eng->niveau,
-        ];
-        if ($data['is_leaf']) {
-            $elts = EngagementEntreprise::with('banque')->where('engagement_id', $eng->id)->where('entreprise_id', $id)->get();
-            $data['encours_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->encours_montant ?? 0);
-            }, 0);
-            $data['sollicite_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->sollicite_montant ?? 0);
-            }, 0);
-            $data['encours_impaye'] = $elts->reduce(function ($carry, $item) {
-                return $carry + ($item->encours_impaye ?? 0);
-            }, 0);
-            $data['elts'] = $elts->map(function ($elt) {
-                return [
-                    'banque_name' => $elt->banque?->name ?? '—',
-                    'encours_montant' => $elt->encours_montant ?? 0,
-                    'encours_impaye' => $elt->encours_impaye ?? 0,
-                    'encours_dt_validite' => $elt->encours_dt_validite ?? '—',
-                    'sollicite_montant' => $elt->sollicite_montant ?? 0,
-                    'sollicite_dt_validite' => $elt->sollicite_dt_validite ?? '—',
-                ];
-            })->values()->toArray();
-            $data['variation'] = $data['sollicite_montant'] - $data['encours_montant'];
-
-        } else {
-            $data['children'] = $eng->children->map(function ($child) use ($id) {
-                return $this->parse($child, $id);
-            });
-            foreach ($data['children'] as $child) {
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-                $data['variation'] += $child['variation'];
-            }
-        }
-
-        return $data;
-    }
-
     public function getEngagementReport($token)
     {
         $entreprise = Entreprise::where('token', $token)->first();
-        if ($entreprise) {
-            $engagements = Engagement::where('parent_id', 0)->get();
-            $data = [];
-            foreach ($engagements as $eng) {
-                $data[] = $this->parse($eng, $entreprise->id);
-            }
-            // dd($data);
-
-            $engagements = $data;
-            $banques = Banque::all();
-
-            // $engagements = EngagementEntreprise::where('entreprise_id',$entreprise->id)->get();
-            return view('Ca.Companies.engagement_report', compact('engagements', 'entreprise', 'banques'));
-        } else {
+        if (! $entreprise) {
             return back();
         }
 
+        $service = app(EngagementReportService::class);
+        $engagements = $service->buildRowsForEntreprise($entreprise->id);
+        $banques = Banque::all();
+        $canEdit = false;
+        $setEngagementUrl = null;
+
+        return view('Ca.Companies.engagement_report', compact('engagements', 'entreprise', 'banques', 'canEdit', 'setEngagementUrl'));
     }
 
     public function saveProgramme(Request $request)
@@ -352,6 +432,10 @@ class CompanyController extends Controller
                 'tiers.person',
                 'tiers.company.produit',
                 'dossiers.programme',
+                'dossiers.instructionProgrammes.programme',
+                'dossiers.chefFiliereSubmittedToAgenceBy',
+                'dossiers.instructionAgenceValidatedBy',
+                'dossiers.instructionAgenceRejectedBy',
                 'juridiqueAvisUser',
                 'conformiteAvisUser',
                 'promuClientUser',
@@ -362,6 +446,11 @@ class CompanyController extends Controller
                 'dossierEntreeRelation.instructionValidatedBy',
                 'dossierEntreeRelation.programmeSelections.programme',
                 'dossierEntreeRelation.programmeSelections.instructionDossier',
+                'dossierEntreeRelation.instructionBundleDossier.instructionProgrammes.programme',
+                'dossierEntreeRelation.instructionBundleDossier.chefFiliereSubmittedToAgenceBy',
+                'dossierEntreeRelation.instructionBundleSubmittedBy',
+                'dossierEntreeRelation.instructionBundleValidatedBy',
+                'dossierEntreeRelation.instructionBundleRejectedBy',
             ])
             ->firstOrFail();
 

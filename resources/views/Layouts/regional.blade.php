@@ -21,7 +21,7 @@
         
         <ul class="mainnav__menu nav flex-column gap-2">
            <li class="nav-item">
-               <a href="{{ route('regional.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="demo-pli-home fs-3 me-2"></i>
+               <a href="{{ route('regional.dashboard') }}" class="nav-link mininav-toggle {{ $active==1?'active':'' }}"><i class="bi bi-house-door fs-4 me-2"></i>
                    <span class="nav-label mininav-content ms-1">Tableau de board</span>
                </a>
            </li>
@@ -29,7 +29,7 @@
 
         <!-- Link with submenu -->
          <li class="nav-item has-sub">
-            <a href="#" class="mininav-toggle nav-link {{ ($active>200&&$active<300)?'active':'' }}"><i class="pli-folders fs-5 me-2"></i>
+            <a href="#" class="mininav-toggle nav-link {{ ($active>200&&$active<300)?'active':'' }}"><i class="bi bi-folder2-open fs-5 me-2"></i>
                 <span class="nav-label ms-1">DOSSIERS</span>
             </a>
             <!-- Settings submenu list -->
@@ -53,31 +53,31 @@
         <!-- END : Link with submenu -->
 
            <li class="nav-item">
-                <a href="{{ route('regional.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="pli-affiliate fs-2 me-2"></i>
+                <a href="{{ route('regional.programmes.index') }}" class="nav-link mininav-toggle {{ $active==3?'active':'' }}"><i class="bi bi-diagram-3 fs-5 me-2"></i>
                     <span class="nav-label mininav-content ms-1">PROGRAMMES</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('regional.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}"><i class="pli-bank fs-2 me-2"></i>
+                <a href="{{ route('regional.entreprises.index') }}" class="nav-link mininav-toggle {{ $active==4?'active':'' }}"><i class="bi bi-bank fs-5 me-2"></i>
                     <span class="nav-label mininav-content ms-1">ENTREPRISES</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('regional.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="pli-phone-2 fs-2 me-2"></i>
+                <a href="{{ route('regional.entreprises.prospects') }}" class="nav-link mininav-toggle {{ $active==5?'active':'' }}"><i class="bi bi-telephone fs-5 me-2"></i>
                     <span class="nav-label mininav-content ms-1">PROSPECTS</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('regional.users.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="pli-conference fs-2 me-2"></i>
+                <a href="{{ route('regional.users.index') }}" class="nav-link mininav-toggle {{ $active==6?'active':'' }}"><i class="bi bi-people fs-5 me-2"></i>
                     <span class="nav-label mininav-content ms-1">Comptes utilisateurs</span>
                 </a>
             </li>
 
             <li class="nav-item has-sub">
-                <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}"><i class="pli-map fs-5 me-2"></i>
+                <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}"><i class="bi bi-map fs-5 me-2"></i>
                     <span class="nav-label ms-1">Territore</span>
                 </a>
                 <!-- Settings submenu list -->

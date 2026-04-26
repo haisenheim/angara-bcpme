@@ -1,6 +1,6 @@
 {{--
-    Section qualification compacte — chef de filière ou chef d’agence (CA).
-    Variables : $item, $eer, $qualifUrl (route écran qualification chef filière), $hasCompletedQualif, $isQualifAuthor, $showQualifDetail
+    Section structuration compacte — chef de filière ou chef d’agence (CA).
+    Variables : $item, $eer, $qualifUrl (route écran structuration chef filière), $hasCompletedQualif, $isQualifAuthor, $showQualifDetail
     Option : $workspace = 'chef-filiere' | 'ca'
 --}}
 @php
@@ -25,6 +25,7 @@
     $statusBadge = 'secondary';
     $statusAt = null;
     $statusAtLabel = '';
+    $statusDetail = null;
 
     if ($eer && $showQualifDetail) {
         if ($eer->instruction_validated_at && $eer->statut === \App\Models\DossierEntreeRelation::STATUT_INSTRUCTION_VALIDEE) {
@@ -32,32 +33,30 @@
             $statusBadge = 'success';
             $statusAt = $fmt($eer->instruction_validated_at);
             $statusAtLabel = 'Validation instruction';
-        } elseif ($eer->qualification_validated_by_agence_at) {
-            $statusLabel = 'Qualification validée (chef d\'agence)';
-            $statusBadge = 'success';
-            $statusAt = $fmt($eer->qualification_validated_by_agence_at);
-            $statusAtLabel = 'Validée le';
-        } elseif ($eer->programmes_submitted_at && ! $eer->qualification_validated_by_agence_at) {
-            $statusLabel = 'En attente du chef d\'agence';
-            $statusBadge = 'warning';
-            $statusAt = $fmt($eer->programmes_submitted_at);
-            $statusAtLabel = 'Soumise le';
-        } elseif ($eer->qualification_completed_at) {
-            $statusLabel = 'Enregistrée — à soumettre au CA';
-            $statusBadge = 'info';
-            $statusAt = $fmt($eer->qualification_completed_at);
-            $statusAtLabel = 'Dernière sauvegarde';
         } else {
-            $statusLabel = 'Brouillon';
-            $statusBadge = 'secondary';
-            $statusAt = null;
-            $statusAtLabel = '';
+            $qualPres = \App\Models\DossierEntreeRelation::clientStructurationPresentation($eer);
+            $statusLabel = $qualPres['label'];
+            $statusBadge = $qualPres['badge_variant'];
+            $statusDetail = $qualPres['detail'] ?? null;
+            if ($eer->qualification_validated_by_agence_at) {
+                $statusAt = $fmt($eer->qualification_validated_by_agence_at);
+                $statusAtLabel = 'Validée le';
+            } elseif ($eer->programmes_submitted_at) {
+                $statusAt = $fmt($eer->programmes_submitted_at);
+                $statusAtLabel = 'Soumise le';
+            } elseif ($eer->qualification_rejected_by_agence_at) {
+                $statusAt = $fmt($eer->qualification_rejected_by_agence_at);
+                $statusAtLabel = 'Refus le';
+            } elseif ($eer->qualification_completed_at) {
+                $statusAt = $fmt($eer->qualification_completed_at);
+                $statusAtLabel = 'Dernière sauvegarde';
+            }
         }
     } elseif ($eer) {
-        $statusLabel = 'Non complétée';
-        $statusBadge = 'light';
-        $statusAt = null;
-        $statusAtLabel = '';
+        $qualPres = \App\Models\DossierEntreeRelation::clientStructurationPresentation($eer);
+        $statusLabel = $qualPres['label'];
+        $statusBadge = $qualPres['badge_variant'];
+        $statusDetail = $qualPres['detail'] ?? null;
     }
 @endphp
 
@@ -65,14 +64,17 @@
     <div class="cf-qual-strip px-3 py-2 border-bottom">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 min-w-0">
-                <span class="fw-semibold text-body text-nowrap">Qualification</span>
+                <span class="fw-semibold text-body text-nowrap">Structuration</span>
                 @if($showQualifDetail && $eer)
-                    <span class="badge rounded-pill bg-{{ $statusBadge }} {{ $statusBadge === 'light' ? 'text-dark border' : '' }}">{{ $statusLabel }}</span>
+                    <span class="badge rounded-pill {{ $statusBadge === 'light' ? 'bg-light text-dark border' : 'text-bg-'.$statusBadge }}">{{ $statusLabel }}</span>
                     @if($statusAt)
                         <span class="cf-qual-strip__time small text-muted text-nowrap">
                             <span class="cf-qual-strip__time-label">{{ $statusAtLabel }}</span>
                             <span class="fw-medium text-body">{{ $statusAt }}</span>
                         </span>
+                    @endif
+                    @if($statusDetail)
+                        <span class="small text-muted text-truncate d-inline-block max-w-100" style="max-width: 28rem;" title="{{ e($statusDetail) }}">{{ e($statusDetail) }}</span>
                     @endif
                 @else
                     <span class="badge rounded-pill bg-light text-dark border">Non démarrée</span>
@@ -87,15 +89,18 @@
                         <span class="small text-muted">Soumis — lecture seule</span>
                     @endif
                     @if(!$hasCompletedQualif)
-                        <a href="{{ $qualifUrl }}" class="btn btn-sm btn-primary">Qualifier</a>
+                        <a href="{{ $qualifUrl }}" class="btn btn-sm btn-primary">Structurer</a>
                     @endif
                     @if($showQualifDetail)
-                        <a href="{{ $qualifUrl }}" class="btn btn-sm btn-link text-decoration-none">Écran qualification</a>
+                        <a href="{{ $qualifUrl }}" class="btn btn-sm btn-link text-decoration-none">Écran structuration</a>
                     @endif
                 @elseif($workspace === 'ca')
                     @if($caCanValidate && $workflowInstructionUrl)
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalCaQualifReject">
+                            Refuser la structuration
+                        </button>
                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalCaQualifApprove">
-                            Valider la qualification
+                            Valider la structuration
                         </button>
                     @elseif($showQualifDetail && $eer && $workflowInstructionUrl)
                         <a href="{{ $workflowInstructionUrl }}" class="btn btn-sm btn-link text-decoration-none">Écran validation</a>
@@ -118,11 +123,11 @@
         @endif
         <p class="small text-muted mb-0 mt-2 mt-md-1">
             @if($workspace === 'ca')
-                Une qualification par client. Après votre validation, le chef de filière inscrit le client aux programmes (dossiers d’instruction créés à l’inscription).
+                Une structuration par client. Après votre validation, le chef de filière inscrit le client aux programmes (dossiers d’instruction créés à l’inscription).
             @elseif(in_array($workspace, ['respexp', 'juridique', 'analyste-juridique', 'analyste'], true))
-                Synthèse de la qualification (lecture seule). L’instruction des dossiers est assurée par l’analyste financier une fois le dossier affecté.
+                Synthèse de la structuration (lecture seule). L’instruction des dossiers est assurée par l’analyste financier une fois le dossier affecté.
             @else
-                Une qualification par client. Inscriptions programme après validation du chef d’agence.
+                Une structuration par client. Inscriptions programme après validation du chef d’agence.
             @endif
         </p>
     </div>
@@ -141,15 +146,38 @@
             </details>
         @else
             @if($workspace === 'chef-filiere')
-                <p class="text-body-secondary small mb-0">Aucune qualification enregistrée. Utilisez « Qualifier » pour démarrer.</p>
+                <p class="text-body-secondary small mb-0">Aucune structuration enregistrée. Utilisez « Structurer » pour démarrer.</p>
             @else
-                <p class="text-body-secondary small mb-0">Aucune qualification enregistrée. La saisie est effectuée par le chef de filière.</p>
+                <p class="text-body-secondary small mb-0">Aucune structuration enregistrée. La saisie est effectuée par le chef de filière.</p>
             @endif
         @endif
     </div>
 </div>
 
 @if($workspace === 'ca' && $caCanValidate && $eer && $item)
+<div class="modal fade" id="modalCaQualifReject" tabindex="-1" aria-labelledby="modalCaQualifRejectLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ route('ca.workflow.instructions.reject-qualification', $eer->token) }}">
+                @csrf
+                <input type="hidden" name="return_entreprise_token" value="{{ $item->token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCaQualifRejectLabel">Refuser la structuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Le chef de filière pourra modifier la structuration et la resoumettre.</p>
+                    <label for="ca_qualif_reject_motif" class="form-label small">Motif (optionnel)</label>
+                    <textarea class="form-control" name="reject_motif" id="ca_qualif_reject_motif" rows="3" maxlength="5000" placeholder="Précisez les éléments à corriger…"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">Confirmer le refus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <div class="modal fade" id="modalCaQualifApprove" tabindex="-1" aria-labelledby="modalCaQualifApproveLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -157,11 +185,11 @@
                 @csrf
                 <input type="hidden" name="return_entreprise_token" value="{{ $item->token }}">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalCaQualifApproveLabel">Valider la qualification</h5>
+                    <h5 class="modal-title" id="modalCaQualifApproveLabel">Valider la structuration</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0">Confirmer la validation de la qualification pour <strong>{{ $item->name }}</strong> ?</p>
+                    <p class="mb-0">Confirmer la validation de la structuration pour <strong>{{ $item->name }}</strong> ?</p>
                     <p class="small text-muted mt-2 mb-0">Après validation, le statut est mis à jour et le chef de filière pourra inscrire le client aux programmes depuis la fiche client.</p>
                 </div>
                 <div class="modal-footer">

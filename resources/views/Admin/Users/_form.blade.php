@@ -1,5 +1,6 @@
 @php
     $isEdit = $item->exists;
+    $organisationType = old('organisation_type', $item->organisation_type ?: ((int) ($item->agence_id ?? 0) > 0 ? 'agence' : 'entite'));
     $directionLabel = old('agence_id', $item->agence_id)
         ? ($item->agence?->representation?->name ?? "Direction determinee par l'agence selectionnee")
         : "La direction sera deduite de l'agence selectionnee";
@@ -66,8 +67,21 @@
 <div class="card mt-3">
     <div class="card-body">
         <h6 class="mb-3">Affectation</h6>
+        <div class="row g-3 mb-2">
+            <div class="col-12">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="organisation_type" id="org_agence" value="agence" @checked($organisationType === 'agence')>
+                    <label class="form-check-label" for="org_agence">Agence</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="organisation_type" id="org_entite" value="entite" @checked($organisationType === 'entite')>
+                    <label class="form-check-label" for="org_entite">Entite</label>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-6" data-org-section="agence">
                 <label for="agence_id" class="form-label">Agence</label>
                 <select id="agence_id" name="agence_id" class="form-control">
                     <option value="0">Aucune</option>
@@ -76,13 +90,44 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6" data-org-section="agence">
                 <label class="form-label">Direction</label>
                 <input type="text" class="form-control" value="{{ $directionLabel }}" disabled>
+            </div>
+
+            <div class="col-md-6" data-org-section="entite">
+                <label for="organisation_entite_id" class="form-label">Entite</label>
+                <select id="organisation_entite_id" name="organisation_entite_id" class="form-control">
+                    <option value="">Selectionner une entite</option>
+                    @foreach($organisationEntites as $entite)
+                        <option value="{{ $entite->id }}" @selected((string) old('organisation_entite_id', $item->organisation_entite_id) === (string) $entite->id)>
+                            {{ $entite->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        function applyOrgVisibility() {
+            const type = document.querySelector('input[name="organisation_type"]:checked')?.value || 'agence';
+            document.querySelectorAll('[data-org-section="agence"]').forEach(el => el.style.display = type === 'agence' ? '' : 'none');
+            document.querySelectorAll('[data-org-section="entite"]').forEach(el => el.style.display = type === 'entite' ? '' : 'none');
+            if (type === 'agence') {
+                const ent = document.getElementById('organisation_entite_id');
+                if (ent) ent.value = '';
+            } else {
+                const ag = document.getElementById('agence_id');
+                if (ag) ag.value = '0';
+            }
+        }
+        document.querySelectorAll('input[name="organisation_type"]').forEach(r => r.addEventListener('change', applyOrgVisibility));
+        applyOrgVisibility();
+    })();
+</script>
 
 <div class="d-flex justify-content-between align-items-center mt-4">
     <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Retour a la liste</a>

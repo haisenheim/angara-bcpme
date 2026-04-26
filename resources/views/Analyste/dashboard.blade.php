@@ -255,7 +255,7 @@
                                 </span>
                             </div>
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-success" role="progressbar" id="completion-progress" style="width: 0%" 
+                                <div class="progress-bar bg-success" role="progressbar" id="completion-progress" style="width: 0%"
                                      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                         </div>
@@ -309,41 +309,41 @@
         .text-bold {
             font-weight: 800;
         }
-        
+
         .border-left-primary {
             border-left: 0.25rem solid #4e73df !important;
         }
-        
+
         .border-left-success {
             border-left: 0.25rem solid #1cc88a !important;
         }
-        
+
         .border-left-info {
             border-left: 0.25rem solid #36b9cc !important;
         }
-        
+
         .border-left-warning {
             border-left: 0.25rem solid #f6c23e !important;
         }
-        
+
         .card {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
         }
-        
+
         .shadow {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
         }
-        
+
         .chart-pie {
             position: relative;
             height: 15rem;
         }
-        
+
         .chart-area {
             position: relative;
             height: 10rem;
         }
-        
+
         @media (max-width: 768px) {
             .chart-pie,
             .chart-area {
@@ -352,4 +352,7 @@
         }
     </style>
 @endsection
+
+
+
 

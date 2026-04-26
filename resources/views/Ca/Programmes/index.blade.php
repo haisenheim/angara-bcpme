@@ -1,11 +1,12 @@
-@extends('Layouts.ca')
+@php $rp = $routePrefix ?? 'ca'; @endphp
+@extends($layout ?? 'Layouts.ca')
 
 @section('title', 'Programmes')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-       <li class="breadcrumb-item"><a href="{{ route('ca.dashboard') }}">Angara</a></li>
-       <li class="breadcrumb-item"><a href="#">Programmes</a></li>
+       <li class="breadcrumb-item"><a href="{{ route($rp.'.dashboard') }}">Tableau de bord</a></li>
+       <li class="breadcrumb-item"><a href="{{ route($rp.'.programmes.index') }}">Programmes</a></li>
        <li class="breadcrumb-item active" aria-current="page">Liste des programmes</li>
     </ol>
 </nav>
@@ -87,7 +88,7 @@
             const gridApi = agGrid.createGrid(gridDiv, gridOptions);
 
             gridApi.addEventListener('rowSelected', function(e) {
-                if (e.data?.token) window.location.href = "{{ url('ca/programmes') }}/" + e.data.token;
+                if (e.data?.token) window.location.href = "{{ url($rp.'/programmes') }}/" + e.data.token;
             });
 
             const searchInput = document.getElementById("programmes-search-input");
@@ -97,7 +98,7 @@
                 });
             }
 
-            fetch("{{ route('ca.programmes.all') }}")
+            fetch("{{ route($rp.'.programmes.all') }}")
                 .then(r => r.json())
                 .then(data => {
                     gridApi.setGridOption("rowData", data);

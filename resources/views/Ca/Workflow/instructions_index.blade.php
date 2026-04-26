@@ -1,11 +1,11 @@
 @extends('Layouts.ca')
 
-@section('title', 'Validation des instructions')
+@section('title', 'Validations structuration EER')
 
 @section('page-header')
     <div>
-        <h1 class="h3 mb-0">Validations instruction</h1>
-        <p class="text-muted mb-0">Dossiers EER soumis par le chef de filiere et en attente de creation des dossiers d'instruction.</p>
+        <h1 class="h3 mb-0">Validations structuration (EER)</h1>
+        <p class="text-muted mb-0">Structurations soumises par le chef de filière avant validation d’agence. La constitution du dossier d’instruction multi-programmes (programmes et budgets d’appui) et sa validation se font ensuite via <a href="{{ route('ca.workflow.instruction-dossiers.index') }}">Dossiers d’instruction (multi-programmes)</a>.</p>
     </div>
 @endsection
 

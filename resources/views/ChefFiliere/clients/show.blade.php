@@ -14,14 +14,13 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.index') }}">Retour à la liste</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="chefFiliereClientShowActions">
+        <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.index') }}">Retour à la liste</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#besoins"><i class="demo-psi-file-edit me-2"></i>Modifier les besoins (appuis)</a></li>
+        <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#produit-principal"><i class="demo-psi-file-edit me-2"></i>Modifier le produit principal</a></li>
+        <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#produits-secondaires"><i class="demo-psi-file-edit me-2"></i>Modifier les produits secondaires</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
@@ -73,41 +72,166 @@
     'workspace' => 'chef-filiere',
 ])
 
-@if(isset($enrollableProgrammes) && $enrollableProgrammes->isNotEmpty())
-<div class="card cf-client-card mb-4 border-start border-success border-4">
+@php
+    $eerClient = $item->dossierEntreeRelation;
+    $chefInstructionDossiers = $item->dossiers->filter(fn ($d) => $d->instructionProgrammes->isNotEmpty())->sortByDesc('created_at')->values();
+    $canComposeBundle = $eerClient
+        && $eerClient->qualification_validated_by_agence_at
+        && isset($bundleAvailableProgrammes)
+        && $bundleAvailableProgrammes->isNotEmpty();
+@endphp
+
+@if($eerClient && $eerClient->qualification_validated_by_agence_at && $chefInstructionDossiers->isNotEmpty())
+<div class="card cf-client-card mb-4 border-start border-primary border-4">
     <div class="card-header py-3 border-bottom">
-        <h2 class="h5 mb-0">Inscription à un programme</h2>
-        <p class="text-muted small mb-0 mt-1">Un programme à la fois. Chaque inscription crée un dossier d’instruction lié au client.</p>
+        <h2 class="h6 mb-0">Dossiers d’instruction transmis à l’agence</h2>
+        <p class="text-muted small mb-0 mt-1">Chaque structuration transmise est validée ou rejetée par le chef d’agence. Vous pouvez en soumettre d’autres tant qu’il reste des programmes disponibles.</p>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light"><tr><th>Programmes</th><th>Engagements</th><th>Transmis</th><th>Statut</th></tr></thead>
+                <tbody>
+                    @foreach($chefInstructionDossiers as $dChef)
+                        <tr>
+                            <td class="small">{{ $dChef->programmesLabel() }}</td>
+                            <td class="small">
+                                @if($dChef->engagements_sollicites_total !== null || $dChef->engagements_en_cours_total !== null)
+                                    <span class="d-block">Sollicités : {{ $dChef->engagements_sollicites_total !== null ? number_format((float) $dChef->engagements_sollicites_total, 0, ',', ' ') : '—' }}</span>
+                                    <span class="d-block text-muted">En cours : {{ $dChef->engagements_en_cours_total !== null ? number_format((float) $dChef->engagements_en_cours_total, 0, ',', ' ') : '—' }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="small">{{ $dChef->chef_filiere_submitted_to_agence_at?->format('d/m/Y H:i') ?? '—' }} @if($dChef->chefFiliereSubmittedToAgenceBy)<br><span class="text-muted">{{ $dChef->chefFiliereSubmittedToAgenceBy->name }}</span>@endif</td>
+                            <td class="small">
+                                @if($dChef->isInstructionPendingAgenceValidation())
+                                    <span class="badge bg-warning text-dark">{{ app(\App\Services\StructurationClosureService::class)->closureStatutLabel($dChef) }}</span>
+                                @elseif($dChef->isInstructionValidatedByAgence())
+                                    <span class="badge bg-success">Validé</span>
+                                @elseif($dChef->isInstructionRejectedByAgence())
+                                    <span class="badge bg-danger">Rejeté</span>
+                                    @if($dChef->instruction_agence_reject_motif)
+                                        <div class="text-danger mt-1" style="white-space: pre-wrap;">{{ Str::limit($dChef->instruction_agence_reject_motif, 120) }}</div>
+                                    @endif
+                                @else
+                                    <span class="badge bg-secondary">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
+@if($canComposeBundle)
+<div class="card cf-client-card mb-4 border-start border-success border-4" id="composition-dossier-instruction">
+    <div class="card-header py-3 border-bottom">
+        <h2 class="h5 mb-0">Nouveau dossier d’instruction (multi-programmes)</h2>
+        <p class="text-muted small mb-0 mt-1">Sélectionnez un ou plusieurs programmes. Pour chacun, indiquez le budget d’appui <strong>financier</strong> et <strong>non financier</strong> (XAF). Vous pouvez soumettre plusieurs dossiers distincts ; chacun est horodaté et envoyé au chef d’agence pour validation.</p>
     </div>
     <div class="card-body">
-        <form method="post" action="{{ route('chef-filiere.clients.programmes.enroll', $item->token) }}" class="row g-3 align-items-end">
+        <form method="post" action="{{ route('chef-filiere.clients.dossier-instruction.submit', $item->token) }}" id="form-dossier-instruction-bundle">
             @csrf
-            <div class="col-md-6">
-                <label class="form-label fw-semibold" for="enroll_programme_id">Programme</label>
-                <select name="programme_id" id="enroll_programme_id" class="form-select" required>
-                    <option value="">— Choisir un programme —</option>
-                    @foreach($enrollableProgrammes as $prg)
-                        <option value="{{ $prg->id }}">{{ $prg->name }}</option>
-                    @endforeach
-                </select>
+            <div class="row g-3 mb-3 p-3 border rounded bg-white">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="engagements_sollicites_total">Total des engagements sollicités (XAF)</label>
+                    <input type="number" name="engagements_sollicites_total" id="engagements_sollicites_total" class="form-control @error('engagements_sollicites_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_sollicites_total') }}" required>
+                    @error('engagements_sollicites_total')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-text">Sert au paramétrage de la délégation de pouvoir pour la clôture du dossier d’instruction (fin de parcours).</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="engagements_en_cours_total">Total des engagements en cours (XAF)</label>
+                    <input type="number" name="engagements_en_cours_total" id="engagements_en_cours_total" class="form-control @error('engagements_en_cours_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_en_cours_total') }}" required>
+                    @error('engagements_en_cours_total')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold" for="enroll_type_appui">Type d’appui</label>
-                <select name="type_appui" id="enroll_type_appui" class="form-select">
-                    <option value="financier">Financier</option>
-                    <option value="non_financier">Non financier</option>
-                    <option value="mixte">Mixte</option>
-                </select>
+            <div id="bundle-lignes" class="mb-3">
+                <div class="row g-2 align-items-end bundle-ligne mb-3 p-3 border rounded bg-light">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Programme</label>
+                        <select name="lignes[0][programme_id]" class="form-select bundle-programme" required>
+                            <option value="">— Choisir —</option>
+                            @foreach($bundleAvailableProgrammes as $prg)
+                                <option value="{{ $prg->id }}">{{ $prg->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Budget appui financier (XAF)</label>
+                        <input type="number" name="lignes[0][budget_appui_financier]" class="form-control" min="0" step="1" value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Budget appui non financier (XAF)</label>
+                        <input type="number" name="lignes[0][budget_appui_non_financier]" class="form-control" min="0" step="1" value="0">
+                    </div>
+                    <div class="col-md-2 text-md-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-remove-ligne d-none w-100" title="Retirer">Retirer</button>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-success w-100">Inscrire et créer le dossier</button>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-add-programme-ligne">Ajouter un programme</button>
+                <button type="submit" class="btn btn-success">Soumettre le dossier au chef d’agence</button>
             </div>
         </form>
     </div>
 </div>
-@elseif(isset($enrollableProgrammes) && $item->dossierEntreeRelation?->qualification_validated_by_agence_at && $enrollableProgrammes->isEmpty())
+<script>
+(function () {
+    const container = document.getElementById('bundle-lignes');
+    const addBtn = document.getElementById('btn-add-programme-ligne');
+    if (!container || !addBtn) return;
+    const templateOptions = @json($bundleAvailableProgrammes->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values());
+    let idx = 1;
+    function rowHtml(i) {
+        let opts = '<option value="">— Choisir —</option>';
+        templateOptions.forEach(function (p) {
+            opts += '<option value="' + p.id + '">' + (p.name || '').replace(/</g, '&lt;') + '</option>';
+        });
+        return '<div class="row g-2 align-items-end bundle-ligne mb-3 p-3 border rounded bg-light">' +
+            '<div class="col-md-4"><label class="form-label fw-semibold">Programme</label>' +
+            '<select name="lignes[' + i + '][programme_id]" class="form-select bundle-programme" required>' + opts + '</select></div>' +
+            '<div class="col-md-3"><label class="form-label fw-semibold">Budget appui financier (XAF)</label>' +
+            '<input type="number" name="lignes[' + i + '][budget_appui_financier]" class="form-control" min="0" step="1" value="0"></div>' +
+            '<div class="col-md-3"><label class="form-label fw-semibold">Budget appui non financier (XAF)</label>' +
+            '<input type="number" name="lignes[' + i + '][budget_appui_non_financier]" class="form-control" min="0" step="1" value="0"></div>' +
+            '<div class="col-md-2 text-md-end"><button type="button" class="btn btn-outline-danger btn-sm btn-remove-ligne w-100" title="Retirer">Retirer</button></div></div>';
+    }
+    function refreshRemoveButtons() {
+        const rows = container.querySelectorAll('.bundle-ligne');
+        rows.forEach(function (row, i) {
+            const btn = row.querySelector('.btn-remove-ligne');
+            if (!btn) return;
+            btn.classList.toggle('d-none', rows.length <= 1);
+        });
+    }
+    addBtn.addEventListener('click', function () {
+        container.insertAdjacentHTML('beforeend', rowHtml(idx++));
+        refreshRemoveButtons();
+        container.lastElementChild.querySelector('.btn-remove-ligne').addEventListener('click', function () {
+            if (container.querySelectorAll('.bundle-ligne').length <= 1) return;
+            this.closest('.bundle-ligne').remove();
+            refreshRemoveButtons();
+        });
+    });
+    container.addEventListener('click', function (e) {
+        const t = e.target;
+        if (t && t.classList && t.classList.contains('btn-remove-ligne')) {
+            if (container.querySelectorAll('.bundle-ligne').length <= 1) return;
+            t.closest('.bundle-ligne').remove();
+            refreshRemoveButtons();
+        }
+    });
+    refreshRemoveButtons();
+})();
+</script>
+@elseif($eerClient && $eerClient->qualification_validated_by_agence_at && isset($bundleAvailableProgrammes) && $bundleAvailableProgrammes->isEmpty())
 <div class="alert alert-light border mb-4">
-    <strong>Inscriptions programmes.</strong> Tous les programmes disponibles ont déjà un dossier d’instruction pour ce client, ou aucun programme n’est paramétré.
+    <strong>Dossier d’instruction.</strong> Tous les programmes sont déjà rattachés à un dossier pour ce client, ou aucun programme n’est disponible.
 </div>
 @endif
 
@@ -561,7 +685,7 @@
     <div class="col-12">
         <div class="card cf-client-card">
             <div class="card-header bg-white border-bottom py-3">
-                <strong>Dossiers d'instruction par programme</strong>
+                <strong>Dossiers d’instruction</strong>
             </div>
             <div class="card-body">
                 @if($item->dossiers->isEmpty())
@@ -571,17 +695,32 @@
                         <table class="table table-striped mb-0 align-middle">
                             <thead>
                                 <tr>
-                                    <th>Programme</th>
-                                    <th>Signataire</th>
-                                    <th>Budget</th>
-                                    <th>Date signature conv.</th>
+                                    <th>Programmes &amp; budgets d’appui (XAF)</th>
+                                    <th>Signataire (réf.)</th>
+                                    <th>Budget programme (réf.)</th>
+                                    <th>Date conv. (réf.)</th>
                                     <th class="text-end"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($item->dossiers as $dossier)
                                     <tr>
-                                        <th>{{ $dossier->programme?->name ?? '—' }}</th>
+                                        <td>
+                                            @if($dossier->instructionProgrammes->isNotEmpty())
+                                                <ul class="list-unstyled mb-0 small">
+                                                    @foreach($dossier->instructionProgrammes as $dip)
+                                                        <li class="mb-1">
+                                                            <strong>{{ $dip->programme?->name ?? '—' }}</strong>
+                                                            — financier : {{ number_format((float) $dip->budget_appui_financier, 0, ',', ' ') }}
+                                                            ; non financier : {{ number_format((float) $dip->budget_appui_non_financier, 0, ',', ' ') }}
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                <strong>{{ $dossier->programme?->name ?? '—' }}</strong>
+                                                <span class="text-muted small d-block">Dossier historique (un programme)</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $dossier->programme?->signataire ?? '—' }}</td>
                                         <td>{{ $dossier->programme?->budget !== null ? number_format((float) $dossier->programme->budget, 0, ',', '.') . ' XAF' : '—' }}</td>
                                         <td>{{ $dossier->programme?->dt_sig_conv ? \Carbon\Carbon::parse($dossier->programme->dt_sig_conv)->format('d/m/Y') : '—' }}</td>

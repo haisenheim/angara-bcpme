@@ -1,5 +1,16 @@
 @extends('Layouts.ca')
 
+@push('styles')
+<style>
+    .table-notation th { font-weight: 600; }
+    .table-notation .vertical-align { vertical-align: middle !important; text-align: center; }
+    .ca-dossier-show__notation-body { max-height: min(78vh, 42rem); overflow: auto; }
+</style>
+@if($item->isInstructionValidatedByAgence() && ! $item->isInstructionCaTransmittedToExploitation())
+    @include('partials.summernote-fr-styles')
+@endif
+@endpush
+
 @section('title', 'Dossier - ' . ($item->entreprise?->name ?? 'Instruction'))
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
@@ -12,25 +23,27 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('ca.dossier.get.grille.analyse', $item->token) }}"><i class="demo-psi-magnifi-glass me-2"></i>Grille d'analyse critique</a></li>
-            @if($item->entreprise)
-            <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
-            @endif
+    <x-page-actions-dropdown button-id="caDossierShowActions" menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2">
+        @if(($canApproveRejectInstructionTransmission ?? false) && $item->isInstructionPendingAgenceValidation())
+            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionApproveModal"><i class="demo-psi-check me-2 text-success"></i> Valider la transmission</button></li>
+            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionRejectModal"><i class="demo-psi-cross me-2 text-danger"></i> Rejeter la transmission</button></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a data-sequence="9" class="dropdown-item" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
-        </ul>
-    </div>
+        @endif
+        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese', $item->token) }}"><i class="demo-psi-file-text me-2"></i> Dossier d’analyse critique</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese.pdf', $item->token) }}" target="_blank" rel="noopener"><i class="demo-psi-download me-2"></i> Exporter le dossier en PDF</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#dossierPieceUploadModal_ca">
+                <i class="demo-psi-upload me-2"></i> Ajouter une pièce au dossier
+            </button>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
     <div>
-        <h5 class="page-title mb-0">Dossier d'instruction</h5>
-        <p class="text-body-secondary mb-0 mt-1">{{ $item->entreprise?->name }} — {{ $item->programme?->name }}</p>
+        <h5 class="page-title mb-0 mt-2">Dossier d'instruction</h5>
+        <p class="text-body-secondary mb-0">{{ $item->entreprise?->name }} — {{ $item->programmesLabel() }}</p>
     </div>
 @endsection
 
@@ -41,6 +54,25 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
         </div>
     @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0 ps-3">
+                @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    @endif
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-11">
 
     {{-- Cartes récapitulatives --}}
     <div class="row g-3 mb-4">
@@ -55,8 +87,8 @@
         <div class="col-md-3 col-sm-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body py-3">
-                    <small class="text-muted text-uppercase d-block mb-1">Programme</small>
-                    <p class="mb-0 fw-semibold">{{ $item->programme?->name ?? '—' }}</p>
+                    <small class="text-muted text-uppercase d-block mb-1">Programme(s)</small>
+                    <p class="mb-0 fw-semibold small">{{ $item->programmesLabel() }}</p>
                 </div>
             </div>
         </div>
@@ -83,6 +115,17 @@
         @endif
     </div>
 
+    @include('partials.dossier-engagements-totaux-cards', ['dossier' => $item])
+
+    @include('partials.instruction-dossier-consultation', ['dossier' => $item, 'instructionConsultation' => $instructionConsultation ?? null])
+
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'routePiecesStore' => 'ca.dossier.pieces.store',
+        'modalId' => 'dossierPieceUploadModal_ca',
+        'fichierTypes' => $fichierTypes ?? collect(),
+    ])
+
     <div class="row g-3">
         {{-- Colonne gauche : Résumé et notation PME --}}
         <div class="col-lg-4">
@@ -94,8 +137,41 @@
                     <dl class="row mb-0 g-2">
                         <dt class="col-sm-5 text-muted small">Entreprise</dt>
                         <dd class="col-sm-7">{{ $item->entreprise?->name ?? '—' }}</dd>
-                        <dt class="col-sm-5 text-muted small">Programme</dt>
-                        <dd class="col-sm-7">{{ $item->programme?->name ?? '—' }}</dd>
+                        <dt class="col-sm-5 text-muted small">Programme(s)</dt>
+                        <dd class="col-sm-7">{{ $item->programmesLabel() }}</dd>
+                        @if($item->chef_filiere_submitted_to_agence_at)
+                            <dt class="col-sm-5 text-muted small">Transmis à l’agence</dt>
+                            <dd class="col-sm-7">
+                                {{ $item->chef_filiere_submitted_to_agence_at->format('d/m/Y H:i') }}
+                                @if($item->chefFiliereSubmittedToAgenceBy)
+                                    — {{ $item->chefFiliereSubmittedToAgenceBy->name }}
+                                @endif
+                            </dd>
+                        @endif
+                        @if($item->instruction_agence_validated_at)
+                            <dt class="col-sm-5 text-muted small">Validé agence</dt>
+                            <dd class="col-sm-7">
+                                {{ $item->instruction_agence_validated_at->format('d/m/Y H:i') }}
+                                @if($item->instructionAgenceValidatedBy) — {{ $item->instructionAgenceValidatedBy->name }} @endif
+                            </dd>
+                        @elseif($item->instruction_agence_rejected_at)
+                            <dt class="col-sm-5 text-muted small">Rejet agence</dt>
+                            <dd class="col-sm-7 text-danger">
+                                {{ $item->instruction_agence_rejected_at->format('d/m/Y H:i') }}
+                                @if($item->instructionAgenceRejectedBy) — {{ $item->instructionAgenceRejectedBy->name }} @endif
+                            </dd>
+                        @endif
+                        @if($item->instruction_ca_transmitted_to_exploitation_at)
+                            <dt class="col-sm-5 text-muted small">Transmission REXP</dt>
+                            <dd class="col-sm-7">
+                                {{ $item->instruction_ca_transmitted_to_exploitation_at->format('d/m/Y H:i') }}
+                                @if($item->instructionCaTransmittedToExploitationBy) — {{ $item->instructionCaTransmittedToExploitationBy->name }} @endif
+                            </dd>
+                        @endif
+                        <dt class="col-sm-5 text-muted small">Engagements sollicités</dt>
+                        <dd class="col-sm-7">{{ $item->engagements_sollicites_total !== null ? number_format((float) $item->engagements_sollicites_total, 0, ',', ' ').' XAF' : '—' }}</dd>
+                        <dt class="col-sm-5 text-muted small">Engagements en cours</dt>
+                        <dd class="col-sm-7">{{ $item->engagements_en_cours_total !== null ? number_format((float) $item->engagements_en_cours_total, 0, ',', ' ').' XAF' : '—' }}</dd>
                     </dl>
                 </div>
             </div>
@@ -103,7 +179,7 @@
             @if($sme ?? null)
                 <div class="card border-0 shadow-sm mt-3">
                     <div class="card-header bg-transparent border-0 py-3">
-                        <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Notation PME</h6>
+                        <h6 class="mb-0 fw-semibold"><i class="demo-psi-information me-2 text-primary"></i>Notation PME</h6>
                     </div>
                     <div class="card-body">
                         <h6 class="fw-semibold">{{ $sme->name ?? $sme['name'] }}</h6>
@@ -124,7 +200,7 @@
                 <div class="card-header bg-transparent border-0 py-3">
                     <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Grille de notation</h6>
                 </div>
-                <div class="card-body overflow-auto" style="max-height: 70vh;">
+                <div class="card-body ca-dossier-show__notation-body">
                     @if(count($indicateurs ?? []))
                         <div class="table-responsive">
                             <table class="table table-sm table-hover table-notation align-middle">
@@ -250,7 +326,7 @@
                         <div class="text-center py-5">
                             <i class="demo-psi-file-search text-muted" style="font-size: 3rem;"></i>
                             <p class="text-muted mt-3 mb-2">Aucune donnée DSF importée</p>
-                            <p class="small text-muted">La grille de notation sera affichée une fois les données DSF disponibles.</p>
+                            <p class="small text-muted">Les données DSF sont importées par l'analyste financier.</p>
                         </div>
                     @endif
                 </div>
@@ -258,33 +334,14 @@
         </div>
     </div>
 
-    {{-- Modal Remarques et recommandations du Chef d'agence (point 9) --}}
-    <div class="modal fade" id="reportCaModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Remarques et recommandations du Chef d'agence</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 9).</p>
-                    <form action="{{ route('ca.dossier.set.analyse') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="dossier_id" value="{{ $item->id }}">
-                        <input type="hidden" name="sequence" value="9">
-                        <div class="mb-3">
-                            <div id="quill-editor-ca-show" class="mb-3" style="height: 150px;"></div>
-                            <textarea rows="3" class="d-none" name="content" id="quill-editor-area-ca-show">{{ $item->conclusions_ca ?? '' }}</textarea>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
+
+    @if(($canApproveRejectInstructionTransmission ?? false) && $item->isInstructionPendingAgenceValidation())
+        @include('partials.ca-instruction-transmission-modals', ['dossier' => $item])
+    @endif
+
+    @include('partials.ca-instruction-agence-avis-saisie', ['dossier' => $item])
 @endsection
 
 @section('modal')
@@ -317,19 +374,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('quill-editor-ca-show')) {
-        var editor = new Quill('#quill-editor-ca-show', {
-            theme: 'snow',
-            modules: { toolbar: [ [{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline', 'strike'], ['blockquote', 'code-block'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['link'], ['clean'] ] }
-        });
-        var quillArea = document.getElementById('quill-editor-area-ca-show');
-        editor.root.innerHTML = quillArea.value || '';
-        editor.on('text-change', function() { quillArea.value = editor.root.innerHTML; });
-        document.getElementById('reportCaModal').addEventListener('show.bs.modal', function() {
-            editor.root.innerHTML = quillArea.value || '';
-        });
-    }
-
     document.querySelectorAll('.btn-critere').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var url = "{{ route('ca.instruction.critere.choices') }}";
@@ -362,8 +406,42 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 @section('script')
-<style>
-.table-notation th { font-weight: 600; }
-.table-notation .vertical-align { vertical-align: middle !important; text-align: center; }
-</style>
+@if($item->isInstructionValidatedByAgence() && ! $item->isInstructionCaTransmittedToExploitation())
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>
+<script>
+(function ($) {
+    function baseOptions(height) {
+        return {
+            lang: 'fr-FR',
+            height: height,
+            dialogsInBody: true,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'hr']],
+                ['view', ['codeview']]
+            ],
+            placeholder: 'Rédigez l’avis du chef d’agence sur ce dossier d’instruction…',
+        };
+    }
+    function syncSummernoteToTextarea($ta) {
+        if ($ta.length && $ta.next('.note-editor').length) {
+            $ta.val($ta.summernote('code'));
+        }
+    }
+    jQuery(function () {
+        var $ta = $('#instruction_agence_ca_avis');
+        if (!$ta.length) {
+            return;
+        }
+        $ta.summernote($.extend({}, baseOptions(260)));
+        $('#form-ca-instruction-agence-avis').on('submit', function () {
+            syncSummernoteToTextarea($ta);
+        });
+    });
+})(window.jQuery);
+</script>
+@endif
 @endsection

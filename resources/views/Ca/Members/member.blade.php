@@ -11,21 +11,6 @@
  </nav>
 @endsection
 
-@section('actions')
-    <div class="btn-group">
-        <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle hstack gap-2" data-bs-toggle="dropdown" aria-expanded="false">
-        Actions
-        <span class="vr"></span>
-        </button>
-        <ul class="dropdown-menu analyse">
-            @if($item->entite)
-                <li><a class="dropdown-item" href="{{ route('ca.entites.show',$item->entite->token) }}">Afficher l'entité individuelle</a></li>
-            @endif
-        </ul>
-    </div>
-@endsection
-
-
 @section('content')
     <div class="d-flex gap-2">
        <div class="w-300px">

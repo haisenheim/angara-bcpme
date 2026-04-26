@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Ca;
 
+use App\Http\Controllers\Concerns\ResolvesGovernanceRoutePrefix;
 use App\Http\Controllers\Controller;
 use App\Models\Agence;
 use App\Models\Representation;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    use ResolvesGovernanceRoutePrefix;
+
     /**
      * Display a listing of the resource.
      *
@@ -18,9 +21,13 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
-        $items = User::where('agence_id',auth()->user()->agence_id)->get();
-        return view('/Ca/Users/index')->with(compact('items'));
+        $items = User::where('agence_id', auth()->user()->agence_id)->get();
+
+        return view('/Ca/Users/index', [
+            'items' => $items,
+            'layout' => $this->governanceLayout(),
+            'routePrefix' => $this->governanceRoutePrefix(),
+        ]);
     }
 
 

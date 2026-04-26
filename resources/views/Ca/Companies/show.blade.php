@@ -18,15 +18,10 @@
 @endsection
 
 @section('actions')
-    <div class="dropdown">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="demo-psi-dot-vertical me-1"></i> Actions
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ route('ca.entreprises.index') }}">Retour liste entreprises</a></li>
-            <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
-        </ul>
-    </div>
+    <x-page-actions-dropdown button-id="caEntrepriseShowActions">
+        <li><a class="dropdown-item" href="{{ route('ca.entreprises.index') }}">Retour liste entreprises</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')

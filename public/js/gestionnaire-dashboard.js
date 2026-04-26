@@ -29,7 +29,6 @@ const GestionnaireDashboard = {
             .then(response => response.json())
             .then(data => {
                 document.getElementById('total-entreprises').textContent = data.total_entreprises;
-                document.getElementById('total-entites-individuelles').textContent = data.total_entites_individuelles;
                 document.getElementById('total-dossiers').textContent = data.total_dossiers;
                 document.getElementById('total-prospects').textContent = data.total_prospects;
             })

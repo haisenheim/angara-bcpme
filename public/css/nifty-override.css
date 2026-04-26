@@ -1,32 +1,44 @@
 /**
- * Angara — thème déploiement BC-PME (Nifty overrides).
- * Vert institutionnel #88b824 : fonds navigation.
- * Rouge logo #c41e3a : boutons / CTA primaires.
+ * Angara — thème BC‑PME “banque sobre”.
+ * - CTA: anthracite
+ * - Accent: vert logo BC‑PME (micro-détails)
+ * - Danger/Risque: rouge logo BC‑PME
  */
 
 :root,
 html[data-scheme="corn"] {
-    --bcpme-green: #88b824;
-    --bcpme-green-dark: #6f9a1c;
-    --bcpme-green-subtle: #e8f5d9;
-    --bcpme-red: #c41e3a;
-    --bcpme-red-dark: #9e1830;
-    --bcpme-red-subtle: #fce8ec;
-    --nifty-primary: #c41e3a;
-    --nifty-primary-dark: #9e1830;
-    --nifty-primary-light: #fce8ec;
-    --nifty-sidebar-bg: #88b824;
+    --bcpme-green: #91BD47; /* vert logo */
+    --bcpme-green-dark: #506926; /* dérivé assombri */
+    --bcpme-green-subtle: #EDF6DE;
+    --bcpme-red: #D0362E; /* rouge logo */
+    --bcpme-red-dark: #B92B24;
+    --bcpme-red-subtle: #FDE9E8;
+
+    /* Primary (CTA) = anthracite */
+    --bcpme-ink: #111827;
+    --bcpme-ink-dark: #0B1220;
+    --bcpme-ink-subtle: #F3F4F6;
+
+    --nifty-primary: var(--bcpme-ink);
+    --nifty-primary-dark: var(--bcpme-ink-dark);
+    --nifty-primary-light: var(--bcpme-ink-subtle);
+
+    --nifty-sidebar-bg: var(--bcpme-green-dark);
     --nifty-sidebar-active: #ffffff;
     --nifty-navbar-bg: #ffffff;
     --nf-content-title-color: #1a1a1a;
     --nf-content-title-weight: 700;
-    --bs-body-bg: #f5f5f5;
-    --bs-body-bg-rgb: 245, 245, 245;
-    --bs-body-color: #3a3a3a;
-    --bs-body-color-rgb: 58, 58, 58;
-    --bs-heading-color: #1a1a1a;
-    --bs-border-color: #e0e0e0;
-    --bs-secondary-color: #6b6b6b;
+    --bs-body-bg: #F7F8FA;
+    --bs-body-bg-rgb: 247, 248, 250;
+    --bs-body-color: #111827;
+    --bs-body-color-rgb: 17, 24, 39;
+    --bs-heading-color: #111827;
+    --bs-border-color: #E6E8EC;
+    --bs-secondary-color: #4B5563;
+    --bs-primary: var(--bcpme-ink);
+    --bs-primary-rgb: 17, 24, 39;
+    --bs-link-color: #111827;
+    --bs-link-hover-color: #0B1220;
 }
 
 html {
@@ -50,10 +62,10 @@ h6 {
 }
 
 .page-title {
-    color: #1a1a1a;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    color: #111827;
+    font-weight: 650;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 /* —— Top header: white bar, subtle bottom border —— */
@@ -84,7 +96,7 @@ h6 {
 
 /* —— Main navigation (sidebar): vert BC-PME #88b824, actif lisible sur fond clair —— */
 .mainnav {
-    --nf-mainnav-bg: #88b824;
+    --nf-mainnav-bg: var(--bcpme-green-dark);
     --nf-mainnav-color: rgba(255, 255, 255, 0.95);
     --nf-mainnav-secondary-color: rgba(255, 255, 255, 0.55);
     --nf-mainnav-link-color: rgba(255, 255, 255, 0.9);
@@ -99,7 +111,7 @@ h6 {
     --nf-mainnav-submenu-active-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     --nf-mainnav-submenu-dashed-color: rgba(255, 255, 255, 0.35);
     --nf-mainnav-min-icon-color: #ffffff;
-    --nf-mainnav-min-icon-active-color: #88b824;
+    --nf-mainnav-min-icon-active-color: var(--bcpme-green);
     --nf-mainnav-min-submenu-active-bg: #ffffff;
     --nf-mainnav-min-submenu-active-color: #1a1a1a;
 }
@@ -153,32 +165,32 @@ h6 {
     color: #6b6b6b;
 }
 
-/* —— Primary / outline buttons (rouge logo BC-PME) —— */
+/* —— Primary / outline buttons (CTA anthracite) —— */
 .btn-primary,
 a.btn-primary {
-    --bs-btn-bg: var(--bcpme-red);
-    --bs-btn-border-color: var(--bcpme-red);
+    --bs-btn-bg: var(--bcpme-ink);
+    --bs-btn-border-color: var(--bcpme-ink);
     --bs-btn-color: #ffffff;
-    --bs-btn-hover-bg: var(--bcpme-red-dark);
-    --bs-btn-hover-border-color: var(--bcpme-red-dark);
+    --bs-btn-hover-bg: var(--bcpme-ink-dark);
+    --bs-btn-hover-border-color: var(--bcpme-ink-dark);
     --bs-btn-hover-color: #ffffff;
-    --bs-btn-active-bg: var(--bcpme-red-dark);
-    --bs-btn-active-border-color: var(--bcpme-red-dark);
+    --bs-btn-active-bg: var(--bcpme-ink-dark);
+    --bs-btn-active-border-color: var(--bcpme-ink-dark);
     --bs-btn-active-color: #ffffff;
-    border-radius: 4px;
+    border-radius: 10px;
     font-weight: 600;
     box-shadow: none !important;
 }
 
 .btn-outline-primary,
 a.btn-outline-primary {
-    --bs-btn-color: var(--bcpme-red);
-    --bs-btn-border-color: var(--bcpme-red);
-    --bs-btn-hover-bg: var(--bcpme-red-subtle);
-    --bs-btn-hover-border-color: var(--bcpme-red);
-    --bs-btn-hover-color: var(--bcpme-red-dark);
-    border-width: 2px;
-    border-radius: 4px;
+    --bs-btn-color: var(--bcpme-ink);
+    --bs-btn-border-color: #D1D5DB;
+    --bs-btn-hover-bg: #F3F4F6;
+    --bs-btn-hover-border-color: #9CA3AF;
+    --bs-btn-hover-color: var(--bcpme-ink-dark);
+    border-width: 1px;
+    border-radius: 10px;
     font-weight: 600;
     box-shadow: none !important;
 }
@@ -190,7 +202,7 @@ a.btn-outline-primary {
 /* Badges */
 .badge.bg-primary,
 span.badge.bg-primary {
-    background-color: var(--bcpme-red) !important;
+    background-color: var(--bcpme-ink) !important;
     color: #ffffff !important;
     font-weight: 600;
 }
@@ -203,25 +215,25 @@ span.badge.bg-primary {
 /* Cards */
 .card {
     background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid #E6E8EC;
+    border-radius: 12px;
+    box-shadow: none;
 }
 
 .angara-card {
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: none;
+    border: 1px solid #E6E8EC;
 }
 
 .card-header {
-    background-color: #f5f5f5 !important;
+    background-color: transparent !important;
     font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #1a1a1a;
-    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #111827;
+    border-bottom: 1px solid #E6E8EC;
 }
 
 /* Feature icon discs (vert institutionnel + pastille) */
@@ -240,7 +252,7 @@ span.badge.bg-primary {
 .bc-pme-footer {
     background-color: #1a1a1a !important;
     color: #cccccc !important;
-    border-top: 3px solid #88b824 !important;
+    border-top: 3px solid var(--bcpme-green) !important;
 }
 
 .bc-pme-footer a {
@@ -248,7 +260,7 @@ span.badge.bg-primary {
 }
 
 .bc-pme-footer a:hover {
-    color: #88b824 !important;
+    color: var(--bcpme-green) !important;
 }
 
 .bc-pme-footer .nav-link {
@@ -256,7 +268,7 @@ span.badge.bg-primary {
 }
 
 .bc-pme-footer .nav-link:hover {
-    color: #88b824 !important;
+    color: var(--bcpme-green) !important;
 }
 
 .bc-pme-footer .btn-link {
@@ -264,13 +276,13 @@ span.badge.bg-primary {
 }
 
 .bc-pme-footer .btn-link:hover {
-    color: #88b824 !important;
+    color: var(--bcpme-green) !important;
 }
 
 /* Secondary sidebar (Nifty aside) */
 .sidebar {
-    background-color: #f5f5f5;
-    border-inline-start: 1px solid #e0e0e0;
+    background-color: #F7F8FA;
+    border-inline-start: 1px solid #E6E8EC;
 }
 
 /* Header controls: avoid pill shape on search toggles */
@@ -296,7 +308,87 @@ span.badge.bg-primary {
 
 /* Scroll-to-top : vert institutionnel */
 .scroll-page {
-    --nf-btn-scroll-bg: #88b824;
+    --nf-btn-scroll-bg: var(--bcpme-green-dark);
     --nf-btn-scroll-color: #ffffff;
+}
+
+/* Danger = rouge logo (sans toucher CTA) */
+.btn-danger,
+a.btn-danger {
+    --bs-btn-bg: var(--bcpme-red);
+    --bs-btn-border-color: var(--bcpme-red);
+    --bs-btn-color: #ffffff;
+    --bs-btn-hover-bg: var(--bcpme-red-dark);
+    --bs-btn-hover-border-color: var(--bcpme-red-dark);
+    --bs-btn-active-bg: var(--bcpme-red-dark);
+    --bs-btn-active-border-color: var(--bcpme-red-dark);
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+
+/* Brand helpers (accent vert logo, sobre) */
+.text-brand {
+    color: var(--bcpme-green) !important;
+}
+
+.border-brand {
+    border-color: var(--bcpme-green) !important;
+}
+
+.bg-brand-subtle {
+    background-color: var(--bcpme-green-subtle) !important;
+}
+
+/**
+ * Zone @yield('actions') : déclencheur menu vert institutionnel (#91BD47)
+ * — harmonise tous les menus d’actions d’en-tête (dropdown ou btn-group).
+ */
+.angara-page-actions .dropdown > .dropdown-toggle,
+.angara-page-actions .btn-group > .dropdown-toggle {
+    --angara-actions-bg: #91bd47;
+    --angara-actions-bg-hover: #7aad3a;
+    --angara-actions-border: #91bd47;
+    background-color: var(--angara-actions-bg) !important;
+    border-color: var(--angara-actions-border) !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: none !important;
+}
+
+.angara-page-actions .dropdown > .dropdown-toggle:hover,
+.angara-page-actions .dropdown > .dropdown-toggle:focus,
+.angara-page-actions .dropdown > .dropdown-toggle.show,
+.angara-page-actions .btn-group > .dropdown-toggle:hover,
+.angara-page-actions .btn-group > .dropdown-toggle:focus,
+.angara-page-actions .btn-group > .dropdown-toggle.show {
+    background-color: var(--angara-actions-bg-hover) !important;
+    border-color: var(--angara-actions-bg-hover) !important;
+    color: #fff !important;
+}
+
+.angara-page-actions .dropdown > .dropdown-toggle:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(145, 189, 71, 0.35) !important;
+}
+
+.btn-angara-actions.dropdown-toggle,
+.btn-angara-actions.dropdown-toggle.show {
+    --angara-actions-bg: #91bd47;
+    --angara-actions-bg-hover: #7aad3a;
+    background-color: var(--angara-actions-bg) !important;
+    border-color: var(--angara-actions-bg) !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: none !important;
+}
+
+.btn-angara-actions.dropdown-toggle:hover,
+.btn-angara-actions.dropdown-toggle:focus,
+.btn-angara-actions.dropdown-toggle.show {
+    background-color: var(--angara-actions-bg-hover) !important;
+    border-color: var(--angara-actions-bg-hover) !important;
+    color: #fff !important;
 }
 

@@ -56,7 +56,9 @@
                    <!-- Breadcrumb -->
                    <div class="d-flex justify-content-between">
                         @yield('breadcrumb')
-                        @yield('actions')
+                        <div class="angara-page-actions ms-md-auto">
+                            @yield('actions')
+                        </div>
                    </div>
 
                    <!-- END : Breadcrumb -->

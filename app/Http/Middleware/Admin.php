@@ -38,6 +38,12 @@ class Admin
         if(in_array('users',$parts)){
             $active = 6;
         }
+        if(in_array('delegation-pouvoirs',$parts)){
+            $active = 804;
+        }
+        if(in_array('fichiers-types',$parts)){
+            $active = 807;
+        }
         if(in_array('territoire',$parts)){
             $active = 701;
         }

@@ -11,7 +11,7 @@
     $analysteCanEdit = $isAssignedCredit && ! $submittedByAnalyste;
 @endphp
 
-<div class="card shadow-sm border-0 mb-4 border-start border-4 border-success">
+<div class="card mb-4 border-start border-4 border-success">
     <div class="card-header bg-white py-3">
         <strong>Pôle engagements — analyste crédit &amp; transmission risques</strong>
         <p class="small text-muted mb-0 mt-1">Analyste crédit (profil {{ $profilAcId }}), puis avis du responsable engagements, puis envoi au responsable risques (profil {{ (int) config('angara.role_responsable_risques', 12) }}).</p>
@@ -49,11 +49,11 @@
 
                 <form method="post" id="form-analyste-credit-reng" class="mb-0">
                     @csrf
-                    <div class="mb-3">
+                    <div class="mb-3 summernote-wrapper">
                         <label class="form-label" for="reng_contre_analyse">Contre-analyse</label>
                         <textarea name="reng_contre_analyse" id="reng_contre_analyse" class="form-control js-summernote-reng" rows="8">{!! old('reng_contre_analyse', $dossier->reng_contre_analyse) !!}</textarea>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 summernote-wrapper">
                         <label class="form-label" for="reng_analyste_credit_avis">Avis</label>
                         <textarea name="reng_analyste_credit_avis" id="reng_analyste_credit_avis" class="form-control js-summernote-reng" rows="8">{!! old('reng_analyste_credit_avis', $dossier->reng_analyste_credit_avis) !!}</textarea>
                     </div>
@@ -76,15 +76,19 @@
                     </p>
                 @endif
                 <p class="small fw-semibold mb-1">Contre-analyse</p>
-                <div class="border rounded p-3 bg-light small rich-text-rendered mb-3">{!! $dossier->reng_contre_analyse !!}</div>
+                <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered mb-3">{!! $dossier->reng_contre_analyse !!}</div>
                 <p class="small fw-semibold mb-1">Avis</p>
-                <div class="border rounded p-3 bg-light small rich-text-rendered mb-3">{!! $dossier->reng_analyste_credit_avis !!}</div>
-                @unless($isAnalysteAc)
-                    @if($dossier->reng_etat_engagements_client && strlen(trim(strip_tags((string) $dossier->reng_etat_engagements_client))) > 0)
-                        <p class="small fw-semibold mb-1">État des engagements du client</p>
-                        <div class="border rounded p-3 bg-light small rich-text-rendered">{!! $dossier->reng_etat_engagements_client !!}</div>
-                    @endif
-                @endunless
+                <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered mb-3">{!! $dossier->reng_analyste_credit_avis !!}</div>
+                @if($dossier->entreprise?->token)
+                    <p class="small text-muted mb-0">
+                        L’état des engagements du client est celui de la fiche entreprise (répartition par banque et type d’engagement).
+                        @if($isAnalysteAc)
+                            <a href="{{ route('analyste-credit.entreprise.get.engagements', $dossier->entreprise->token) }}">Ouvrir l’état des engagements</a>
+                        @elseif($r === 'reng' && \Illuminate\Support\Facades\Route::has('reng.entreprises.engagements'))
+                            <a href="{{ route('reng.entreprises.engagements', $dossier->entreprise->token) }}">Consulter l’état des engagements</a>
+                        @endif
+                    </p>
+                @endif
             </div>
         @endif
 
@@ -95,7 +99,7 @@
                 @error('risques')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('reng.dossiers.responsable-avis', $dossier->token) }}" class="mb-3">
                     @csrf
-                    <div class="mb-2">
+                    <div class="mb-2 summernote-wrapper">
                         <label for="reng_responsable_avis" class="form-label">Rédigez votre avis</label>
                         <textarea name="reng_responsable_avis" id="reng_responsable_avis" class="form-control js-summernote-reng @error('reng_responsable_avis') is-invalid @enderror" rows="10">{!! old('reng_responsable_avis', $dossier->reng_responsable_avis) !!}</textarea>
                     </div>
@@ -121,7 +125,7 @@
                 </p>
                 @if($dossier->reng_responsable_avis)
                     <h6 class="fw-semibold mb-2 mt-3">Avis du responsable engagements</h6>
-                    <div class="border rounded p-3 bg-light small rich-text-rendered">{!! $dossier->reng_responsable_avis !!}</div>
+                    <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered">{!! $dossier->reng_responsable_avis !!}</div>
                 @endif
             </div>
         @endif

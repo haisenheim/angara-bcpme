@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers\Analyste;
 
+use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
+use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
 use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
 use App\Models\Dossier;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Models\EntrepriseAppui;
 use App\Models\EntrepriseProduit;
+use App\Models\Agence;
 use App\Models\Forme;
+use App\Services\ClientEntrepriseTableExportService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use App\Models\Person;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
@@ -23,6 +30,8 @@ use Illuminate\Support\Facades\Session;
 
 class CompanyController extends Controller
 {
+    use AppliesEntrepriseListIndexFilters;
+    use AppliesProspectListIndexFilters;
     use BuildsEntrepriseQuestionnaireResults;
 
     /**
@@ -73,11 +82,15 @@ class CompanyController extends Controller
 
     private function parseEntreprisesIndexFilters(Request $request): array
     {
-        return [
-            'region_id' => $request->input('region_id'),
-            'departement_id' => $request->input('departement_id'),
-            'forme_id' => $request->input('forme_id'),
-        ];
+        return array_merge(
+            [
+                'region_id' => $request->input('region_id'),
+                'departement_id' => $request->input('departement_id'),
+                'forme_id' => $request->input('forme_id'),
+                'client_structuration_status' => DossierEntreeRelation::normalizeClientStructurationFilter($request->input('client_structuration_status')),
+            ],
+            $this->parsePromuClientAndAgenceGestionnaireFilters($request, true),
+        );
     }
 
     private function applyEntreprisesIndexFilters($query, array $filters)
@@ -91,6 +104,11 @@ class CompanyController extends Controller
         if (! empty($filters['forme_id'])) {
             $query->where('forme_id', $filters['forme_id']);
         }
+        if (! empty($filters['client_structuration_status'])) {
+            $query->whereClientStructurationStatus($filters['client_structuration_status']);
+        }
+
+        $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
 
         return $query;
     }
@@ -123,7 +141,7 @@ class CompanyController extends Controller
 
         $filters = $this->parseEntreprisesIndexFilters($request);
         $query = $this->applyEntreprisesIndexFilters(
-            $this->analysteEntreprisesBaseQuery()->with(['region', 'departement', 'forme', 'arrondissement']),
+            $this->analysteEntreprisesBaseQuery()->with(['region', 'departement', 'forme', 'arrondissement', 'dossierEntreeRelation', 'agence', 'gestionnaire']),
             $filters
         );
 
@@ -158,6 +176,41 @@ class CompanyController extends Controller
         ]);
     }
 
+    public function exportClients(Request $request)
+    {
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $search = trim((string) $request->input('search.value', ''));
+        $filters = $this->parseEntreprisesIndexFilters($request);
+        $query = $this->applyEntreprisesIndexFilters(
+            $this->analysteEntreprisesBaseQuery()->with(['dossierEntreeRelation', 'agence', 'gestionnaire', 'region', 'arrondissement']),
+            $filters,
+        );
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->orderBy('name')->get();
+        $rows = ClientEntrepriseTableExportService::rowsCaGestionnaireAnalyste($items);
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersCaGestionnaireAnalyste(),
+            $format,
+            'analyste-clients',
+            'Analyste — entreprises (dossiers)',
+        );
+    }
+
     public function fetchProspects()
     {
         $items = $this->prospectsQuery()->get();
@@ -174,8 +227,8 @@ class CompanyController extends Controller
     public function fetchProspectsStats(Request $request)
     {
         $base = $this->prospectsQuery();
-        $filters = $this->parseFiltersProspects($request);
-        $query = $this->applyFiltersProspects($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
 
         $stats = [
             'total' => (clone $query)->count(),
@@ -196,8 +249,8 @@ class CompanyController extends Controller
         $search = trim($request->input('search.value', ''));
 
         $base = $this->prospectsQuery();
-        $filters = $this->parseFiltersProspects($request);
-        $query = $this->applyFiltersProspects($base->clone(), $filters);
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
 
         $recordsTotal = $this->prospectsQuery()->count();
         $recordsFiltered = $query->count();
@@ -227,39 +280,70 @@ class CompanyController extends Controller
         ]);
     }
 
-    private function parseFiltersProspects(Request $request): array
+    public function exportProspects(Request $request)
     {
-        return [
-            'region_id' => $request->input('region_id'),
-            'taille' => $request->input('taille'),
-            'forme_id' => $request->input('forme_id'),
-            'caractere' => $request->input('caractere'),
-        ];
-    }
-
-    private function applyFiltersProspects($query, array $filters)
-    {
-        if (! empty($filters['region_id'])) {
-            $query->where('region_id', $filters['region_id']);
-        }
-        if (! empty($filters['taille'])) {
-            $query->where('taille', $filters['taille']);
-        }
-        if (! empty($filters['forme_id'])) {
-            $query->where('forme_id', $filters['forme_id']);
-        }
-        if (! empty($filters['caractere'])) {
-            $query->where('caractere', $filters['caractere']);
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
         }
 
-        return $query;
+        $search = trim((string) $request->input('search.value', ''));
+        $base = $this->prospectsQuery();
+        $filters = $this->parseProspectIndexFilters($request);
+        $query = $this->applyProspectIndexFilters(clone $base, $filters, []);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('rccm', 'like', "%{$search}%")
+                    ->orWhere('niu', 'like', "%{$search}%")
+                    ->orWhere('manager', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->with(['agence', 'gestionnaire', 'user', 'region', 'arrondissement'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = ProspectEntrepriseTableExportService::rowsAnalyste($items);
+
+        return TableDocumentExportService::downloadFormatted(
+            $rows,
+            ProspectEntrepriseTableExportService::headersAnalyste(),
+            $format,
+            'analyste-prospects',
+            'Analyste — liste des prospects',
+            'Vue transverse des dossiers prospect',
+        );
     }
 
     public function fetchFilterOptions()
     {
+        $base = $this->analysteEntreprisesBaseQuery();
+        $agenceIds = (clone $base)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = (clone $base)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+
         return response()->json([
             'regions' => Region::orderBy('name')->get(['id', 'name']),
             'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'agences' => Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']),
+            'gestionnaires' => User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function fetchProspectsFilterOptions()
+    {
+        $p = Entreprise::query()->where('prospect', 1);
+        $agenceIds = (clone $p)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = (clone $p)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+
+        return response()->json([
+            'regions' => Region::orderBy('name')->get(['id', 'name']),
+            'formes' => Forme::orderBy('name')->get(['id', 'name']),
+            'agences' => Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']),
+            'gestionnaires' => User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

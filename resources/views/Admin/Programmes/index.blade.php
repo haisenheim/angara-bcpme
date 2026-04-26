@@ -1,7 +1,6 @@
 @extends('Layouts.admin')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/2.3.0/css/dataTables.bootstrap5.min.css">
 <style>
     .admin-programmes-stats .stats-card { transition: transform 0.2s; }
     .admin-programmes-stats .stats-card:hover { transform: translateY(-2px); }
@@ -27,7 +26,11 @@
 @endsection
 
 @section('actions')
-    <a href="{{ route('admin.programmes.create') }}" class="btn btn-primary btn-sm"><i class="demo-pli-add me-2 fs-5"></i> Ajouter</a>
+    <x-page-actions-dropdown>
+        <li>
+            <a href="{{ route('admin.programmes.create') }}" class="dropdown-item"><i class="demo-pli-add me-2 fs-5"></i> Ajouter</a>
+        </li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('page-header')
@@ -108,32 +111,37 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm" id="programmes-card">
+    <div class="angara-table" id="programmes-card">
+        <div class="card border-0 shadow-sm">
         <div class="card-body p-3 p-md-4">
             <div class="table-responsive">
                 <table id="programmesTable" class="table table-hover table-bordered align-middle mb-0" style="width:100%">
                     <thead class="table-light">
                         <tr>
-                            <th>Désignation</th>
-                            <th>Convention</th>
-                            <th>Signataire</th>
-                            <th>Date de signature</th>
-                            <th>Budget (XAF)</th>
-                            <th>Bénéficiaires PP</th>
-                            <th>Bénéficiaires PM</th>
+                            <th data-angara-sort-col="0">Désignation</th>
+                            <th data-angara-sort-col="1">Convention</th>
+                            <th data-angara-sort-col="2">Signataire</th>
+                            <th data-angara-sort-col="3">Date de signature</th>
+                            <th data-angara-sort-col="4">Budget (XAF)</th>
+                            <th data-angara-sort-col="5">Bénéficiaires PP</th>
+                            <th data-angara-sort-col="6">Bénéficiaires PM</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                <div data-angara-table-info></div>
+                <div data-angara-table-paging></div>
+            </div>
+            <div class="angara-table-empty d-none" data-angara-table-empty>Aucune donnée.</div>
+        </div>
         </div>
     </div>
 @endsection
 
 @section('script')
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.3.0/js/dataTables.bootstrap5.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = "{{ url('admin/programmes') }}";
@@ -141,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const statsUrl = "{{ route('admin.programmes.stats') }}";
     const filterOptionsUrl = "{{ route('admin.programmes.filter-options') }}";
 
-    let table;
     let filterTimeout;
 
     fetch(filterOptionsUrl)
@@ -171,53 +178,59 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(err) { console.error('Stats:', err); });
     }
 
-    table = new DataTable('#programmesTable', AngaraDataTables.mergeDefaults({
-        serverSide: true,
-        ajax: {
-            url: paginatedUrl,
-            data: function(d) {
-                d.signataire_filter = document.getElementById('filter-signataire').value;
-            }
-        },
+    const table = new AngaraTable(document.getElementById('programmesTable'), {
+        ajaxUrl: paginatedUrl,
+        pageLength: 15,
+        searchDelay: 350,
+        filters: { signataire_filter: 'filter-signataire' },
         columns: [
-            { data: 'name', name: 'name', render: function(d, t, row) {
+            { data: 'name', name: 'name', render: function(d, _t, row) {
                 const token = row && row.token ? row.token : '';
                 const label = d != null && d !== '' ? d : '—';
                 return '<a href="' + baseUrl + '/' + token + '" class="fw-medium text-decoration-none">' + label + '</a>';
             }},
-            { data: 'convention', name: 'convention', defaultContent: '—' },
-            { data: 'signataire', name: 'signataire', defaultContent: '—' },
-            { data: 'dt_sig_conv', name: 'dt_sig_conv', defaultContent: '—' },
-            { data: 'budget', name: 'budget', defaultContent: '—', render: function(d) {
+            { data: 'convention', name: 'convention' },
+            { data: 'signataire', name: 'signataire' },
+            { data: 'dt_sig_conv', name: 'dt_sig_conv' },
+            { data: 'budget', name: 'budget', render: function(d) {
                 return d != null && d !== '' ? new Intl.NumberFormat('fr-FR').format(d) : '—';
             }},
-            { data: 'type_pp', name: 'type_pp', defaultContent: '—' },
-            { data: 'type_pm', name: 'type_pm', defaultContent: '—' },
-            { data: 'token', orderable: false, searchable: false, className: 'text-end', render: function(token) {
-                const t = token || '';
-                return '<a href="' + baseUrl + '/' + t + '" class="btn-action btn btn-sm btn-outline-primary"><i class="demo-psi-eye"></i> Voir</a>';
+            { data: 'type_pp', name: 'type_pp' },
+            { data: 'type_pm', name: 'type_pm' },
+            { data: 'token', name: 'token', orderable: false, className: 'text-end angara-table-actions', width: '64px', render: function(token) {
+                const href = baseUrl + '/' + (token || '');
+                return ''
+                    + '<div class="dropdown">'
+                    + '  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">'
+                    + '    <i class="bi bi-three-dots-vertical"></i>'
+                    + '  </button>'
+                    + '  <ul class="dropdown-menu dropdown-menu-end">'
+                    + '    <li><a class="dropdown-item" href="' + href + '"><i class="bi bi-eye me-2"></i>Ouvrir</a></li>'
+                    + '    <li><button class="dropdown-item" type="button" data-copy-text="' + href + '"><i class="bi bi-link-45deg me-2"></i>Copier le lien</button></li>'
+                    + '  </ul>'
+                    + '</div>';
             }}
         ],
-        order: [[0, 'asc']],
-        pageLength: 15,
-        lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
+        order: [0, 'asc'],
         drawCallback: function() { loadStats(); }
-    }));
+    });
 
     document.getElementById('filter-search').addEventListener('input', function() {
         clearTimeout(filterTimeout);
-        const self = this;
-        filterTimeout = setTimeout(function() { table.search(self.value).draw(); }, 350);
-    });
-
-    document.getElementById('filter-signataire').addEventListener('change', function() {
-        table.ajax.reload();
+        const v = this.value || '';
+        filterTimeout = setTimeout(function() {
+            table.state.search = v;
+            table.state.page = 0;
+            table.reload();
+        }, 350);
     });
 
     document.getElementById('btn-reset-filters').addEventListener('click', function() {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-signataire').value = '';
-        table.search('').ajax.reload();
+        table.state.search = '';
+        table.state.page = 0;
+        table.reload();
     });
 
     loadStats();

@@ -13,16 +13,17 @@
 @endsection
 
 @section('actions')
-<div class="dropdown">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="demo-psi-dot-vertical me-1"></i> Actions
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->entreprise?->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+    <x-page-actions-dropdown button-id="caDossierGrilleActions" menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2 analyse">
+        @if(($canApproveRejectInstructionTransmission ?? false) && $item->isInstructionPendingAgenceValidation())
+            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionApproveModal"><i class="demo-psi-check me-2 text-success"></i> Valider la transmission</button></li>
+            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionRejectModal"><i class="demo-psi-cross me-2 text-danger"></i> Rejeter la transmission</button></li>
+            <li><hr class="dropdown-divider"></li>
+        @endif
+        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese', $item->token) }}"><i class="demo-psi-file-text me-2"></i> Dossier d’analyse critique</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese.pdf', $item->token) }}" target="_blank" rel="noopener"><i class="demo-psi-download me-2"></i> Exporter le dossier en PDF</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" data-sequence="9" data-bs-target="#reportCaModal" data-bs-toggle="modal" href="#"><i class="demo-psi-pen-5 me-2"></i>Saisir remarques et recommandations</a></li>
-    </ul>
-</div>
+        <li><a class="dropdown-item" href="{{ route('ca.dossiers.show', $item->token) }}"><i class="demo-psi-file me-2"></i> Retour fiche dossier</a></li>
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')
@@ -33,11 +34,39 @@
         </div>
     @endif
 
+    @include('partials.dossier-pieces-jointes', [
+        'dossier' => $item,
+        'showUpload' => false,
+    ])
+
     <div class="container">
         <div class="d-flex justify-content-center">
             <div style="width:800px" class="card border-0 shadow-sm">
                 <div class="card-header p-4 bg-transparent">
                     <h4 class="text-center mb-0">GRILLE D'ANALYSE CRITIQUE</h4>
+                    <p class="text-center text-muted small mb-0 mt-2">Programme(s) : {{ $item->programmesLabel() }}</p>
+                    @if($item->instructionProgrammes->isNotEmpty())
+                        <div class="table-responsive mt-3 mx-auto" style="max-width: 640px;">
+                            <table class="table table-sm table-bordered mb-0 bg-white">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Programme</th>
+                                        <th class="text-end">Appui financier (XAF)</th>
+                                        <th class="text-end">Appui non financier (XAF)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($item->instructionProgrammes as $dip)
+                                        <tr>
+                                            <td>{{ $dip->programme?->name ?? '—' }}</td>
+                                            <td class="text-end">{{ number_format((float) $dip->budget_appui_financier, 0, ',', ' ') }}</td>
+                                            <td class="text-end">{{ number_format((float) $dip->budget_appui_non_financier, 0, ',', ' ') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
                 <div class="card-body table-responsive">
                     <div role="tabpanel">
@@ -83,50 +112,7 @@
         </div>
     </div>
 
-    {{-- Modal Remarques et recommandations du Chef d'agence --}}
-    <div class="modal fade" id="reportCaModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Remarques et recommandations du Chef d'agence</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3">Saisissez vos remarques et recommandations pour compléter la grille d'analyse critique (point 9).</p>
-                    <form action="{{ route('ca.dossier.set.analyse') }}" method="post">
-                        @csrf
-                        <input type="hidden" name="dossier_id" value="{{ $item->id }}">
-                        <input type="hidden" name="sequence" value="9">
-                        <div class="mb-3">
-                            <div id="quill-editor-ca" class="mb-3" style="height: 150px;"></div>
-                            <textarea rows="3" class="d-none" name="content" id="quill-editor-area-ca">{{ $item->conclusions_ca ?? '' }}</textarea>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-@endsection
-
-@section('script')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('quill-editor-ca')) {
-        var editor = new Quill('#quill-editor-ca', {
-            theme: 'snow',
-            modules: { toolbar: [ [{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline', 'strike'], ['blockquote', 'code-block'], [{ 'list': 'ordered' }, { 'list': 'bullet' }], ['link'], ['clean'] ] }
-        });
-        var quillArea = document.getElementById('quill-editor-area-ca');
-        editor.root.innerHTML = quillArea.value || '';
-        editor.on('text-change', function() { quillArea.value = editor.root.innerHTML; });
-        document.getElementById('reportCaModal').addEventListener('show.bs.modal', function() {
-            editor.root.innerHTML = quillArea.value || '';
-        });
-    }
-});
-</script>
+    @if(($canApproveRejectInstructionTransmission ?? false) && $item->isInstructionPendingAgenceValidation())
+        @include('partials.ca-instruction-transmission-modals', ['dossier' => $item])
+    @endif
 @endsection
