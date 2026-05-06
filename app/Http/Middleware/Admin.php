@@ -47,6 +47,15 @@ class Admin
         if(in_array('territoire',$parts)){
             $active = 701;
         }
+        if(in_array('agences',$parts)){
+            $active = 702;
+        }
+        if(in_array('organismes',$parts)){
+            $active = 801;
+        }
+        if(in_array('banques',$parts)){
+            $active = 802;
+        }
         Session::put('active',$active);
         return $next($request);
     }

@@ -254,6 +254,12 @@ Route::namespace('App\Http\Controllers\Admin')
 
         Route::resource('users', 'UserController');
         Route::get('territoire', 'TerritoireController@index')->name('territoire');
+
+        Route::get('agences/{agence}/enable', 'AgenceController@enable')->name('agences.enable');
+        Route::get('agences/{agence}/disable', 'AgenceController@disable')->name('agences.disable');
+        Route::resource('agences', 'AgenceController')->except(['create', 'edit']);
+        Route::resource('organismes', 'OrganismeController')->except(['create', 'edit']);
+        Route::resource('banques', 'BanqueController')->except(['create', 'edit']);
         Route::resource('pieces-exigibles', 'PieceExigibleDefinitionController')->except(['destroy']);
         Route::resource('fichiers-types', 'FichierTypeController');
         Route::get('fichiers-types/{fichiers_type}/enable', 'FichierTypeController@enable')->name('fichiers-types.enable');

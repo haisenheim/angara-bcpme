@@ -6,34 +6,32 @@ use Illuminate\Database\Eloquent\Model;
 
 class Agence extends Model
 {
-    //
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function representation()
     {
-        return $this->belongsTo('App\Models\Representation');
+        return $this->belongsTo(Representation::class);
     }
-
-   
 
     public function departement()
     {
-        return $this->belongsTo('App\Models\Departement');
+        return $this->belongsTo(Departement::class);
     }
 
-    public function getStatusAttribute(){
-        $data = [
-            'name'=>'verrouillé',
-            'color'=>'danger'
-        ];
-        if($this->active){
-            $data = [
-                'name'=>'actif',
-                'color'=>'success'
+    public function getStatusAttribute()
+    {
+        if ($this->active) {
+            return [
+                'name' => 'actif',
+                'color' => 'success',
             ];
         }
 
-        return $data;
+        return [
+            'name' => 'verrouillé',
+            'color' => 'danger',
+        ];
     }
 }

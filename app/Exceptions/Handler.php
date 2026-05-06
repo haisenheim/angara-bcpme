@@ -38,9 +38,11 @@ class Handler extends ExceptionHandler
          * Plutôt que d'afficher "419 Page Expired", on renvoie l'utilisateur vers
          * la page de connexion avec un message explicite.
          *
-         * Note : la route `logout` est en plus exclue de la vérification CSRF dans
-         * `App\Http\Middleware\VerifyCsrfToken` pour garantir qu'une déconnexion
-         * fonctionne même quand la session a déjà expiré.
+         * Note : les routes d'authentification publiques (logout, login,
+         * forgot-password, reset-password, two-factor-challenge) sont en plus
+         * exclues de la vérification CSRF dans `App\Http\Middleware\VerifyCsrfToken`
+         * pour garantir que ces flux fonctionnent même quand la session a déjà
+         * expiré côté serveur.
          */
         $this->renderable(function (TokenMismatchException $e, Request $request) {
             if ($request->expectsJson()) {

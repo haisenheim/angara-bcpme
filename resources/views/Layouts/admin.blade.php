@@ -344,12 +344,16 @@
                 </a>
                 <!-- Settings submenu list -->
                 <ul class="mininav-content nav collapse">
-                    <li class="nav-item">
-                        <a href="#" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link {{ $active==802?'active':'' }}">Banques</a>
-                    </li>
+                    @if (Route::has('admin.organismes.index'))
+                        <li class="nav-item">
+                            <a href="{{ route('admin.organismes.index') }}" class="nav-link {{ $active==801?'active':'' }}">Organismes</a>
+                        </li>
+                    @endif
+                    @if (Route::has('admin.banques.index'))
+                        <li class="nav-item">
+                            <a href="{{ route('admin.banques.index') }}" class="nav-link {{ $active==802?'active':'' }}">Banques</a>
+                        </li>
+                    @endif
                     @if (Route::has('admin.operateurs.index'))
                         <li class="nav-item">
                             <a href="{{ route('admin.operateurs.index') }}" class="nav-link {{ $active==803?'active':'' }}">Operateurs mobiles</a>
