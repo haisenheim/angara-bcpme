@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 class Dossier extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -19,16 +20,24 @@ class Dossier extends Model
         'exploitation_engagements_decision_at' => 'datetime',
         'exploitation_analyste_assigned_at' => 'datetime',
         'exploitation_analyste_transmitted_to_exploitation_at' => 'datetime',
+        'exploitation_analyste_rejected_at' => 'datetime',
         'juridique_instruction_submitted_at' => 'datetime',
         'juridique_analyste_assigned_at' => 'datetime',
         'juridique_analyste_submitted_to_reju_at' => 'datetime',
+        'juridique_analyste_rejected_at' => 'datetime',
+        'juridique_rejected_to_exploitation_at' => 'datetime',
         'juridique_submitted_to_engagements_at' => 'datetime',
+        'engagements_rejected_to_juridique_at' => 'datetime',
+        'risques_rejected_to_engagements_at' => 'datetime',
+        'direction_rejected_to_risques_at' => 'datetime',
         'reng_analyste_credit_assigned_at' => 'datetime',
         'reng_analyste_credit_submitted_at' => 'datetime',
+        'reng_analyste_credit_rejected_at' => 'datetime',
         'reng_submitted_to_risques_at' => 'datetime',
         'reng_responsable_avis_at' => 'datetime',
         'rerx_analyste_risques_assigned_at' => 'datetime',
         'rerx_analyste_risques_submitted_at' => 'datetime',
+        'rerx_analyste_risques_rejected_at' => 'datetime',
         'rerx_submitted_to_direction_at' => 'datetime',
         'rerx_responsable_avis_at' => 'datetime',
         'chef_filiere_submitted_to_agence_at' => 'datetime',
@@ -52,7 +61,8 @@ class Dossier extends Model
         return 'token';
     }
 
-    public function entreprise(){
+    public function entreprise()
+    {
         return $this->belongsTo('App\Models\Entreprise');
     }
 
@@ -62,16 +72,19 @@ class Dossier extends Model
         return $this->hasMany(Fichier::class, 'dossier_id')->orderByDesc('uploaded_at');
     }
 
-    public function programme(){
+    public function programme()
+    {
         return $this->belongsTo('App\Models\Programme');
     }
 
-    public function gestionnaire(){
-        return $this->belongsTo('App\Models\User','gestionnaire_id');
+    public function gestionnaire()
+    {
+        return $this->belongsTo('App\Models\User', 'gestionnaire_id');
     }
 
-    public function analyste(){
-        return $this->belongsTo('App\Models\User','analyste_id');
+    public function analyste()
+    {
+        return $this->belongsTo('App\Models\User', 'analyste_id');
     }
 
     public function exploitationAvisCreditUser()
@@ -171,6 +184,18 @@ class Dossier extends Model
         return $this->instruction_closure_validated_at !== null || $this->instruction_closure_rejected_at !== null;
     }
 
+    /**
+     * Statut unifié du dossier d'instruction (référence : prompt.txt l.23-27).
+     *
+     * Délégué au {@see \App\Services\DossierInstructionStatutService} pour rester centralisé.
+     *
+     * @return array{code: string, label: string, badge_variant: string, detail: ?string}
+     */
+    public function instructionStatutPresentation(): array
+    {
+        return app(\App\Services\DossierInstructionStatutService::class)->presentation($this);
+    }
+
     public function isInstructionClosureValidated(): bool
     {
         return $this->instruction_closure_validated_at !== null;
@@ -231,6 +256,60 @@ class Dossier extends Model
     {
         return $query->whereNotNull('instruction_agence_validated_at')
             ->whereNull('instruction_agence_rejected_at');
+    }
+
+    /**
+     * Filtre les dossiers selon le statut unifié d'instruction (référence : prompt.txt l.23-27).
+     *
+     * Codes acceptés : valide | rejete | en_cours | valide_et_rejete (cf. {@see DossierInstructionStatutService}).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Dossier>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<Dossier>
+     */
+    public function scopeWhereInstructionStatut($query, string $statut)
+    {
+        $svc = \App\Services\DossierInstructionStatutService::class;
+
+        return match ($statut) {
+            $svc::CODE_VALIDE => $query->whereNotNull('instruction_closure_validated_at')
+                ->where(function ($q) {
+                    $q->whereNull('exploitation_analyste_rejected_at')
+                        ->whereNull('juridique_analyste_rejected_at')
+                        ->whereNull('reng_analyste_credit_rejected_at')
+                        ->whereNull('rerx_analyste_risques_rejected_at')
+                        ->where(fn ($qq) => $qq->whereNull('exploitation_engagements_decision')->orWhere('exploitation_engagements_decision', '!=', 'rejet'));
+                }),
+            $svc::CODE_REJETE => $query->where(function ($q) {
+                $q->whereNotNull('instruction_closure_rejected_at')
+                    ->orWhere(function ($q2) {
+                        $q2->whereNotNull('instruction_agence_rejected_at')
+                            ->whereNull('instruction_agence_validated_at');
+                    })
+                    ->orWhere(function ($q2) {
+                        $q2->where('exploitation_engagements_decision', 'rejet')
+                            ->whereNull('instruction_closure_validated_at');
+                    });
+            }),
+            $svc::CODE_VALIDE_ET_REJETE => $query->whereNotNull('instruction_closure_validated_at')
+                ->where(function ($q) {
+                    $q->whereNotNull('exploitation_analyste_rejected_at')
+                        ->orWhereNotNull('juridique_analyste_rejected_at')
+                        ->orWhereNotNull('reng_analyste_credit_rejected_at')
+                        ->orWhereNotNull('rerx_analyste_risques_rejected_at')
+                        ->orWhere('exploitation_engagements_decision', 'rejet');
+                }),
+            $svc::CODE_EN_COURS => $query->whereNull('instruction_closure_validated_at')
+                ->whereNull('instruction_closure_rejected_at')
+                ->where(function ($q) {
+                    $q->whereNull('instruction_agence_rejected_at')
+                        ->orWhereNotNull('instruction_agence_validated_at');
+                })
+                ->where(function ($q) {
+                    $q->whereNull('exploitation_engagements_decision')
+                        ->orWhere('exploitation_engagements_decision', '!=', 'rejet');
+                }),
+            default => $query,
+        };
     }
 
     /**
@@ -400,6 +479,26 @@ class Dossier extends Model
         return $this->hasExploitationAfInstructionSectionsComplete();
     }
 
+    /**
+     * Rubriques « avis chargé d’instruction » pour affichage séparé (fiche dossier, PDF, etc.).
+     *
+     * @return list<array{column: string, label: string, html: string, filled: bool}>
+     */
+    public function exploitationAfInstructionZonesForDisplay(): array
+    {
+        $rows = [];
+        foreach (self::EXPLOITATION_AF_INSTRUCTION_SECTIONS as $column => $label) {
+            $rows[] = [
+                'column' => $column,
+                'label' => $label,
+                'html' => (string) ($this->{$column} ?? ''),
+                'filled' => $this->afInstructionSectionHasSubstance($column),
+            ];
+        }
+
+        return $rows;
+    }
+
     /** Assemble les rubriques pour l’affichage chronologique / consultation (HTML). */
     public function compileExploitationAnalysteInstructionAvisFromAfSections(): string
     {
@@ -410,7 +509,7 @@ class Dossier extends Model
                 continue;
             }
             $parts[] = '<h6 class="small text-uppercase text-muted mb-2">'.e($label).'</h6>'
-                . '<div class="mb-4 rich-text-rendered">'.$html.'</div>';
+                .'<div class="mb-4 rich-text-rendered">'.$html.'</div>';
         }
 
         return implode('', $parts);
@@ -448,10 +547,29 @@ class Dossier extends Model
     /**
      * Transmission au REXP par l’analyste financier (saisie des rubriques + grille de notation).
      * Colonnes : {@see $exploitation_analyste_transmitted_to_exploitation_at}, {@see $exploitation_analyste_transmitted_to_exploitation_by_user_id}.
+     *
+     * Note : retourne `false` si le REXP a rejeté la soumission (l'analyste peut alors corriger
+     * et retransmettre — réouverture sur rejet, prompt l. 220).
      */
     public function isInstructionTransmittedToExploitationByAnalysteFinancier(): bool
     {
-        return $this->exploitation_analyste_transmitted_to_exploitation_at !== null;
+        return $this->exploitation_analyste_transmitted_to_exploitation_at !== null
+            && $this->exploitation_analyste_rejected_at === null;
+    }
+
+    /**
+     * Rejet par le responsable exploitation de la soumission de l'analyste financier (motif obligatoire).
+     */
+    public function isExploitationAnalysteRejectedByRexp(): bool
+    {
+        return $this->exploitation_analyste_rejected_at !== null
+            && ($this->exploitation_analyste_transmitted_to_exploitation_at === null
+                || $this->exploitation_analyste_rejected_at->greaterThanOrEqualTo($this->exploitation_analyste_transmitted_to_exploitation_at));
+    }
+
+    public function exploitationAnalysteRejectedBy()
+    {
+        return $this->belongsTo(User::class, 'exploitation_analyste_rejected_by_user_id');
     }
 
     /**
@@ -464,17 +582,65 @@ class Dossier extends Model
 
     public function isSubmittedToJuridique(): bool
     {
-        return $this->juridique_instruction_submitted_at !== null;
+        // Réouverture sur rejet inter-pôle (RJU vers REXP) : la soumission est annulée tant que
+        // le REXP n'a pas retransmis (réouverture conformément au prompt l. 220).
+        return $this->juridique_instruction_submitted_at !== null
+            && $this->juridique_rejected_to_exploitation_at === null;
+    }
+
+    /**
+     * Le RJU a renvoyé le dossier au REXP avec motif (rejet inter-pôle, réouverture du pôle exploitation).
+     */
+    public function isJuridiqueRejectedToExploitation(): bool
+    {
+        return $this->juridique_rejected_to_exploitation_at !== null;
+    }
+
+    public function juridiqueRejectedToExploitationBy()
+    {
+        return $this->belongsTo(User::class, 'juridique_rejected_to_exploitation_by_user_id');
     }
 
     public function isJuridiqueAnalysteAvisSubmittedToReju(): bool
     {
-        return $this->juridique_analyste_submitted_to_reju_at !== null;
+        return $this->juridique_analyste_submitted_to_reju_at !== null
+            && $this->juridique_analyste_rejected_at === null;
+    }
+
+    /**
+     * Rejet par le responsable juridique de la soumission de l'analyste juridique (motif obligatoire).
+     */
+    public function isJuridiqueAnalysteRejectedByReju(): bool
+    {
+        return $this->juridique_analyste_rejected_at !== null
+            && ($this->juridique_analyste_submitted_to_reju_at === null
+                || $this->juridique_analyste_rejected_at->greaterThanOrEqualTo($this->juridique_analyste_submitted_to_reju_at));
+    }
+
+    public function juridiqueAnalysteRejectedBy()
+    {
+        return $this->belongsTo(User::class, 'juridique_analyste_rejected_by_user_id');
     }
 
     public function isSubmittedToEngagementsFromJuridique(): bool
     {
-        return $this->juridique_submitted_to_engagements_at !== null;
+        // Réouverture sur rejet inter-pôle (RENG vers RJU) : la soumission est annulée tant que
+        // le RJU n'a pas retransmis (réouverture conformément au prompt l. 220).
+        return $this->juridique_submitted_to_engagements_at !== null
+            && $this->engagements_rejected_to_juridique_at === null;
+    }
+
+    /**
+     * Le RENG a renvoyé le dossier au RJU avec motif (rejet inter-pôle, réouverture du pôle juridique).
+     */
+    public function isEngagementsRejectedToJuridique(): bool
+    {
+        return $this->engagements_rejected_to_juridique_at !== null;
+    }
+
+    public function engagementsRejectedToJuridiqueBy()
+    {
+        return $this->belongsTo(User::class, 'engagements_rejected_to_juridique_by_user_id');
     }
 
     public function hasJuridiqueAnalysteAvisFilled(): bool
@@ -493,12 +659,44 @@ class Dossier extends Model
 
     public function isRengAnalysteCreditSubmittedToReng(): bool
     {
-        return $this->reng_analyste_credit_submitted_at !== null;
+        return $this->reng_analyste_credit_submitted_at !== null
+            && $this->reng_analyste_credit_rejected_at === null;
+    }
+
+    /**
+     * Rejet par le responsable engagements de la soumission de l'analyste crédit (motif obligatoire).
+     */
+    public function isRengAnalysteCreditRejectedByReng(): bool
+    {
+        return $this->reng_analyste_credit_rejected_at !== null
+            && ($this->reng_analyste_credit_submitted_at === null
+                || $this->reng_analyste_credit_rejected_at->greaterThanOrEqualTo($this->reng_analyste_credit_submitted_at));
+    }
+
+    public function rengAnalysteCreditRejectedBy()
+    {
+        return $this->belongsTo(User::class, 'reng_analyste_credit_rejected_by_user_id');
     }
 
     public function isSubmittedToRisquesFromReng(): bool
     {
-        return $this->reng_submitted_to_risques_at !== null;
+        // Réouverture sur rejet inter-pôle (RISQ vers RENG) : la soumission est annulée tant que
+        // le RENG n'a pas retransmis (réouverture conformément au prompt l. 220).
+        return $this->reng_submitted_to_risques_at !== null
+            && $this->risques_rejected_to_engagements_at === null;
+    }
+
+    /**
+     * Le RISQ a renvoyé le dossier au RENG avec motif (rejet inter-pôle, réouverture du pôle engagements).
+     */
+    public function isRisquesRejectedToEngagements(): bool
+    {
+        return $this->risques_rejected_to_engagements_at !== null;
+    }
+
+    public function risquesRejectedToEngagementsBy()
+    {
+        return $this->belongsTo(User::class, 'risques_rejected_to_engagements_by_user_id');
     }
 
     public function hasRengResponsableAvisFilled(): bool
@@ -510,12 +708,45 @@ class Dossier extends Model
 
     public function isRerxAnalysteRisquesSubmittedToRerx(): bool
     {
-        return $this->rerx_analyste_risques_submitted_at !== null;
+        return $this->rerx_analyste_risques_submitted_at !== null
+            && $this->rerx_analyste_risques_rejected_at === null;
+    }
+
+    /**
+     * Rejet par le responsable risques de la soumission de l'analyste risques (motif obligatoire).
+     */
+    public function isRerxAnalysteRisquesRejectedByRisq(): bool
+    {
+        return $this->rerx_analyste_risques_rejected_at !== null
+            && ($this->rerx_analyste_risques_submitted_at === null
+                || $this->rerx_analyste_risques_rejected_at->greaterThanOrEqualTo($this->rerx_analyste_risques_submitted_at));
+    }
+
+    public function rerxAnalysteRisquesRejectedBy()
+    {
+        return $this->belongsTo(User::class, 'rerx_analyste_risques_rejected_by_user_id');
     }
 
     public function isSubmittedToDirectionFromRerx(): bool
     {
-        return $this->rerx_submitted_to_direction_at !== null;
+        // Réouverture sur rejet inter-pôle (Direction vers RISQ) : la soumission est annulée tant que
+        // le RISQ n'a pas retransmis (réouverture conformément au prompt l. 220).
+        return $this->rerx_submitted_to_direction_at !== null
+            && $this->direction_rejected_to_risques_at === null;
+    }
+
+    /**
+     * La direction (DG/DGA/délégué) a renvoyé le dossier au RISQ avec motif sans clôturer
+     * (rejet inter-pôle, réouverture du pôle risques).
+     */
+    public function isDirectionRejectedToRisques(): bool
+    {
+        return $this->direction_rejected_to_risques_at !== null;
+    }
+
+    public function directionRejectedToRisquesBy()
+    {
+        return $this->belongsTo(User::class, 'direction_rejected_to_risques_by_user_id');
     }
 
     public function hasRerxResponsableAvisFilled(): bool
@@ -580,19 +811,20 @@ class Dossier extends Model
         return true;
     }
 
-    public function agence(){
-        return $this->belongsTo('App\Models\Agence','agence_id');
+    public function agence()
+    {
+        return $this->belongsTo('App\Models\Agence', 'agence_id');
     }
 
-    public function representation(){
-        return $this->belongsTo('App\Models\Representation','represenantion_id');
+    public function representation()
+    {
+        return $this->belongsTo('App\Models\Representation', 'represenantion_id');
     }
 
-    public function indicateurs(){
-        return $this->hasMany('App\Models\Instruction\IndicateurFinancier','dossier_id');
+    public function indicateurs()
+    {
+        return $this->hasMany('App\Models\Instruction\IndicateurFinancier', 'dossier_id');
     }
-
-
 
     public function reponses()
     {
@@ -678,13 +910,14 @@ class Dossier extends Model
     {
         $indicateurs = $this->indicateurs;
         $reponses = $this->reponses;
-        if($indicateurs->count() > 0){
+        if ($indicateurs->count() > 0) {
             return [
                 'status' => true,
                 'name' => "En cours d'instruction",
                 'code' => 1,
             ];
         }
+
         return [
             'status' => false,
             'name' => 'En attente d\'instruction',
@@ -729,11 +962,11 @@ class Dossier extends Model
             }
 
             // Exemple d'exercice
-           /* $exercices = $indicateurs->map(function ($value) {
-                return $value->serialize();
-            }); */
+            /* $exercices = $indicateurs->map(function ($value) {
+                 return $value->serialize();
+             }); */
 
-           // $exercices = $indicateurs;
+            // $exercices = $indicateurs;
 
             $nf = $indicateurs[0]['notation']['note'];
         }
@@ -822,6 +1055,20 @@ class Dossier extends Model
 
         $htmlFilled = fn (?string $h): bool => strlen(trim(strip_tags((string) $h))) > 0;
 
+        // Début du parcours « instruction » : création du dossier d’instruction (hors structuration client).
+        $creationActor = $this->chef_filiere_submitted_to_agence_at
+            ? $this->chefFiliereSubmittedToAgenceBy
+            : null;
+        if ($this->created_at instanceof Carbon) {
+            $push(
+                $this->created_at,
+                'Création du dossier d’instruction (chef de filière)',
+                $creationActor,
+                null,
+                'creation'
+            );
+        }
+
         $push($this->chef_filiere_submitted_to_agence_at, 'Transmission du dossier d’instruction au chef d’agence (chef de filière)', $this->chefFiliereSubmittedToAgenceBy, null, 'transmission');
         $valClotureBody = null;
         if ($this->instruction_agence_closing_note) {
@@ -886,6 +1133,19 @@ class Dossier extends Model
             'transmission'
         );
 
+        if ($this->exploitation_analyste_rejected_at) {
+            $motifHtml = $this->exploitation_analyste_reject_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->exploitation_analyste_reject_motif).'</p>'
+                : null;
+            $push(
+                $this->exploitation_analyste_rejected_at,
+                'Rejet de la soumission de l’analyste financier (responsable exploitation)',
+                $this->exploitationAnalysteRejectedBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
         if ($this->exploitation_avis_credit_at && $htmlFilled($this->exploitation_avis_credit)) {
             $push($this->exploitation_avis_credit_at, 'Avis de crédit — responsable exploitation', $this->exploitationAvisCreditUser, $this->exploitation_avis_credit, 'avis');
         } elseif ($this->exploitation_avis_credit_at) {
@@ -924,6 +1184,32 @@ class Dossier extends Model
             $push($this->juridique_responsable_avis_at, 'Avis du responsable juridique', $this->juridiqueResponsableAvisBy, $this->juridique_responsable_avis, 'avis');
         }
 
+        if ($this->juridique_analyste_rejected_at) {
+            $motifHtml = $this->juridique_analyste_reject_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->juridique_analyste_reject_motif).'</p>'
+                : null;
+            $push(
+                $this->juridique_analyste_rejected_at,
+                'Rejet de l’avis de l’analyste juridique (responsable juridique)',
+                $this->juridiqueAnalysteRejectedBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
+        if ($this->juridique_rejected_to_exploitation_at) {
+            $motifHtml = $this->juridique_rejected_to_exploitation_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->juridique_rejected_to_exploitation_motif).'</p>'
+                : null;
+            $push(
+                $this->juridique_rejected_to_exploitation_at,
+                'Rejet inter-pôle : dossier renvoyé au pôle exploitation (responsable juridique)',
+                $this->juridiqueRejectedToExploitationBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
         if ($this->juridique_submitted_to_engagements_at) {
             $push($this->juridique_submitted_to_engagements_at, 'Transmission du dossier au responsable engagements', $this->juridiqueSubmittedToEngagementsBy, null, 'transmission');
         }
@@ -953,6 +1239,32 @@ class Dossier extends Model
             }
         }
 
+        if ($this->reng_analyste_credit_rejected_at) {
+            $motifHtml = $this->reng_analyste_credit_reject_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->reng_analyste_credit_reject_motif).'</p>'
+                : null;
+            $push(
+                $this->reng_analyste_credit_rejected_at,
+                'Rejet de la soumission de l’analyste crédit (responsable engagements)',
+                $this->rengAnalysteCreditRejectedBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
+        if ($this->engagements_rejected_to_juridique_at) {
+            $motifHtml = $this->engagements_rejected_to_juridique_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->engagements_rejected_to_juridique_motif).'</p>'
+                : null;
+            $push(
+                $this->engagements_rejected_to_juridique_at,
+                'Rejet inter-pôle : dossier renvoyé au pôle juridique (responsable engagements)',
+                $this->engagementsRejectedToJuridiqueBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
         if ($this->reng_submitted_to_risques_at) {
             $push($this->reng_submitted_to_risques_at, 'Transmission du dossier au responsable risques', $this->rengSubmittedToRisquesBy, null, 'transmission');
         }
@@ -978,8 +1290,47 @@ class Dossier extends Model
             }
         }
 
+        if ($this->rerx_analyste_risques_rejected_at) {
+            $motifHtml = $this->rerx_analyste_risques_reject_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->rerx_analyste_risques_reject_motif).'</p>'
+                : null;
+            $push(
+                $this->rerx_analyste_risques_rejected_at,
+                'Rejet de la soumission de l’analyste risques (responsable risques)',
+                $this->rerxAnalysteRisquesRejectedBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
+        if ($this->risques_rejected_to_engagements_at) {
+            $motifHtml = $this->risques_rejected_to_engagements_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->risques_rejected_to_engagements_motif).'</p>'
+                : null;
+            $push(
+                $this->risques_rejected_to_engagements_at,
+                'Rejet inter-pôle : dossier renvoyé au pôle engagements (responsable risques)',
+                $this->risquesRejectedToEngagementsBy,
+                $motifHtml,
+                'validation'
+            );
+        }
+
         if ($this->rerx_submitted_to_direction_at) {
             $push($this->rerx_submitted_to_direction_at, 'Transmission à la direction (DG &amp; DGA)', $this->rerxSubmittedToDirectionBy, null, 'transmission');
+        }
+
+        if ($this->direction_rejected_to_risques_at) {
+            $motifHtml = $this->direction_rejected_to_risques_motif
+                ? '<p class="mb-0 small"><strong>Motif :</strong> '.e($this->direction_rejected_to_risques_motif).'</p>'
+                : null;
+            $push(
+                $this->direction_rejected_to_risques_at,
+                'Rejet inter-pôle : dossier renvoyé au pôle risques (direction)',
+                $this->directionRejectedToRisquesBy,
+                $motifHtml,
+                'validation'
+            );
         }
 
         if ($this->conclusions_ca_saved_at && $htmlFilled((string) ($this->conclusions_ca ?? ''))) {
@@ -1093,6 +1444,4 @@ class Dossier extends Model
             default => $query,
         };
     }
-
-
 }

@@ -17,8 +17,9 @@ use App\Services\ClientEntrepriseTableExportService;
 use App\Services\DossierInstructionShowPresenter;
 use App\Services\DossierTableExportService;
 use App\Services\EngagementReportService;
-use App\Services\InstructionDossierAnalyseCritiqueSyntheseService;
+use App\Services\InstructionAnalyseCritiqueDossierDocumentService;
 use App\Services\InstructionDossierConsultationService;
+use App\Services\WorkflowEmailNotificationService;
 use Dompdf\Canvas;
 use Dompdf\FontMetrics;
 use Illuminate\Database\Eloquent\Builder;
@@ -118,6 +119,7 @@ class PortfolioController extends Controller
             'produits.filiere',
             'produits.branche',
             'appuis.type',
+            'critereAvis.user',
             'village',
             'quartier',
             'arrondissement',
@@ -146,6 +148,104 @@ class PortfolioController extends Controller
         $checklist = $item->piecesExigiblesChecklist();
 
         return view('RoleSpace.entreprises.show', compact('space', 'item', 'mr', 'checklist'));
+    }
+
+    /**
+     * Fiche entreprise / prospect — export PDF (côté serveur).
+     */
+    public function entrepriseFichePdf(string $token)
+    {
+        $space = $this->resolveSpace();
+
+        $item = Entreprise::query()->where('token', $token)->firstOrFail();
+        $this->assertPortfolioEntrepriseAccess($item, $space);
+
+        $item->load([
+            'user',
+            'forme',
+            'filiere',
+            'branche',
+            'produit',
+            'produits.filiere',
+            'produits.branche',
+            'appuis.type',
+            'critereAvis.user',
+            'village',
+            'quartier',
+            'arrondissement',
+            'departement',
+            'region',
+            'agence.representation',
+            'gestionnaire',
+            'tiers.person',
+            'tiers.company.produit',
+            'dossiers.programme',
+            'dossiers.analyste',
+            'dossiers.gestionnaire',
+            'dossierEntreeRelation.qualificationUser',
+            'dossierEntreeRelation.programmesSubmittedBy',
+            'dossierEntreeRelation.qualificationValidatedByAgenceUser',
+            'dossierEntreeRelation.instructionValidatedBy',
+            'dossierEntreeRelation.programmeSelections.programme',
+            'dossierEntreeRelation.programmeSelections.instructionDossier',
+            'dossierAnalyseCritique',
+            'juridiqueAvisUser',
+            'conformiteAvisUser',
+            'promuClientUser',
+            'prospectRejectedUser',
+            'sites.region',
+            'sites.departement',
+            'sites.arrondissement',
+            'sites.village',
+            'sites.quartier',
+            'equipeMembres.site',
+            'equipeMembres.cniFichier',
+            'reponses.question',
+            'reponses.choice',
+        ]);
+
+        $mr = $this->buildQuestionnaireResults($item);
+        $checklist = $item->piecesExigiblesChecklist();
+
+        $logoData = '';
+        $logoPath = public_path('img/logo-bcpme.png');
+        if (is_readable($logoPath)) {
+            $logoData = base64_encode((string) file_get_contents($logoPath));
+        }
+        $generatedAt = now();
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->loadView('RoleSpace.entreprises.fiche_pdf', [
+            'space' => $space,
+            'item' => $item,
+            'mr' => $mr,
+            'checklist' => $checklist,
+            'logoData' => $logoData,
+            'generatedAt' => $generatedAt,
+        ]);
+        $pdf->setCallbacks([
+            [
+                'event' => 'end_document',
+                'f' => function (int $pageNumber, int $pageCount, Canvas $canvas, FontMetrics $fontMetrics): void {
+                    $font = $fontMetrics->get_font('DejaVu Sans', 'normal');
+                    $size = 8;
+                    $color = [0.35, 0.35, 0.35];
+                    $w = $canvas->get_width();
+                    $h = $canvas->get_height();
+                    $y = $h - 28;
+                    $pageLabel = 'Page '.$pageNumber.' / '.$pageCount;
+                    $tw = $canvas->get_text_width($pageLabel, $font, $size);
+                    $canvas->text($w - $tw - 18, $y, $pageLabel, $font, $size, $color);
+                    $canvas->text(18, $y, 'BC-PME — Angara', $font, $size, $color);
+                },
+            ],
+        ]);
+
+        $nameSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($item->name ?: $item->token));
+        $filename = ($item->prospect ? 'fiche-prospect-' : 'fiche-client-').$nameSlug.'.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -726,6 +826,18 @@ class PortfolioController extends Controller
         $dossier->rerx_analyste_risques_assigned_by_user_id = auth()->id();
         $dossier->save();
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Affectation de dossier — pôle risques',
+            title: 'Un dossier vous a été affecté',
+            body: "Vous avez été affecté(e) sur un dossier.\n\nMerci de consulter le dossier et d’effectuer les actions attendues dans votre espace.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-risques.dossiers.show', $dossier->token),
+            event: 'assign_rerx_analyste_risques'
+        );
+        $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+
         return redirect()
             ->route('rerx.dossiers.show', $token)
             ->with('success', 'Dossier affecté à '.$analyste->name.'.');
@@ -800,7 +912,35 @@ class PortfolioController extends Controller
 
         $dossier->rerx_submitted_to_direction_at = now();
         $dossier->rerx_submitted_to_direction_by_user_id = auth()->id();
+        // Réouverture suite à rejet inter-pôle (Direction vers RISQ) : on réinitialise les marqueurs.
+        $dossier->direction_rejected_to_risques_at = null;
+        $dossier->direction_rejected_to_risques_by_user_id = null;
+        $dossier->direction_rejected_to_risques_motif = null;
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $dgPayload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — direction (DG)',
+            title: 'Un dossier a été transmis à la direction',
+            body: "Un dossier d’instruction a été transmis à la direction (DG & DGA).\n\nMerci de consulter le dossier et d’effectuer les actions attendues.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('dg.dossiers.show', $dossier->token),
+            event: 'submit_rerx_to_direction'
+        );
+        $dgaPayload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — direction (DGA)',
+            title: 'Un dossier a été transmis à la direction',
+            body: "Un dossier d’instruction a été transmis à la direction (DG & DGA).\n\nMerci de consulter le dossier et d’effectuer les actions attendues.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('dga.dossiers.show', $dossier->token),
+            event: 'submit_rerx_to_direction'
+        );
+
+        $dgRecipients = $mailer->recipientsByRole((int) config('angara.role_dg', 4));
+        $dgaRecipients = $mailer->recipientsByRole((int) config('angara.role_dga', 5));
+        $mailer->notifyUsers($dgRecipients, auth()->user(), $dgPayload, $ctx);
+        $mailer->notifyUsers($dgaRecipients, auth()->user(), $dgaPayload, $ctx);
 
         return redirect()
             ->route('rerx.dossiers.show', $token)
@@ -851,6 +991,18 @@ class PortfolioController extends Controller
         $dossier->juridique_analyste_assigned_at = now();
         $dossier->juridique_analyste_assigned_by_user_id = auth()->id();
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Affectation de dossier — pôle juridique',
+            title: 'Un dossier vous a été affecté',
+            body: "Vous avez été affecté(e) sur un dossier.\n\nMerci de consulter le dossier et de préparer votre avis.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-juridique.dossiers.show', $dossier->token),
+            event: 'assign_juridique_analyste'
+        );
+        $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
 
         $msg = 'Dossier affecté à '.$analyste->name.'.';
 
@@ -916,7 +1068,24 @@ class PortfolioController extends Controller
 
         $dossier->juridique_submitted_to_engagements_at = now();
         $dossier->juridique_submitted_to_engagements_by_user_id = auth()->id();
+        // Réouverture suite à rejet inter-pôle (RENG vers RJU) : on réinitialise les marqueurs.
+        $dossier->engagements_rejected_to_juridique_at = null;
+        $dossier->engagements_rejected_to_juridique_by_user_id = null;
+        $dossier->engagements_rejected_to_juridique_motif = null;
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — responsable engagements',
+            title: 'Un dossier a été transmis au responsable engagements',
+            body: "Un dossier vient d’être transmis au pôle engagements.\n\nMerci de consulter le dossier et d’effectuer les actions attendues.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('reng.dossiers.show', $dossier->token),
+            event: 'submit_juridique_to_engagements'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_engagements', 9));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
 
         return redirect()
             ->route('juridique.dossiers.show', $token)
@@ -973,6 +1142,18 @@ class PortfolioController extends Controller
         $dossier->reng_analyste_credit_assigned_at = now();
         $dossier->reng_analyste_credit_assigned_by_user_id = auth()->id();
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Affectation de dossier — engagements',
+            title: 'Un dossier vous a été affecté',
+            body: "Vous avez été affecté(e) sur un dossier.\n\nMerci de consulter le dossier et de préparer votre contre-analyse et avis.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-credit.dossiers.show', $dossier->token),
+            event: 'assign_reng_analyste_credit'
+        );
+        $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
 
         return redirect()
             ->route('reng.dossiers.show', $token)
@@ -1048,7 +1229,24 @@ class PortfolioController extends Controller
 
         $dossier->reng_submitted_to_risques_at = now();
         $dossier->reng_submitted_to_risques_by_user_id = auth()->id();
+        // Réouverture suite à rejet inter-pôle (RISQ vers RENG) : on réinitialise les marqueurs.
+        $dossier->risques_rejected_to_engagements_at = null;
+        $dossier->risques_rejected_to_engagements_by_user_id = null;
+        $dossier->risques_rejected_to_engagements_motif = null;
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — responsable risques',
+            title: 'Un dossier a été transmis au responsable risques',
+            body: "Un dossier vient d’être transmis au pôle risques.\n\nMerci de consulter le dossier et d’effectuer les actions attendues.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('rerx.dossiers.show', $dossier->token),
+            event: 'submit_reng_to_risques'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_risques', 12));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
 
         return redirect()
             ->route('reng.dossiers.show', $token)
@@ -1180,7 +1378,24 @@ class PortfolioController extends Controller
 
         $dossier->juridique_instruction_submitted_at = now();
         $dossier->juridique_instruction_submitted_by_user_id = auth()->id();
+        // Réouverture suite à rejet inter-pôle (RJU vers REXP) : on réinitialise les marqueurs.
+        $dossier->juridique_rejected_to_exploitation_at = null;
+        $dossier->juridique_rejected_to_exploitation_by_user_id = null;
+        $dossier->juridique_rejected_to_exploitation_motif = null;
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — pôle juridique',
+            title: 'Un dossier a été transmis au pôle juridique',
+            body: "Un dossier vient d’être transmis au pôle juridique.\n\nMerci de consulter le dossier et d’effectuer les actions attendues (affectation analyste, avis, transmission).",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('juridique.dossiers.show', $dossier->token),
+            event: 'submit_respexp_to_juridique'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_juridique', 10));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
 
         return redirect()
             ->route('respexp.dossiers.show', $token)
@@ -1230,6 +1445,18 @@ class PortfolioController extends Controller
         $dossier->exploitation_analyste_assigned_by_user_id = auth()->id();
         $dossier->save();
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Affectation de dossier — instruction analyste financier',
+            title: 'Un dossier vous a été affecté',
+            body: "Vous avez été affecté(e) sur un dossier d’instruction.\n\nMerci de consulter le dossier et de démarrer l’instruction. Une fois terminé, soumettez au responsable exploitation.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste.dossiers.show', $dossier->token),
+            event: 'assign_exploitation_analyste_financier'
+        );
+        $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+
         $msg = $wasAssigned
             ? 'Dossier réaffecté à '.$analyste->name.'.'
             : 'Dossier affecté à '.$analyste->name.'. L’analyste le verra dans son espace pour l’instruction.';
@@ -1258,6 +1485,67 @@ class PortfolioController extends Controller
         $data = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
 
         return view('RoleSpace.dossiers.instruction_detail', array_merge(compact('space'), $data));
+    }
+
+    /**
+     * Dossier d'instruction complet — export PDF (côté serveur).
+     */
+    public function dossierInstructionPdf(string $token)
+    {
+        $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+        if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
+            return $redirect;
+        }
+        $dossier->loadMissing([
+            'entreprise',
+            'programme',
+            'instructionProgrammes.programme',
+            'fichiersDossier.type',
+            'fichiersDossier.uploadedBy',
+            'exploitationAnalysteTransmittedToExploitationBy',
+            'instructionCaTransmittedToExploitationBy',
+            'analyste',
+        ]);
+
+        $space = $this->resolveSpace();
+        $data = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
+
+        $logoData = '';
+        $logoPath = public_path('img/logo-bcpme.png');
+        if (is_readable($logoPath)) {
+            $logoData = base64_encode((string) file_get_contents($logoPath));
+        }
+        $generatedAt = now();
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->loadView('RoleSpace.dossiers.instruction_detail_pdf', array_merge($data, [
+            'space' => $space,
+            'logoData' => $logoData,
+            'generatedAt' => $generatedAt,
+        ]));
+        $pdf->setCallbacks([
+            [
+                'event' => 'end_document',
+                'f' => function (int $pageNumber, int $pageCount, Canvas $canvas, FontMetrics $fontMetrics): void {
+                    $font = $fontMetrics->get_font('DejaVu Sans', 'normal');
+                    $size = 8;
+                    $color = [0.35, 0.35, 0.35];
+                    $w = $canvas->get_width();
+                    $h = $canvas->get_height();
+                    $y = $h - 28;
+                    $pageLabel = 'Page '.$pageNumber.' / '.$pageCount;
+                    $tw = $canvas->get_text_width($pageLabel, $font, $size);
+                    $canvas->text($w - $tw - 18, $y, $pageLabel, $font, $size, $color);
+                    $canvas->text(18, $y, 'BC-PME — Angara', $font, $size, $color);
+                },
+            ],
+        ]);
+
+        $nameSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($dossier->entreprise?->name ?: $dossier->token));
+        $filename = 'dossier-instruction-complet-'.$nameSlug.'.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -1366,7 +1654,7 @@ class PortfolioController extends Controller
     }
 
     /**
-     * Dossier d’analyse critique : synthèse chronologique des avis (même accès que l’instruction).
+     * Dossier d’analyse critique : analyse critique de l’analyste financier (rubriques alignées sur la fiche dossier).
      */
     public function dossierAnalyseCritiqueSyntheseShow(string $token)
     {
@@ -1374,12 +1662,11 @@ class PortfolioController extends Controller
         if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
             return $redirect;
         }
-        $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
         $space = $this->resolveSpace();
         $item = $dossier;
-        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($dossier);
+        $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($dossier);
 
-        return view('RoleSpace.dossiers.dossier_analyse_critique', compact('space', 'item', 'entries'));
+        return view('RoleSpace.dossiers.dossier_analyse_critique', compact('space', 'item', 'doc'));
     }
 
     public function dossierAnalyseCritiqueSynthesePdf(string $token)
@@ -1388,8 +1675,7 @@ class PortfolioController extends Controller
         if ($redirect = $this->redirectUnlessCanViewAnalystInstructionWork($dossier)) {
             return $redirect;
         }
-        $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
-        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($dossier);
+        $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($dossier);
 
         $logoData = '';
         $logoPath = public_path('img/logo-bcpme.png');
@@ -1403,7 +1689,7 @@ class PortfolioController extends Controller
         $pdf->setPaper('A4', 'portrait');
         $pdf->loadView('RoleSpace.dossiers.dossier_analyse_critique_pdf', [
             'item' => $dossier,
-            'entries' => $entries,
+            'doc' => $doc,
             'logoData' => $logoData,
             'generatedAt' => $generatedAt,
         ]);
@@ -1427,5 +1713,433 @@ class PortfolioController extends Controller
         $filename = 'dossier-analyse-critique-'.preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) $dossier->token).'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Rejet par le REXP de la soumission de l'analyste financier (réouverture de l'étape AF).
+     *
+     * Effets :
+     * - Trace l'horodatage, l'auteur et le motif obligatoire du rejet.
+     * - L'avis et la grille de l'analyste financier deviennent à nouveau modifiables.
+     * - L'avis crédit éventuellement saisi par le REXP est conservé mais devra être confirmé / mis à jour.
+     */
+    public function rejectExploitationAnalyste(Request $request, string $token)
+    {
+        $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if (! $dossier->isInstructionTransmittedToExploitationByAnalysteFinancier()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Aucune soumission de l’analyste financier en attente de décision.']);
+        }
+        if ($dossier->isSubmittedToJuridique()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Le dossier a été transmis au pôle juridique : la soumission de l’analyste ne peut plus être rejetée.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet est obligatoire.']
+        );
+
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet est obligatoire.'])
+                ->withInput();
+        }
+
+        $dossier->exploitation_analyste_rejected_at = now();
+        $dossier->exploitation_analyste_rejected_by_user_id = auth()->id();
+        $dossier->exploitation_analyste_reject_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Soumission rejetée — analyste financier',
+            title: 'Votre soumission a été rejetée par le responsable exploitation',
+            body: "Le responsable exploitation a rejeté votre soumission. Vous pouvez modifier votre travail et le retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste.dossiers.show', $dossier->token),
+            event: 'reject_exploitation_analyste'
+        );
+        if ($dossier->analyste_id) {
+            $analyste = User::query()->whereKey((int) $dossier->analyste_id)->first();
+            if ($analyste) {
+                $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+            }
+        }
+
+        return redirect()
+            ->route('respexp.dossiers.show', $token)
+            ->with('success', 'Soumission de l’analyste financier rejetée. Il peut désormais corriger et retransmettre.');
+    }
+
+    /**
+     * Rejet par le RJU de la soumission de l'analyste juridique (réouverture de l'étape AJ).
+     */
+    public function rejectJuridiqueAnalyste(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('juridique_instruction_submitted_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('juridique.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if (! $dossier->isJuridiqueAnalysteAvisSubmittedToReju()) {
+            return redirect()
+                ->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Aucune soumission de l’analyste juridique en attente de décision.']);
+        }
+        if ($dossier->isSubmittedToEngagementsFromJuridique()) {
+            return redirect()
+                ->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Le dossier a été transmis au pôle engagements : la soumission de l’analyste ne peut plus être rejetée.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet est obligatoire.']
+        );
+
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()
+                ->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet est obligatoire.'])
+                ->withInput();
+        }
+
+        $dossier->juridique_analyste_rejected_at = now();
+        $dossier->juridique_analyste_rejected_by_user_id = auth()->id();
+        $dossier->juridique_analyste_reject_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Avis rejeté — analyste juridique',
+            title: 'Votre avis a été rejeté par le responsable juridique',
+            body: "Le responsable juridique a rejeté votre avis. Vous pouvez le modifier et le retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-juridique.dossiers.show', $dossier->token),
+            event: 'reject_juridique_analyste'
+        );
+        if ($dossier->juridique_analyste_user_id) {
+            $analyste = User::query()->whereKey((int) $dossier->juridique_analyste_user_id)->first();
+            if ($analyste) {
+                $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+            }
+        }
+
+        return redirect()
+            ->route('juridique.dossiers.show', $token)
+            ->with('success', 'Avis de l’analyste juridique rejeté. Il peut désormais le corriger et le retransmettre.');
+    }
+
+    /**
+     * Rejet par le RENG de la soumission de l'analyste crédit (réouverture de l'étape AC).
+     */
+    public function rejectRengAnalysteCredit(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('juridique_submitted_to_engagements_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if (! $dossier->isRengAnalysteCreditSubmittedToReng()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Aucune soumission de l’analyste crédit en attente de décision.']);
+        }
+        if ($dossier->isSubmittedToRisquesFromReng()) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Le dossier a été transmis au pôle risques : la soumission de l’analyste ne peut plus être rejetée.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet est obligatoire.']
+        );
+
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()
+                ->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet est obligatoire.'])
+                ->withInput();
+        }
+
+        $dossier->reng_analyste_credit_rejected_at = now();
+        $dossier->reng_analyste_credit_rejected_by_user_id = auth()->id();
+        $dossier->reng_analyste_credit_reject_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Soumission rejetée — analyste crédit',
+            title: 'Votre soumission a été rejetée par le responsable engagements',
+            body: "Le responsable engagements a rejeté votre soumission. Vous pouvez la modifier et la retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-credit.dossiers.show', $dossier->token),
+            event: 'reject_reng_analyste_credit'
+        );
+        if ($dossier->reng_analyste_credit_user_id) {
+            $analyste = User::query()->whereKey((int) $dossier->reng_analyste_credit_user_id)->first();
+            if ($analyste) {
+                $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+            }
+        }
+
+        return redirect()
+            ->route('reng.dossiers.show', $token)
+            ->with('success', 'Soumission de l’analyste crédit rejetée. Il peut désormais corriger et retransmettre.');
+    }
+
+    /**
+     * Rejet par le RISQ de la soumission de l'analyste risques (réouverture de l'étape AR).
+     */
+    public function rejectRerxAnalysteRisques(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('reng_submitted_to_risques_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if (! $dossier->isRerxAnalysteRisquesSubmittedToRerx()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Aucune soumission de l’analyste risques en attente de décision.']);
+        }
+        if ($dossier->isSubmittedToDirectionFromRerx()) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_analyste' => 'Le dossier a été transmis à la direction : la soumission de l’analyste ne peut plus être rejetée.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet est obligatoire.']
+        );
+
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()
+                ->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet est obligatoire.'])
+                ->withInput();
+        }
+
+        $dossier->rerx_analyste_risques_rejected_at = now();
+        $dossier->rerx_analyste_risques_rejected_by_user_id = auth()->id();
+        $dossier->rerx_analyste_risques_reject_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Soumission rejetée — analyste risques',
+            title: 'Votre soumission a été rejetée par le responsable risques',
+            body: "Le responsable risques a rejeté votre soumission. Vous pouvez la modifier et la retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('analyste-risques.dossiers.show', $dossier->token),
+            event: 'reject_rerx_analyste_risques'
+        );
+        if ($dossier->rerx_analyste_risques_user_id) {
+            $analyste = User::query()->whereKey((int) $dossier->rerx_analyste_risques_user_id)->first();
+            if ($analyste) {
+                $mailer->notifyUser($analyste, auth()->user(), $payload, $ctx);
+            }
+        }
+
+        return redirect()
+            ->route('rerx.dossiers.show', $token)
+            ->with('success', 'Soumission de l’analyste risques rejetée. Il peut désormais corriger et retransmettre.');
+    }
+
+    /**
+     * Rejet inter-pôle : RJU renvoie le dossier vers le pôle exploitation (réouverture REXP).
+     *
+     * Effets :
+     * - Verrouillage RJU : le rejet n'est possible qu'avant transmission au pôle engagements.
+     * - L'avis crédit du REXP, sa décision sur les engagements et sa transmission au juridique sont à nouveau modifiables.
+     */
+    public function rejectJuridiqueToExploitation(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('juridique_instruction_submitted_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()->route('juridique.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if ($dossier->isSubmittedToEngagementsFromJuridique()) {
+            return redirect()->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier est déjà transmis au pôle engagements : il ne peut plus être renvoyé au pôle exploitation.']);
+        }
+        if ($dossier->isJuridiqueRejectedToExploitation()) {
+            return redirect()->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier a déjà été renvoyé au pôle exploitation : en attente de retransmission par le REXP.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet inter-pôle est obligatoire.']
+        );
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()->route('juridique.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet inter-pôle est obligatoire.'])->withInput();
+        }
+
+        $dossier->juridique_rejected_to_exploitation_at = now();
+        $dossier->juridique_rejected_to_exploitation_by_user_id = auth()->id();
+        $dossier->juridique_rejected_to_exploitation_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Rejet inter-pôle — dossier renvoyé au pôle exploitation',
+            title: 'Le responsable juridique vous renvoie le dossier',
+            body: "Le responsable juridique a rejeté le dossier et vous le renvoie pour révision. Vous pouvez modifier votre avis et votre décision sur les engagements puis retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('respexp.dossiers.show', $dossier->token),
+            event: 'reject_juridique_to_exploitation'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_exploitation', 6));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+
+        return redirect()->route('juridique.dossiers.show', $token)
+            ->with('success', 'Dossier renvoyé au pôle exploitation. Le responsable exploitation pourra modifier et retransmettre.');
+    }
+
+    /**
+     * Rejet inter-pôle : RENG renvoie le dossier vers le pôle juridique (réouverture RJU).
+     */
+    public function rejectEngagementsToJuridique(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('juridique_submitted_to_engagements_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()->route('reng.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if ($dossier->isSubmittedToRisquesFromReng()) {
+            return redirect()->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier est déjà transmis au pôle risques : il ne peut plus être renvoyé au pôle juridique.']);
+        }
+        if ($dossier->isEngagementsRejectedToJuridique()) {
+            return redirect()->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier a déjà été renvoyé au pôle juridique : en attente de retransmission par le RJU.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet inter-pôle est obligatoire.']
+        );
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()->route('reng.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet inter-pôle est obligatoire.'])->withInput();
+        }
+
+        $dossier->engagements_rejected_to_juridique_at = now();
+        $dossier->engagements_rejected_to_juridique_by_user_id = auth()->id();
+        $dossier->engagements_rejected_to_juridique_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Rejet inter-pôle — dossier renvoyé au pôle juridique',
+            title: 'Le responsable engagements vous renvoie le dossier',
+            body: "Le responsable engagements a rejeté le dossier et vous le renvoie pour révision. Vous pouvez modifier votre avis puis retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('juridique.dossiers.show', $dossier->token),
+            event: 'reject_engagements_to_juridique'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_juridique', 8));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+
+        return redirect()->route('reng.dossiers.show', $token)
+            ->with('success', 'Dossier renvoyé au pôle juridique. Le responsable juridique pourra modifier et retransmettre.');
+    }
+
+    /**
+     * Rejet inter-pôle : RISQ renvoie le dossier vers le pôle engagements (réouverture RENG).
+     */
+    public function rejectRisquesToEngagements(Request $request, string $token)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereNotNull('reng_submitted_to_risques_at')
+            ->firstOrFail();
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()->route('rerx.dossiers.show', $token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+        if ($dossier->isSubmittedToDirectionFromRerx()) {
+            return redirect()->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier est déjà transmis à la direction : il ne peut plus être renvoyé au pôle engagements.']);
+        }
+        if ($dossier->isRisquesRejectedToEngagements()) {
+            return redirect()->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_inter_pole' => 'Le dossier a déjà été renvoyé au pôle engagements : en attente de retransmission par le RENG.']);
+        }
+
+        $validated = $request->validate(
+            ['rejet_motif' => 'required|string|max:5000'],
+            ['rejet_motif.required' => 'Le motif du rejet inter-pôle est obligatoire.']
+        );
+        if (strlen(trim(strip_tags((string) $validated['rejet_motif']))) === 0) {
+            return redirect()->route('rerx.dossiers.show', $token)
+                ->withErrors(['rejet_motif' => 'Le motif du rejet inter-pôle est obligatoire.'])->withInput();
+        }
+
+        $dossier->risques_rejected_to_engagements_at = now();
+        $dossier->risques_rejected_to_engagements_by_user_id = auth()->id();
+        $dossier->risques_rejected_to_engagements_motif = $validated['rejet_motif'];
+        $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Rejet inter-pôle — dossier renvoyé au pôle engagements',
+            title: 'Le responsable risques vous renvoie le dossier',
+            body: "Le responsable risques a rejeté le dossier et vous le renvoie pour révision. Vous pouvez modifier votre avis puis retransmettre.\n\nMotif : ".$validated['rejet_motif'],
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('reng.dossiers.show', $dossier->token),
+            event: 'reject_risques_to_engagements'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_engagements', 10));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+
+        return redirect()->route('rerx.dossiers.show', $token)
+            ->with('success', 'Dossier renvoyé au pôle engagements. Le responsable engagements pourra modifier et retransmettre.');
     }
 }

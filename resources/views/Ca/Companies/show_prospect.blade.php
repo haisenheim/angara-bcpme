@@ -34,6 +34,7 @@
         @else
             <span class="badge bg-secondary">Brouillon — non soumis</span>
         @endif
+        <x-statut-badge :statut="$item->clientStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">Workflow entrée en relation — avis juridique &amp; conformité</p>
 </div>
@@ -325,6 +326,9 @@
         @include('Gestionnaire.Companies.partials.tiers_section', ['item' => $item, 'tiers_readonly' => true, 'tiers_entreprise_show_route' => 'ca.entreprises.show'])
     </div>
     <div class="col-12">
+        @include('partials.entreprise-sites-et-equipe', ['item' => $item, 'canCrud' => false])
+    </div>
+    <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
                 <strong>Checklist des pieces exigibles</strong>
@@ -511,6 +515,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="col-12">
+        @include('partials.entreprise-avis-gestionnaire-par-critere', ['item' => $item, 'mr' => $mr])
     </div>
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">

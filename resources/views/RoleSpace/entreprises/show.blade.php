@@ -1,4 +1,5 @@
 @extends(match ($space['route'] ?? '') {
+    'gestionnaire' => 'Layouts.gestionnaire',
     'respexp' => 'Layouts.respexp',
     'juridique' => 'Layouts.juridique',
     'analyste-juridique' => 'Layouts.analyste-juridique',
@@ -38,17 +39,43 @@
 @endsection
 
 @section('actions')
-    <x-page-actions-dropdown button-id="roleSpaceEntrepriseShowActions">
-        @if($isAnalysteCreditSpace)
-            <li><a class="dropdown-item" href="{{ route('analyste-credit.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+    @if(($space['route'] ?? '') === 'gestionnaire')
+        <x-page-actions-dropdown button-id="gestionnaireEntrepriseShowActions">
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.fiche.pdf', $item->token) }}" target="_blank" rel="noopener"><i class="bi bi-printer me-2"></i>Imprimer la fiche (PDF)</a></li>
             <li><hr class="dropdown-divider"></li>
-        @elseif($hasEngagementsReadRoute)
-            <li><a class="dropdown-item" href="{{ route($engagementsReadRoute, $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+            <li><a class="dropdown-item" data-bs-target="#addAppuiModal" data-bs-toggle="modal" href="#"><i class="demo-psi-add me-2"></i>Ajouter un appui</a></li>
+            <li><a class="dropdown-item" data-bs-target="#addElementModal" data-bs-toggle="modal" href="#"><i class="demo-psi-file me-2"></i>Ajouter une pièce</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Checklist pièces exigibles</a></li>
             <li><hr class="dropdown-divider"></li>
-        @endif
-        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
-        <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>
-    </x-page-actions-dropdown>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Questionnaire de mise en relation</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.physique.create', $item->token) }}"><i class="demo-psi-male me-2"></i>Tiers personne physique</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
+        </x-page-actions-dropdown>
+    @else
+        <x-page-actions-dropdown button-id="roleSpaceEntrepriseShowActions">
+            @php
+                $fichePdfRoute = ($space['route'] ?? '').'.entreprises.fiche.pdf';
+                $hasFichePdfRoute = \Illuminate\Support\Facades\Route::has($fichePdfRoute);
+            @endphp
+            @if($hasFichePdfRoute)
+                <li><a class="dropdown-item" href="{{ route($fichePdfRoute, $item->token) }}" target="_blank" rel="noopener"><i class="bi bi-printer me-2"></i>Imprimer la fiche (PDF)</a></li>
+                <li><hr class="dropdown-divider"></li>
+            @endif
+            @if($isAnalysteCreditSpace)
+                <li><a class="dropdown-item" href="{{ route('analyste-credit.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+                <li><hr class="dropdown-divider"></li>
+            @elseif($hasEngagementsReadRoute)
+                <li><a class="dropdown-item" href="{{ route($engagementsReadRoute, $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+                <li><hr class="dropdown-divider"></li>
+            @endif
+            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
+            <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>
+        </x-page-actions-dropdown>
+    @endif
 @endsection
 
 @section('page-header')
@@ -62,6 +89,7 @@
         @endif
         <span class="badge bg-secondary">{{ $item->taille ?? '—' }}</span>
         <span class="badge bg-{{ $item->caractere === 'Formel' ? 'success' : 'warning' }}">{{ $item->caractere ?? '—' }}</span>
+        <x-statut-badge :statut="$item->clientStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">Portefeuille — {{ $item->forme?->name ?? '—' }} — {{ $item->agence?->name ?? '—' }}</p>
 </div>
@@ -121,5 +149,78 @@
     'dossierShowRoute' => $space['route'].'.dossiers.show',
     'programmeShowRoute' => $ficheProgrammeRoute,
     'tiersEntrepriseShowRoute' => $space['route'].'.entreprises.show',
+    'sitesEquipeCanCrud' => (($space['route'] ?? '') === 'gestionnaire'),
 ])
+
+@if(($space['route'] ?? '') === 'gestionnaire')
+    <div class="modal fade" id="addAppuiModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un appui</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.appui.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                        <div class="">
+                            <div class="form-group">
+                                <label class="form-label">Appui</label>
+                                <select required name="appui_id" id="appui_id" class="form-select">
+                                    <option value="0">Selectionner un appui ...</option>
+                                    @foreach(($appuis ?? []) as $it)
+                                        <option value="{{ $it->id }}">{{ $it->name }} ({{ $it->financier?'financier':'non financier' }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-5">
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addElementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter une pièce constitutive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <form enctype="multipart/form-data" action="{{ route('gestionnaire.entreprise.element.save') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="entreprise_id" value="{{ $item->id }}">
+                        <div class="mb-3">
+                            <label for="type_id" class="form-label">Type de pièce</label>
+                            <select required name="type_id" id="type_id" class="form-select">
+                                <option value="0">Selectionner un type de pièce  ...</option>
+                                @foreach(($elements ?? []) as $it)
+                                    <option value="{{ $it->id }}">{{ $it->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fichier" class="form-label">Fichier</label>
+                            <input type="file" name="fichier" id="fichier" class="form-control">
+                        </div>
+                        <div class="mt-5 d-grid">
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .form-group{
+            margin-top: 1rem;
+        }
+    </style>
+@endif
 @endsection

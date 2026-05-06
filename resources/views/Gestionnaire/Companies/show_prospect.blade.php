@@ -2,6 +2,10 @@
 
 @include('partials.entreprise-fiche-styles')
 
+@push('styles')
+@include('partials.summernote-fr-styles', ['variant' => 'bs5'])
+@endpush
+
 @section('title', $item->name)
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
@@ -15,6 +19,8 @@
 
 @section('actions')
     <x-page-actions-dropdown button-id="gestionnaireProspectShowActions">
+        <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.fiche.pdf', $item->token) }}" target="_blank" rel="noopener"><i class="bi bi-printer me-2"></i>Imprimer la fiche (PDF)</a></li>
+        <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.prospects') }}">Retour liste</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.questionnaire', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Repondre au questionnaire</a></li>
@@ -46,6 +52,7 @@
         @else
             <span class="badge bg-secondary">Brouillon — non soumis</span>
         @endif
+        <x-statut-badge :statut="$item->clientStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">Workflow entrée en relation — avis juridique &amp; conformité</p>
 </div>
@@ -337,6 +344,9 @@
         @include('Gestionnaire.Companies.partials.tiers_section', ['item' => $item])
     </div>
     <div class="col-12">
+        @include('partials.entreprise-sites-et-equipe', ['item' => $item, 'canCrud' => true])
+    </div>
+    <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                 <strong>Checklist des pieces exigibles</strong>
@@ -484,6 +494,52 @@
                                                     </div>
                                                 </div>
 
+                                                @php
+                                                    $critereId = (int) ($result['critere']?->id ?? 0);
+                                                    $avis = $critereId > 0 ? ($item->critereAvis?->firstWhere('critere_id', $critereId) ?? null) : null;
+                                                @endphp
+                                                @if($critereId > 0)
+                                                    <div class="card border-0 shadow-sm mb-4 border-start border-3 border-primary">
+                                                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                                            <div>
+                                                                <strong>Avis du gestionnaire — {{ $result['critere']?->name ?? 'Critère' }}</strong>
+                                                                <p class="text-body-secondary small mb-0 mt-1">Saisissez une synthèse pour ce critère principal (modifiable à tout moment).</p>
+                                                            </div>
+                                                            @if($avis?->saved_at)
+                                                                <span class="badge bg-light text-dark">Dernière saisie {{ \Illuminate\Support\Carbon::parse($avis->saved_at)->format('d/m/Y \à H:i') }}</span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form method="post" action="{{ route('gestionnaire.entreprises.prospects.avis-criteres.store', $item->token) }}">
+                                                                @csrf
+                                                                <input type="hidden" name="critere_id" value="{{ $critereId }}">
+                                                                <div class="summernote-wrapper summernote-wrapper--compact mb-3">
+                                                                    <label class="form-label" for="avis_critere_{{ $critereId }}">Votre avis</label>
+                                                                    <textarea
+                                                                        name="avis"
+                                                                        id="avis_critere_{{ $critereId }}"
+                                                                        class="form-control js-summernote-gestionnaire-critere-avis @error('avis') is-invalid @enderror"
+                                                                        rows="6"
+                                                                    >{!! (old('critere_id') && (int) old('critere_id') === $critereId) ? old('avis') : ($avis?->avis) !!}</textarea>
+                                                                    @error('avis')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                                                </div>
+                                                                @error('critere_id')
+                                                                    <div class="text-danger small mb-2">{{ $message }}</div>
+                                                                @enderror
+                                                                <button type="submit" class="btn btn-primary">Enregistrer l’avis</button>
+                                                            </form>
+                                                            @if($avis?->avis)
+                                                                <form method="post" action="{{ route('gestionnaire.entreprises.prospects.avis-criteres.store', $item->token) }}" class="d-inline" onsubmit="return confirm('Supprimer l’avis pour ce critère ?');">
+                                                                    @csrf
+                                                                    <input type="hidden" name="critere_id" value="{{ $critereId }}">
+                                                                    <input type="hidden" name="avis" value="">
+                                                                    <button type="submit" class="btn btn-outline-danger ms-1">Supprimer</button>
+                                                                </form>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 <div class="tab-base tab-vertical">
                                                     <div class="row g-0">
                                                         <div class="col-md-4 col-lg-4">
@@ -571,4 +627,31 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>
+<script>
+    jQuery(document).ready(function($) {
+        $('.js-summernote-gestionnaire-critere-avis').summernote({
+            lang: 'fr-FR',
+            height: 160,
+            dialogsInBody: true,
+            placeholder: 'Saisissez votre avis...',
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'hr']],
+                ['view', ['codeview']]
+            ],
+            callbacks: {
+                onChange: function (contents) {
+                    $(this).val(contents);
+                }
+            }
+        });
+    });
+</script>
 @endsection

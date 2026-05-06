@@ -8,15 +8,17 @@
     'rerx' => 'Layouts.rerx',
     'dg' => 'Layouts.dg',
     'dga' => 'Layouts.dga',
+    'gestionnaire' => 'Layouts.gestionnaire',
     default => 'Layouts.app',
 })
 
 @php
     $roleSpaceDossierSummernoteRoutes = ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga'];
     $roleSpaceDossierNeedsSummernote = in_array($space['route'] ?? '', $roleSpaceDossierSummernoteRoutes, true);
+    $readonly = (bool) ($readonly ?? false);
 @endphp
 
-@if($roleSpaceDossierNeedsSummernote)
+@if($roleSpaceDossierNeedsSummernote && ! $readonly)
 @push('styles')
 @include('partials.summernote-fr-styles', ['variant' => 'bs5'])
 @endpush
@@ -40,6 +42,7 @@
 @endsection
 
 @section('actions')
+@if(! $readonly)
 @php
     $spaceRoute = (string) ($space['route'] ?? '');
     $dossiersListRoute = in_array($spaceRoute, ['dg', 'dga'], true)
@@ -66,6 +69,19 @@
         @endif
 
         <li><hr class="dropdown-divider my-2"></li>
+        @php
+            $instructionPdfRoute = $spaceRoute.'.dossiers.instruction.pdf';
+            $hasInstructionPdfRoute = \Illuminate\Support\Facades\Route::has($instructionPdfRoute);
+        @endphp
+        @if($hasInstructionPdfRoute)
+            <li><h6 class="dropdown-header text-uppercase small text-muted px-3 mb-0">Exports</h6></li>
+            <li>
+                <a class="dropdown-item rounded-0 py-2" href="{{ route($instructionPdfRoute, $dossier->token) }}" target="_blank" rel="noopener">
+                    <i class="bi bi-printer me-2 text-body-secondary"></i>Imprimer le dossier complet (PDF)
+                </a>
+            </li>
+            <li><hr class="dropdown-divider my-2"></li>
+        @endif
         <li>
             <button type="button" class="dropdown-item rounded-0 py-2" data-bs-toggle="modal" data-bs-target="#{{ $piecesModalId ?? 'dossierPieceUploadModal' }}">
                 <i class="demo-psi-upload me-2 text-body-secondary"></i>Ajouter une pièce au dossier
@@ -173,6 +189,13 @@
                     <i class="demo-psi-cross me-2 text-danger"></i>Rejeter la clôture instruction
                 </button>
             </li>
+            @if($dossier->isSubmittedToDirectionFromRerx() && ! $dossier->isDirectionRejectedToRisques())
+                <li>
+                    <button type="button" class="dropdown-item rounded-0 py-2 text-warning" data-bs-toggle="modal" data-bs-target="#modalRejectVersRisques">
+                        <i class="demo-psi-arrow-back me-2 text-warning"></i>Renvoyer au pôle risques (sans clôturer)
+                    </button>
+                </li>
+            @endif
             @if(! empty($instructionClosureRuleDescription))
                 <li>
                     <span class="dropdown-item disabled text-muted small py-2" tabindex="-1">{{ $instructionClosureRuleDescription }}</span>
@@ -186,9 +209,10 @@
             </li>
         @endif
 </x-page-actions-dropdown>
+@endif
 @endsection
 
-@if(! $dossier->isInstructionClosed() && ! empty($canCloseInstruction))
+@if(! $readonly && ! $dossier->isInstructionClosed() && ! empty($canCloseInstruction))
     <div class="modal fade" id="modalInstructionClosureApprove" tabindex="-1" aria-labelledby="modalInstructionClosureApproveLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -200,8 +224,10 @@
                     @csrf
                     <div class="modal-body">
                         <p class="text-muted small mb-3">Cette clôture correspond à la <strong>fin de parcours</strong> du dossier d’instruction (délégation de pouvoir).</p>
-                        <label class="form-label small" for="instruction_closure_note">Note (optionnel)</label>
-                        <textarea class="form-control" id="instruction_closure_note" name="instruction_closure_note" rows="3" maxlength="5000" placeholder="Note éventuelle"></textarea>
+                        <label class="form-label small" for="instruction_closure_note">Note de clôture <span class="text-danger" aria-hidden="true">*</span></label>
+                        <textarea class="form-control @error('instruction_closure_note') is-invalid @enderror" id="instruction_closure_note" name="instruction_closure_note" rows="3" maxlength="5000" required minlength="1" placeholder="Saisissez la note de clôture (obligatoire)">{{ old('instruction_closure_note') }}</textarea>
+                        @error('instruction_closure_note')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Toute clôture doit être accompagnée d'une note de clôture (obligatoire).</div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -224,11 +250,13 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label" for="instruction_closure_reject_motif">Motif (optionnel)</label>
-                            <textarea class="form-control" id="instruction_closure_reject_motif" name="instruction_closure_reject_motif" rows="4" maxlength="5000"></textarea>
+                            <textarea class="form-control" id="instruction_closure_reject_motif" name="instruction_closure_reject_motif" rows="4" maxlength="5000">{{ old('instruction_closure_reject_motif') }}</textarea>
                         </div>
                         <div class="mb-0">
-                            <label class="form-label small" for="instruction_closure_reject_note">Note interne (optionnel)</label>
-                            <textarea class="form-control" id="instruction_closure_reject_note" name="instruction_closure_note" rows="2" maxlength="5000"></textarea>
+                            <label class="form-label small" for="instruction_closure_reject_note">Note de clôture <span class="text-danger" aria-hidden="true">*</span></label>
+                            <textarea class="form-control @error('instruction_closure_note') is-invalid @enderror" id="instruction_closure_reject_note" name="instruction_closure_note" rows="3" maxlength="5000" required minlength="1" placeholder="Saisissez la note de clôture (obligatoire)">{{ old('instruction_closure_note') }}</textarea>
+                            @error('instruction_closure_note')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text">Toute clôture (validation ou rejet) doit être accompagnée d'une note de clôture (obligatoire).</div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -239,6 +267,16 @@
             </div>
         </div>
     </div>
+
+    @if($dossier->isSubmittedToDirectionFromRerx() && ! $dossier->isDirectionRejectedToRisques())
+        @include('RoleSpace.dossiers.partials._inter_pole_reject_modal', [
+            'modalId' => 'modalRejectVersRisques',
+            'action' => route('instruction.dossiers.rejeter-vers-risques', $dossier->token),
+            'titre' => 'Renvoyer le dossier au pôle risques (sans clôturer)',
+            'description' => 'Le rejet inter-pôle renvoie le dossier au responsable risques pour révision (sans clôturer le dossier d’instruction). Le motif est obligatoire et tracé.',
+            'ctaLabel' => 'Renvoyer au pôle risques',
+        ])
+    @endif
 @endif
 
 @section('page-header')
@@ -252,6 +290,7 @@
         <span class="badge bg-secondary-subtle text-secondary border">
             {{ $dossier->currentOrganisationLabel() ?: '—' }}
         </span>
+        <x-statut-badge :statut="$dossier->instructionStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">{{ $dossier->entreprise?->name ?? 'Entreprise non renseignée' }}</p>
     <div class="d-flex flex-wrap gap-2 mt-2">
@@ -328,57 +367,66 @@
 
         @php
             $spaceRoute = (string) ($space['route'] ?? '');
-            $isHubSpace = in_array($spaceRoute, ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga'], true);
+            $isHubSpace = in_array($spaceRoute, ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga', 'gestionnaire'], true);
             $timeline = $dossier->instructionWorkflowHistoryTimeline();
             $structurationSvc = app(\App\Services\StructurationClosureService::class);
         @endphp
 
-        {{-- Présentation linéaire (ordre chronologique croissant) --}}
+        {{-- Chronologie « actes » (résumé) pour repli ; chronologie complète sur les espaces hub --}}
         @php
             $timelineSorted = $timeline
                 ->sortBy(fn ($r) => $r['at']?->getTimestamp() ?? PHP_INT_MAX)
                 ->values();
+            $consultChrono = $instructionConsultation ?? null;
+            $consultChronoColl = ($consultChrono && isset($consultChrono['timeline']))
+                ? collect($consultChrono['timeline'])
+                : collect();
+            $hasConsultChrono = $consultChronoColl->isNotEmpty();
+            $showChronologyCard = $isHubSpace || ! $hasConsultChrono;
+            $useFullChronology = $isHubSpace && $hasConsultChrono;
+            if ($useFullChronology) {
+                $chronologyRows = $consultChronoColl
+                    ->sortBy(function ($r) {
+                        $t = $r['at'] ?? null;
+                        $ts = $t instanceof \Carbon\Carbon ? $t->getTimestamp() : 0;
+                        $secondary = str_pad((string) (int) ($r['sort'] ?? 0), 6, '0', STR_PAD_LEFT);
+                        $label = mb_strtolower((string) ($r['label'] ?? ''));
+
+                        return sprintf('%012d.%s.%s', $ts, $secondary, $label);
+                    })
+                    ->values();
+            } else {
+                $chronologyRows = $timelineSorted;
+            }
         @endphp
 
-        {{-- Bloc synthèse : programmes / budgets ; sur les espaces « hub », l’historique détaillé est fusionné avec le parcours sous la chronologie des actes. --}}
+        {{-- Bloc synthèse : programmes / budgets ; sur les espaces « hub », la chronologie détaillée est uniquement sous cette carte. --}}
         @include('partials.instruction-dossier-consultation', [
             'dossier' => $dossier,
             'instructionConsultation' => $instructionConsultation ?? null,
             'showConsultationTimeline' => ! $isHubSpace,
         ])
 
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-header bg-transparent border-0 py-3">
-                <h6 class="mb-0 fw-semibold"><i class="demo-psi-clock me-2 text-primary"></i>Historique (chronologie)</h6>
-                <p class="text-muted small mb-0 mt-1">Actes enregistrés uniquement (nature de l’action, date et heure, auteur et profil) — ordre chronologique croissant.@if($isHubSpace) Le détail des contenus saisis figure dans la section <strong>Parcours d’instruction et historique du dossier</strong> ci-dessous.@else Le détail des contenus peut figurer dans la carte <strong>Historique du dossier</strong> ci-dessus.@endif</p>
+        @if($showChronologyCard)
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h6 class="mb-0 fw-semibold"><i class="demo-psi-clock me-2 text-primary"></i>Historique (chronologie)</h6>
+                    <p class="text-muted small mb-0 mt-1">
+                        @if($useFullChronology)
+                            <strong>Timeline horizontale</strong> (défilement latéral sur petit écran) : événements du parcours d’instruction et avis ou traces complémentaires enregistrés sur le dossier (distincts du <strong>dossier d’analyse critique</strong> : avis du chargé d’instruction analyste, document dédié), en ordre chronologique croissant — nature de l’événement, date et heure, auteur et profil uniquement.
+                        @else
+                            <strong>Timeline horizontale</strong> : actes enregistrés (nature de l’action, date et heure, auteur et profil), ordre chronologique croissant.
+                        @endif
+                    </p>
+                </div>
+                <div class="card-body pt-0">
+                    @include('partials.instruction-chronology-horizontal-timeline', [
+                        'rows' => $chronologyRows,
+                        'useFullChronology' => $useFullChronology,
+                    ])
+                </div>
             </div>
-            <div class="card-body pt-0">
-                @if($timelineSorted->isEmpty())
-                    <p class="text-muted small mb-0">Aucun événement enregistré pour ce dossier.</p>
-                @else
-                    <div class="vstack gap-2">
-                        @foreach($timelineSorted as $row)
-                            <div class="border rounded p-2 bg-white">
-                                <div class="d-flex justify-content-between gap-2">
-                                    <div class="small fw-semibold text-break">{{ $row['label'] }}</div>
-                                    <div class="small text-muted text-nowrap">{{ $row['at']?->format('d/m/Y H:i') }}</div>
-                                </div>
-                                @if(! empty($row['actor']))
-                                    <div class="small text-muted mt-1 text-break">
-                                        Par <strong>{{ $row['actor']->name }}</strong>
-                                        @if(! empty($row['actor']->role?->name))
-                                            <span class="text-muted">— {{ $row['actor']->role->name }}</span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <div class="small text-muted mt-1">Auteur non renseigné ou non applicable.</div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        </div>
+        @endif
 
         {{-- Parcours + historique détaillé (fusion, ordre croissant par étape, fonds subtle) --}}
         @if($isHubSpace)
@@ -391,16 +439,16 @@
             ])
 
             {{-- Modals d’affectation (inchangées) --}}
-            @if($spaceRoute === 'respexp' && isset($analystesExploitation) && $analystesExploitation->isNotEmpty())
+            @if(! $readonly && $spaceRoute === 'respexp' && isset($analystesExploitation) && $analystesExploitation->isNotEmpty())
                 @include('RoleSpace.dossiers.partials.respexp_assign_analyste_modal')
             @endif
-            @if($spaceRoute === 'juridique' && isset($analystesJuridique) && $analystesJuridique->isNotEmpty() && ! $dossier->isSubmittedToEngagementsFromJuridique() && ! $dossier->isJuridiqueAnalysteAvisSubmittedToReju())
+            @if(! $readonly && $spaceRoute === 'juridique' && isset($analystesJuridique) && $analystesJuridique->isNotEmpty() && ! $dossier->isSubmittedToEngagementsFromJuridique() && ! $dossier->isJuridiqueAnalysteAvisSubmittedToReju())
                 @include('RoleSpace.dossiers.partials.juridique_assign_analyste_modal')
             @endif
-            @if($spaceRoute === 'reng' && isset($analystesCredit) && $analystesCredit->isNotEmpty() && ! $dossier->isSubmittedToRisquesFromReng() && ! $dossier->isRengAnalysteCreditSubmittedToReng())
+            @if(! $readonly && $spaceRoute === 'reng' && isset($analystesCredit) && $analystesCredit->isNotEmpty() && ! $dossier->isSubmittedToRisquesFromReng() && ! $dossier->isRengAnalysteCreditSubmittedToReng())
                 @include('RoleSpace.dossiers.partials.reng_assign_analyste_credit_modal')
             @endif
-            @if($spaceRoute === 'rerx' && isset($analystesRisques) && $analystesRisques->isNotEmpty() && ! $dossier->isSubmittedToDirectionFromRerx() && ! $dossier->isRerxAnalysteRisquesSubmittedToRerx())
+            @if(! $readonly && $spaceRoute === 'rerx' && isset($analystesRisques) && $analystesRisques->isNotEmpty() && ! $dossier->isSubmittedToDirectionFromRerx() && ! $dossier->isRerxAnalysteRisquesSubmittedToRerx())
                 @include('RoleSpace.dossiers.partials.rerx_assign_analyste_risques_modal')
             @endif
         @endif
@@ -411,12 +459,13 @@
                 'routePiecesStore' => ($spaceRoute).'.dossiers.pieces.store',
                 'modalId' => $piecesModalId ?? 'dossierPieceUploadModal',
                 'fichierTypes' => $fichierTypes ?? collect(),
+                'showUpload' => ! $readonly,
             ])
         </div>
     </div>
 @endsection
 
-@if($roleSpaceDossierNeedsSummernote)
+@if($roleSpaceDossierNeedsSummernote && ! $readonly)
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>

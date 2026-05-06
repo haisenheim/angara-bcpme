@@ -89,6 +89,11 @@ class Entreprise extends Model
         return $this->hasMany('App\Models\QuestionAnswer', 'entreprise_id');
     }
 
+    public function critereAvis(): HasMany
+    {
+        return $this->hasMany(EntrepriseCritereAvis::class, 'entreprise_id');
+    }
+
     public function answers()
     {
         return $this->hasMany('App\Models\Instruction\Scoring\Individual\DossierChoice', 'dossier_id');
@@ -182,6 +187,49 @@ class Entreprise extends Model
         return $this->promu_client_at !== null || $this->prospect_rejected_at !== null;
     }
 
+    /**
+     * Statut métier global de l'entreprise (référence : prompt.txt l.30-36).
+     *
+     * Gère les états « cycle de vie » au-delà du cas client structuré (prospect en cours / rejeté / etc.).
+     * Pour les entreprises promues client, délègue à {@see DossierEntreeRelation::clientStructurationPresentation()}.
+     *
+     * @return array{code: string, label: string, badge_variant: string, detail: ?string}
+     */
+    public function clientStatutPresentation(): array
+    {
+        if ($this->prospect_rejected_at !== null && $this->promu_client_at === null) {
+            return [
+                'code' => 'prospect_rejete',
+                'label' => 'Prospect rejeté',
+                'badge_variant' => 'danger',
+                'detail' => 'Refus de conversion en client par le chef d’agence',
+            ];
+        }
+
+        if ($this->promu_client_at === null) {
+            if ($this->prospect_submitted_at !== null) {
+                return [
+                    'code' => 'prospect_en_cours',
+                    'label' => 'Prospect — avis en cours',
+                    'badge_variant' => 'info',
+                    'detail' => 'Avis juridique / conformité / décision chef d’agence en attente',
+                ];
+            }
+
+            return [
+                'code' => 'prospect_brouillon',
+                'label' => 'Prospect (brouillon)',
+                'badge_variant' => 'secondary',
+                'detail' => 'Pas encore soumis pour avis',
+            ];
+        }
+
+        // Entreprise promue client : on délègue au statut « structuration » prévu par le prompt (l.30-36).
+        $this->loadMissing('dossierEntreeRelation');
+
+        return DossierEntreeRelation::clientStructurationPresentation($this->dossierEntreeRelation);
+    }
+
     public function taille()
     {
         return $this->belongsTo('App\Models\Taille');
@@ -220,6 +268,16 @@ class Entreprise extends Model
     public function quartier()
     {
         return $this->belongsTo('App\Models\Quartier');
+    }
+
+    public function sites(): HasMany
+    {
+        return $this->hasMany(EntrepriseSite::class, 'entreprise_id')->orderBy('libelle');
+    }
+
+    public function equipeMembres(): HasMany
+    {
+        return $this->hasMany(EntrepriseEquipeMembre::class, 'entreprise_id')->orderBy('nom')->orderBy('prenom');
     }
 
     public function getTpersoAttribute()

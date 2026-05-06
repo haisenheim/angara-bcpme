@@ -8,7 +8,10 @@
     $submittedToReju = $dossier->isJuridiqueAnalysteAvisSubmittedToReju();
     $submittedToEngagements = $dossier->isSubmittedToEngagementsFromJuridique();
     $isAssignedAnalyst = $isAnalysteAj && (int) $dossier->juridique_analyste_user_id === (int) auth()->id();
-    $analystCanEditAvis = $isAssignedAnalyst && ! $submittedToEngagements;
+    $rejectedByReju = $dossier->isJuridiqueAnalysteRejectedByReju();
+    // Verrouillage strict : l'avis est figé dès la soumission au RJU (cohérence avec AF/AC/AR).
+    // Réouverture sur rejet : l'analyste peut à nouveau modifier après un rejet motivé du RJU.
+    $analystCanEditAvis = $isAssignedAnalyst && (! $submittedToReju || $rejectedByReju);
 @endphp
 
 <div class="card shadow-sm border-0 mb-4 border-start border-4 border-primary">
@@ -41,29 +44,24 @@
         @if($analystCanEditAvis)
             <div class="mb-4">
                 <h6 class="fw-semibold mb-2">Votre avis (analyste juridique)</h6>
-                @if($submittedToReju && $dossier->juridique_analyste_submitted_to_reju_at)
-                    <p class="small text-muted mb-2">
-                        Première transmission au responsable juridique le {{ $dossier->juridique_analyste_submitted_to_reju_at->format('d/m/Y H:i') }}
-                        @if($dossier->juridiqueAnalysteSubmittedToRejuBy)
-                            — <strong>{{ $dossier->juridiqueAnalysteSubmittedToRejuBy->name }}</strong>
-                        @endif
-                    </p>
-                @endif
+                @include('RoleSpace.dossiers.partials._analyste_reject_banner', [
+                    'rejected' => $rejectedByReju,
+                    'motif' => $dossier->juridique_analyste_reject_motif,
+                    'rejectedAt' => $dossier->juridique_analyste_rejected_at,
+                    'rejectedBy' => $dossier->juridiqueAnalysteRejectedBy,
+                    'libelleAction' => 'modifier votre avis puis le retransmettre au responsable juridique',
+                ])
                 @error('juridique_analyste_avis')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
-                <form method="post" action="{{ route('analyste-juridique.dossiers.soumettre-reju', $dossier->token) }}" id="form-analyste-juridique-soumettre">
+                <form method="post" action="{{ route('analyste-juridique.dossiers.soumettre-reju', $dossier->token) }}" id="form-analyste-juridique-soumettre" onsubmit="return confirm('Transmettre votre avis au responsable juridique ? Une fois soumis, l’avis ne sera plus modifiable depuis votre espace.');">
                     @csrf
                     <div class="mb-3 summernote-wrapper">
                         <label for="juridique_analyste_avis" class="form-label">Rédigez votre avis</label>
                         <textarea name="juridique_analyste_avis" id="juridique_analyste_avis" class="form-control js-summernote-juridique @error('juridique_analyste_avis') is-invalid @enderror" rows="10">{!! old('juridique_analyste_avis', $dossier->juridique_analyste_avis) !!}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">{{ $submittedToReju ? 'Enregistrer la mise à jour de l’avis' : 'Soumettre au responsable juridique' }}</button>
+                    <button type="submit" class="btn btn-primary">Soumettre au responsable juridique</button>
                 </form>
                 <p class="small text-muted mt-2 mb-0">
-                    @if($submittedToReju)
-                        Vous pouvez encore modifier votre avis tant que le responsable juridique n’a pas transmis le dossier au <strong>responsable engagements</strong>. La date et l’auteur de la première transmission au responsable juridique restent affichées ci-dessous.
-                    @else
-                        Après la première soumission, le responsable juridique est informé (horodatage et identité enregistrés). Vous pourrez encore ajuster l’avis jusqu’à la transmission du dossier au responsable engagements.
-                    @endif
+                    La soumission est définitive : conformément au workflow, votre avis sera figé dès la transmission au responsable juridique (horodatage et identité enregistrés). Une réouverture nécessite une action explicite du maillon suivant.
                 </p>
             </div>
         @elseif($submittedToReju)
@@ -84,8 +82,18 @@
         @if($isReju && $submittedToReju && ! $submittedToEngagements)
             <div class="mb-0">
                 <h6 class="fw-semibold mb-2">Avis du responsable juridique</h6>
+                @include('RoleSpace.dossiers.partials._inter_pole_reject_banner', [
+                    'rejected' => $dossier->isEngagementsRejectedToJuridique(),
+                    'motif' => $dossier->engagements_rejected_to_juridique_motif,
+                    'rejectedAt' => $dossier->engagements_rejected_to_juridique_at,
+                    'rejectedBy' => $dossier->engagementsRejectedToJuridiqueBy,
+                    'libelleAction' => 'modifier votre avis et retransmettre au responsable engagements',
+                    'sourcePole' => 'responsable engagements',
+                ])
                 @error('juridique_responsable_avis')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 @error('engagements')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                @error('rejet_motif')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                @error('rejet_analyste')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('juridique.dossiers.responsable-avis', $dossier->token) }}" class="mb-3">
                     @csrf
                     <div class="mb-2 summernote-wrapper">
@@ -94,12 +102,33 @@
                     </div>
                     <button type="submit" class="btn btn-outline-primary btn-sm">Enregistrer l’avis</button>
                 </form>
-                <form method="post" action="{{ route('juridique.dossiers.soumettre-engagements', $dossier->token) }}" onsubmit="return confirm('Transmettre ce dossier au responsable engagements ?');">
-                    @csrf
-                    <button type="submit" class="btn btn-dark">Soumettre au responsable engagements</button>
-                </form>
-                <p class="small text-muted mt-2 mb-0">Vous pouvez modifier et ré-enregistrer votre avis autant que nécessaire tant que vous n’avez pas cliqué sur <strong>Soumettre au responsable engagements</strong>. La transmission enregistre la date, l’heure et votre identité ; l’avis du responsable juridique doit être renseigné avant l’envoi.</p>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <form method="post" action="{{ route('juridique.dossiers.soumettre-engagements', $dossier->token) }}" onsubmit="return confirm('Transmettre ce dossier au responsable engagements ?');" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn btn-dark">Soumettre au responsable engagements</button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRejectAnalysteJuridique">
+                        Rejeter l’avis de l’analyste
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalRejectVersExploitation">
+                        Renvoyer au pôle exploitation
+                    </button>
+                </div>
+                <p class="small text-muted mt-2 mb-0">Si l’avis de l’analyste juridique nécessite des corrections, vous pouvez le rejeter (motif obligatoire) : il pourra alors le modifier et vous le retransmettre. Si c’est le travail du pôle exploitation qui nécessite des corrections, vous pouvez renvoyer le dossier au responsable exploitation (motif obligatoire). Sinon, soumettez le dossier au responsable engagements.</p>
             </div>
+            @include('RoleSpace.dossiers.partials._pole_analyste_reject_modal', [
+                'modalId' => 'modalRejectAnalysteJuridique',
+                'action' => route('juridique.dossiers.rejeter-analyste', $dossier->token),
+                'titre' => 'Rejeter l’avis de l’analyste juridique',
+                'description' => 'Le rejet rend l’avis de l’analyste juridique à nouveau modifiable. Le motif est obligatoire et tracé (date, heure, identité).',
+            ])
+            @include('RoleSpace.dossiers.partials._inter_pole_reject_modal', [
+                'modalId' => 'modalRejectVersExploitation',
+                'action' => route('juridique.dossiers.rejeter-vers-exploitation', $dossier->token),
+                'titre' => 'Renvoyer le dossier au pôle exploitation',
+                'description' => 'Le rejet inter-pôle renvoie le dossier au responsable exploitation pour révision (avis crédit, décision engagements). Le motif est obligatoire et tracé.',
+                'ctaLabel' => 'Renvoyer au pôle exploitation',
+            ])
         @elseif($submittedToEngagements)
             <div class="mt-3 pt-3 border-top">
                 <h6 class="fw-semibold mb-2">Transmission au responsable engagements</h6>

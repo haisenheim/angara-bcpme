@@ -72,6 +72,10 @@ class DossierController extends Controller
 
         $dossier->reng_analyste_credit_submitted_at = now();
         $dossier->reng_analyste_credit_submitted_by_user_id = auth()->id();
+        // Réouverture suite à rejet : on réinitialise les marqueurs de rejet (l'historique reste tracé en timeline).
+        $dossier->reng_analyste_credit_rejected_at = null;
+        $dossier->reng_analyste_credit_rejected_by_user_id = null;
+        $dossier->reng_analyste_credit_reject_motif = null;
         $dossier->save();
 
         return redirect()

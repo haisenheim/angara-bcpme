@@ -109,19 +109,37 @@
                 @else
                     <p class="mb-2">Indicateurs financiers saisis : <strong>{{ $dossier->indicateurs->count() }}</strong></p>
                     <p class="mb-2">Réponses critères d’instruction : <strong>{{ $dossier->reponses->count() }}</strong></p>
-                    <p class="mb-3 text-muted small">Accédez à la <strong>grille de notation</strong>, aux indicateurs DSF et au <strong>dossier d’analyse critique</strong> (synthèse chronologique des avis) tels que renseignés par l’analyste.</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ route($spaceRoute.'.dossiers.instruction', $dossier->token) }}" class="btn btn-sm btn-primary">
-                            <i class="demo-psi-bar-chart me-1"></i> Ouvrir le contenu d’instruction (grille de notation)
-                        </a>
-                        <a href="{{ route($spaceRoute.'.dossiers.dossier-analyse-critique', $dossier->token) }}" class="btn btn-sm btn-outline-primary">
-                            Dossier d’analyse critique
-                        </a>
-                    </div>
-                    @if($dossier->isInstructionSubmittedToExploitation() && $dossier->exploitation_analyste_instruction_avis)
+                    @php
+                        $dossier->loadMissing('analyste');
+                    @endphp
+                    <p class="mb-3 text-muted small">Accédez au <strong>contenu d’instruction</strong> (grille de notation, indicateurs DSF) et au <strong>dossier d’analyse critique</strong> : <strong>analyse critique faite par {{ $dossier->analyste?->name ?? 'l’analyste financier' }}</strong> (section ci-dessous ou document PDF).</p>
+                    @php
+                        $instructionRouteName = $spaceRoute.'.dossiers.instruction';
+                        $analyseCritiqueRouteName = $spaceRoute.'.dossiers.dossier-analyse-critique';
+                        $hasInstructionRoute = \Illuminate\Support\Facades\Route::has($instructionRouteName);
+                        $hasAnalyseCritiqueRoute = \Illuminate\Support\Facades\Route::has($analyseCritiqueRouteName);
+                    @endphp
+                    @if(empty($readonly) && ($hasInstructionRoute || $hasAnalyseCritiqueRoute))
+                        <div class="d-flex flex-wrap gap-2">
+                            @if($hasInstructionRoute)
+                                <a href="{{ route($instructionRouteName, $dossier->token) }}" class="btn btn-sm btn-primary">
+                                    <i class="demo-psi-bar-chart me-1"></i> Ouvrir le contenu d’instruction (grille de notation)
+                                </a>
+                            @endif
+                            @if($hasAnalyseCritiqueRoute)
+                                <a href="{{ route($analyseCritiqueRouteName, $dossier->token) }}" class="btn btn-sm btn-outline-primary">
+                                    Dossier d’analyse critique (AFE)
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+                    @if($dossier->isInstructionSubmittedToExploitation() && $dossier->hasExploitationAnalysteInstructionAvisSubstance())
                         <div class="mt-3 pt-3 border-top">
-                            <p class="small fw-semibold mb-2 text-uppercase text-muted">Avis du chargé d’instruction (analyste financier)</p>
-                            <div class="rich-text-rendered small border rounded p-3 bg-body-tertiary">{!! $dossier->exploitation_analyste_instruction_avis !!}</div>
+                            @include('partials.exploitation-analyste-instruction-zones', [
+                                'dossier' => $dossier,
+                                'showSectionTitle' => true,
+                                'showEmptyZones' => true,
+                            ])
                         </div>
                     @endif
                     @if($dossier->isInstructionCaTransmittedToExploitation() && strlen(trim(strip_tags((string) ($dossier->instruction_agence_ca_avis ?? '')))) > 0)
@@ -260,7 +278,17 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white"><strong>Transmission au pôle juridique</strong></div>
         <div class="card-body">
+            @include('RoleSpace.dossiers.partials._inter_pole_reject_banner', [
+                'rejected' => $dossier->isJuridiqueRejectedToExploitation(),
+                'motif' => $dossier->juridique_rejected_to_exploitation_motif,
+                'rejectedAt' => $dossier->juridique_rejected_to_exploitation_at,
+                'rejectedBy' => $dossier->juridiqueRejectedToExploitationBy,
+                'libelleAction' => 'modifier votre avis crédit et/ou votre décision sur les engagements puis retransmettre au pôle juridique',
+                'sourcePole' => 'responsable juridique',
+            ])
             @error('juridique')<div class="alert alert-danger py-2 small">{{ $message }}</div>@enderror
+            @error('rejet_motif')<div class="alert alert-danger py-2 small">{{ $message }}</div>@enderror
+            @error('rejet_analyste')<div class="alert alert-danger py-2 small">{{ $message }}</div>@enderror
             @if($transmisJuridique && $dossier->juridique_instruction_submitted_at)
                 <p class="mb-0 small text-success">
                     <strong>Dossier transmis</strong> — le {{ $dossier->juridique_instruction_submitted_at->format('d/m/Y') }} à {{ $dossier->juridique_instruction_submitted_at->format('H:i') }}
@@ -270,11 +298,39 @@
                 </p>
                 <p class="small text-muted mb-0 mt-2">Le responsable juridique peut consulter ce dossier dans son espace (menu <strong>Dossiers d’instruction</strong>).</p>
             @elseif($dossier->canRespexpSoumettreAuJuridique())
-                <p class="small text-muted mb-3">Après validation du dossier d’instruction et saisie de l’avis de crédit, transmettez le dossier au pôle juridique.</p>
-                <form method="post" action="{{ route('respexp.dossiers.soumettre-juridique', $dossier->token) }}" class="mb-0">
-                    @csrf
-                    <button type="submit" class="btn btn-primary">Soumettre au pôle juridique</button>
-                </form>
+                <p class="small text-muted mb-3">Après validation du dossier d’instruction et saisie de l’avis de crédit, transmettez le dossier au pôle juridique. Si la soumission de l’analyste financier nécessite des corrections, vous pouvez la rejeter (motif obligatoire).</p>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <form method="post" action="{{ route('respexp.dossiers.soumettre-juridique', $dossier->token) }}" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn btn-primary">Soumettre au pôle juridique</button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRejectAnalysteFinancier">
+                        Rejeter la soumission de l’analyste
+                    </button>
+                </div>
+                @include('RoleSpace.dossiers.partials._pole_analyste_reject_modal', [
+                    'modalId' => 'modalRejectAnalysteFinancier',
+                    'action' => route('respexp.dossiers.rejeter-analyste', $dossier->token),
+                    'titre' => 'Rejeter la soumission de l’analyste financier',
+                    'description' => 'Le rejet rend les rubriques d’analyse de l’analyste financier à nouveau modifiables. Le motif est obligatoire et tracé (date, heure, identité).',
+                ])
+            @elseif($dossier->isInstructionTransmittedToExploitationByAnalysteFinancier() && ! $dossier->isSubmittedToJuridique())
+                {{-- Permettre le rejet même quand l'avis crédit n'est pas encore renseigné, afin de renvoyer une saisie problématique. --}}
+                <p class="small text-muted mb-3">Si la soumission de l’analyste financier nécessite des corrections avant de pouvoir saisir l’avis de crédit, vous pouvez la rejeter (motif obligatoire) : l’analyste pourra modifier puis retransmettre.</p>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRejectAnalysteFinancier">
+                    Rejeter la soumission de l’analyste
+                </button>
+                @include('RoleSpace.dossiers.partials._pole_analyste_reject_modal', [
+                    'modalId' => 'modalRejectAnalysteFinancier',
+                    'action' => route('respexp.dossiers.rejeter-analyste', $dossier->token),
+                    'titre' => 'Rejeter la soumission de l’analyste financier',
+                    'description' => 'Le rejet rend les rubriques d’analyse de l’analyste financier à nouveau modifiables. Le motif est obligatoire et tracé (date, heure, identité).',
+                ])
+                <p class="small text-muted mb-2 mt-3">La transmission au pôle juridique nécessite par ailleurs :</p>
+                <ul class="small text-muted mb-0">
+                    <li>l’avis de crédit renseigné ;</li>
+                    <li>la décision sur le dossier d’instruction en <strong>accord</strong>.</li>
+                </ul>
             @else
                 <p class="small text-muted mb-2">La transmission est possible lorsque :</p>
                 <ul class="small text-muted mb-0">

@@ -66,6 +66,10 @@ class DossierController extends Controller
 
         $dossier->rerx_analyste_risques_submitted_at = now();
         $dossier->rerx_analyste_risques_submitted_by_user_id = auth()->id();
+        // Réouverture suite à rejet : on réinitialise les marqueurs de rejet (l'historique reste tracé en timeline).
+        $dossier->rerx_analyste_risques_rejected_at = null;
+        $dossier->rerx_analyste_risques_rejected_by_user_id = null;
+        $dossier->rerx_analyste_risques_reject_motif = null;
         $dossier->save();
 
         return redirect()

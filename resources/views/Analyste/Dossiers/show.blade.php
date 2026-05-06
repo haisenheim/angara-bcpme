@@ -78,6 +78,13 @@
     @error('submission')
         <div class="alert alert-danger">{{ $message }}</div>
     @enderror
+    @include('RoleSpace.dossiers.partials._analyste_reject_banner', [
+        'rejected' => $item->isExploitationAnalysteRejectedByRexp(),
+        'motif' => $item->exploitation_analyste_reject_motif,
+        'rejectedAt' => $item->exploitation_analyste_rejected_at,
+        'rejectedBy' => $item->exploitationAnalysteRejectedBy,
+        'libelleAction' => 'modifier vos rubriques d’analyse et retransmettre au responsable exploitation',
+    ])
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <ul class="mb-0 ps-3">

@@ -37,6 +37,7 @@
         @endif
         <span class="badge bg-secondary">{{ $item->taille }}</span>
         <span class="badge bg-{{ $item->caractere === 'Formel' ? 'success' : 'warning' }}">{{ $item->caractere }}</span>
+        <x-statut-badge :statut="$item->clientStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">Dossier entreprise — {{ $item->forme?->name ?? '—' }}</p>
 </div>
@@ -52,7 +53,15 @@
 
 @include('partials.entreprise-qualification-chef-filiere', ['item' => $item, 'qualificationContext' => 'gestionnaire'])
 
-@include('partials.entreprise-fiche-client-body', ['item' => $item, 'mr' => $mr, 'checklist' => $checklist])
+@include('partials.entreprise-fiche-client-ca-body', [
+    'item' => $item,
+    'mr' => $mr,
+    'checklist' => $checklist,
+    'dossierShowRoute' => 'gestionnaire.dossiers.show',
+    'programmeShowRoute' => 'gestionnaire.programmes.show',
+    'tiersEntrepriseShowRoute' => 'gestionnaire.entreprises.show',
+    'sitesEquipeCanCrud' => true,
+])
 
     <div class="modal fade" id="addAppuiModal" tabindex="-1">
         <div class="modal-dialog">

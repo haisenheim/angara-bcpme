@@ -9,14 +9,21 @@ use App\Models\User;
 class InstructionDelegationService
 {
     /**
-     * Profils (users.role_id = profils.id) autorisés à valider / rejeter la structuration soumise
-     * (étape « agence / délégation »), selon le total des engagements sollicités et le paramétrage.
-     * Sans règle : DG et DGA uniquement (config angara.role_dg / role_dga).
+     * Profils (users.role_id = profils.id) autorisés à valider / rejeter la clôture du dossier
+     * d'instruction, selon le total des engagements sollicités et le paramétrage de délégation.
+     *
+     * Règle métier (prompt l. 226) : « En dernier ressort c'est le DG ou le DGA qui dispose de
+     * la possibilité de clôturer le dossier. » → le DG et le DGA conservent TOUJOURS le pouvoir
+     * de clôture, en parallèle du profil délégué applicable au seuil.
+     *
+     * Sans règle / sans total : DG et DGA uniquement.
      */
     public function authorizedProfilIdsForDossier(Dossier $dossier): array
     {
+        $direction = $this->defaultDirectionProfilIds();
+
         if ($dossier->engagements_sollicites_total === null) {
-            return $this->defaultDirectionProfilIds();
+            return $direction;
         }
 
         $total = (float) $dossier->engagements_sollicites_total;
@@ -26,16 +33,16 @@ class InstructionDelegationService
             ->get();
 
         if ($rules->isEmpty()) {
-            return $this->defaultDirectionProfilIds();
+            return $direction;
         }
 
         foreach ($rules as $rule) {
             if ($total <= (float) $rule->seuil_engagements_max) {
-                return [(int) $rule->profil_id];
+                return array_values(array_unique(array_merge([(int) $rule->profil_id], $direction)));
             }
         }
 
-        return $this->defaultDirectionProfilIds();
+        return $direction;
     }
 
     /**
@@ -78,28 +85,29 @@ class InstructionDelegationService
 
     /**
      * Libellé métier pour l’interface (seuil + profil ciblé), utilisé pour la clôture du dossier d’instruction.
+     * Le DG/DGA conserve toujours le pouvoir de clôture (mention systématique en complément du profil délégué).
      */
     public function describeRuleForInstructionClosure(Dossier $dossier): string
     {
         if ($dossier->engagements_sollicites_total === null) {
-            return 'Total des engagements sollicités non renseigné sur ce dossier : seuls le DG et le DGA peuvent valider ou rejeter la structuration, jusqu’à mise à jour métier.';
+            return 'Total des engagements sollicités non renseigné sur ce dossier : seuls le DG et le DGA peuvent valider ou rejeter la clôture, jusqu’à mise à jour métier.';
         }
 
         $total = (float) $dossier->engagements_sollicites_total;
         $rules = DelegationPouvoir::query()->orderBy('seuil_engagements_max')->get();
         if ($rules->isEmpty()) {
-            return 'Aucun paramétrage : seuls le DG et le DGA peuvent valider ou rejeter la structuration.';
+            return 'Aucun paramétrage : seuls le DG et le DGA peuvent valider ou rejeter la clôture.';
         }
         foreach ($rules as $rule) {
             if ($total <= (float) $rule->seuil_engagements_max) {
                 $name = $rule->profil?->name ?? ('Profil #'.$rule->profil_id);
 
                 return 'Seuil applicable : total engagements sollicités ≤ '.number_format((float) $rule->seuil_engagements_max, 0, ',', ' ')
-                    .' XAF — profil habilité : '.$name.'.';
+                    .' XAF — profil habilité : '.$name.' (le DG et le DGA conservent toujours le pouvoir de clôture en dernier ressort).';
             }
         }
 
-        return 'Total au-delà des seuils paramétrés : validation/réjet de la structuration réservé au DG et au DGA.';
+        return 'Total au-delà des seuils paramétrés : validation/rejet de la clôture réservé au DG et au DGA.';
     }
 
     /**

@@ -8,7 +8,9 @@
     $submittedByAnalyste = $dossier->isRengAnalysteCreditSubmittedToReng();
     $submittedToRisques = $dossier->isSubmittedToRisquesFromReng();
     $isAssignedCredit = $isAnalysteAc && (int) $dossier->reng_analyste_credit_user_id === (int) auth()->id();
-    $analysteCanEdit = $isAssignedCredit && ! $submittedByAnalyste;
+    $rejectedByReng = $dossier->isRengAnalysteCreditRejectedByReng();
+    // Réouverture sur rejet : l'analyste peut à nouveau modifier après un rejet motivé du RENG.
+    $analysteCanEdit = $isAssignedCredit && (! $submittedByAnalyste || $rejectedByReng);
 @endphp
 
 <div class="card mb-4 border-start border-4 border-success">
@@ -41,6 +43,13 @@
         @if($analysteCanEdit)
             <div class="mb-3">
                 <h6 class="fw-semibold mb-2">Votre travail (analyste crédit)</h6>
+                @include('RoleSpace.dossiers.partials._analyste_reject_banner', [
+                    'rejected' => $rejectedByReng,
+                    'motif' => $dossier->reng_analyste_credit_reject_motif,
+                    'rejectedAt' => $dossier->reng_analyste_credit_rejected_at,
+                    'rejectedBy' => $dossier->rengAnalysteCreditRejectedBy,
+                    'libelleAction' => 'corriger votre contre-analyse / avis et retransmettre',
+                ])
                 @error('draft')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 @error('submit')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 @foreach (['reng_contre_analyse' => 'Contre-analyse', 'reng_analyste_credit_avis' => 'Avis'] as $field => $label)
@@ -95,8 +104,18 @@
         @if($isReng && $submittedByAnalyste && ! $submittedToRisques)
             <div class="mb-0">
                 <h6 class="fw-semibold mb-2">Avis du responsable engagements</h6>
+                @include('RoleSpace.dossiers.partials._inter_pole_reject_banner', [
+                    'rejected' => $dossier->isRisquesRejectedToEngagements(),
+                    'motif' => $dossier->risques_rejected_to_engagements_motif,
+                    'rejectedAt' => $dossier->risques_rejected_to_engagements_at,
+                    'rejectedBy' => $dossier->risquesRejectedToEngagementsBy,
+                    'libelleAction' => 'modifier votre avis et retransmettre au responsable risques',
+                    'sourcePole' => 'responsable risques',
+                ])
                 @error('reng_responsable_avis')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 @error('risques')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                @error('rejet_motif')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
+                @error('rejet_analyste')<div class="text-danger small mb-2">{{ $message }}</div>@enderror
                 <form method="post" action="{{ route('reng.dossiers.responsable-avis', $dossier->token) }}" class="mb-3">
                     @csrf
                     <div class="mb-2 summernote-wrapper">
@@ -105,12 +124,33 @@
                     </div>
                     <button type="submit" class="btn btn-outline-primary btn-sm">Enregistrer l’avis</button>
                 </form>
-                <form method="post" action="{{ route('reng.dossiers.soumettre-risques', $dossier->token) }}" onsubmit="return confirm('Transmettre ce dossier au responsable risques ?');">
-                    @csrf
-                    <button type="submit" class="btn btn-dark">Soumettre au responsable risques</button>
-                </form>
-                <p class="small text-muted mt-2 mb-0">La transmission enregistre la date, l’heure et votre identité.</p>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <form method="post" action="{{ route('reng.dossiers.soumettre-risques', $dossier->token) }}" onsubmit="return confirm('Transmettre ce dossier au responsable risques ?');" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn btn-dark">Soumettre au responsable risques</button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalRejectAnalysteCredit">
+                        Rejeter le travail de l’analyste
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalRejectVersJuridique">
+                        Renvoyer au pôle juridique
+                    </button>
+                </div>
+                <p class="small text-muted mt-2 mb-0">Vous pouvez : rejeter le travail de l’analyste crédit (réouverture interne), renvoyer le dossier au responsable juridique pour révision (motif obligatoire), ou transmettre au responsable risques.</p>
             </div>
+            @include('RoleSpace.dossiers.partials._pole_analyste_reject_modal', [
+                'modalId' => 'modalRejectAnalysteCredit',
+                'action' => route('reng.dossiers.rejeter-analyste-credit', $dossier->token),
+                'titre' => 'Rejeter le travail de l’analyste crédit',
+                'description' => 'Le rejet rend la contre-analyse et l’avis de l’analyste crédit à nouveau modifiables. Le motif est obligatoire et tracé (date, heure, identité).',
+            ])
+            @include('RoleSpace.dossiers.partials._inter_pole_reject_modal', [
+                'modalId' => 'modalRejectVersJuridique',
+                'action' => route('reng.dossiers.rejeter-vers-juridique', $dossier->token),
+                'titre' => 'Renvoyer le dossier au pôle juridique',
+                'description' => 'Le rejet inter-pôle renvoie le dossier au responsable juridique pour révision. Le motif est obligatoire et tracé.',
+                'ctaLabel' => 'Renvoyer au pôle juridique',
+            ])
         @elseif($submittedToRisques)
             <div class="mt-3 pt-3 border-top">
                 <h6 class="fw-semibold mb-2">Transmission au responsable risques</h6>

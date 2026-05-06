@@ -11,6 +11,7 @@ use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Instruction\IndicateurFinancier;
 use App\Models\User;
 use App\Services\DossierInstructionShowPresenter;
+use App\Services\WorkflowEmailNotificationService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
@@ -132,7 +133,24 @@ class DossierController extends Controller
         $dossier->exploitation_analyste_instruction_avis_saved_at = now();
         $dossier->exploitation_analyste_transmitted_to_exploitation_at = now();
         $dossier->exploitation_analyste_transmitted_to_exploitation_by_user_id = auth()->id();
+        // Réouverture suite à rejet : on réinitialise les marqueurs de rejet (l'historique reste tracé en timeline).
+        $dossier->exploitation_analyste_rejected_at = null;
+        $dossier->exploitation_analyste_rejected_by_user_id = null;
+        $dossier->exploitation_analyste_reject_motif = null;
         $dossier->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — responsable exploitation',
+            title: 'Un dossier a été transmis au responsable exploitation',
+            body: "Un dossier d’instruction a été soumis par l’analyste financier.\n\nMerci de consulter le dossier : avis de crédit, validation engagements, puis transmission au pôle juridique si nécessaire.",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('respexp.dossiers.show', $dossier->token),
+            event: 'submit_analyste_to_respexp'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_exploitation', 6));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
 
         return redirect()->back()->with('success', 'Dossier soumis au responsable exploitation pour validation.');
     }
