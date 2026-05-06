@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class OrganismeController extends Controller
 {
@@ -74,7 +75,7 @@ class OrganismeController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:150'],
             'abb' => ['nullable', 'string', 'max:20'],
-            'type_id' => ['required', 'integer', 'exists:Torganismes,id'],
+            'type_id' => ['required', 'integer', Rule::exists((new Torganisme)->getTable(), 'id')],
             'parent_id' => ['nullable', 'integer'],
             'pay_id' => ['nullable', 'integer'],
         ];

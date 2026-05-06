@@ -9,6 +9,8 @@ class Torganisme extends Model
 {
     use HasFactory;
 
+    protected $table = 'torganismes';
+
     protected $guarded = [];
 
     public $timestamps = false;
