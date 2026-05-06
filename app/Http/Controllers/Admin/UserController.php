@@ -83,7 +83,7 @@ class UserController extends Controller
 
         Session::flash('success', 'Compte utilisateur cree avec succes.');
 
-        return redirect()->route('admin.users.edit', $user->token);
+        return redirect()->route('admin.users.index');
     }
 
     public function show($token)
