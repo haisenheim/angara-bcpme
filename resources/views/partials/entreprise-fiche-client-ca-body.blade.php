@@ -281,6 +281,9 @@
         </div>
     </div>
     <div class="col-12">
+        @include('partials.entreprise-sites-et-equipe', ['item' => $item, 'canCrud' => (bool) ($sitesEquipeCanCrud ?? false)])
+    </div>
+    <div class="col-12">
         @include('Gestionnaire.Companies.partials.tiers_section', ['item' => $item, 'tiers_readonly' => true, 'tiers_entreprise_show_route' => $tiersEntrepriseShowRoute])
     </div>
     <div class="col-12">
@@ -470,6 +473,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="col-12">
+        @include('partials.entreprise-avis-gestionnaire-par-critere', ['item' => $item, 'mr' => $mr])
     </div>
     @php
         $eerCa = $item->dossierEntreeRelation;

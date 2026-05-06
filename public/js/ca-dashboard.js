@@ -39,7 +39,18 @@ const CADashboard = {
                 document.getElementById('total-users').textContent = data.total_users;
                 document.getElementById('total-prospects').textContent = data.total_prospects;
 
-                this.updatePortfolioChart(data.total_entreprises, data.total_cooperatives);
+                const wfPS = document.getElementById('wf-prospects-submitted');
+                if (wfPS) wfPS.textContent = data.workflow_prospects_submitted ?? 0;
+                const wfPB = document.getElementById('wf-prospects-blocked');
+                if (wfPB) wfPB.textContent = data.workflow_prospects_blocked ?? 0;
+                const wfP = document.getElementById('wf-prospects-pending');
+                if (wfP) wfP.textContent = data.workflow_prospects_pending ?? 0;
+                const wfE = document.getElementById('wf-eer-pending');
+                if (wfE) wfE.textContent = data.workflow_eer_pending ?? 0;
+                const wfB = document.getElementById('wf-instruction-bundles-pending');
+                if (wfB) wfB.textContent = data.workflow_instruction_bundles_pending ?? 0;
+
+                this.updatePortfolioChart(data.total_entreprises, data.total_cooperatives ?? 0);
             })
             .catch(error => {
                 console.error('Error loading stats:', error);

@@ -17,6 +17,7 @@ use App\Models\Dossier;
 use App\Models\ElementConstitutif;
 use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
+use App\Models\EntrepriseCritereAvis;
 use App\Models\EntrepriseAppui;
 use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
@@ -31,6 +32,9 @@ use App\Models\Region;
 use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
+use App\Services\WorkflowEmailNotificationService;
+use Dompdf\Canvas;
+use Dompdf\FontMetrics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -330,12 +334,172 @@ class CompanyController extends ExtendedController
             return redirect()->route('gestionnaire.entreprises.show', $token);
         }
 
+        // Si le chef d'agence avait rejeté le prospect, on rouvre le circuit d'avis.
+        if ($item->prospect_rejected_at !== null) {
+            $item->prospect_rejected_at = null;
+            $item->prospect_rejected_user_id = null;
+        }
+        // (Re)initialisation des avis : la resoumission déclenche un nouveau cycle.
+        $item->juridique_avis = null;
+        $item->juridique_avis_at = null;
+        $item->juridique_avis_user_id = null;
+        $item->conformite_avis = null;
+        $item->conformite_avis_at = null;
+        $item->conformite_avis_user_id = null;
+
         $item->prospect_submitted_at = now();
         $item->save();
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+
+        // Responsable juridique
+        $jurPayload = $mailer->buildPayload(
+            subject: 'Prospect soumis — avis juridique requis',
+            title: 'Un prospect est en attente de votre avis',
+            body: "Un prospect vient d’être soumis par un gestionnaire pour avis juridique.\n\nMerci de consulter la fiche et de saisir votre avis.",
+            ctaLabel: 'Ouvrir le prospect',
+            ctaUrl: route('juridique.prospects.show', $item->token),
+            event: 'submit_prospect_for_juridique_avis'
+        );
+        $jurRoleId = (int) config('angara.role_responsable_juridique', 10);
+        $jurRecipients = $mailer->recipientsByRole($jurRoleId);
+        $jurExtra = (array) config('angara.workflow_prospect_juridique_emails', []);
+        $mailer->notifyUsersAndAdditionalEmails(
+            $jurRecipients,
+            $jurExtra,
+            'Responsable juridique',
+            auth()->user(),
+            $jurPayload,
+            $ctx
+        );
+        $jurHasRoleEmail = $jurRecipients->contains(fn ($u) => $u instanceof User && filled($u->email));
+        $jurHasExtra = collect($jurExtra)->contains(fn ($e) => is_string($e) && filter_var(trim($e), FILTER_VALIDATE_EMAIL));
+        if (! $jurHasRoleEmail && ! $jurHasExtra) {
+            $mailer->notifyTestRecipientIfNoRealRecipient(
+                auth()->user(),
+                $jurPayload,
+                $ctx,
+                'Aucun destinataire trouvé pour l’avis juridique (utilisateurs actifs role_id='.$jurRoleId.' vides, et ANGARA_WORKFLOW_PROSPECT_JURIDIQUE_EMAILS non renseigné).',
+                [
+                    'role_id' => $jurRoleId,
+                    'prospect_token' => $item->token,
+                    'entreprise_id' => $item->id,
+                ]
+            );
+        }
+
+        // Responsable conformité
+        $confPayload = $mailer->buildPayload(
+            subject: 'Prospect soumis — avis conformité requis',
+            title: 'Un prospect est en attente de votre avis',
+            body: "Un prospect vient d’être soumis par un gestionnaire pour avis conformité.\n\nMerci de consulter la fiche et de saisir votre avis.",
+            ctaLabel: 'Ouvrir le prospect',
+            ctaUrl: route('conformite.prospects.show', $item->token),
+            event: 'submit_prospect_for_conformite_avis'
+        );
+        $confRoleId = (int) config('angara.role_responsable_conformite', 11);
+        $confRecipients = $mailer->recipientsByRole($confRoleId);
+        $confExtra = (array) config('angara.workflow_prospect_conformite_emails', []);
+        $mailer->notifyUsersAndAdditionalEmails(
+            $confRecipients,
+            $confExtra,
+            'Responsable conformité',
+            auth()->user(),
+            $confPayload,
+            $ctx
+        );
+        $confHasRoleEmail = $confRecipients->contains(fn ($u) => $u instanceof User && filled($u->email));
+        $confHasExtra = collect($confExtra)->contains(fn ($e) => is_string($e) && filter_var(trim($e), FILTER_VALIDATE_EMAIL));
+        if (! $confHasRoleEmail && ! $confHasExtra) {
+            $mailer->notifyTestRecipientIfNoRealRecipient(
+                auth()->user(),
+                $confPayload,
+                $ctx,
+                'Aucun destinataire trouvé pour l’avis conformité (utilisateurs actifs role_id='.$confRoleId.' vides, et ANGARA_WORKFLOW_PROSPECT_CONFORMITE_EMAILS non renseigné).',
+                [
+                    'role_id' => $confRoleId,
+                    'prospect_token' => $item->token,
+                    'entreprise_id' => $item->id,
+                ]
+            );
+        }
 
         Session::flash('success', 'Prospect soumis le '.$item->prospect_submitted_at->format('d/m/Y \à H:i').'.');
 
         return redirect()->route('gestionnaire.entreprises.show', $token);
+    }
+
+    /**
+     * Enregistre l'avis du gestionnaire par critère principal (questionnaire entrée en relation).
+     */
+    public function storeProspectCritereAvis(Request $request, string $token)
+    {
+        $item = Entreprise::query()
+            ->where('token', $token)
+            ->where('prospect', true)
+            ->firstOrFail();
+
+        $uid = auth()->id();
+        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'critere_id' => ['required', 'integer', 'min:1'],
+            'avis' => ['nullable', 'string'],
+        ]);
+
+        $critereId = (int) $validated['critere_id'];
+
+        // Garde-fou: n'autoriser que les critères réellement présents dans les réponses du questionnaire.
+        $allowedCritereIds = $item->reponses()
+            ->distinct()
+            ->pluck('critere_id')
+            ->filter(fn ($v) => $v !== null && (int) $v > 0)
+            ->map(fn ($v) => (int) $v)
+            ->values()
+            ->all();
+
+        if (! in_array($critereId, $allowedCritereIds, true)) {
+            return redirect()
+                ->route('gestionnaire.entreprises.show', $item->token)
+                ->withErrors(['critere_id' => 'Critère invalide pour ce questionnaire.']);
+        }
+
+        $raw = (string) ($validated['avis'] ?? '');
+        $raw = trim($raw);
+
+        // Summernote renvoie fréquemment "<p><br></p>" pour un contenu vide.
+        $plain = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($raw), ENT_QUOTES | ENT_HTML5)));
+        $isEmpty = $plain === '' || $raw === '<p><br></p>' || $raw === '<p></p>';
+
+        if ($isEmpty) {
+            EntrepriseCritereAvis::query()
+                ->where('entreprise_id', $item->id)
+                ->where('critere_id', $critereId)
+                ->delete();
+
+            return redirect()
+                ->route('gestionnaire.entreprises.show', $item->token)
+                ->with('success', 'Avis supprimé pour ce critère.');
+        }
+
+        EntrepriseCritereAvis::query()->updateOrCreate(
+            [
+                'entreprise_id' => $item->id,
+                'critere_id' => $critereId,
+            ],
+            [
+                'user_id' => $uid,
+                'avis' => $raw,
+                'saved_at' => now(),
+            ]
+        );
+
+        return redirect()
+            ->route('gestionnaire.entreprises.show', $item->token)
+            ->with('success', 'Avis enregistré pour ce critère.');
     }
 
     public function fetchAll()
@@ -725,17 +889,28 @@ class CompanyController extends ExtendedController
     public function show(string $token)
     {
         //
-        $item = Entreprise::where('token', $token)->first();
+        $item = Entreprise::query()
+            ->where('token', $token)
+            ->orWhere('id', (int) $token)
+            ->first();
         if (! $item) {
             return back();
         }
-        $item->load(['promuClientUser', 'prospectRejectedUser']);
+        $item->load([
+            'promuClientUser',
+            'prospectRejectedUser',
+            'sites.arrondissement',
+            'sites.departement',
+            'sites.region',
+            'equipeMembres.site',
+        ]);
         $mr = $this->buildQuestionnaireResults($item);
         $checklist = $item->piecesExigiblesChecklist();
         if ($item->prospect) {
             $item->load([
                 'juridiqueAvisUser',
                 'conformiteAvisUser',
+                'critereAvis.user',
                 'arrondissement',
                 'departement',
                 'region',
@@ -755,15 +930,134 @@ class CompanyController extends ExtendedController
         $elements = ElementConstitutif::where('active', 1)->get();
 
         $item->load([
+            'forme',
+            'filiere',
+            'branche',
+            'produit',
+            'produits.filiere',
+            'produits.branche',
+            'appuis.type',
+            'critereAvis.user',
+            'sites.arrondissement',
+            'sites.departement',
+            'sites.region',
+            'equipeMembres.site',
+            'equipeMembres.cniFichier',
+            'village',
+            'quartier',
+            'arrondissement',
+            'departement',
+            'region',
+            'agence.representation',
+            'tiers.person',
+            'tiers.company.produit',
+            'dossiers.programme',
+            'dossiers.instructionProgrammes.programme',
+            'dossiers.chefFiliereSubmittedToAgenceBy',
+            'dossiers.instructionAgenceValidatedBy',
+            'dossiers.instructionAgenceRejectedBy',
+            'juridiqueAvisUser',
+            'conformiteAvisUser',
+            'promuClientUser',
+            'prospectRejectedUser',
             'dossierEntreeRelation.qualificationUser',
             'dossierEntreeRelation.programmesSubmittedBy',
+            'dossierEntreeRelation.qualificationValidatedByAgenceUser',
             'dossierEntreeRelation.instructionValidatedBy',
             'dossierEntreeRelation.programmeSelections.programme',
             'dossierEntreeRelation.programmeSelections.instructionDossier',
         ]);
 
-        return view('/Gestionnaire/Companies/show', compact('item', 'mr', 'appuis', 'elements', 'checklist'));
+        $space = ['route' => 'gestionnaire', 'title' => 'Gestionnaire'];
 
+        return view('RoleSpace.entreprises.show', compact('item', 'mr', 'checklist', 'space', 'appuis', 'elements'));
+
+    }
+
+    /**
+     * Fiche entreprise / prospect — export PDF (côté serveur).
+     */
+    public function fichePdf(string $token)
+    {
+        $item = Entreprise::query()
+            ->where('token', $token)
+            ->orWhere('id', (int) $token)
+            ->firstOrFail();
+
+        // Accès gestionnaire : propriétaire (user) ou gestionnaire.
+        $uid = auth()->id();
+        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+            abort(403);
+        }
+
+        $item->load([
+            'promuClientUser',
+            'prospectRejectedUser',
+            'juridiqueAvisUser',
+            'conformiteAvisUser',
+            'critereAvis.user',
+            'arrondissement',
+            'departement',
+            'region',
+            'forme',
+            'agence.representation',
+            'produit',
+            'produits',
+            'appuis.type',
+            'sites.region',
+            'sites.departement',
+            'sites.arrondissement',
+            'sites.village',
+            'sites.quartier',
+            'equipeMembres.site',
+            'equipeMembres.cniFichier',
+            'reponses.question',
+            'reponses.choice',
+        ]);
+
+        $mr = $this->buildQuestionnaireResults($item);
+        $checklist = $item->piecesExigiblesChecklist();
+
+        $logoData = '';
+        $logoPath = public_path('img/logo-bcpme.png');
+        if (is_readable($logoPath)) {
+            $logoData = base64_encode((string) file_get_contents($logoPath));
+        }
+        $generatedAt = now();
+        $space = ['route' => 'gestionnaire', 'title' => 'Gestionnaire'];
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->loadView('RoleSpace.entreprises.fiche_pdf', [
+            'space' => $space,
+            'item' => $item,
+            'mr' => $mr,
+            'checklist' => $checklist,
+            'logoData' => $logoData,
+            'generatedAt' => $generatedAt,
+        ]);
+        $pdf->setCallbacks([
+            [
+                'event' => 'end_document',
+                'f' => function (int $pageNumber, int $pageCount, Canvas $canvas, FontMetrics $fontMetrics): void {
+                    $font = $fontMetrics->get_font('DejaVu Sans', 'normal');
+                    $size = 8;
+                    $color = [0.35, 0.35, 0.35];
+                    $w = $canvas->get_width();
+                    $h = $canvas->get_height();
+                    $y = $h - 28;
+                    $pageLabel = 'Page '.$pageNumber.' / '.$pageCount;
+                    $tw = $canvas->get_text_width($pageLabel, $font, $size);
+                    $canvas->text($w - $tw - 18, $y, $pageLabel, $font, $size, $color);
+                    $canvas->text(18, $y, 'BC-PME — Angara', $font, $size, $color);
+                },
+            ],
+        ]);
+
+        $nameSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($item->name ?: $item->token));
+        $filename = ($item->prospect ? 'fiche-prospect-' : 'fiche-client-').$nameSlug.'.pdf';
+
+        return $pdf->download($filename);
     }
 
     private function buildQuestionnaireResults(Entreprise $item)

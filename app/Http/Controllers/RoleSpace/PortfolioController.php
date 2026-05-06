@@ -508,6 +508,12 @@ class PortfolioController extends Controller
                 $query->whereHas('indicateurs');
             }
         }
+        if ($statut = $request->query('instruction_statut')) {
+            $allowed = \App\Services\DossierInstructionStatutService::allCodes();
+            if (in_array($statut, $allowed, true)) {
+                $query->whereInstructionStatut($statut);
+            }
+        }
         if ($createdFrom = $request->query('created_from')) {
             $query->where('created_at', '>=', \Carbon\Carbon::parse($createdFrom)->startOfDay());
         }

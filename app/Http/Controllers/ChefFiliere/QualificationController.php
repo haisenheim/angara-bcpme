@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Services\AnalyseCritiqueService;
+use App\Services\WorkflowEmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -146,6 +147,23 @@ class QualificationController extends Controller
         $eer->save();
 
         $this->analyseCritiqueService->syncChefFiliereQualification($item, $eer);
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de structuration — chef d’agence',
+            title: 'Une structuration client a été transmise',
+            body: "La structuration d’un client vient d’être soumise par le chef de filière pour validation.\n\nMerci de consulter la transmission et de valider ou rejeter la structuration.",
+            ctaLabel: 'Ouvrir la transmission',
+            ctaUrl: route('ca.workflow.instructions.show', $eer->token),
+            event: 'submit_qualification_to_ca'
+        );
+        $recipients = $mailer->recipientsByRole(
+            (int) config('angara.role_chef_agence', 15),
+            $item->agence_id ? (int) $item->agence_id : null
+        );
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+
         Session::flash('success', 'Structuration soumise au chef d\'agence pour validation. Après validation, vous constituerez le dossier d\'instruction (plusieurs programmes et budgets d\'appui) depuis la fiche client.');
 
         return redirect()->route('chef-filiere.qualifications.show', $token);

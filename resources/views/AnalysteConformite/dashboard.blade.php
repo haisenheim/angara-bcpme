@@ -13,9 +13,17 @@
     <div class="container-fluid">
         <div class="card shadow-sm">
             <div class="card-body">
-                <p class="mb-2">Prospects actuellement soumis dans le circuit : <strong>{{ $pendingProspects }}</strong></p>
+                <p class="mb-2">Prospects actuellement soumis dans le circuit : <strong id="anconf-prospects"><span class="spinner-border spinner-border-sm" role="status"></span></strong></p>
                 <p class="text-muted mb-0">L'espace est prêt et peut maintenant accueillir les files et formulaires métier conformité.</p>
             </div>
         </div>
     </div>
+    <script src="{{ asset('js/simple-dashboard-stats.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            AngaraLoadDashboardStats(@json(route('analyste-conformite.dashboard.stats')), {
+                prospects_soumis: 'anconf-prospects',
+            });
+        });
+    </script>
 @endsection

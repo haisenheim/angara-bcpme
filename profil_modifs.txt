@@ -27,7 +27,6 @@ INSERT INTO `profils` (`id`, `name`, `abb`, `niveau`, `metier`, `programme`, `ac
 (16, 'ANALYSTE JURIDIQUE', 'ANJ', 4, 1, 0, 1),
 (17, 'AUDITEUR', 'AUD', 4, 1, 0, 1),
 (18, 'CONTROLEUR', 'CONT', 4, 1, 0, 1),
-(19, 'AGENT PROGRAMME', 'AP', 5, 0, 1, 1),
 (20, 'RESPONSABLE SECTORIEL', 'RS', 0, 1, 0, 1),
 (21, 'GESTIONNAIRE DE COMPTE ', NULL, 0, 1, 0, 1);
 

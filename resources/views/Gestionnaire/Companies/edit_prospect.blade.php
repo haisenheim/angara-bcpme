@@ -42,8 +42,14 @@
                         </div>
                     @endif
 
-                    @if($item->prospect_submitted_at)
-                        <div class="alert alert-warning">Ce prospect a été soumis le {{ $item->prospect_submitted_at->format('d/m/Y H:i') }} — la fiche n’est plus modifiable ici.</div>
+                    @php
+                        $prospectSubmittedAt = $item->prospect_submitted_at;
+                        if (is_string($prospectSubmittedAt) && trim($prospectSubmittedAt) !== '') {
+                            $prospectSubmittedAt = \Illuminate\Support\Carbon::parse($prospectSubmittedAt);
+                        }
+                    @endphp
+                    @if($prospectSubmittedAt)
+                        <div class="alert alert-warning">Ce prospect a été soumis le {{ $prospectSubmittedAt?->format('d/m/Y H:i') }} — la fiche n’est plus modifiable ici.</div>
                     @else
                     <form action="{{ route('gestionnaire.entreprises.save') }}" method="post" id="form-prospect-edit" novalidate>
                         @csrf

@@ -4242,7 +4242,6 @@ INSERT INTO `profils` (`id`, `name`, `abb`, `niveau`, `metier`, `programme`, `ac
 (16, 'ANALYSTE JURIDIQUE', 'ANJ', 4, 1, 0, 1),
 (17, 'AUDITEUR', 'AUD', 4, 1, 0, 1),
 (18, 'CONTROLEUR', 'CONT', 4, 1, 0, 1),
-(19, 'AGENT PROGRAMME', 'AP', 5, 0, 1, 1),
 (20, 'RESPONSABLE SECTORIEL', 'RS', 0, 1, 0, 1),
 (21, 'GESTIONNAIRE DE COMPTE ', NULL, 0, 1, 0, 1);
 
@@ -6297,8 +6296,6 @@ INSERT INTO `users` (`id`, `name`, `role_id`, `photo_uri`, `agence_id`, `represe
 (46, 'NGOAH Armelle', 13, NULL, 10, 3, 0, 0, 0, 0, 0, 0, '6248517471', 'a.ngoah24@angara.com', NULL, '$2y$12$pvxoR8KHqAoAWi3j.AY5xOtQwg.d0AfyMMITXP4bwRgDCW8MrWBja', NULL, NULL, NULL, NULL, NULL, '2024-12-12 17:08:24', 1, '35180606cc78d12437717823190bd4d7d3f74599', NULL),
 (47, 'ELOUNDOU Francis', 13, NULL, 10, 3, 0, 0, 0, 0, 0, 0, '6530924619', 'f.eloundou65@angara.com', NULL, '$2y$12$MiyWfrzYcz0sohtZofD65exUgE3tPrFMwV.pn3WXGW9eKfdr9gB3q', NULL, NULL, NULL, NULL, NULL, '2024-12-12 17:08:25', 1, '557e1607d6f2e5a4d0a66f3b03d39f0896453aaf', NULL),
 (48, 'ENDIGA Cédric', 14, NULL, 10, 3, 0, 0, 0, 0, 0, 0, '6901522585', 'c.endiga89@angara.com', NULL, '$2y$12$BaDt0AZMGumkEHY2IFs/6OG7DhhUv075zj4GXxZKW4vUSA2RsDrdu', NULL, NULL, NULL, NULL, NULL, '2024-12-12 17:08:25', 1, '57e14c9765db134b936cad0d5d5c7298a8dd6ac0', NULL),
-(49, 'User Program', 19, NULL, 0, 0, 1, 0, 0, 0, 0, 0, '678230239', 'user.program@angara.com', NULL, '$2y$12$BaDt0AZMGumkEHY2IFs/6OG7DhhUv075zj4GXxZKW4vUSA2RsDrdu', NULL, NULL, NULL, NULL, NULL, NULL, 1, 'hdjsdjksdsgwqedscdsbdsnbdsnghgew512668178129219sdbds', NULL),
-(50, 'Zanga Alain', 19, NULL, 0, 0, 1, 0, 0, 0, 1, 0, '68237329', 'a.zanga@gmail.com', NULL, '$2y$12$kGKfIJHabkWn4r3rMY9dfugJyfFElXh6h/bZdPTZN2CgGBs6Ie9xS', NULL, NULL, NULL, NULL, '2024-12-17 09:57:50', '2024-12-17 09:57:50', 1, '6328sdgh2378hjds67326hgwfgefw536273gehw62323', NULL),
 (51, 'Salam sosso', 21, NULL, 0, 0, 0, 1, 0, 0, 0, 0, NULL, 's.salam@gmail.com', NULL, '$2y$12$hen.M6ShrXbjnKjNSPQw7.w0qs1dN.L4yVZY6umrZWOxB7mQERW62', NULL, NULL, NULL, NULL, '2025-01-20 20:06:53', '2025-01-20 20:06:53', 1, 'b5fe782bb0446c042186cc540b23fff8fbeab1f4', NULL),
 (53, 'Edzigui bernard', 21, NULL, 0, 0, 0, 2, 0, 0, 0, 0, NULL, 'b.edzigui@angara.com', NULL, '$2y$12$5NExxsYrYshtm1vRG6dc7.vZnwhpsPofmo1gz/4g8haA8fMNfMgxO', NULL, NULL, NULL, NULL, '2025-02-06 07:33:40', '2025-02-06 07:33:40', 1, '8bf8323f6d93f1c3cb44cc6c6e1c5380d5f58a14', NULL),
 (54, 'haisenheim', 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, NULL, 'haisen@admin.com', NULL, '$2y$12$o7zYahJ25wft6b0fJG6iZe8EvoTt2qqa6/zYHPnWcA51mqovw1m9S', NULL, NULL, NULL, NULL, '2025-02-14 10:09:54', '2025-02-14 10:09:54', 1, NULL, '{\"platform.systems.roles\":true,\"platform.systems.users\":true,\"platform.systems.attachment\":true,\"platform.index\":true}'),

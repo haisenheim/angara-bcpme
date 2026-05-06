@@ -45,4 +45,25 @@ return [
     'role_dg' => (int) env('ANGARA_ROLE_DG', 4),
     'role_dga' => (int) env('ANGARA_ROLE_DGA', 5),
 
+    /**
+     * Emails explicites (séparés par des virgules) pour notifier le circuit prospect
+     * lorsqu’aucun utilisateur actif n’est trouvé pour le rôle attendu (ex. base de démo).
+     * Exemple : ANGARA_WORKFLOW_PROSPECT_JURIDIQUE_EMAILS=juridique@example.com
+     */
+    'workflow_prospect_juridique_emails' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('ANGARA_WORKFLOW_PROSPECT_JURIDIQUE_EMAILS', ''))
+    ))),
+
+    'workflow_prospect_conformite_emails' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('ANGARA_WORKFLOW_PROSPECT_CONFORMITE_EMAILS', ''))
+    ))),
+
+    /**
+     * Seuil (en monnaie locale) au-dessus duquel un dossier d'instruction
+     * en cours déclenche une alerte dans le tableau de bord Risques.
+     */
+    'alerte_engagement_seuil' => (float) env('ANGARA_ALERTE_ENGAGEMENT_SEUIL', 100_000_000),
+
 ];

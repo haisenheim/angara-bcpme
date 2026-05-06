@@ -711,6 +711,21 @@ Route::middleware(['auth'])
         Route::post('dossiers/{token}/rejeter-vers-risques', [\App\Http\Controllers\InstructionClosureController::class, 'rejectToRisques'])->name('dossiers.rejeter-vers-risques');
     });
 
+// Tableaux de bord — 5 familles (prompt l. 86-105).
+// Accessibles aux utilisateurs authentifiés ; le périmètre est restreint par profil
+// (cf. TableauDeBordController::scopeFromRequest).
+Route::middleware(['auth'])
+    ->prefix('tdb')
+    ->name('tdb.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\TableauDeBordController::class, 'index'])->name('index');
+        Route::get('operationnel', [\App\Http\Controllers\TableauDeBordController::class, 'operationnel'])->name('operationnel');
+        Route::get('portefeuille', [\App\Http\Controllers\TableauDeBordController::class, 'portefeuille'])->name('portefeuille');
+        Route::get('risques', [\App\Http\Controllers\TableauDeBordController::class, 'risques'])->name('risques');
+        Route::get('strategique', [\App\Http\Controllers\TableauDeBordController::class, 'strategique'])->name('strategique');
+        Route::get('programmes', [\App\Http\Controllers\TableauDeBordController::class, 'programmes'])->name('programmes');
+    });
+
 Route::middleware(['auth', 'ca'])->group(function () {
     Route::redirect('chef-agence/dashboard', '/ca/dashboard', 301);
     Route::redirect('chef-agence/prospects', '/ca/workflow/prospects', 301);

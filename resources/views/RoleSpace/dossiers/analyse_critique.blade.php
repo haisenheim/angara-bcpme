@@ -11,7 +11,7 @@
     default => 'Layouts.app',
 })
 
-@section('title', 'Analyse critique — '.$space['title'])
+@section('title', 'Analyse critique analyste — '.$space['title'])
 
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
@@ -19,7 +19,7 @@
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
         <li class="breadcrumb-item"><a href="{{ route(in_array($space['route'] ?? '', ['dg', 'dga'], true) ? $space['route'].'.dossiers.valides-chef-agence' : $space['route'].'.dossiers.index') }}">Dossiers</a></li>
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dossiers.show', $item->token) }}">{{ Str::limit($item->programme?->name ?? 'Dossier', 42) }}</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Grille d’analyse critique</li>
+        <li class="breadcrumb-item active" aria-current="page">Sept zones — analyse critique</li>
     </ol>
 </nav>
 @endsection
@@ -27,10 +27,10 @@
 @section('actions')
     <x-page-actions-dropdown>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique</a>
+            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique (PDF / export)</a>
         </li>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.instruction', $item->token) }}" class="dropdown-item">Grille de notation</a>
+            <a href="{{ route($space['route'].'.dossiers.instruction', $item->token) }}" class="dropdown-item">Contenu d’instruction (grille détaillée)</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
@@ -43,8 +43,9 @@
 
 @section('page-header')
 <div>
-    <h5 class="page-title mb-0">Grille d’analyse critique (lecture seule)</h5>
-    <p class="text-body-secondary mb-0 mt-1">{{ $item->entreprise?->name ?? '—' }}</p>
+    <h5 class="page-title mb-0">Analyse critique — sept zones analyste (lecture seule)</h5>
+    <p class="text-body-secondary mb-0 mt-1">{{ $item->entreprise?->name ?? '—' }} — {{ $item->programmesLabel() ?: '—' }}</p>
+    <p class="small text-muted mb-0 mt-2">Les rubriques ci-dessous alimentent l’<strong>avis du chargé d’instruction</strong> ; le <strong>dossier d’analyse critique</strong> reprend ce même contenu (document dédié).</p>
 </div>
 @endsection
 
@@ -58,7 +59,7 @@
         <div class="col-12 col-xl-10">
             <div class="card border-0 shadow-sm">
                 <div class="card-header py-4">
-                    <h4 class="text-center mb-0">GRILLE D'ANALYSE CRITIQUE</h4>
+                    <h4 class="text-center mb-0">SEPT ZONES DE L’ANALYSE CRITIQUE</h4>
                 </div>
                 <div class="card-body">
                     <div class="mt-1 border rounded rounded-2 p-3">
@@ -90,7 +91,8 @@
                         <div class="lh-base rich-text-rendered small">{!! $item->conclusions_analyste ?? '—' !!}</div>
                     </div>
                     <div class="mt-4 border rounded rounded-2 p-3 border-primary border-2">
-                        <h4 class="fs-5">8. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
+                        <h4 class="fs-5">Complément — chef d’agence</h4>
+                        <p class="small text-muted mb-2">Hors des sept zones analyste ; avis ou conclusions du chef d’agence sur le dossier d’instruction.</p>
                         <div class="lh-base rich-text-rendered small">{!! $item->conclusions_ca ?? '—' !!}</div>
                     </div>
                 </div>

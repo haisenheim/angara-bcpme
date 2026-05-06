@@ -129,6 +129,9 @@
                           <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false" tabindex="-1">Les tiers</button>
                        </li>
                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tabSitesEquipe" type="button" role="tab" aria-controls="_tabSitesEquipe" aria-selected="false" tabindex="-1">Sites &amp; Équipe</button>
+                       </li>
+                       <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -206,6 +209,11 @@
                        <div id="_tab3" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <div class="mt-3">
                                 @include('Gestionnaire.Companies.partials.tiers_section', ['item' => $item])
+                            </div>
+                       </div>
+                       <div id="_tabSitesEquipe" class="tab-pane fade" role="tabpanel">
+                            <div class="mt-3">
+                                @include('partials.entreprise-sites-et-equipe', ['item' => $item, 'canCrud' => true])
                             </div>
                        </div>
                        <div id="_tab4" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">

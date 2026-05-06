@@ -18,8 +18,6 @@ class InstructionDossierConsultationService
     ) {}
 
     /**
-     * Chaque entrée de la collection `timeline` inclut `workflow_step` (1 à 6) pour le regroupement par étape du parcours.
-     *
      * @return array{
      *   has_budget_rows: bool,
      *   lignes: list<array{programme_name: string, financier: float, non_financier: float, total_ligne: float}>,
@@ -85,12 +83,16 @@ class InstructionDossierConsultationService
                 ];
             });
 
+        $instructionStartsAt = $dossier->created_at instanceof Carbon ? $dossier->created_at : null;
+
         $timeline = $workflowTimeline
             ->concat($avisTimeline)
-            ->map(function (array $row) {
-                return array_merge($row, [
-                    'workflow_step' => $this->workflowStepForTimelineRow($row),
-                ]);
+            ->when($instructionStartsAt !== null, function (Collection $c) use ($instructionStartsAt) {
+                return $c->filter(function (array $r) use ($instructionStartsAt) {
+                    $t = $r['at'] ?? null;
+
+                    return $t instanceof Carbon && $t->greaterThanOrEqualTo($instructionStartsAt);
+                });
             })
             ->sortByDesc(function (array $r) {
                 $t = $r['at'] ?? null;
@@ -110,72 +112,6 @@ class InstructionDossierConsultationService
             'timeline' => $timeline,
             'timeline_count' => $timeline->count(),
         ];
-    }
-
-    /**
-     * Regroupe chaque entrée de chronologie dans une des 6 étapes du parcours (affichage fusionné).
-     */
-    private function workflowStepForTimelineRow(array $row): int
-    {
-        if (($row['kind'] ?? '') === 'analyse_critique') {
-            return match ($row['avis_source'] ?? '') {
-                AnalyseCritiqueAvis::SOURCE_JURIDIQUE,
-                AnalyseCritiqueAvis::SOURCE_CONFORMITE => 3,
-                AnalyseCritiqueAvis::SOURCE_ANALYSTE,
-                AnalyseCritiqueAvis::SOURCE_GESTIONNAIRE,
-                AnalyseCritiqueAvis::SOURCE_INSTRUCTION => 2,
-                AnalyseCritiqueAvis::SOURCE_CHEF_AGENCE,
-                AnalyseCritiqueAvis::SOURCE_CHEF_FILIERE,
-                AnalyseCritiqueAvis::SOURCE_EER => 1,
-                default => 2,
-            };
-        }
-
-        $label = (string) ($row['label'] ?? '');
-
-        if (str_contains($label, 'Clôture du dossier') || str_contains($label, 'Rejet de clôture')) {
-            return 6;
-        }
-
-        if (
-            str_contains($label, 'Conclusions direction')
-            || str_contains($label, 'Transmission à la direction')
-            || str_contains($label, 'Avis du responsable risques')
-            || str_contains($label, 'Soumission au responsable risques')
-            || str_contains($label, 'Affectation de l’analyste risques')
-            || str_contains($label, 'Transmission du dossier au responsable risques')
-        ) {
-            return 5;
-        }
-
-        if (
-            str_contains($label, 'Transmission du dossier au responsable engagements')
-            || str_contains($label, 'Avis du responsable engagements')
-            || str_contains($label, 'Soumission au responsable engagements (analyste crédit)')
-            || str_contains($label, 'Affectation de l’analyste crédit')
-        ) {
-            return 4;
-        }
-
-        if (
-            str_contains($label, 'pôle juridique')
-            || str_contains($label, 'analyste juridique')
-            || str_contains($label, 'responsable juridique')
-        ) {
-            return 3;
-        }
-
-        if (
-            str_contains($label, 'Transmission au responsable exploitation (analyste financier')
-            || str_contains($label, 'Avis de crédit')
-            || str_contains($label, 'Décision sur le dossier des engagements')
-            || str_contains($label, 'Cotation du dossier')
-            || str_contains($label, 'grille d’instruction')
-        ) {
-            return 2;
-        }
-
-        return 1;
     }
 
     private function avisSourceTypeLabel(?string $sourceType): string

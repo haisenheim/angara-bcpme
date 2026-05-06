@@ -106,6 +106,46 @@
             </div>
         </div>
 
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-primary border-opacity-25">
+                    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h6 class="mb-1 text-primary">Workflow instruction</h6>
+                            <p class="text-muted small mb-0">
+                                À soumettre exploitation : <strong id="af-wf-pending-submission"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
+                                &nbsp;·&nbsp;
+                                Déjà soumis : <strong id="af-wf-submitted"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{{ route('analyste.dossiers.index') }}" class="btn btn-primary btn-sm">Ouvrir mes dossiers</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Mes dossiers à soumettre (exploitation)</h6>
+                        <a href="{{ route('analyste.dossiers.index') }}" class="btn btn-sm btn-primary">
+                            Voir tous <i class="demo-psi-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush" id="af-todos-container">
+                            <div class="text-center py-3">
+                                <span class="spinner-border spinner-border-sm" role="status"></span> Chargement...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Alert Cards for Urgent Items -->
         <div class="row mb-4">
             <div class="col-xl-6 mb-3" id="urgent-alert" style="display:none;">

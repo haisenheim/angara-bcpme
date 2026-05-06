@@ -29,6 +29,7 @@
         </li>
     </ul>
 </div>
+@include('partials.layout-tdb-link')
 @include('partials.layout-role-nav-compte')
 @yield('modal')
 @endsection

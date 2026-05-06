@@ -22,6 +22,7 @@ const AnalysteDashboard = {
     init() {
         console.log('Initializing Analyste Dashboard...');
         this.loadStats();
+        this.loadTodos();
         this.loadDistributionChart();
         this.loadMonthlyAnalysisChart();
         this.loadRecentDossiers();
@@ -38,6 +39,11 @@ const AnalysteDashboard = {
                 document.getElementById('pending-analysis').textContent = data.pending_analysis;
                 document.getElementById('completed-analysis').textContent = data.completed_analysis;
                 document.getElementById('total-entreprises').textContent = data.total_entreprises;
+
+                const p = document.getElementById('af-wf-pending-submission');
+                if (p) p.textContent = data.pending_submission ?? 0;
+                const s = document.getElementById('af-wf-submitted');
+                if (s) s.textContent = data.submitted_to_exploitation ?? 0;
             })
             .catch(error => {
                 console.error('Error loading stats:', error);
@@ -320,6 +326,53 @@ const AnalysteDashboard = {
             .catch(error => {
                 console.error('Error loading programmes:', error);
                 this.showError('programmes-error', 'Erreur de chargement des programmes');
+            });
+    },
+
+    loadTodos() {
+        fetch('/analyste/dashboard/todos')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('af-todos-container');
+                if (!container) return;
+                const rows = (data && data.todos) || [];
+                container.innerHTML = '';
+
+                if (!rows.length) {
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="pli-folder text-muted fs-1"></i>
+                            <p class="text-muted mt-2">Aucun dossier à soumettre</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                rows.forEach(row => {
+                    const href = row.token ? `/analyste/dossiers/${row.token}` : '#';
+                    const entreprise = row.entreprise || '—';
+                    const programmes = row.programmes || '—';
+                    const when = row.assigned_human ? `Affecté ${row.assigned_human}` : '—';
+
+                    container.innerHTML += `
+                        <a class="list-group-item list-group-item-action px-0" href="${href}">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">${entreprise}</div>
+                                    <div class="text-muted small">${programmes}</div>
+                                </div>
+                                <div class="text-muted small text-nowrap">${when}</div>
+                            </div>
+                        </a>
+                    `;
+                });
+            })
+            .catch(error => {
+                console.error('Error loading todos:', error);
+                const container = document.getElementById('af-todos-container');
+                if (container) {
+                    container.innerHTML = '<div class="text-center py-2 text-muted small">—</div>';
+                }
             });
     },
 

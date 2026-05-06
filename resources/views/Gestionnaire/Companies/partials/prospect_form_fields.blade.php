@@ -928,6 +928,7 @@
 .selection-badge {
     display: inline-flex;
     align-items: center;
+    gap: 0.35rem;
     padding: 0.35rem 0.55rem;
     border-radius: 999px;
     background: var(--accent-soft);
@@ -935,6 +936,35 @@
     color: #4e6d14;
     font-size: 0.78rem;
     font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    -webkit-appearance: none;
+    appearance: none;
+    text-decoration: none;
+}
+
+.selection-badge:hover {
+    filter: brightness(0.98);
+}
+
+.selection-badge:focus-visible {
+    outline: 2px solid rgba(136, 184, 36, 0.35);
+    outline-offset: 2px;
+}
+
+.selection-badge__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(78, 109, 20, 0.25);
+    background: rgba(255, 255, 255, 0.7);
+    color: #4e6d14;
+    font-size: 0.85rem;
+    font-weight: 800;
 }
 </style>
 
@@ -1002,10 +1032,34 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         const labels = selectedOptions.map((option) => option.dataset.label.trim());
         if (preview) {
-            preview.innerHTML = labels
-                .map((text) => '<span class="selection-badge">' + text + '</span>')
+            preview.innerHTML = selectedOptions
+                .map((option) => {
+                    const text = option.dataset.label.trim();
+                    const value = option.value;
+                    return (
+                        '<button type="button" class="selection-badge" data-remove-value="' +
+                        escapeHtml(value) +
+                        '" aria-label="Retirer ' +
+                        escapeHtml(text) +
+                        '">' +
+                        '<span>' +
+                        escapeHtml(text) +
+                        '</span>' +
+                        '<span class="selection-badge__remove" aria-hidden="true">&times;</span>' +
+                        '</button>'
+                    );
+                })
                 .join('');
         }
         if (label) {
@@ -1020,6 +1074,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderCheckboxDropdown(dropdown);
             });
         });
+
+        const previewId = dropdown.dataset.previewTarget;
+        const preview = previewId ? document.getElementById(previewId) : null;
+        if (preview) {
+            preview.addEventListener('click', function (event) {
+                const btn = event.target && event.target.closest ? event.target.closest('[data-remove-value]') : null;
+                if (!btn) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const value = btn.getAttribute('data-remove-value');
+                const cssEscape = function (val) {
+                    if (window.CSS && typeof window.CSS.escape === 'function') {
+                        return window.CSS.escape(val);
+                    }
+                    return String(val).replace(/["\\]/g, '\\$&');
+                };
+                const checkbox = dropdown.querySelector('.multi-check-dropdown__checkbox[value="' + cssEscape(value) + '"]');
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
         dropdown.addEventListener('toggle', function () {
             if (!dropdown.open) {
                 return;

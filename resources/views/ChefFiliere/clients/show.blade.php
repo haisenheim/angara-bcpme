@@ -130,52 +130,78 @@
 @if($canComposeBundle)
 <div class="card cf-client-card mb-4 border-start border-success border-4" id="composition-dossier-instruction">
     <div class="card-header py-3 border-bottom">
-        <h2 class="h5 mb-0">Nouveau dossier d’instruction (multi-programmes)</h2>
+        <h2 class="h5 mb-0">{{ isset($bundleEditDossier) && $bundleEditDossier ? 'Correction — dossier d’instruction (multi-programmes)' : 'Nouveau dossier d’instruction (multi-programmes)' }}</h2>
         <p class="text-muted small mb-0 mt-1">Sélectionnez un ou plusieurs programmes. Pour chacun, indiquez le budget d’appui <strong>financier</strong> et <strong>non financier</strong> (XAF). Vous pouvez soumettre plusieurs dossiers distincts ; chacun est horodaté et envoyé au chef d’agence pour validation.</p>
     </div>
     <div class="card-body">
         <form method="post" action="{{ route('chef-filiere.clients.dossier-instruction.submit', $item->token) }}" id="form-dossier-instruction-bundle">
             @csrf
+            @if(isset($bundleEditDossier) && $bundleEditDossier)
+                <input type="hidden" name="dossier_id" value="{{ (int) $bundleEditDossier->id }}">
+                <div class="alert alert-warning border mb-3">
+                    <strong>Dossier rejeté.</strong> Vous pouvez corriger les programmes et budgets, puis resoumettre au chef d’agence.
+                </div>
+            @endif
             <div class="row g-3 mb-3 p-3 border rounded bg-white">
                 <div class="col-md-6">
                     <label class="form-label fw-semibold" for="engagements_sollicites_total">Total des engagements sollicités (XAF)</label>
-                    <input type="number" name="engagements_sollicites_total" id="engagements_sollicites_total" class="form-control @error('engagements_sollicites_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_sollicites_total') }}" required>
+                    <input type="number" name="engagements_sollicites_total" id="engagements_sollicites_total" class="form-control @error('engagements_sollicites_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_sollicites_total', isset($bundleEditDossier) && $bundleEditDossier ? $bundleEditDossier->engagements_sollicites_total : null) }}" required>
                     @error('engagements_sollicites_total')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <div class="form-text">Sert au paramétrage de la délégation de pouvoir pour la clôture du dossier d’instruction (fin de parcours).</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold" for="engagements_en_cours_total">Total des engagements en cours (XAF)</label>
-                    <input type="number" name="engagements_en_cours_total" id="engagements_en_cours_total" class="form-control @error('engagements_en_cours_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_en_cours_total') }}" required>
+                    <input type="number" name="engagements_en_cours_total" id="engagements_en_cours_total" class="form-control @error('engagements_en_cours_total') is-invalid @enderror" min="0" step="1" value="{{ old('engagements_en_cours_total', isset($bundleEditDossier) && $bundleEditDossier ? $bundleEditDossier->engagements_en_cours_total : null) }}" required>
                     @error('engagements_en_cours_total')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
             <div id="bundle-lignes" class="mb-3">
-                <div class="row g-2 align-items-end bundle-ligne mb-3 p-3 border rounded bg-light">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">Programme</label>
-                        <select name="lignes[0][programme_id]" class="form-select bundle-programme" required>
-                            <option value="">— Choisir —</option>
-                            @foreach($bundleAvailableProgrammes as $prg)
-                                <option value="{{ $prg->id }}">{{ $prg->name }}</option>
-                            @endforeach
-                        </select>
+                @php
+                    $editLines = [];
+                    if (isset($bundleEditDossier) && $bundleEditDossier && $bundleEditDossier->relationLoaded('instructionProgrammes')) {
+                        $editLines = $bundleEditDossier->instructionProgrammes
+                            ->map(fn ($l) => [
+                                'programme_id' => (int) $l->programme_id,
+                                'budget_appui_financier' => (float) ($l->budget_appui_financier ?? 0),
+                                'budget_appui_non_financier' => (float) ($l->budget_appui_non_financier ?? 0),
+                            ])
+                            ->values()
+                            ->all();
+                    }
+                    $editLines = count($editLines) ? $editLines : [[
+                        'programme_id' => null,
+                        'budget_appui_financier' => 0,
+                        'budget_appui_non_financier' => 0,
+                    ]];
+                @endphp
+                @foreach($editLines as $i => $ln)
+                    <div class="row g-2 align-items-end bundle-ligne mb-3 p-3 border rounded bg-light">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Programme</label>
+                            <select name="lignes[{{ $i }}][programme_id]" class="form-select bundle-programme" required>
+                                <option value="">— Choisir —</option>
+                                @foreach($bundleAvailableProgrammes as $prg)
+                                    <option value="{{ $prg->id }}" @selected((int) $prg->id === (int) ($ln['programme_id'] ?? 0))>{{ $prg->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Budget appui financier (XAF)</label>
+                            <input type="number" name="lignes[{{ $i }}][budget_appui_financier]" class="form-control" min="0" step="1" value="{{ (float) ($ln['budget_appui_financier'] ?? 0) }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Budget appui non financier (XAF)</label>
+                            <input type="number" name="lignes[{{ $i }}][budget_appui_non_financier]" class="form-control" min="0" step="1" value="{{ (float) ($ln['budget_appui_non_financier'] ?? 0) }}">
+                        </div>
+                        <div class="col-md-2 text-md-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-remove-ligne {{ count($editLines) <= 1 ? 'd-none' : '' }} w-100" title="Retirer">Retirer</button>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Budget appui financier (XAF)</label>
-                        <input type="number" name="lignes[0][budget_appui_financier]" class="form-control" min="0" step="1" value="0">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Budget appui non financier (XAF)</label>
-                        <input type="number" name="lignes[0][budget_appui_non_financier]" class="form-control" min="0" step="1" value="0">
-                    </div>
-                    <div class="col-md-2 text-md-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm btn-remove-ligne d-none w-100" title="Retirer">Retirer</button>
-                    </div>
-                </div>
+                @endforeach
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-add-programme-ligne">Ajouter un programme</button>
-                <button type="submit" class="btn btn-success">Soumettre le dossier au chef d’agence</button>
+                <button type="submit" class="btn btn-success">{{ isset($bundleEditDossier) && $bundleEditDossier ? 'Resoumettre au chef d’agence' : 'Soumettre le dossier au chef d’agence' }}</button>
             </div>
         </form>
     </div>

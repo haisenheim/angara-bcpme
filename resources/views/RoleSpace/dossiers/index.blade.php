@@ -110,11 +110,20 @@
                         <input type="search" name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Entreprise, programme…">
                     </div>
                     <div class="col-6 col-md-3 col-lg-2">
-                        <label class="form-label small text-muted mb-0">État instruction</label>
+                        <label class="form-label small text-muted mb-0">Étape</label>
                         <select name="instruction_state" class="form-select form-select-sm">
-                            <option value="">Tous</option>
+                            <option value="">Toutes</option>
                             <option value="pending" @selected(request('instruction_state') === 'pending')>En attente</option>
                             <option value="in_progress" @selected(request('instruction_state') === 'in_progress')>En cours</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label class="form-label small text-muted mb-0">Statut</label>
+                        <select name="instruction_statut" class="form-select form-select-sm">
+                            <option value="">Tous</option>
+                            @foreach(\App\Services\DossierInstructionStatutService::filterLabels() as $code => $label)
+                                <option value="{{ $code }}" @selected(request('instruction_statut') === $code)>{{ $label }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-6 col-md-3 col-lg-2">
@@ -152,7 +161,8 @@
                                     <th class="text-nowrap">Cotation du dossier</th>
                                 @endif
                                 <th>Gestionnaire</th>
-                                <th>État</th>
+                                <th>Statut</th>
+                                <th>Étape</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -172,14 +182,15 @@
                                         </td>
                                     @endif
                                     <td>{{ $dossier->gestionnaire?->name ?? '—' }}</td>
-                                    <td>{{ $dossier->status['name'] ?? '—' }}</td>
+                                    <td><x-statut-badge :statut="$dossier->instructionStatutPresentation()" :show-detail="false" /></td>
+                                    <td class="small text-muted">{{ $dossier->status['name'] ?? '—' }}</td>
                                     <td class="text-end">
                                         <a href="{{ route($space['route'].'.dossiers.show', $dossier->token) }}" class="btn btn-sm btn-primary">Ouvrir</a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $space['route'] === 'respexp' ? 7 : 6 }}" class="text-center text-muted py-4">Aucun dossier trouvé.</td>
+                                    <td colspan="{{ $space['route'] === 'respexp' ? 8 : 7 }}" class="text-center text-muted py-4">Aucun dossier trouvé.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -130,11 +130,15 @@
                         <div>
                             <h6 class="mb-1 text-primary">Décision chef d'agence</h6>
                             <p class="text-muted small mb-0">
-                                Prospects soumis à arbitrage : <strong>{{ $workflowPendingCount ?? 0 }}</strong>
+                                Prospects soumis : <strong id="wf-prospects-submitted"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
                                 &nbsp;·&nbsp;
-                                Validations structuration (EER) : <strong>{{ $workflowInstructionCount ?? 0 }}</strong>
+                                Bloqués (avis) : <strong id="wf-prospects-blocked"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
                                 &nbsp;·&nbsp;
-                                Dossiers instruction à valider (chef de filière) : <strong>{{ $workflowInstructionBundleCount ?? 0 }}</strong>
+                                Prêts arbitrage : <strong id="wf-prospects-pending"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
+                                &nbsp;·&nbsp;
+                                Validations structuration (EER) : <strong id="wf-eer-pending"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
+                                &nbsp;·&nbsp;
+                                Dossiers instruction à valider (chef de filière) : <strong id="wf-instruction-bundles-pending"><span class="spinner-border spinner-border-sm" role="status"></span></strong>
                             </p>
                         </div>
                         <div class="d-flex gap-2 flex-wrap">

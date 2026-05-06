@@ -17,12 +17,17 @@
                     'validation' => 'bg-dark',
                     'affectation' => 'bg-info',
                     'transmission' => 'bg-success',
+                    'creation' => 'bg-warning text-dark',
                     default => 'bg-secondary',
                 };
             @endphp
             <div class="border-bottom pb-3 mb-3">
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                    <span class="badge {{ $badgeClass }}">{{ ucfirst($kind) }}</span>
+                    <span class="badge {{ $badgeClass }}">{{ match ($kind) {
+                        'analyse_critique' => 'Analyse critique',
+                        'creation' => 'Création',
+                        default => ucfirst((string) $kind),
+                    } }}</span>
                     <span class="small text-muted">
                         {{ $row['at']->format('d/m/Y') }} à {{ $row['at']->format('H:i') }}
                     </span>

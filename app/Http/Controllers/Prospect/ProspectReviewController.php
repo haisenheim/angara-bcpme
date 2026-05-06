@@ -9,6 +9,8 @@ use App\Models\QuestionSousCritere;
 use App\Services\AnalyseCritiqueService;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
+use App\Services\WorkflowEmailNotificationService;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
@@ -147,6 +149,46 @@ class ProspectReviewController extends Controller
         $item->save();
         $this->analyseCritiqueService->syncProspectWorkflow($item);
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+
+        // Informer le gestionnaire (ou créateur) qu'un avis a été saisi
+        $gestionnaire = null;
+        if ($item->gestionnaire_id) {
+            $gestionnaire = User::query()->whereKey((int) $item->gestionnaire_id)->first();
+        }
+        if (! $gestionnaire && $item->user_id) {
+            $gestionnaire = User::query()->whereKey((int) $item->user_id)->first();
+        }
+        if ($gestionnaire) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect — avis juridique disponible',
+                title: 'Avis juridique enregistré',
+                body: "L’avis juridique a été enregistré sur un prospect soumis.\n\nVous pouvez consulter la fiche et poursuivre le circuit.",
+                ctaLabel: 'Ouvrir le prospect',
+                ctaUrl: route('gestionnaire.entreprises.show', $item->token),
+                event: 'prospect_juridique_avis_saved'
+            );
+            $mailer->notifyUser($gestionnaire, auth()->user(), $payload, $ctx);
+        }
+
+        // Si les deux avis sont disponibles, notifier le chef d'agence pour décision
+        if ($item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect — décision chef d’agence requise',
+                title: 'Prospect prêt pour décision',
+                body: "Les avis juridique et conformité sont disponibles.\n\nMerci de consulter le prospect et de décider (promotion client ou refus).",
+                ctaLabel: 'Ouvrir le prospect',
+                ctaUrl: route('ca.workflow.prospects.show', $item->token),
+                event: 'prospect_ready_for_ca_decision'
+            );
+            $recipients = $mailer->recipientsByRole(
+                (int) config('angara.role_chef_agence', 15),
+                $item->agence_id ? (int) $item->agence_id : null
+            );
+            $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+        }
+
         Session::flash('success', 'Avis juridique enregistré le '.now()->format('d/m/Y à H:i').'.');
 
         return redirect()->route('juridique.prospects.show', $token);
@@ -174,6 +216,44 @@ class ProspectReviewController extends Controller
         $item->save();
         $this->analyseCritiqueService->syncProspectWorkflow($item);
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+
+        $gestionnaire = null;
+        if ($item->gestionnaire_id) {
+            $gestionnaire = User::query()->whereKey((int) $item->gestionnaire_id)->first();
+        }
+        if (! $gestionnaire && $item->user_id) {
+            $gestionnaire = User::query()->whereKey((int) $item->user_id)->first();
+        }
+        if ($gestionnaire) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect — avis conformité disponible',
+                title: 'Avis conformité enregistré',
+                body: "L’avis conformité a été enregistré sur un prospect soumis.\n\nVous pouvez consulter la fiche et poursuivre le circuit.",
+                ctaLabel: 'Ouvrir le prospect',
+                ctaUrl: route('gestionnaire.entreprises.show', $item->token),
+                event: 'prospect_conformite_avis_saved'
+            );
+            $mailer->notifyUser($gestionnaire, auth()->user(), $payload, $ctx);
+        }
+
+        if ($item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect — décision chef d’agence requise',
+                title: 'Prospect prêt pour décision',
+                body: "Les avis juridique et conformité sont disponibles.\n\nMerci de consulter le prospect et de décider (promotion client ou refus).",
+                ctaLabel: 'Ouvrir le prospect',
+                ctaUrl: route('ca.workflow.prospects.show', $item->token),
+                event: 'prospect_ready_for_ca_decision'
+            );
+            $recipients = $mailer->recipientsByRole(
+                (int) config('angara.role_chef_agence', 15),
+                $item->agence_id ? (int) $item->agence_id : null
+            );
+            $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+        }
+
         Session::flash('success', 'Avis conformité enregistré le '.now()->format('d/m/Y à H:i').'.');
 
         return redirect()->route('conformite.prospects.show', $token);
@@ -186,7 +266,9 @@ class ProspectReviewController extends Controller
     {
         return Entreprise::query()
             ->where('prospect', true)
-            ->whereNotNull('prospect_submitted_at');
+            ->whereNotNull('prospect_submitted_at')
+            ->whereNull('prospect_rejected_at')
+            ->whereNull('promu_client_at');
     }
 
     /**
@@ -209,13 +291,13 @@ class ProspectReviewController extends Controller
     {
         $query = Entreprise::query()
             ->where('token', $token)
-            ->whereNotNull('prospect_submitted_at')
             ->where(function ($q) {
-                $q->where('prospect', true)
-                    ->orWhereNotNull('promu_client_at');
+                // Circuit ouvert (soumis) ou clos (promotion / rejet).
+                $q->whereNotNull('prospect_submitted_at');
                 if (Schema::connection('central_app_mysql')->hasColumn('entreprises', 'prospect_rejected_at')) {
                     $q->orWhereNotNull('prospect_rejected_at');
                 }
+                $q->orWhereNotNull('promu_client_at');
             });
 
         return $query->first();

@@ -182,7 +182,7 @@
                             <th data-angara-sort-col="4">Localisation</th>
                             <th data-angara-sort-col="5">Taille</th>
                             <th data-angara-sort-col="6">Capital</th>
-                            <th>Structuration client</th>
+                            <th>Statut client</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -284,7 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
             { data: null, name: 'localisation', orderable: false, render: function(_d, _t, row) { return (row?.commune || '-') + (row?.region ? ' / ' + row.region : ''); } },
             { data: 'taille', name: 'taille', render: function(d) { return d ? '<span class="badge bg-secondary">' + d + '</span>' : '-'; } },
             { data: 'capital', name: 'capital', render: function(d) { return d != null ? new Intl.NumberFormat('fr-FR').format(d) : '-'; } },
-            { data: 'client_structuration_label', name: 'client_structuration_label', orderable: false, render: function(d) { return d ? '<span class="badge text-bg-light text-dark border">' + d + '</span>' : '—'; } },
+            { data: 'client_statut', name: 'client_statut', orderable: false, render: function(s) {
+                if (!s || !s.label) { return '—'; }
+                const variant = s.badge_variant || 'secondary';
+                const label = String(s.label).replace(/[<>]/g, '');
+                const detail = s.detail ? ' title="' + String(s.detail).replace(/"/g, '&quot;') + '" data-bs-toggle="tooltip"' : '';
+                return '<span class="badge bg-' + variant + ' text-uppercase fw-semibold"' + detail + '>' + label + '</span>';
+            } },
             { data: 'token', name: 'token', orderable: false, className: 'text-end angara-table-actions', width: '64px', render: function(token) {
                 const href = baseUrl + '/' + (token||'');
                 return ''

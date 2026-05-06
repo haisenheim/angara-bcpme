@@ -8,6 +8,7 @@ use App\Models\Entreprise;
 use App\Models\Programme;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
@@ -51,6 +52,14 @@ class DashboardController extends Controller
             'completed_analysis' => $enCours,
             'total_entreprises' => $totalEntreprises,
             'in_progress' => $enCours,
+            // Workflow instruction côté analyste financier (timestamps existants).
+            'pending_submission' => (clone $base)
+                ->whereNotNull('analyste_id')
+                ->whereNull('exploitation_analyste_transmitted_to_exploitation_at')
+                ->count(),
+            'submitted_to_exploitation' => (clone $base)
+                ->whereNotNull('exploitation_analyste_transmitted_to_exploitation_at')
+                ->count(),
         ];
 
         return response()->json($stats);
@@ -191,6 +200,36 @@ class DashboardController extends Controller
         });
 
         return response()->json($programmes);
+    }
+
+    public function getTodos()
+    {
+        $base = $this->dossiersQueryForCurrentAnalyste();
+
+        $rows = (clone $base)
+            ->whereNotNull('analyste_id')
+            ->whereNull('exploitation_analyste_transmitted_to_exploitation_at')
+            ->with(['entreprise', 'programme', 'instructionProgrammes.programme'])
+            ->orderBy('exploitation_analyste_assigned_at', 'asc')
+            ->orderBy('updated_at', 'asc')
+            ->limit(10)
+            ->get()
+            ->map(function (Dossier $d) {
+                $assignedAt = $d->exploitation_analyste_assigned_at instanceof Carbon ? $d->exploitation_analyste_assigned_at : null;
+
+                return [
+                    'token' => $d->token,
+                    'entreprise' => $d->entreprise?->name ?? '—',
+                    'programmes' => method_exists($d, 'programmesLabel') ? $d->programmesLabel() : ($d->programme?->name ?? '—'),
+                    'assigned_at' => $assignedAt?->toDateTimeString(),
+                    'assigned_human' => $assignedAt?->diffForHumans(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'todos' => $rows,
+        ]);
     }
 
 }

@@ -11,12 +11,11 @@ use App\Models\Dossier;
 use App\Models\FichierType;
 use App\Models\Instruction\Critere;
 use App\Models\Instruction\IndicateurFinancier;
-use App\Services\InstructionDelegationService;
-use App\Services\InstructionDossierAnalyseCritiqueSyntheseService;
+use App\Services\InstructionAnalyseCritiqueDossierDocumentService;
+use App\Services\WorkflowEmailNotificationService;
 use Dompdf\Canvas;
 use Dompdf\FontMetrics;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class DossierController extends Controller
 {
@@ -29,9 +28,11 @@ class DossierController extends Controller
         return view('/Ca/Dossiers/index');
     }
 
-    public function fetchAll(){
+    public function fetchAll()
+    {
         $items = $this->baseQuery()->orderBy('created_at', 'DESC')->get();
         $items = DossierListResource::collection($items);
+
         return response()->json($items);
     }
 
@@ -51,6 +52,7 @@ class DossierController extends Controller
             'avec_analyste' => (clone $query)->whereNotNull('analyste_id')->count(),
             'sans_analyste' => (clone $query)->whereNull('analyste_id')->count(),
         ];
+
         return response()->json($stats);
     }
 
@@ -109,10 +111,13 @@ class DossierController extends Controller
                     ->orWhereHas('instructionProgrammes', fn ($q2) => $q2->where('programme_id', $pid));
             });
         }
-        if (!empty($filters['analyste_id'])) $query->where('analyste_id', $filters['analyste_id']);
+        if (! empty($filters['analyste_id'])) {
+            $query->where('analyste_id', $filters['analyste_id']);
+        }
         if (! empty($filters['entity_route'])) {
             $query->inCurrentEntity((string) $filters['entity_route']);
         }
+
         return $query;
     }
 
@@ -133,7 +138,8 @@ class DossierController extends Controller
         return response()->json(['programmes' => $programmes, 'analystes' => $analystes, 'entities' => $entities]);
     }
 
-    public function show($token){
+    public function show($token)
+    {
 
         $item = Dossier::query()
             ->where('token', $token)
@@ -156,19 +162,21 @@ class DossierController extends Controller
             ->firstOrFail();
         $criteres = Critere::all();
         $id = $item->id;
-        $criteres = $criteres->map(function($critere)use($id){
-            $critere->souscriteres = $critere->sousCriteres->map(function($souscritere)use($id){
-                $souscritere->reponse = $souscritere->reponses->where('dossier_id',$id)->first();
+        $criteres = $criteres->map(function ($critere) use ($id) {
+            $critere->souscriteres = $critere->sousCriteres->map(function ($souscritere) use ($id) {
+                $souscritere->reponse = $souscritere->reponses->where('dossier_id', $id)->first();
+
                 return $souscritere;
             });
+
             return $critere;
         });
 
-        $criteres = $criteres->map(function($ct){
+        $criteres = $criteres->map(function ($ct) {
             return $this->parseCriteres($ct);
         });
 
-        $indicateurs = IndicateurFinancier::where('dossier_id',$item->id)->get();
+        $indicateurs = IndicateurFinancier::where('dossier_id', $item->id)->get();
         $banques = Banque::all();
         $sme = DossierHelper::getSme($item->note);
         $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($item);
@@ -265,6 +273,19 @@ class DossierController extends Controller
             'instruction_ca_transmitted_to_exploitation_by_user_id' => auth()->id(),
         ]);
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForDossier($dossier);
+        $payload = $mailer->buildPayload(
+            subject: 'Transmission de dossier — responsable exploitation',
+            title: 'Un dossier a été transmis au responsable exploitation',
+            body: "Un dossier d’instruction a été transmis par le chef d’agence au responsable exploitation.\n\nMerci de consulter le dossier et d’effectuer les actions attendues (avis / engagements / transmission juridique).",
+            ctaLabel: 'Ouvrir le dossier',
+            ctaUrl: route('respexp.dossiers.show', $dossier->token),
+            event: 'submit_ca_to_respexp'
+        );
+        $recipients = $mailer->recipientsByRole((int) config('angara.role_responsable_exploitation', 6));
+        $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
+
         return redirect()
             ->route('ca.dossiers.show', $token)
             ->with('success', 'Dossier transmis au responsable exploitation.');
@@ -291,7 +312,7 @@ class DossierController extends Controller
     }
 
     /**
-     * Synthèse chronologique du dossier d’analyse critique (instruction + avis intégrés).
+     * Dossier d’analyse critique : analyse critique de l’analyste financier (rubriques alignées sur la fiche dossier).
      */
     public function dossierAnalyseCritiqueSyntheseShow(string $token)
     {
@@ -302,14 +323,12 @@ class DossierController extends Controller
                 'entreprise',
                 'programme',
                 'instructionProgrammes.programme',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
             ])
             ->firstOrFail();
 
-        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($item);
+        $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($item);
 
-        return view('Ca/Dossiers/dossier_analyse_critique', compact('item', 'entries'));
+        return view('Ca/Dossiers/dossier_analyse_critique', compact('item', 'doc'));
     }
 
     public function dossierAnalyseCritiqueSynthesePdf(string $token)
@@ -321,12 +340,10 @@ class DossierController extends Controller
                 'entreprise',
                 'programme',
                 'instructionProgrammes.programme',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
             ])
             ->firstOrFail();
 
-        $entries = app(InstructionDossierAnalyseCritiqueSyntheseService::class)->buildOrderedEntries($dossier);
+        $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($dossier);
 
         $logoData = '';
         $logoPath = public_path('img/logo-bcpme.png');
@@ -340,7 +357,7 @@ class DossierController extends Controller
         $pdf->setPaper('A4', 'portrait');
         $pdf->loadView('RoleSpace.dossiers.dossier_analyse_critique_pdf', [
             'item' => $dossier,
-            'entries' => $entries,
+            'doc' => $doc,
             'logoData' => $logoData,
             'generatedAt' => $generatedAt,
         ]);
@@ -366,75 +383,94 @@ class DossierController extends Controller
         return $pdf->download($filename);
     }
 
-    public function setAnalyse(){
+    public function setAnalyse()
+    {
         $sequence = request('sequence');
         $content = request('content');
         $dossier_id = request('dossier_id');
         $dossier = Dossier::find($dossier_id);
-        if (!$dossier || $dossier->agence_id != auth()->user()->agence_id) {
+        if (! $dossier || $dossier->agence_id != auth()->user()->agence_id) {
             return back();
         }
         $data = [];
-        if($sequence==1) $data = ['donnees_generales'=>$content];
-        if($sequence==2) $data = ['analyse_ensemble'=>$content];
-        if($sequence==3) $data = ['analyse_financiere'=>$content];
-        if($sequence==4) $data = ['appuis'=>$content];
-        if($sequence==5) $data = ['analyse_risque'=>$content];
-        if($sequence==6) $data = ['analyse_rentabilite'=>$content];
-        if($sequence==8) $data = ['conclusions_gestionnaire'=>$content];
-        if($sequence==9) $data = [
-            'conclusions_ca' => $content,
-            'conclusions_ca_saved_at' => now(),
-            'conclusions_ca_saved_by_user_id' => auth()->id(),
-        ];
+        if ($sequence == 1) {
+            $data = ['donnees_generales' => $content];
+        }
+        if ($sequence == 2) {
+            $data = ['analyse_ensemble' => $content];
+        }
+        if ($sequence == 3) {
+            $data = ['analyse_financiere' => $content];
+        }
+        if ($sequence == 4) {
+            $data = ['appuis' => $content];
+        }
+        if ($sequence == 5) {
+            $data = ['analyse_risque' => $content];
+        }
+        if ($sequence == 6) {
+            $data = ['analyse_rentabilite' => $content];
+        }
+        if ($sequence == 8) {
+            $data = ['conclusions_gestionnaire' => $content];
+        }
+        if ($sequence == 9) {
+            $data = [
+                'conclusions_ca' => $content,
+                'conclusions_ca_saved_at' => now(),
+                'conclusions_ca_saved_by_user_id' => auth()->id(),
+            ];
+        }
         if (! empty($data) && (int) $sequence !== 9) {
             $data['instruction_grille_last_edited_at'] = now();
             $data['instruction_grille_last_edited_by_user_id'] = auth()->id();
         }
-        if (!empty($data)) {
+        if (! empty($data)) {
             $dossier->update($data);
         }
+
         return redirect()->back()->with('success', 'Enregistrement effectué.');
     }
 
-    private function parseCriteres(Critere $critere){
+    private function parseCriteres(Critere $critere)
+    {
         $dsc = [];
         $note = 0;
-        foreach($critere->souscriteres as $sc){
+        foreach ($critere->souscriteres as $sc) {
             $r = $sc->reponse;
             $ch = $r?->choice;
-            if($r){
+            if ($r) {
                 $note += $r->value;
             }
             $dsc[] = [
-                'id'=>$sc->id,
-                'name'=>$sc->name,
-                'critereId'=>$sc->critere_id,
-                'sequence'=>$sc->sequence,
-                'default'=>$sc->default,
-                'note'=>$r?$r->note:0,
-                'reponse'=>$r?[
-                        'id'=>$r->id,
-                        'dossierId'=>$r->dossier_id,
-                        'critereId'=>$r->critere_id,
-                        'choiceId'=>$r->choice_id,
-                        'note'=>$r->note,
-                        'choice'=>[
-                            'id'=>$ch->id,
-                            'valeur'=>$ch->valeur,
-                            'note'=>$ch->note,
-                            'critereId'=>$sc->critere_id,
-                        ]
+                'id' => $sc->id,
+                'name' => $sc->name,
+                'critereId' => $sc->critere_id,
+                'sequence' => $sc->sequence,
+                'default' => $sc->default,
+                'note' => $r ? $r->note : 0,
+                'reponse' => $r ? [
+                    'id' => $r->id,
+                    'dossierId' => $r->dossier_id,
+                    'critereId' => $r->critere_id,
+                    'choiceId' => $r->choice_id,
+                    'note' => $r->note,
+                    'choice' => [
+                        'id' => $ch->id,
+                        'valeur' => $ch->valeur,
+                        'note' => $ch->note,
+                        'critereId' => $sc->critere_id,
+                    ],
 
-                ]:[],
+                ] : [],
             ];
         }
 
         return [
-            'id'=>$critere->id,
-            'name'=>$critere->name,
-            'note'=>$note,
-            'souscriteres'=>$dsc,
+            'id' => $critere->id,
+            'name' => $critere->name,
+            'note' => $note,
+            'souscriteres' => $dsc,
         ];
     }
 }

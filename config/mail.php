@@ -114,6 +114,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Destinataire de test (redirection globale des notifications workflow)
+    |--------------------------------------------------------------------------
+    |
+    | Utiliser config() et non env() dans le code applicatif : après
+    | `php artisan config:cache`, env() hors fichiers config renvoie null.
+    |
+    */
+    'test_recipient' => env('MAIL_TEST_RECIPIENT'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |

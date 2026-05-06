@@ -60,6 +60,8 @@
         </li>
     </ul>
 </div>
+@include('partials.layout-tdb-link')
+
 <div class="mainnav__categoriy py-3">
     <h6 class="mainnav__caption mt-0 px-3 fw-bold">COMPTE</h6>
     <ul class="mainnav__menu nav flex-column">

@@ -91,6 +91,7 @@
             <!-- END : Link with submenu -->
         </ul>
     </div>
+@include('partials.layout-tdb-link')
 @include('partials.layout-role-nav-compte')
 @yield('modal')
     <!-- END : Navigation Category -->

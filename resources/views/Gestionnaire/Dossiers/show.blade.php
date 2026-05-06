@@ -101,7 +101,52 @@
 
     @include('partials.dossier-engagements-totaux-cards', ['dossier' => $item])
 
-    @include('partials.instruction-dossier-consultation', ['dossier' => $item, 'instructionConsultation' => $instructionConsultation ?? null])
+    @php
+        $timeline = $item->instructionWorkflowHistoryTimeline();
+        $timelineSorted = collect($timeline)
+            ->sortBy(fn ($r) => $r['at']?->getTimestamp() ?? PHP_INT_MAX)
+            ->values();
+
+        $consultChrono = $instructionConsultation ?? null;
+        $consultChronoColl = ($consultChrono && isset($consultChrono['timeline']))
+            ? collect($consultChrono['timeline'])
+            : collect();
+        $useFullChronology = $consultChronoColl->isNotEmpty();
+
+        $chronologyRows = $useFullChronology
+            ? $consultChronoColl
+                ->sortBy(function ($r) {
+                    $t = $r['at'] ?? null;
+                    $ts = $t instanceof \Carbon\Carbon ? $t->getTimestamp() : 0;
+                    $secondary = str_pad((string) (int) ($r['sort'] ?? 0), 6, '0', STR_PAD_LEFT);
+                    $label = mb_strtolower((string) ($r['label'] ?? ''));
+
+                    return sprintf('%012d.%s.%s', $ts, $secondary, $label);
+                })
+                ->values()
+            : $timelineSorted;
+    @endphp
+
+    @include('partials.instruction-dossier-consultation', [
+        'dossier' => $item,
+        'instructionConsultation' => $instructionConsultation ?? null,
+        'showConsultationTimeline' => false,
+    ])
+
+    <div class="card border-0 shadow-sm mt-3">
+        <div class="card-header bg-transparent border-0 py-3">
+            <h6 class="mb-0 fw-semibold"><i class="demo-psi-clock me-2 text-primary"></i>Historique (chronologie)</h6>
+            <p class="text-muted small mb-0 mt-1">
+                <strong>Timeline horizontale</strong> (défilement latéral sur petit écran) : événements du parcours d’instruction, en ordre chronologique croissant — nature de l’événement, date et heure, auteur et profil.
+            </p>
+        </div>
+        <div class="card-body pt-0">
+            @include('partials.instruction-chronology-horizontal-timeline', [
+                'rows' => $chronologyRows,
+                'useFullChronology' => $useFullChronology,
+            ])
+        </div>
+    </div>
 
     @include('partials.dossier-pieces-jointes', [
         'dossier' => $item,

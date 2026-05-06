@@ -1,0 +1,86 @@
+---
+description: Contexte projet ANGARA — à lire avant toute génération de code ou réponse architecturale
+globs: ["**/*.php", "**/*.md", "database/**", "routes/**", "app/**"]
+alwaysApply: true
+---
+
+# Contexte Projet ANGARA
+
+La source de vérité complète du projet est dans **CONTEXT.md** à la racine.
+Lis ce fichier en priorité avant de répondre à toute question d'architecture
+ou de générer du code touchant aux modèles, migrations, routes ou services.
+
+---
+
+## Résumé de référence rapide
+
+### Qu'est-ce que ANGARA ?
+Outil de structuration des PME par filieres pour les banques l'Afrique francophone.
+
+### La règle la plus importante du projet
+```
+Tout client commence par etre un prospect
+Les les acteurs ont une vue unique de la fiche client et de la fiche prospect pour eviter les ecarts dans les elements affichés mais leurs actions sur le client ou le prospect different en fonctions de leurs responsabilités dans le workflow
+
+Les les acteurs ont une vue unique du dossier d'instruction pour eviter les ecarts dans les elements affichés mais leurs actions sur le client ou le prospect different en fonctions de leurs responsabilités dans le workflow
+
+```
+
+### Ce qui ne bouge jamais
+- `les étapes des differents workflows` → Chaque étape est validée ou rejetée par un acteur intervenant dans le workflow.
+- `validation` et `rejet` → pour chacune de ces actions on retient la date et l'heure ainsi que l'identité de l'acteur.
+Chacune de ces actions est precédée pour une action de soumission d'un acteur en amount
+- `soumission` → gele les modifications effectuées et transmet l'element a l'étape suivante.
+
+### Localisation des fichiers clés
+```
+CONTEXT.md                    → vision, stack, architecture, règles
+docs/FEATURES.md              → fonctionnalités par phase et plan
+docs/ACTORS.md                → acteurs, rôles, permissions
+docs/WORKFLOW.md              → workflows métier détaillés
+.cursor/rules/general.mdc     → règles de code et conventions
+.cursor/rules/context.mdc     → ce fichier
+```
+
+### Routes API
+```
+```
+
+### Où placer un nouveau fichier ?
+```
+Nouveau service            → app/Services/{Auth|Notification|Paiement|Sync}/
+Nouvelle migration → database/migrations/
+Nouveau seeder  → database/seeders/
+```
+
+---
+
+## Ce que Cursor doit faire systématiquement
+
+### Quand on lui demande de créer un modèle
+
+1. Ajouter les relations appropriées
+2. Ajouter les scopes métier pertinents
+
+`
+
+
+
+
+
+### Quand on lui demande un test
+
+1. Pest 3 — syntaxe fonctionnelle (`it('...', function() {}`)
+2. Pas de `extends TestCase`
+3. Grouper avec `->group('domaine')`
+
+### Quand on lui demande du code Flutter
+
+1. State : Riverpod 2 uniquement
+2. Navigation : go_router uniquement
+3. HTTP : Dio + TenantInterceptor
+4. Toujours prévoir le cas offline (cache Drift d'abord)
+5. Tokens stockés dans flutter_secure_storage
+
+---
+

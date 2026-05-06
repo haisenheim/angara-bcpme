@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\Entreprise;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
@@ -23,10 +24,49 @@ class DashboardController extends Controller
         $userId = auth()->user()->id;
         $agenceId = auth()->user()->agence_id;
 
+        // Compatibilité: certaines données historiques utilisent `user_id` (créateur),
+        // le workflow prospect utilise `gestionnaire_id`.
+        $myEntreprises = Entreprise::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere('gestionnaire_id', $userId);
+            });
+
+        $myProspects = (clone $myEntreprises)->where('prospect', true);
+
         $stats = [
-            'total_entreprises' => Entreprise::where('user_id', $userId)->count(),
+            'total_entreprises' => (clone $myEntreprises)->count(),
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
-            'total_prospects' => Entreprise::where('user_id', $userId)->where('prospect', 1)->count(),
+            'my_dossiers' => Dossier::query()->where('gestionnaire_id', $userId)->count(),
+            'total_prospects' => (clone $myProspects)->count(),
+
+            // Workflow prospect (gestionnaire): brouillon / soumis / bloqués / prêts décision.
+            'prospects_brouillon' => (clone $myProspects)
+                ->whereNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->count(),
+            'prospects_soumis' => (clone $myProspects)
+                ->whereNotNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->count(),
+            'prospects_bloques_avis' => (clone $myProspects)
+                ->whereNotNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->where(function ($q) {
+                    $q->whereNull('juridique_avis_at')
+                        ->orWhereNull('conformite_avis_at');
+                })
+                ->count(),
+            'prospects_prets_arbitrage' => (clone $myProspects)
+                ->whereNotNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->whereNotNull('juridique_avis_at')
+                ->whereNotNull('conformite_avis_at')
+                ->count(),
         ];
 
         return response()->json($stats);
@@ -109,6 +149,69 @@ class DashboardController extends Controller
         return response()->json([
             'labels' => $months,
             'data' => $data,
+        ]);
+    }
+
+    public function getTodos()
+    {
+        $userId = auth()->id();
+
+        $myProspects = Entreprise::query()
+            ->where('prospect', true)
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere('gestionnaire_id', $userId);
+            })
+            ->whereNull('promu_client_at')
+            ->whereNull('prospect_rejected_at');
+
+        $drafts = (clone $myProspects)
+            ->whereNull('prospect_submitted_at')
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get(['token', 'name', 'updated_at'])
+            ->map(function (Entreprise $e) {
+                $at = $e->updated_at instanceof Carbon ? $e->updated_at : null;
+
+                return [
+                    'token' => $e->token,
+                    'name' => $e->name ?? '—',
+                    'when_human' => $at?->diffForHumans(),
+                ];
+            })
+            ->values();
+
+        $blocked = (clone $myProspects)
+            ->whereNotNull('prospect_submitted_at')
+            ->where(function ($q) {
+                $q->whereNull('juridique_avis_at')
+                    ->orWhereNull('conformite_avis_at');
+            })
+            ->orderBy('prospect_submitted_at', 'asc')
+            ->limit(10)
+            ->get(['token', 'name', 'prospect_submitted_at', 'juridique_avis_at', 'conformite_avis_at'])
+            ->map(function (Entreprise $e) {
+                $submitted = $e->prospect_submitted_at instanceof Carbon ? $e->prospect_submitted_at : null;
+                $missing = [];
+                if (! $e->juridique_avis_at) {
+                    $missing[] = 'avis juridique';
+                }
+                if (! $e->conformite_avis_at) {
+                    $missing[] = 'avis conformité';
+                }
+
+                return [
+                    'token' => $e->token,
+                    'name' => $e->name ?? '—',
+                    'when_human' => $submitted?->diffForHumans(),
+                    'missing' => implode(' · ', $missing),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'drafts' => $drafts,
+            'blocked' => $blocked,
         ]);
     }
 

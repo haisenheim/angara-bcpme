@@ -9,8 +9,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        return view('AnalysteConformite.dashboard', [
-            'pendingProspects' => Entreprise::query()
+        return view('AnalysteConformite.dashboard');
+    }
+
+    public function getStats()
+    {
+        return response()->json([
+            'prospects_soumis' => Entreprise::query()
                 ->where('prospect', true)
                 ->whereNotNull('prospect_submitted_at')
                 ->count(),

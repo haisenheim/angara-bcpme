@@ -12,6 +12,8 @@ use App\Services\AnalyseCritiqueService;
 use App\Services\InstructionDelegationService;
 use App\Services\InstructionDossierConsultationService;
 use App\Services\StructurationClosureService;
+use App\Services\WorkflowEmailNotificationService;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -123,6 +125,23 @@ class WorkflowController extends Controller
             'Prospect valide par le chef d\'agence et promu au statut client.'
         );
 
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+        $gestionnaire = $item->gestionnaire_id
+            ? User::query()->whereKey((int) $item->gestionnaire_id)->first()
+            : ($item->user_id ? User::query()->whereKey((int) $item->user_id)->first() : null);
+        if ($gestionnaire) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect validé — promu client',
+                title: 'Décision chef d’agence',
+                body: "Le prospect a été validé par le chef d’agence et promu au statut client.\n\nVous pouvez consulter la fiche client et poursuivre le parcours (structuration).",
+                ctaLabel: 'Ouvrir la fiche',
+                ctaUrl: route('gestionnaire.entreprises.show', $item->token),
+                event: 'prospect_approved_by_ca'
+            );
+            $mailer->notifyUser($gestionnaire, auth()->user(), $payload, $ctx);
+        }
+
         Session::flash('success', 'Prospect valide. Le client peut maintenant etre qualifie par le chef de filiere.');
 
         return redirect()->route('ca.workflow.prospects.index');
@@ -153,9 +172,16 @@ class WorkflowController extends Controller
             'reject_motif' => 'nullable|string|max:5000',
         ]);
 
-        $item->prospect = false;
         $item->prospect_rejected_at = now();
         $item->prospect_rejected_user_id = auth()->id();
+        // Réouverture côté gestionnaire : le prospect redevient un brouillon modifiable, prêt à être resoumis.
+        $item->prospect_submitted_at = null;
+        $item->juridique_avis = null;
+        $item->juridique_avis_at = null;
+        $item->juridique_avis_user_id = null;
+        $item->conformite_avis = null;
+        $item->conformite_avis_at = null;
+        $item->conformite_avis_user_id = null;
         $item->save();
 
         $message = 'Prospect refuse par le chef d\'agence (non promu client).';
@@ -163,6 +189,23 @@ class WorkflowController extends Controller
             $message .= "\n\nMotif : ".$data['reject_motif'];
         }
         $this->analyseCritiqueService->syncProspectRejetChefAgence($item, $message);
+
+        $mailer = app(WorkflowEmailNotificationService::class);
+        $ctx = $mailer->contextForEntreprise($item);
+        $gestionnaire = $item->gestionnaire_id
+            ? User::query()->whereKey((int) $item->gestionnaire_id)->first()
+            : ($item->user_id ? User::query()->whereKey((int) $item->user_id)->first() : null);
+        if ($gestionnaire) {
+            $payload = $mailer->buildPayload(
+                subject: 'Prospect refusé',
+                title: 'Décision chef d’agence',
+                body: "Le prospect a été refusé par le chef d’agence.\n\nConsultez la fiche pour voir les détails et le motif (si renseigné).",
+                ctaLabel: 'Ouvrir la fiche',
+                ctaUrl: route('gestionnaire.entreprises.show', $item->token),
+                event: 'prospect_rejected_by_ca'
+            );
+            $mailer->notifyUser($gestionnaire, auth()->user(), $payload, $ctx);
+        }
 
         Session::flash('success', 'Le prospect a ete refuse. Les responsables ne peuvent plus modifier les avis.');
 

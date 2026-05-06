@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Dossier d’analyse critique — {{ $item->programme?->name ?? 'Dossier' }}</title>
+    <title>Dossier d’analyse critique — {{ $item->programmesLabel() ?: 'Dossier' }}</title>
     <style>
         @page {
             margin: 28mm 18mm 22mm 18mm;
@@ -42,35 +42,28 @@
             font-size: 9pt;
         }
         .pdf-meta strong { color: #333; }
-        .entry {
+        .pdf-zone {
             page-break-inside: avoid;
-            margin-bottom: 14px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 12px;
+            border: 1px solid #cfd8dc;
+            border-radius: 4px;
+            overflow: hidden;
         }
-        .entry:last-child { border-bottom: none; }
-        .entry-date {
-            font-size: 8.5pt;
-            color: #fff;
-            background: #37474f;
-            padding: 2px 8px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-        .entry-label { font-weight: bold; font-size: 10.5pt; margin-bottom: 4px; color: #0d47a1; }
-        .entry-author {
+        .pdf-zone-head {
+            background: #eceff1;
+            padding: 8px 10px;
+            border-bottom: 1px solid #cfd8dc;
             font-size: 9pt;
-            color: #444;
-            margin-bottom: 8px;
         }
-        .entry-body {
+        .pdf-zone-title { font-weight: bold; color: #1a237e; }
+        .pdf-zone-body {
             font-size: 9.5pt;
-            border: 1px solid #e3e8ef;
             padding: 10px;
             background: #fafbfc;
         }
-        .entry-body p { margin: 0 0 6px 0; }
-        .entry-body p:last-child { margin-bottom: 0; }
+        .pdf-zone-body p { margin: 0 0 6px 0; }
+        .pdf-zone-body p:last-child { margin-bottom: 0; }
+        .pdf-empty { color: #888; font-style: italic; font-size: 9pt; }
         .pdf-footer-note {
             font-size: 8pt;
             color: #666;
@@ -79,31 +72,20 @@
             padding-top: 10px;
             border-top: 1px solid #ccc;
         }
-        .pdf-pieces {
-            margin-bottom: 18px;
-            page-break-inside: avoid;
-        }
-        .pdf-pieces-title {
-            font-size: 10.5pt;
+        .pdf-section-title {
+            font-size: 11pt;
             font-weight: bold;
             color: #0d47a1;
-            margin: 0 0 8px 0;
+            margin: 16px 0 10px 0;
+            border-bottom: 1px solid #0d47a1;
+            padding-bottom: 4px;
         }
-        .pdf-pieces-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 8.5pt;
-        }
-        .pdf-pieces-table th,
-        .pdf-pieces-table td {
+        .pdf-legacy {
             border: 1px solid #cfd8dc;
-            padding: 5px 6px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .pdf-pieces-table th {
-            background: #eceff1;
-            font-weight: bold;
+            padding: 10px;
+            background: #fffef7;
+            font-size: 9pt;
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -120,7 +102,7 @@
                 </td>
                 <td style="text-align: right;">
                     <p class="pdf-title">Dossier d’analyse critique</p>
-                    <p class="pdf-sub">Banque Camerounaise des PME — Angara</p>
+                    <p class="pdf-sub">Avis du chargé d’instruction — rubriques séparées</p>
                 </td>
             </tr>
         </table>
@@ -133,51 +115,38 @@
         <strong>Document généré le :</strong> {{ $generatedAt->format('d/m/Y à H:i') }}
     </div>
 
-    <div class="pdf-pieces">
-        <p class="pdf-pieces-title">Pièces jointes au dossier</p>
-        @if($item->fichiersDossier->isEmpty())
-            <p style="color:#666; font-size:9pt; margin:0;">Aucune pièce n’a encore été déposée sur ce dossier.</p>
-        @else
-            <table class="pdf-pieces-table">
-                <thead>
-                    <tr>
-                        <th style="width:18%;">Type</th>
-                        <th style="width:32%;">Fichier</th>
-                        <th style="width:20%;">Date et heure</th>
-                        <th style="width:30%;">Déposé par</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($item->fichiersDossier as $f)
-                        <tr>
-                            <td>{{ $f->type?->name ?? '—' }}</td>
-                            <td>{{ $f->original_name ?: ($f->name ? basename($f->name) : '—') }}</td>
-                            <td>{{ $f->uploaded_at ? $f->uploaded_at->format('d/m/Y H:i') : '—' }}</td>
-                            <td>{{ $f->uploadedBy?->name ?? '—' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
-    </div>
-
-    @forelse($entries as $entry)
-        <div class="entry">
-            <div class="entry-date">{{ $entry['at']->format('d/m/Y H:i') }}</div>
-            <div class="entry-label">{{ $entry['label'] }}</div>
-            <div class="entry-author">
-                <strong>{{ $entry['author_name'] }}</strong> — {{ $entry['author_profile'] }}
-                @if(($entry['origin'] ?? '') === 'analyse_critique')
-                    (Analyse critique entreprise)
+    @php
+        $item->loadMissing('analyste');
+        $titreAnalyseCritiquePdf = 'Analyse critique faite par '.($item->analyste?->name ?? 'l’analyste financier (non renseigné)');
+        $zones = $item->exploitationAfInstructionZonesForDisplay();
+        $anyZone = collect($zones)->contains(fn ($z) => $z['filled']);
+        $legacy = (string) ($item->exploitation_analyste_instruction_avis ?? '');
+        $legacyFilled = strlen(trim(strip_tags($legacy))) > 0;
+    @endphp
+    <p class="pdf-section-title">{{ $titreAnalyseCritiquePdf }}</p>
+    @foreach($zones as $zone)
+        <div class="pdf-zone">
+            <div class="pdf-zone-head">
+                <span class="pdf-zone-title">{{ $zone['label'] }}</span>
+            </div>
+            <div class="pdf-zone-body rich-text-rendered">
+                @if($zone['filled'])
+                    {!! $zone['html'] !!}
+                @else
+                    <p class="pdf-empty">Non renseigné.</p>
                 @endif
             </div>
-            <div class="entry-body rich-text-rendered">
-                {!! $entry['body_html'] !!}
-            </div>
         </div>
-    @empty
-        <p style="color:#666;">Aucun avis enregistré dans la chronologie pour ce dossier.</p>
-    @endforelse
+    @endforeach
+
+    @if(! $anyZone && $legacyFilled)
+        <div class="pdf-legacy rich-text-rendered">
+            <strong>Contenu consolidé (historique ou synchronisation)</strong><br><br>
+            {!! $legacy !!}
+        </div>
+    @elseif(! $anyZone && ! $legacyFilled)
+        <p class="pdf-empty">Aucune rubrique renseignée.</p>
+    @endif
 
     <div class="pdf-footer-note">
         Document confidentiel — BC-PME. Reproduction interdite sans autorisation.

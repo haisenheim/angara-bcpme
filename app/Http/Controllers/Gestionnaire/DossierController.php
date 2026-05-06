@@ -158,12 +158,23 @@ class DossierController extends Controller
         return redirect()->back()->with('success', 'Recommandations enregistrées.');
     }
 
-    public function show($token){
-        $item = Dossier::query()
+    public function show($token)
+    {
+        $uid = (int) auth()->id();
+
+        $dossier = Dossier::query()
             ->where('token', $token)
-            ->where('gestionnaire_id', auth()->user()->id)
+            ->whereHas('entreprise', function ($q) use ($uid) {
+                $q->where('prospect', 0)
+                    ->whereNotNull('promu_client_at')
+                    ->where(function ($q2) use ($uid) {
+                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
+                    });
+            })
             ->with([
                 'entreprise',
+                'entreprise.juridiqueAvisUser',
+                'entreprise.conformiteAvisUser',
                 'programme',
                 'instructionProgrammes.programme',
                 'analyste',
@@ -171,39 +182,52 @@ class DossierController extends Controller
                 'chefFiliereSubmittedToAgenceBy',
                 'instructionAgenceValidatedBy',
                 'instructionAgenceRejectedBy',
+                'juridiqueAnalysteUser',
+                'juridiqueAnalysteAssignedBy',
+                'juridiqueAnalysteSubmittedToRejuBy',
+                'juridiqueAnalysteUser',
+                'juridiqueSubmittedToEngagementsBy',
+                'rengAnalysteCreditUser',
+                'rengAnalysteCreditAssignedBy',
+                'rengAnalysteCreditSubmittedBy',
+                'rengSubmittedToRisquesBy',
+                'rerxAnalysteRisquesUser',
+                'rerxAnalysteRisquesAssignedBy',
+                'rerxAnalysteRisquesSubmittedBy',
+                'rerxSubmittedToDirectionBy',
+                'exploitationAvisCreditUser',
+                'exploitationEngagementsDecisionUser',
+                'juridiqueInstructionSubmittedBy',
                 'fichiersDossier.type',
                 'fichiersDossier.uploadedBy',
             ])
             ->firstOrFail();
-        $criteres = Critere::all();
-        $id = $item->id;
-        $criteres = $criteres->map(function($critere)use($id){
-            $critere->souscriteres = $critere->sousCriteres->map(function($souscritere)use($id){
-                $souscritere->reponse = $souscritere->reponses->where('dossier_id',$id)->first();
-                return $souscritere;
-            });
-            return $critere;
-        });
 
-        $criteres = $criteres->map(function($ct){
-            return $this->parseCriteres($ct);
-        });
-
-        $indicateurs = IndicateurFinancier::where('dossier_id',$item->id)->get();
-        $banques = Banque::all();
-        $sme = DossierHelper::getSme($item->note);
-        $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($item);
-
+        $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($dossier);
         $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+        $instructionClosureStatutLabel = app(\App\Services\StructurationClosureService::class)->closureStatutLabel($dossier);
 
-        return view('Gestionnaire/Dossiers/show', compact('item', 'indicateurs', 'criteres', 'sme', 'banques', 'instructionConsultation', 'fichierTypes'));
+        $space = [
+            'route' => 'gestionnaire',
+            'title' => 'Gestionnaire',
+        ];
+        $readonly = true;
+
+        return view('RoleSpace.dossiers.show', compact('dossier', 'instructionConsultation', 'fichierTypes', 'instructionClosureStatutLabel', 'space', 'readonly'));
     }
 
     public function storeDossierPiece(Request $request, string $token)
     {
         $dossier = Dossier::query()
             ->where('token', $token)
-            ->where('gestionnaire_id', auth()->id())
+            ->whereHas('entreprise', function ($q) {
+                $uid = (int) auth()->id();
+                $q->where('prospect', 0)
+                    ->whereNotNull('promu_client_at')
+                    ->where(function ($q2) use ($uid) {
+                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
+                    });
+            })
             ->firstOrFail();
 
         return $this->completeDossierPieceUpload($request, $dossier, 'gestionnaire.dossiers.show', $dossier);

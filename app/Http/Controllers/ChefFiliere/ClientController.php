@@ -19,6 +19,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\AnalyseCritiqueService;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\WorkflowEmailNotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,9 +136,17 @@ class ClientController extends Controller
         $checklist = $item->piecesExigiblesChecklist();
 
         $eer = $item->dossierEntreeRelation;
+        $bundleEditDossier = null;
         $bundleAvailableProgrammes = collect();
         if ($eer && $eer->qualification_validated_by_agence_at) {
-            $taken = $this->assignedProgrammeIdsForEntreprise($item, null);
+            // En cas de rejet par le chef d'agence, on autorise le chef de filière à corriger
+            // le dernier dossier multi-programmes rejeté (mise à jour + resoumission).
+            $bundleEditDossier = $item->dossiers
+                ->filter(fn ($d) => $d instanceof Dossier && $d->instructionProgrammes?->isNotEmpty())
+                ->first(fn ($d) => $d->isInstructionRejectedByAgence());
+
+            $excludeId = $bundleEditDossier?->id ? (int) $bundleEditDossier->id : null;
+            $taken = $this->assignedProgrammeIdsForEntreprise($item, $excludeId);
             $bundleAvailableProgrammes = Programme::query()
                 ->orderBy('name')
                 ->when(count($taken) > 0, fn ($q) => $q->whereNotIn('id', $taken))
@@ -146,7 +155,7 @@ class ClientController extends Controller
 
         Session::put('chef_filiere_dossier_consulte_'.$token, true);
 
-        return view('ChefFiliere.clients.show', compact('item', 'mr', 'checklist', 'bundleAvailableProgrammes'));
+        return view('ChefFiliere.clients.show', compact('item', 'mr', 'checklist', 'bundleAvailableProgrammes', 'bundleEditDossier'));
     }
 
     public function editBesoinsProduits(string $token)
@@ -280,6 +289,7 @@ class ClientController extends Controller
         }
 
         $validated = $request->validate([
+            'dossier_id' => 'nullable|integer|min:1',
             'lignes' => 'required|array|min:1',
             'lignes.*.programme_id' => 'required|integer|exists:programmes,id',
             'lignes.*.budget_appui_financier' => 'nullable|numeric|min:0',
@@ -318,7 +328,28 @@ class ClientController extends Controller
         }
 
         $central = 'central_app_mysql';
-        $taken = $this->assignedProgrammeIdsForEntreprise($item, null);
+
+        $editDossierId = isset($validated['dossier_id']) ? (int) $validated['dossier_id'] : null;
+        $editDossier = null;
+        if ($editDossierId) {
+            $editDossier = Dossier::on($central)
+                ->whereKey($editDossierId)
+                ->where('entreprise_id', $item->id)
+                ->with('instructionProgrammes')
+                ->first();
+            if (! $editDossier || ! $editDossier->isInstructionRejectedByAgence()) {
+                return redirect()
+                    ->route('chef-filiere.clients.show', $token)
+                    ->with('info', 'Ce dossier ne peut pas être corrigé (état invalide).');
+            }
+            if ($editDossier->isInstructionClosed() || $editDossier->isInstructionCaTransmittedToExploitation()) {
+                return redirect()
+                    ->route('chef-filiere.clients.show', $token)
+                    ->with('info', 'Ce dossier est déjà dans un état avancé et ne peut plus être corrigé.');
+            }
+        }
+
+        $taken = $this->assignedProgrammeIdsForEntreprise($item, $editDossier?->id ? (int) $editDossier->id : null);
         $conflict = $lignes->pluck('programme_id')->first(fn (int $pid) => in_array($pid, $taken, true));
         if ($conflict !== null) {
             return redirect()
@@ -337,13 +368,12 @@ class ClientController extends Controller
         $dossier = null;
         $abortInfo = null;
 
-        $submittedAt = now();
         $submittedByUserId = (int) auth()->id();
 
         $maxAttempts = 3;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
-                DB::connection($central)->transaction(function () use ($item, $lignes, $eer, &$dossier, &$abortInfo, $central, $submittedAt, $submittedByUserId, $validated) {
+                DB::connection($central)->transaction(function () use ($item, $lignes, &$dossier, &$abortInfo, $central, $submittedByUserId, $validated, $editDossier) {
                     $eerLocked = DossierEntreeRelation::query()
                         ->where('entreprise_id', $item->id)
                         ->lockForUpdate()
@@ -357,17 +387,40 @@ class ClientController extends Controller
 
                     $sorted = $lignes->sortBy('programme_id')->values();
 
-                    $dossier = Dossier::on($central)->create([
-                        'entreprise_id' => $item->id,
-                        'programme_id' => null,
-                        'token' => sha1('instruction-bundle-'.$item->id.'-'.microtime(true)),
-                        'gestionnaire_id' => $item->gestionnaire_id ?: $item->user_id ?: auth()->id(),
-                        'agence_id' => $item->agence_id,
-                        'representation_id' => $item->representation_id,
-                        'active' => 0,
-                        'engagements_sollicites_total' => $validated['engagements_sollicites_total'],
-                        'engagements_en_cours_total' => $validated['engagements_en_cours_total'],
-                    ]);
+                    if ($editDossier) {
+                        $dLocked = Dossier::on($central)->whereKey($editDossier->id)->lockForUpdate()->firstOrFail();
+                        if (! $dLocked->isInstructionRejectedByAgence()) {
+                            $abortInfo = 'Ce dossier n’est plus en rejet (état modifié).';
+
+                            return;
+                        }
+
+                        // Mise à jour du dossier existant (correction + resoumission).
+                        $dLocked->engagements_sollicites_total = $validated['engagements_sollicites_total'];
+                        $dLocked->engagements_en_cours_total = $validated['engagements_en_cours_total'];
+                        $dLocked->instruction_agence_rejected_at = null;
+                        $dLocked->instruction_agence_rejected_by_user_id = null;
+                        $dLocked->instruction_agence_reject_motif = null;
+                        $dLocked->instruction_agence_validated_at = null;
+                        $dLocked->instruction_agence_validated_by_user_id = null;
+                        $dLocked->instruction_agence_closing_note = null;
+                        $dLocked->save();
+
+                        DossierInstructionProgramme::query()->where('dossier_id', $dLocked->id)->delete();
+                        $dossier = $dLocked;
+                    } else {
+                        $dossier = Dossier::on($central)->create([
+                            'entreprise_id' => $item->id,
+                            'programme_id' => null,
+                            'token' => sha1('instruction-bundle-'.$item->id.'-'.microtime(true)),
+                            'gestionnaire_id' => $item->gestionnaire_id ?: $item->user_id ?: auth()->id(),
+                            'agence_id' => $item->agence_id,
+                            'representation_id' => $item->representation_id,
+                            'active' => 0,
+                            'engagements_sollicites_total' => $validated['engagements_sollicites_total'],
+                            'engagements_en_cours_total' => $validated['engagements_en_cours_total'],
+                        ]);
+                    }
 
                     foreach ($sorted as $idx => $l) {
                         $pid = (int) $l['programme_id'];
@@ -413,6 +466,7 @@ class ClientController extends Controller
                         ->whereNotIn('programme_id', $pids)
                         ->delete();
 
+                    $submittedAt = now();
                     $dossier->update([
                         'chef_filiere_submitted_to_agence_at' => $submittedAt,
                         'chef_filiere_submitted_to_agence_by_user_id' => $submittedByUserId,
@@ -443,6 +497,19 @@ class ClientController extends Controller
                 $dossier,
                 'Dossier d\'instruction multi-programmes créé et soumis au chef d\'agence (chef de filière). Programmes : '.$dossier->programmesLabel().'.'
             );
+
+            $mailer = app(WorkflowEmailNotificationService::class);
+            $ctx = $mailer->contextForDossier($dossier);
+            $payload = $mailer->buildPayload(
+                subject: 'Transmission de dossier — chef d’agence',
+                title: 'Un dossier d’instruction vous a été transmis',
+                body: "Un dossier d’instruction multi-programmes vient d’être soumis par le chef de filière.\n\nMerci de consulter le dossier et de valider ou rejeter la transmission.",
+                ctaLabel: 'Ouvrir la transmission',
+                ctaUrl: route('ca.workflow.instruction-dossiers.show', $dossier->token),
+                event: 'submit_instruction_bundle_to_ca'
+            );
+            $recipients = $mailer->recipientsByRole((int) config('angara.role_chef_agence', 15), $item->agence_id ? (int) $item->agence_id : null);
+            $mailer->notifyUsers($recipients, auth()->user(), $payload, $ctx);
         }
 
         return redirect()

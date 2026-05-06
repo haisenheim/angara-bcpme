@@ -1,13 +1,13 @@
 @extends('Layouts.ca')
 
-@section('title', 'Grille d\'analyse critique')
+@section('title', 'Analyse critique analyste — grille et 7 zones')
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ route('ca.dashboard') }}">Angara</a></li>
         <li class="breadcrumb-item"><a href="{{ route('ca.dossiers.index') }}">Dossiers</a></li>
         <li class="breadcrumb-item"><a href="{{ route('ca.dossiers.show', $item->token) }}">{{ $item->entreprise?->name ?? 'Dossier' }}</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Grille d'analyse critique</li>
+        <li class="breadcrumb-item active" aria-current="page">Grille et sept zones</li>
     </ol>
 </nav>
 @endsection
@@ -19,7 +19,7 @@
             <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionRejectModal"><i class="demo-psi-cross me-2 text-danger"></i> Rejeter la transmission</button></li>
             <li><hr class="dropdown-divider"></li>
         @endif
-        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese', $item->token) }}"><i class="demo-psi-file-text me-2"></i> Dossier d’analyse critique</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese', $item->token) }}"><i class="demo-psi-file-text me-2"></i> Dossier d’analyse critique (7 zones)</a></li>
         <li><a class="dropdown-item" href="{{ route('ca.dossier.analyse-critique.synthese.pdf', $item->token) }}" target="_blank" rel="noopener"><i class="demo-psi-download me-2"></i> Exporter le dossier en PDF</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route('ca.dossiers.show', $item->token) }}"><i class="demo-psi-file me-2"></i> Retour fiche dossier</a></li>
@@ -43,8 +43,8 @@
         <div class="d-flex justify-content-center">
             <div style="width:800px" class="card border-0 shadow-sm">
                 <div class="card-header p-4 bg-transparent">
-                    <h4 class="text-center mb-0">GRILLE D'ANALYSE CRITIQUE</h4>
-                    <p class="text-center text-muted small mb-0 mt-2">Programme(s) : {{ $item->programmesLabel() }}</p>
+                    <h4 class="text-center mb-0">SEPT ZONES DE L’ANALYSE CRITIQUE (ANALYSTE)</h4>
+                    <p class="text-center text-muted small mb-0 mt-2">Dossier d’analyse critique : uniquement ces saisies analyste (la grille est dans la fiche instruction). Programme(s) : {{ $item->programmesLabel() }}</p>
                     @if($item->instructionProgrammes->isNotEmpty())
                         <div class="table-responsive mt-3 mx-auto" style="max-width: 640px;">
                             <table class="table table-sm table-bordered mb-0 bg-white">
@@ -103,7 +103,8 @@
                             <p class="lh-base"><?= $item['conclusions_gestionnaire'] ?? '—' ?></p>
                         </div>
                         <div class="mt-4 border rounded rounded-2 p-2 border-primary border-2">
-                            <h4 class="fs-5">9. REMARQUES ET RECOMMANDATIONS DU CHEF D'AGENCE</h4>
+                            <h4 class="fs-5">Complément — chef d’agence</h4>
+                            <p class="small text-muted">Hors des sept zones analyste.</p>
                             <p class="lh-base"><?= $item['conclusions_ca'] ?? '—' ?></p>
                         </div>
                     </div>

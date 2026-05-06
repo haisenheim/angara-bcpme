@@ -12,27 +12,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $agenceId = auth()->user()->agence_id;
-
-        return view('Ca/dashboard', [
-            'workflowPendingCount' => Entreprise::query()
-                ->where('prospect', true)
-                ->whereNotNull('prospect_submitted_at')
-                ->where('agence_id', $agenceId)
-                ->count(),
-            'workflowInstructionCount' => DossierEntreeRelation::query()
-                ->where('statut', DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION)
-                ->whereNull('qualification_validated_by_agence_at')
-                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
-                ->count(),
-            'workflowInstructionBundleCount' => Dossier::on('central_app_mysql')
-                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
-                ->whereNotNull('chef_filiere_submitted_to_agence_at')
-                ->whereNull('instruction_agence_validated_at')
-                ->whereNull('instruction_agence_rejected_at')
-                ->whereHas('instructionProgrammes')
-                ->count(),
-        ]);
+        return view('Ca/dashboard');
     }
 
     /**
@@ -52,11 +32,54 @@ class DashboardController extends Controller
             'total_dossiers' => Dossier::where('agence_id', $agenceId)->count(),
             'dossiers_en_cours' => $dossiersEnCours,
             'total_entreprises' => Entreprise::where('agence_id', $agenceId)->count(),
-
+            'total_cooperatives' => 0,
             'total_users' => $users->count(),
             'total_prospects' => Entreprise::where('agence_id', $agenceId)
                 ->where('prospect', 1)
                 ->whereNotNull('prospect_submitted_at')
+                ->count(),
+            // Prospects soumis (tous) : visibilité "activité" (pas forcément prêts décision).
+            'workflow_prospects_submitted' => Entreprise::query()
+                ->where('prospect', true)
+                ->where('agence_id', $agenceId)
+                ->whereNotNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->count(),
+            // Prospects "bloqués" : soumis, non décidés, avis juridique et/ou conformité manquant.
+            'workflow_prospects_blocked' => Entreprise::query()
+                ->where('prospect', true)
+                ->where('agence_id', $agenceId)
+                ->whereNotNull('prospect_submitted_at')
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->where(function ($q) {
+                    $q->whereNull('juridique_avis_at')
+                        ->orWhereNull('conformite_avis_at');
+                })
+                ->count(),
+            'workflow_prospects_pending' => Entreprise::query()
+                ->where('prospect', true)
+                ->where('agence_id', $agenceId)
+                ->whereNotNull('prospect_submitted_at')
+                // Circuit d'avis en parallèle: décision chef d'agence uniquement après avis juridique + conformité.
+                ->whereNotNull('juridique_avis_at')
+                ->whereNotNull('conformite_avis_at')
+                // Non encore décidé (ni promu client, ni rejeté).
+                ->whereNull('promu_client_at')
+                ->whereNull('prospect_rejected_at')
+                ->count(),
+            'workflow_eer_pending' => DossierEntreeRelation::query()
+                ->where('statut', DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION)
+                ->whereNull('qualification_validated_by_agence_at')
+                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
+                ->count(),
+            'workflow_instruction_bundles_pending' => Dossier::on('central_app_mysql')
+                ->whereHas('entreprise', fn ($q) => $q->where('agence_id', $agenceId))
+                ->whereNotNull('chef_filiere_submitted_to_agence_at')
+                ->whereNull('instruction_agence_validated_at')
+                ->whereNull('instruction_agence_rejected_at')
+                ->whereHas('instructionProgrammes')
                 ->count(),
         ];
 

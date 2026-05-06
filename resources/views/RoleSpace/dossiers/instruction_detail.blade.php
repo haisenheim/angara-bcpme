@@ -27,7 +27,13 @@
 @section('actions')
     <x-page-actions-dropdown>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique</a>
+            <a href="{{ route($space['route'].'.dossiers.instruction.pdf', $item->token) }}" class="dropdown-item" target="_blank" rel="noopener">
+                <i class="bi bi-printer me-2"></i>Imprimer le dossier complet (PDF)
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique (avis analyste)</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
@@ -63,14 +69,21 @@
         'showUpload' => false,
     ])
 
-    @if($item->isInstructionSubmittedToExploitation() && $item->exploitation_analyste_instruction_avis)
+    @if($item->isInstructionSubmittedToExploitation() && $item->hasExploitationAnalysteInstructionAvisSubstance())
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent border-0 py-3">
-                <h6 class="mb-0 fw-semibold"><i class="demo-psi-file-text me-2 text-primary"></i>Avis du chargé d’instruction</h6>
-                <p class="small text-muted mb-0 mt-1">Tel que transmis au responsable exploitation avec le dossier.</p>
+                @php
+                    $item->loadMissing('analyste');
+                @endphp
+                <h6 class="mb-0 fw-semibold"><i class="demo-psi-file-text me-2 text-primary"></i>Analyse critique faite par {{ $item->analyste?->name ?? 'l’analyste financier (non renseigné)' }}</h6>
+                <p class="small text-muted mb-0 mt-1">Rubriques transmises au responsable exploitation avec le dossier.</p>
             </div>
             <div class="card-body pt-0">
-                <div class="rich-text-rendered small border rounded p-3 bg-light">{!! $item->exploitation_analyste_instruction_avis !!}</div>
+                @include('partials.exploitation-analyste-instruction-zones', [
+                    'dossier' => $item,
+                    'showSectionTitle' => false,
+                    'showEmptyZones' => true,
+                ])
             </div>
         </div>
     @endif

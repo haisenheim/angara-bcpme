@@ -6,6 +6,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
@@ -30,6 +31,22 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        /**
+         * Quand une page reste ouverte trop longtemps, le token CSRF peut expirer.
+         * Plutôt que d'afficher "419 Page Expired" (notamment sur logout), on renvoie vers le login.
+         */
+        $this->renderable(function (TokenMismatchException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Page expirée. Veuillez vous reconnecter.',
+                ], 419);
+            }
+
+            return redirect()
+                ->guest(route('login'))
+                ->with('warning', 'Votre session a expiré. Veuillez vous reconnecter.');
         });
 
         /**

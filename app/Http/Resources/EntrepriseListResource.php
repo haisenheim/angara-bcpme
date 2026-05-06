@@ -50,6 +50,7 @@ class EntrepriseListResource extends JsonResource
     public function toArray(Request $request): array
     {
         $structRow = $this->clientStructurationRow();
+        $clientStatut = $this->resource->clientStatutPresentation();
 
         return [
             'id'=>$this->id,
@@ -82,6 +83,12 @@ class EntrepriseListResource extends JsonResource
             'prospect_workflow_status' => $this->prospectWorkflowStatusLabel(),
             'client_structuration_code' => $structRow['code'],
             'client_structuration_label' => $structRow['label'],
+            'client_statut' => [
+                'code' => $clientStatut['code'] ?? null,
+                'label' => $clientStatut['label'] ?? null,
+                'badge_variant' => $clientStatut['badge_variant'] ?? 'secondary',
+                'detail' => $clientStatut['detail'] ?? null,
+            ],
         ];
     }
 

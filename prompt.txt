@@ -35,4 +35,194 @@ Un client peut etre dans les etats suivants:
 4- structuration rejetée : non validee (rejetee) par le chef d'agence.
 5- non structuré: les cas 2,3 et 4
 
+#fonctionnalite sites
+Un client/prospect peut se situer dans plusieurs lieux ou sites.
+Il s'agira pour chaque client ou prospect de definir ses differents sites
+Le gestionnaire peut donc en consultant la fiche client ou prospect ajouter un site
+Pour chaque site on definira:
+    -le nom ou libelle,
+    -la region,le departement,la commune (tous en selection selon les localites parametrees dans la bd)
+    -le village ou le quartier
+    -la latitude et la longitude
+    -contact : telephone et email
+    -une zone de texte (summernote) pour divers
+Seuls le nom et la commune sont obligatoires
+
+#Fonctionnalite equipe:
+Pour chaque Prospect ou client mettre en place une nouvelle fonctionnalite nommee equipe.
+Il s'agit definir pour le client ou le prospect les membres de son equipe.
+Le gestionnaire lorsqu'il consulte la fiche client dispose dans son espace d'une action pour ajouter un membre de l'equipe.
+Pour chaque membre on definira:
+    -nom,
+    -prenom,
+    -telephone,
+    -email,
+    -sa date de naissance (pour definir son age a l'affichage),
+    -sa fonction,
+    -son niveau d'etude (en selection),
+    -sa specialite,
+    -est-il associe? (a cocher)
+    -son site d'affectation
+    -une zone de texte (summernote) pour divers
+Seul le nom et le telephone sont obligatoires
+
+Mettre a niveau l'affichage de la fiche client/propect pour integrer les information sur les sites et l'equipe
+
+
+
+
+
+#notifications
+toute transmission et affectation doit s'accompagner d'une notification email adresse au destinataire de la transmission
+pour prevenir la personne qu'une action est requise (attendue) de sa part.
+
+Un mail professionnel va donc etre envoye au destinaire contenant tous les details sur l'expediteur, et l'evenement declencheur, les taches a effectuer, un bouton CTA, etc ...
+mettre l'envoi du mail dans un try catch pour prevenir d'eventuels problemes.
+si la variable du fichier .env MAIL_TEST_RECIPIENT est differente de null alors envoyer tous les email des Investisseurs a cette adresse email.
+Dans le cas contraire envoyer le mail a l'adresse du destinataire (champ email de du model USER).
+
+
+
+L’application ANGARA permet d’élaborer 5 types de TDB.
+1. Les tableaux de bord opérationnels avec pour objectif de suivre l’activité quotidienne
+notamment des Analystes financiers, Chef de filière et les différents intervenants
+dans la chaine de décision. Les indicateurs ici peuvent être : Dossiers en cours, Dossiers en
+attente de validation, Délais de traitement, Dossiers rejetés, etc.
+2. Les tableaux de bord de portefeuille (niveau management) avec pour objectif de suivre les
+engagements et les clients. Les indicateurs ici peuvent être : Volume de crédits, Répartition
+par filière / secteur (champ produit principal du client), Encours par client, Encours par filière, etc. Les utilisateurs concernés
+sont le Chef d’agence, les Responsables Exploitation, Engagements, Risques, etc.
+3. Les tableaux de bord risques avec pour objectif de surveiller les expositions. Les indicateurs
+peuvent être : Taux d’impayés, Créances en souffrance, Dossiers à risque et Alertes. Les
+utilisateurs concernés seraient le Responsables Risques, la Direction Générale et le Conseil
+d’administration.
+4. Les tableaux de bord stratégiques avec pour objectif de piloter la banque. Les indicateurs ici
+pourraient être : Performance globale, Croissance du portefeuille, Impact des programmes
+ Les utilisateurs concernés seraient la Direction Générale et le Conseil
+d’administration.
+5. Les tableaux de bord programmes avec pour objectif de suivre les dispositifs d’appui. Les
+indicateurs peuvent être : Nombre de bénéficiaires, Montants financés, Impact économique,
+etc.
+
+
+
+
+#Les workflow
+ Workflow 1 : Entrée en relation
+Le workflow d’entrée en relation est organisé en deux phases :
+i) Création du prospect et validation du dossier client ; et
+ii) Structuration du client et de ses besoins (non-financiers et financiers).
+1.1. Création prospect et validataion du propect.
+**Acteurs impliques : Gestionnaire, responsable juridique, responsable conformité, chef d'agence.
+- Enregistrement d’un prospect par le Gestionnaire et soumission pour avis juridique et conformité ;
+- Avis Responsable Juridique et Responsable Conformité
+- Validation de la création du prospect par le Chef d’Agence = Création client
+1.2. Structuration du client et identification de ses besoins
+**Acteurs impliques : Chef de filiere, chef d'agence.
+- Analyse stratégique et opérationnelle du prospect par le Chef de Filière (Positionnement dans le
+secteur d’activité ou la filière ; Vérification de l’éligibilité (import-substitution, filières et profils
+ciblés) ;
+- Identification des besoins (financement, accompagnement, structuration) ;
+- Validation dossier client par le Chef d’Agence
+- Création dossier instruction par affectation a des programmes pour appuis non-financiers et/ou financier et soumission pour validation;.
+Le workflow 1 peut être schématisé comme suit :
+Gestionnaire → Chef d’agence → Chef de filière → Chef d’agence → Responsable Exploitation
+2. Workflow 2 : Instruction du dossier des engagements
+Le workflow d’instruction permet de retracer le parcours du dossier des engagements du client jusqu’à
+leur extinction. Le traitement va ainsi de l’Exploitation (Analyste financier Agence ou Pool d’analystes
+financiers) jusqu’au Conseil d’administration, en passant par le Juridique, les Engagements, les
+Risques et la Direction Générale.
+Au-delà de la traçabilité des événements, ce workflow renforce également la gouvernance en termes
+d’amélioration de la qualité de services, de maîtrise des processus d’instruction des dossiers de crédit,
+de contrôle des engagements et de reporting.
+
+#Etapes du dossier d'instruction
+1. Traitement Pôle Exploitation (Consultation de toutes les pièces et du dossier d’instruction +
+Saisie d’un avis de crédit)
+- Consultation des dossiers d’instruction en instance par le Responsable Exploitation (REXP)
+- Cotation de dossier d’instruction à un Analyste Financier (AF)
+- Instruction dossier par un AF (Grille de notation Corporate, Grille de traitement des engagements du client,
+ Grille d’analyse critique), + Soumission dossier des
+engagements
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engagements par le REXP
+2. Traitement Pôle Juridique (Consultation de toutes les pièces et du dossier d’instruction + Saisie
+d’un avis juridique)
+- Consultation des dossiers d’instruction en instance par le Responsable juridique (RJU)
+- Cotation dossier d’instruction à un Analyste juridique (AJ)
+- Instruction dossier par un AJ + Soumission
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engagements par le RJU
+3. Traitement Pôle Engagements (Consultation de toutes les pièces et du dossier d’instruction +
+Saisie d’un avis de crédit et réglementaire)
+- Consultation des dossiers d’instruction en instance par le Responsable des engagements (RENG)
+- Cotation dossier d’instruction à un Analyste des crédits (AC)
+- Instruction dossier par un AC (Contre-analyse + MAJ Grille de traitement des engagements + Avis)
++ Soumission
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engagements par le RENG
+4. Traitement Pôle Risques (Consultation de toutes les pièces et du dossier d’instruction + Saisie
+d’un avis de gestion des risques)
+- Consultation des dossiers d’instruction en instance par le Responsable des risques (RISQ)
+- Cotation dossier d’instruction à un Analyste des risques (AR)
+- Instruction dossier par un AR (Analyse des risques + Avis) + Soumission
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engagements par le RISQ
+5. Traitement Direction Générale (Consultation de toutes les pièces et du dossier d’instruction +
+Saisie d’un avis et/ou d’une décision de crédit)
+- Consultation des dossiers d’instruction en instance par le DG
+- Lecture + Avis + Validation (Accord ou Rejet) du dossier des engagements par le DG
+
+#Workflow global
+
+#toute creation de client passe par la creation du prospect
+-> creation du prospect par le gestionnaire
+-> avis du responsable juridique et du responsable conformité (en parallele)
+-> validation de conversion en client ou rejet par le chef d'agence
+-> Si prospect devient, client visible dans l'espace du chef de filiere pour structuration
+
+#une fois le prospect devenu en client
+-> structuration du client par le chef de filiere
+-> validataion ou rejet de la structuration par le chef d'agence
+
+#Une fois la structuration du client validée par le chef d'agence
+-> Creation d'un dossier d'instruction pour le client : dossier d'instruction = client + un ou plusieurs programme (s) (on relation le client a un ou plusieurs programmes et definissant pour chaque programme les budget en termes d'appui financiers et en termes d'appui non financiers)
+-> Validation ou rejet du dossier d'instruction par le chef d'agence (CA)
+-> Si dossier d'instruction validé par le chef d'agence, dossier visible dans l'espace du responsable d'exploitation
+
+#Une fois le dossier chez le responsable exploitation
+-> Affectation du dossier a un analyste financier
+-> Traitement du dossier par l'analyste financier : elaboration de la grille de notation, l'analyse critique et transmission au responsable exploitation
+-> Validation du travail de l'analyste financier et saisie de l'avis du responsable exploitation
+-> Si dossier valider par responsable exploitation, dossier transmis au responsable juridique
+
+#Une fois le dossier chez le responsable juridique
+-> Affectation du dossier a un analyste juridique
+-> Saisie de l'Avis de l'analyste juridique et transmission au responsable juridique
+-> Saisie de l'avis du responsable Juridique
+-> Transmission au responsable engagements
+
+#Une fois le dossier chez le responsable engagements
+-> Affectation du dossier a un analyste credit
+-> Saisie de l'Avis de l'analyste credit et transmission au responsable engagements
+-> Saisie de l'avis du responsable engagements
+-> Transmission au responsable risques
+
+#Une fois le dossier chez le responsable risques
+-> Affectation du dossier a un analyste risques
+-> Saisie de l'Avis de l'analyste risques et transmission au responsable risques
+-> Saisie de l'avis du responsable risques
+-> Transmission au DG et au DGA
+
+#Une fois le dossier chez le DG/DGA
+-> Saisie de l'avis du DG ou du DGA
+-> Accord de credit ou rejet du dossier
+-> Si accord alors dossier cloture
+
+N.B: Une fois le dossier soumis au maillon suivant, il devient impossible de faire des modification par l'acteur de l'etape
+precedente (c'est a dire il ne peut plus modifier le contenu qui a produit).
+En cas de rejet (c'est-a-dire non validation du dossier) a une etape donnee, alors l'acteur de l'etape precedente peut a nouveau modifier son contenu et le transmettre a nouveau
+
+
+#Prise en compte de la delegation de pouvoir.
+Le principe de la delagation de pouvoir stipule que l'accord ou le rejet du dossier etre fait des responsables intermediare avant le DG ou le DGA
+En fonction des montants maximum defini dans la grille de delegation de pouvoir
+En dernier ressort c'est de la DG ou le deja qui dispose de la possibilite de cloturer le dossier.
+Toute cloture doit etre accompagnee de la saisie d'une note de cloture.
 

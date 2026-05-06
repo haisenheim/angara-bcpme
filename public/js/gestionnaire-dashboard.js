@@ -19,6 +19,7 @@ const GestionnaireDashboard = {
     init() {
         console.log('Initializing Gestionnaire Dashboard...');
         this.loadStats();
+        this.loadTodos();
         this.loadRecentDossiers();
         this.loadDistributionChart();
         this.loadEntreprisesChart();
@@ -31,6 +32,15 @@ const GestionnaireDashboard = {
                 document.getElementById('total-entreprises').textContent = data.total_entreprises;
                 document.getElementById('total-dossiers').textContent = data.total_dossiers;
                 document.getElementById('total-prospects').textContent = data.total_prospects;
+
+                const b = document.getElementById('wf-prospects-brouillon');
+                if (b) b.textContent = data.prospects_brouillon ?? 0;
+                const s = document.getElementById('wf-prospects-soumis');
+                if (s) s.textContent = data.prospects_soumis ?? 0;
+                const bl = document.getElementById('wf-prospects-bloques');
+                if (bl) bl.textContent = data.prospects_bloques_avis ?? 0;
+                const p = document.getElementById('wf-prospects-prets');
+                if (p) p.textContent = data.prospects_prets_arbitrage ?? 0;
             })
             .catch(error => {
                 console.error('Error loading stats:', error);
@@ -220,6 +230,80 @@ const GestionnaireDashboard = {
             .catch(error => {
                 console.error('Error loading entreprises chart:', error);
                 this.showError('entreprises-chart-error', 'Erreur de chargement du graphique');
+            });
+    },
+
+    loadTodos() {
+        fetch('/gestionnaire/dashboard/todos')
+            .then(response => response.json())
+            .then(data => {
+                const drafts = (data && data.drafts) || [];
+                const blocked = (data && data.blocked) || [];
+
+                const draftsContainer = document.getElementById('gest-drafts-container');
+                if (draftsContainer) {
+                    draftsContainer.innerHTML = '';
+                    if (!drafts.length) {
+                        draftsContainer.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="pli-phone-2 text-muted fs-1"></i>
+                                <p class="text-muted mt-2">Aucun brouillon</p>
+                            </div>
+                        `;
+                    } else {
+                        drafts.forEach(row => {
+                            const href = row.token ? `/gestionnaire/entreprises/${row.token}/edit` : '#';
+                            const name = row.name || '—';
+                            const when = row.when_human ? `Modifié ${row.when_human}` : '—';
+                            draftsContainer.innerHTML += `
+                                <a class="list-group-item list-group-item-action px-0" href="${href}">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div class="fw-semibold small">${name}</div>
+                                        <div class="text-muted small text-nowrap">${when}</div>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                    }
+                }
+
+                const blockedContainer = document.getElementById('gest-blocked-container');
+                if (blockedContainer) {
+                    blockedContainer.innerHTML = '';
+                    if (!blocked.length) {
+                        blockedContainer.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="demo-psi-check text-success fs-1"></i>
+                                <p class="text-muted mt-2">Aucun prospect bloqué</p>
+                            </div>
+                        `;
+                    } else {
+                        blocked.forEach(row => {
+                            const href = row.token ? `/gestionnaire/entreprises/${row.token}/edit` : '#';
+                            const name = row.name || '—';
+                            const when = row.when_human ? `Soumis ${row.when_human}` : '—';
+                            const missing = row.missing ? `Manque: ${row.missing}` : '';
+                            blockedContainer.innerHTML += `
+                                <a class="list-group-item list-group-item-action px-0" href="${href}">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold small">${name}</div>
+                                            <div class="text-muted small">${missing}</div>
+                                        </div>
+                                        <div class="text-muted small text-nowrap">${when}</div>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading todos:', error);
+                const d = document.getElementById('gest-drafts-container');
+                if (d) d.innerHTML = '<div class="text-center py-2 text-muted small">—</div>';
+                const b = document.getElementById('gest-blocked-container');
+                if (b) b.innerHTML = '<div class="text-center py-2 text-muted small">—</div>';
             });
     },
 

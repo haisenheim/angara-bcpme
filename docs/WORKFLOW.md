@@ -37,6 +37,24 @@ Tout rejet :
 
 Les vues `entreprise/show` et `dossier/show` sont **partagées** entre tous les profils habilités. Seules les **actions** (CRUD, validation, soumission, etc.) sont conditionnées par le rôle.
 
+### 1.5. Statuts unifiés (présentation)
+
+Pour éviter les écarts d'affichage entre rôles, deux services centralisent le statut :
+
+| Entité | Service / méthode | Codes |
+|---|---|---|
+| Dossier d'instruction | `App\Services\DossierInstructionStatutService::presentation($dossier)` (alias `Dossier::instructionStatutPresentation()`) | `valide`, `rejete`, `en_cours`, `valide_et_rejete` (prompt l. 23‑27) |
+| Entreprise / client | `App\Models\Entreprise::clientStatutPresentation()` | `prospect_brouillon`, `prospect_soumis`, `prospect_rejete`, `client_en_attente_structuration`, `client_structuration_en_cours`, `client_structuration_rejetee`, `client_structure` (prompt l. 30‑36 + état `prospect`) |
+
+L'affichage utilise systématiquement le composant Blade :
+
+```blade
+<x-statut-badge :statut="$dossier->instructionStatutPresentation()" />
+<x-statut-badge :statut="$entreprise->clientStatutPresentation()" compact />
+```
+
+Filtrage côté requêtes : `Dossier::whereInstructionStatut($code)` (scope Eloquent) — utile pour les listes et dashboards.
+
 ---
 
 ## 2. Workflow 1 — Entrée en relation (prospect → client)
@@ -154,13 +172,38 @@ Une fois le dossier validé par le CA, il est transmis au **responsable exploita
 
 ## 4. Récapitulatif des verrouillages et réouvertures (workflow 2)
 
+### 4.1. Rejet intra‑pôle (responsable → analyste)
+
+Tout responsable de pôle peut **rejeter** la soumission de son analyste. La saisie de l'analyste est alors rouverte ; le motif est obligatoire et notifié.
+
 | Étape | Soumission par | Verrouillage à | Réouverture par | Colonne `*_rejected_at` |
 |---|---|---|---|---|
 | Rubriques d'analyse + grille | Analyste financier | Soumission au REXP | Rejet REXP (motif) | `exploitation_analyste_rejected_at` |
 | Avis analyste juridique | Analyste juridique | Soumission au RJU | Rejet RJU (motif) | `juridique_analyste_rejected_at` |
 | Contre-analyse + avis crédit | Analyste crédit | Soumission au RENG | Rejet RENG (motif) | `reng_analyste_credit_rejected_at` |
 | Analyse + avis risques | Analyste risques | Soumission au RISQ | Rejet RISQ (motif) | `rerx_analyste_risques_rejected_at` |
-| Avis REXP / RJU / RENG / RISQ | Responsables | Transmission au pôle suivant | (réouverture inter-pôle non implémentée) | — |
+
+UI partagée : `resources/views/RoleSpace/dossiers/partials/_pole_analyste_reject_modal.blade.php` (modale) et `_analyste_reject_banner.blade.php` (bandeau de réouverture côté analyste).
+
+### 4.2. Rejet inter‑pôles (responsable du pôle N → responsable du pôle N‑1)
+
+Tout responsable de pôle peut **renvoyer le dossier au pôle précédent** pour révision. Le motif est obligatoire ; les marqueurs de soumission entre pôles sont rouverts ; l'événement reste tracé dans la timeline.
+
+| Transition (pôle N → N‑1) | Endpoint | Colonne `*_rejected_to_*_at` | Effet |
+|---|---|---|---|
+| Juridique → Exploitation | `POST /juridique/dossiers/{token}/rejeter-vers-exploitation` | `juridique_rejected_to_exploitation_at` | Réouvre la transmission `exploitation → juridique` côté REXP |
+| Engagements → Juridique | `POST /reng/dossiers/{token}/rejeter-vers-juridique` | `engagements_rejected_to_juridique_at` | Réouvre la transmission `juridique → engagements` côté RJU |
+| Risques → Engagements | `POST /rerx/dossiers/{token}/rejeter-vers-engagements` | `risques_rejected_to_engagements_at` | Réouvre la transmission `engagements → risques` côté RENG |
+| Direction → Risques | `POST /instruction/dossiers/{token}/closure/reject-to-risques` | `direction_rejected_to_risques_at` | Réouvre la transmission `risques → direction` côté RISQ |
+
+UI partagée : `_inter_pole_reject_modal.blade.php` (modale) et `_inter_pole_reject_banner.blade.php` (bandeau côté pôle réouvert).
+
+À la **retransmission** du pôle réouvert, les marqueurs `*_rejected_to_*_at`, `*_rejected_to_*_by_user_id`, `*_rejected_to_*_motif` sont remis à `null` (cf. `RoleSpace/PortfolioController::storeSoumettre*` / `submit*`).
+
+### 4.3. Rejet bundle / clôture
+
+| Étape | Soumission par | Verrouillage à | Réouverture par | Colonne `*_rejected_at` |
+|---|---|---|---|---|
 | Dossier d'instruction (bundle) | Chef de filière | Soumission au CA | Rejet CA (motif) | `instruction_agence_rejected_at` |
 | Clôture du dossier | DG / DGA / délégué | Validation finale | (rejet de clôture = état terminal) | `instruction_closure_rejected_at` |
 
@@ -176,10 +219,14 @@ Une fois le dossier validé par le CA, il est transmis au **responsable exploita
 | Contrôleurs Workflow 2 | `RoleSpace/PortfolioController` (transverse), `Analyste/DossierController`, `AnalysteJuridique/DossierController`, `AnalysteCredit/DossierController`, `AnalysteRisques/DossierController`, `InstructionClosureController` |
 | Vues Workflow 1 | `resources/views/Gestionnaire/Companies/*`, `resources/views/Juridique/Prospects/*`, `resources/views/Conformite/Prospects/*`, `resources/views/Ca/Companies/*` |
 | Vues Workflow 2 | `resources/views/RoleSpace/dossiers/*`, `resources/views/RoleSpace/dossiers/partials/*workflow*.blade.php`, `resources/views/RoleSpace/dossiers/partials/respexp_dossier_hub.blade.php` |
-| Vues partagées (rejets) | `resources/views/RoleSpace/dossiers/partials/_pole_analyste_reject_modal.blade.php`, `resources/views/RoleSpace/dossiers/partials/_analyste_reject_banner.blade.php` |
+| Vues partagées (rejets analystes) | `resources/views/RoleSpace/dossiers/partials/_pole_analyste_reject_modal.blade.php`, `resources/views/RoleSpace/dossiers/partials/_analyste_reject_banner.blade.php` |
+| Vues partagées (rejets inter‑pôles) | `resources/views/RoleSpace/dossiers/partials/_inter_pole_reject_modal.blade.php`, `resources/views/RoleSpace/dossiers/partials/_inter_pole_reject_banner.blade.php` |
+| Composant statut unifié | `resources/views/components/statut-badge.blade.php` (utilisé via `<x-statut-badge />`) |
+| Service statuts dossier | `app/Services/DossierInstructionStatutService.php` |
 | Routes | `routes/web.php` |
 | Migrations délégation | `database/migrations/2026_04_24_100000_instruction_delegation_pouvoir.php`, `database/migrations/2026_04_26_100000_add_instruction_closure_fields_to_dossiers.php` |
 | Migration rejets analystes | `database/migrations/2026_05_06_100000_add_pole_analyste_reject_columns_to_dossiers.php` |
+| Migration rejets inter‑pôles | `database/migrations/2026_05_06_120000_add_inter_pole_reject_columns_to_dossiers.php` |
 
 ---
 

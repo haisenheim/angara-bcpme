@@ -1,0 +1,85 @@
+Liste des profils :
+
+Gestionnaire : CRUD des prospects et des clients mais tous clients commence toujours par l'etat prospect
+Chef d'agence : Suivi du portefeuille des clients et prospects de son agence, il valide le passage du prospect en client, valide la structuration du client effectuee par le chef de filière
+Chef de filiere : Struture les besoins des clients
+
+#Pole Exploitation
+Responsable Exploitation
+Analyste Financier
+
+#Pole Juridique
+Responsable juridique
+Analyste juridique
+
+#Pole Engagements
+Responsable Engagements
+Analyste Credit
+
+#Pole Risques
+Responsable Risques
+Analyste Risques
+
+#Pole Conformité
+Responsable Conformité
+Analyste Conformité
+
+#Direction generale
+DIRECTEUR GENERAL
+DIRECTEUR GENERAL ADJOINT
+
+RESPONSABLE AUDIT
+RESPONSABLE CONTROLE INTERNE
+
+
+
+#Workflow global
+
+#toute creation de client passe par la creation du prospect
+-> creation du prospect par le gestionnaire
+-> avis du responsable juridique et du responsable conformité (en parallele)
+-> validation de conversion en client ou rejet par le chef d'agence
+-> Si prospect devient, client visible dans l'espace du chef de filiere pour structuration
+
+#une fois le prospect devenu en client
+-> structuration du client par le chef de filiere
+-> validataion ou rejet de la structuration par le chef d'agence
+
+#Une fois la structuration du client validée par le chef d'agence
+-> Creation d'un dossier d'instruction pour le client : dossier d'instruction = client + un ou plusieurs programme (s) (on relation le client a un ou plusieurs programmes et definissant pour chaque programme les budget en termes d'appui financiers et en termes d'appui non financiers)
+-> Validation ou rejet du dossier d'instruction par le chef d'agence (CA)
+-> Si dossier d'instruction validé par le chef d'agence, dossier visible dans l'espace du responsable d'exploitation
+
+#Une fois le dossier chez le responsable exploitation
+-> Affectation du dossier a un analyste financier
+-> Traitement du dossier par l'analyste financier : elaboration de la grille de notation, l'analyse critique et transmission au responsable exploitation
+-> Validation du travail de l'analyste financier et saisie de l'avis du responsable exploitation
+-> Si dossier valider par responsable exploitation, dossier transmis au responsable juridique
+
+#Une fois le dossier chez le responsable juridique
+-> Affectation du dossier a un analyste juridique
+-> Saisie de l'Avis de l'analyste juridique et transmission au responsable juridique
+-> Saisie de l'avis du responsable Juridique
+-> Transmission au responsable engagements
+
+#Une fois le dossier chez le responsable engagements
+-> Affectation du dossier a un analyste credit
+-> Saisie de l'Avis de l'analyste credit et transmission au responsable engagements
+-> Saisie de l'avis du responsable engagements
+-> Transmission au responsable risques
+
+#Une fois le dossier chez le responsable risques
+-> Affectation du dossier a un analyste risques
+-> Saisie de l'Avis de l'analyste risques et transmission au responsable risques
+-> Saisie de l'avis du responsable risques
+-> Transmission au DG et au DGA
+
+#Une fois le dossier chez le DG/DGA
+-> Saisie de l'avis du DG ou du DGA
+-> Accord de credit ou rejet du dossier
+-> Si accord alors dossier cloture
+
+
+#Prise en compte de la delegation de pouvoir.
+Le principe de la delagation de pouvoir stipule que l'accord ou le rejet du dossier etre fait des responsables intermediare avant le DG ou le DGA
+En fonction des montants maximum defini dans la grille de delegation de pouvoir

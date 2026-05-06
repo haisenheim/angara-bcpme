@@ -16,6 +16,9 @@ class DossierListResource extends JsonResource
     public function toArray(Request $request): array
     {
         $org = method_exists($this->resource, 'currentOrganisation') ? $this->currentOrganisation() : null;
+        $statut = method_exists($this->resource, 'instructionStatutPresentation')
+            ? $this->resource->instructionStatutPresentation()
+            : null;
 
         return [
             'id'=>$this->id,
@@ -35,6 +38,12 @@ class DossierListResource extends JsonResource
             'organisation_entity_route'=>$org['entity_route'] ?? null,
             'created'=>$this->created_at->format('d/m/Y H:i'),
             'token'=>$this->token,
+            'instruction_statut' => $statut ? [
+                'code' => $statut['code'] ?? null,
+                'label' => $statut['label'] ?? null,
+                'badge_variant' => $statut['badge_variant'] ?? 'secondary',
+                'detail' => $statut['detail'] ?? null,
+            ] : null,
         ];
     }
 }

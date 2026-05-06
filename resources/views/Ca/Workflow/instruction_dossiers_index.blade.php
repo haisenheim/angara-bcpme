@@ -24,7 +24,8 @@
                         <th>Soumis le</th>
                         <th class="text-end">Eng. sollicités</th>
                         <th>Programmes</th>
-                        <th>État</th>
+                        <th>Statut</th>
+                        <th>Étape</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -42,11 +43,12 @@
                             <td>{{ optional($dossier->chef_filiere_submitted_to_agence_at)->format('d/m/Y H:i') ?? '—' }}</td>
                             <td class="text-end small">{{ $dossier->engagements_sollicites_total !== null ? number_format((float) $dossier->engagements_sollicites_total, 0, ',', ' ') : '—' }}</td>
                             <td class="small">{{ $progLabel }}</td>
-                            <td class="small"><span class="badge bg-warning text-dark">{{ $delegation->closureStatutLabel($dossier) }}</span></td>
+                            <td class="small"><x-statut-badge :statut="$dossier->instructionStatutPresentation()" :show-detail="false" /></td>
+                            <td class="small text-muted">{{ $delegation->closureStatutLabel($dossier) }}</td>
                             <td class="text-end"><a href="{{ route('ca.workflow.instruction-dossiers.show', $dossier->token) }}" class="btn btn-sm btn-outline-primary">Ouvrir</a></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted py-4">Aucun dossier en attente.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">Aucun dossier en attente.</td></tr>
                     @endforelse
                 </tbody>
             </table>
