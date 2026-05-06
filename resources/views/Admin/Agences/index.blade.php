@@ -120,7 +120,9 @@
                 </table>
             </div>
 
-            {{ $items->links() }}
+            <div class="d-flex justify-content-end mt-3">
+                {{ $items->withQueryString()->links() }}
+            </div>
         </div>
     </div>
 
