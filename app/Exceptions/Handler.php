@@ -36,27 +36,22 @@ class Handler extends ExceptionHandler
         /**
          * Quand une page reste ouverte trop longtemps, le token CSRF peut expirer.
          * Plutôt que d'afficher "419 Page Expired", on renvoie l'utilisateur vers
-         * la page de connexion (ou on relance la requête précédente) avec un
-         * message explicite.
+         * la page de connexion avec un message explicite.
          *
-         * Note : les routes d'authentification (logout, login, forgot-password)
-         * sont en plus exclues de la vérification CSRF dans
-         * `App\Http\Middleware\VerifyCsrfToken` pour garantir que ces flux
-         * fonctionnent même quand la session a déjà expiré.
+         * Note : la route `logout` est en plus exclue de la vérification CSRF dans
+         * `App\Http\Middleware\VerifyCsrfToken` pour garantir qu'une déconnexion
+         * fonctionne même quand la session a déjà expiré.
          */
         $this->renderable(function (TokenMismatchException $e, Request $request) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Page expirée. Veuillez recharger la page et réessayer.',
+                    'message' => 'Page expirée. Veuillez vous reconnecter.',
                 ], 419);
             }
 
-            // On préserve la saisie utilisateur (sauf champs sensibles) pour
-            // éviter qu'un formulaire long à remplir soit perdu sur expiration.
             return redirect()
                 ->route('login')
-                ->withInput($request->except($this->dontFlash))
-                ->with('warning', 'Votre session a expiré. Veuillez vous reconnecter pour continuer.');
+                ->with('warning', 'Votre session a expiré. Veuillez vous reconnecter.');
         });
 
         /**
