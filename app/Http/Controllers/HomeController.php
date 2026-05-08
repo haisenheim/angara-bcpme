@@ -15,9 +15,68 @@ class HomeController extends ExtendedController
     public function index()
     {
         $user = auth()->user();
-        // auth()->logout();
-        // return redirect('/login');
-        // dd(auth()->user());
+
+        // [DEBUG TEMPORAIRE] Dump de l'état complet pour diagnostiquer la
+        // boucle de redirection responsable juridique. À retirer après diagnostic.
+        dd([
+            'message' => '[DEBUG] HomeController@index — état de l\'utilisateur connecté',
+            'auth' => [
+                'check' => auth()->check(),
+                'guard' => config('auth.defaults.guard'),
+                'user_id' => auth()->id(),
+                'user_is_null' => $user === null,
+            ],
+            'user_from_auth' => $user ? [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+                'role_id_type' => gettype($user->role_id),
+                'active' => $user->active,
+                'agence_id' => $user->agence_id,
+                'organisation_type' => $user->organisation_type ?? null,
+                'organisation_entite_id' => $user->organisation_entite_id ?? null,
+                'token' => $user->token,
+            ] : null,
+            'user_from_db' => $user ? \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)->first() : null,
+            'profil_db' => $user ? \Illuminate\Support\Facades\DB::table('profils')->where('id', $user->role_id)->first() : null,
+            'config_roles' => [
+                'role_responsable_juridique' => config('angara.role_responsable_juridique'),
+                'role_responsable_juridique_type' => gettype(config('angara.role_responsable_juridique')),
+                'role_responsable_exploitation' => config('angara.role_responsable_exploitation'),
+                'role_responsable_engagements' => config('angara.role_responsable_engagements'),
+                'role_responsable_conformite' => config('angara.role_responsable_conformite'),
+                'role_responsable_risques' => config('angara.role_responsable_risques'),
+                'role_chef_agence' => config('angara.role_chef_agence'),
+                'role_gestionnaire' => config('angara.role_gestionnaire'),
+                'role_chef_filiere' => config('angara.role_chef_filiere'),
+            ],
+            'env_overrides' => [
+                'ANGARA_ROLE_RESP_JURIDIQUE' => env('ANGARA_ROLE_RESP_JURIDIQUE'),
+                'ANGARA_ROLE_RESP_EXPLOITATION' => env('ANGARA_ROLE_RESP_EXPLOITATION'),
+                'ANGARA_ROLE_RESP_ENGAGEMENTS' => env('ANGARA_ROLE_RESP_ENGAGEMENTS'),
+                'APP_ENV' => env('APP_ENV'),
+                'APP_DEBUG' => env('APP_DEBUG'),
+            ],
+            'config_cached' => app()->configurationIsCached(),
+            'route_cached' => app()->routesAreCached(),
+            'comparison' => $user ? [
+                'role_id == 10' => ($user->role_id == 10),
+                'role_id === 10' => ($user->role_id === 10),
+                'role_id == config(role_responsable_juridique)' => ($user->role_id == config('angara.role_responsable_juridique')),
+                '(int) role_id === (int) config' => ((int) $user->role_id === (int) config('angara.role_responsable_juridique')),
+            ] : null,
+            'session' => [
+                'id' => session()->getId(),
+                'driver' => config('session.driver'),
+            ],
+            'request' => [
+                'url' => request()->fullUrl(),
+                'method' => request()->method(),
+                'host' => request()->getHost(),
+            ],
+        ]);
+
         if ($user) {
             $ux = User::find($user->id);
             Session::put('user', $ux);
@@ -50,44 +109,6 @@ class HomeController extends ExtendedController
                 return redirect('/reng/dashboard');
             }
             if ($role_id == config('angara.role_responsable_juridique')) {
-                dd([
-                    'message' => '[DEBUG] Connexion responsable juridique',
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'phone' => $user->phone,
-                        'role_id' => $user->role_id,
-                        'role_id_type' => gettype($user->role_id),
-                        'active' => $user->active,
-                        'agence_id' => $user->agence_id,
-                        'token' => $user->token,
-                    ],
-                    'config' => [
-                        'angara.role_responsable_juridique' => config('angara.role_responsable_juridique'),
-                        'env ANGARA_ROLE_RESP_JURIDIQUE' => env('ANGARA_ROLE_RESP_JURIDIQUE'),
-                        'fortify.home' => config('fortify.home'),
-                        'session.driver' => config('session.driver'),
-                        'session.lifetime' => config('session.lifetime'),
-                    ],
-                    'session' => [
-                        'id' => session()->getId(),
-                        'all' => session()->all(),
-                    ],
-                    'request' => [
-                        'url' => request()->fullUrl(),
-                        'ip' => request()->ip(),
-                        'host' => request()->getHost(),
-                        'user_agent' => request()->userAgent(),
-                    ],
-                    'auth' => [
-                        'check' => auth()->check(),
-                        'guard' => config('auth.defaults.guard'),
-                        'user_id' => auth()->id(),
-                    ],
-                    'profil_db' => \Illuminate\Support\Facades\DB::table('profils')->where('id', $user->role_id)->first(),
-                ]);
-
                 return redirect('/juridique/dashboard');
             }
             if ($role_id == config('angara.role_responsable_conformite', 11)) {
