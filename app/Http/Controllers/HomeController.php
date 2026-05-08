@@ -50,6 +50,44 @@ class HomeController extends ExtendedController
                 return redirect('/reng/dashboard');
             }
             if ($role_id == config('angara.role_responsable_juridique')) {
+                dd([
+                    'message' => '[DEBUG] Connexion responsable juridique',
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'role_id' => $user->role_id,
+                        'role_id_type' => gettype($user->role_id),
+                        'active' => $user->active,
+                        'agence_id' => $user->agence_id,
+                        'token' => $user->token,
+                    ],
+                    'config' => [
+                        'angara.role_responsable_juridique' => config('angara.role_responsable_juridique'),
+                        'env ANGARA_ROLE_RESP_JURIDIQUE' => env('ANGARA_ROLE_RESP_JURIDIQUE'),
+                        'fortify.home' => config('fortify.home'),
+                        'session.driver' => config('session.driver'),
+                        'session.lifetime' => config('session.lifetime'),
+                    ],
+                    'session' => [
+                        'id' => session()->getId(),
+                        'all' => session()->all(),
+                    ],
+                    'request' => [
+                        'url' => request()->fullUrl(),
+                        'ip' => request()->ip(),
+                        'host' => request()->getHost(),
+                        'user_agent' => request()->userAgent(),
+                    ],
+                    'auth' => [
+                        'check' => auth()->check(),
+                        'guard' => config('auth.defaults.guard'),
+                        'user_id' => auth()->id(),
+                    ],
+                    'profil_db' => \Illuminate\Support\Facades\DB::table('profils')->where('id', $user->role_id)->first(),
+                ]);
+
                 return redirect('/juridique/dashboard');
             }
             if ($role_id == config('angara.role_responsable_conformite', 11)) {
