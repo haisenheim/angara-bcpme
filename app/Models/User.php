@@ -32,13 +32,16 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    /**
+     * Note Laravel 10 : la méthode `casts()` n'est interprétée qu'à partir de
+     * Laravel 11. Sur cette version, c'est la propriété `$casts` qui est lue
+     * par `Model::getCasts()`. Sans elle, le cast `password => hashed` ne
+     * s'applique pas et les mots de passe sont stockés en clair.
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
     public function role()
     {
