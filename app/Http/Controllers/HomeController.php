@@ -113,8 +113,22 @@ class HomeController extends ExtendedController
                 return redirect()->route('chef-filiere.dashboard');
             }
 
-            return redirect('/login');
+            // Aucun dashboard ne correspond au role_id : on déconnecte pour ne pas
+            // créer de boucle infinie /home → /login → /home (la route /login étant
+            // 'guest', Fortify redirige tout user authentifié vers /home).
+            \Illuminate\Support\Facades\Log::warning('[home] Utilisateur sans dashboard, déconnexion', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role_id' => $role_id,
+            ]);
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect()->route('login')->with('warning', "Aucun espace n'est associé à votre profil. Contactez l'administrateur.");
         }
+
+        return redirect()->route('login');
     }
 
     public function profile()
