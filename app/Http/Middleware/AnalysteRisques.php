@@ -11,7 +11,7 @@ class AnalysteRisques
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        $expected = (int) config('angara.role_analyste_risques', 18);
+        $expected = (int) (config('angara.role_analyste_risques') ?? 18);
 
         if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');

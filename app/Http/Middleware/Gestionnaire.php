@@ -19,7 +19,7 @@ class Gestionnaire
     {
         $user = auth()->user();
         $agence = Agence::find($user->agence_id);
-        $expected = (int) config('angara.role_gestionnaire', 16);
+        $expected = (int) (config('angara.role_gestionnaire') ?? 16);
         if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }

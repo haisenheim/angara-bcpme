@@ -18,9 +18,9 @@ class Ca
     {
         $user = auth()->user();
         $path = request()->getPathInfo();
-        $chefAgence = (int) config('angara.role_chef_agence', 15);
-        $dg = (int) config('angara.role_dg', 4);
-        $dga = (int) config('angara.role_dga', 5);
+        $chefAgence = (int) (config('angara.role_chef_agence') ?? 15);
+        $dg = (int) (config('angara.role_dg') ?? 4);
+        $dga = (int) (config('angara.role_dga') ?? 5);
         $allowedForInstructionDossiers = [$chefAgence, $dg, $dga];
         if (str_contains($path, 'workflow/instruction-dossiers')) {
             if (! $user || ! in_array((int) $user->role_id, $allowedForInstructionDossiers, true)) {

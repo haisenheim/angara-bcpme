@@ -11,7 +11,7 @@ class ResponsableConformite
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
-        $expected = (int) config('angara.role_responsable_conformite', 11);
+        $expected = (int) (config('angara.role_responsable_conformite') ?? 11);
         if (! $user || (int) $user->role_id !== $expected) {
             return redirect('/login');
         }
