@@ -52,7 +52,8 @@
             <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit', $item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements</a></li>
+            @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
             <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
         </x-page-actions-dropdown>
     @else
@@ -66,11 +67,15 @@
                 <li><hr class="dropdown-divider"></li>
             @endif
             @if($isAnalysteCreditSpace)
-                <li><a class="dropdown-item" href="{{ route('analyste-credit.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+                <li><a class="dropdown-item" href="{{ route('analyste-credit.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements du client</a></li>
+                @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
                 <li><hr class="dropdown-divider"></li>
             @elseif($hasEngagementsReadRoute)
-                <li><a class="dropdown-item" href="{{ route($engagementsReadRoute, $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements du client</a></li>
+                <li><a class="dropdown-item" href="{{ route($engagementsReadRoute, $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements du client</a></li>
+                @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
                 <li><hr class="dropdown-divider"></li>
+            @else
+                @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
             @endif
             <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}">Retour liste entreprises</a></li>
             <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.pieces', $item->token) }}">Pièces exigibles</a></li>

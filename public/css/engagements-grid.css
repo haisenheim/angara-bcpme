@@ -1,0 +1,149 @@
+/*
+ * Grille des engagements — feuille de style dédiée à la grille.
+ * Reproduit visuellement la mise en page Excel
+ * (TABLEAU GRILLE TRAITEMENT ENGAGEMENTS) tout en restant responsive.
+ */
+
+.engagement-grid-wrapper {
+    max-height: 78vh;
+    overflow-y: auto;
+}
+
+.engagement-grid-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+}
+
+.engagement-grid-table th,
+.engagement-grid-table td {
+    border: 1px solid #dee2e6;
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+.engagement-grid-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #f1f5f9;
+}
+
+.engagement-grid-head th {
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+    color: #1e293b;
+    background: #f1f5f9;
+}
+
+.engagement-th-libelle {
+    min-width: 320px;
+    text-align: left;
+}
+
+.engagement-grid-row.engagement-row-section td {
+    background: #0d6efd;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.engagement-grid-row.engagement-row-rubrique td {
+    background: #e7f1ff;
+    color: #0a4ea0;
+    font-weight: 600;
+}
+
+.engagement-grid-row.engagement-row-nature td {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.engagement-grid-row.engagement-row-produit td {
+    background: #ffffff;
+    font-weight: 500;
+}
+
+.engagement-grid-row.engagement-row-ligne td {
+    background: #fffaf0;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.engagement-grid-row .engagement-libelle {
+    font-weight: inherit;
+}
+
+.engagement-grid-row .engagement-impayes {
+    color: #b02a37;
+}
+
+.engagement-grid-row.engagement-row-section .engagement-impayes,
+.engagement-grid-row.engagement-row-rubrique .engagement-impayes {
+    color: inherit;
+}
+
+.engagement-grid-row .engagement-total {
+    font-weight: 600;
+}
+
+.engagement-grid-row .engagement-actions {
+    text-align: center;
+    white-space: nowrap;
+    width: 1%;
+}
+
+.btn-xs {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.72rem;
+    border-radius: 0.25rem;
+    line-height: 1.2;
+}
+
+.engagement-stats .card-body p {
+    word-break: break-word;
+}
+
+/* Partenaire + recherche : une seule ligne visuelle (ne pas séparer au flex-wrap du bandeau) */
+.engagement-partenaire-search-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.5rem;
+    max-width: 100%;
+}
+
+.engagement-partenaire-search-select {
+    flex: 0 1 auto;
+    min-width: 11rem;
+    width: 14rem;
+}
+
+.engagement-partenaire-search-input {
+    flex: 1 1 10rem;
+    min-width: 9rem;
+    width: 12rem;
+    max-width: 18rem;
+}
+
+@media (max-width: 575.98px) {
+    .engagement-partenaire-search-group {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .engagement-partenaire-search-select {
+        width: auto;
+        max-width: 45%;
+    }
+
+    .engagement-partenaire-search-input {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: none;
+    }
+}

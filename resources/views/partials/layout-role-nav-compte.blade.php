@@ -10,5 +10,6 @@
                 <span class="nav-label mininav-content ms-1">Mon profil</span>
             </a>
         </li>
+        @include('partials.nav-li-document-templates')
     </ul>
 </div>

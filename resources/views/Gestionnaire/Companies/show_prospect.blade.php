@@ -28,6 +28,7 @@
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create', $item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.pieces-exigibles.index', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Pieces exigibles</a></li>
         <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show', $item->token) }}"><i class="demo-psi-file-edit me-2"></i>Analyse critique</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
         @if(! $item->prospect_submitted_at)
             <li><hr class="dropdown-divider"></li>
             <li>

@@ -4,27 +4,22 @@ namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
-use App\Services\ClientEntrepriseTableExportService;
-use App\Services\ProspectEntrepriseTableExportService;
-use App\Services\TableDocumentExportService;
 use App\Http\Controllers\ExtendedController;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Agence;
 use App\Models\Arrondissement;
-use App\Models\Banque;
 use App\Models\Departement;
 use App\Models\Dossier;
-use App\Models\ElementConstitutif;
 use App\Models\DossierEntreeRelation;
+use App\Models\ElementConstitutif;
 use App\Models\Entreprise;
-use App\Models\EntrepriseCritereAvis;
 use App\Models\EntrepriseAppui;
+use App\Models\EntrepriseCritereAvis;
 use App\Models\EntrepriseElementConstitutif;
 use App\Models\EntrepriseProduit;
 use App\Models\Forme;
 use App\Models\Instruction\Critere as InstructionCritere;
 use App\Models\Person;
-use App\Services\EngagementReportService;
 use App\Models\Produit;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
@@ -32,6 +27,9 @@ use App\Models\Region;
 use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
+use App\Services\ClientEntrepriseTableExportService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use App\Services\WorkflowEmailNotificationService;
 use Dompdf\Canvas;
 use Dompdf\FontMetrics;
@@ -143,12 +141,12 @@ class CompanyController extends ExtendedController
             'longitude' => 'nullable|string|max:100',
             'taille' => 'nullable|string|max:30',
             'caractere' => 'nullable|in:Formel,Informel',
-            'rccm' => ['nullable', 'string', 'max:100', 'regex:/^RC\/[A-Z0-9-]+\/\d{4}\/[A-Z0-9]+\/\d+$/i'],
+            'rccm' => ['nullable', 'string', 'max:100'],
             'niu' => ['nullable', 'string', 'max:100', 'regex:/^[A-Z][A-Z0-9]{10,19}$/i'],
             'cnps' => 'nullable|string|max:100',
-            'mm_phone' => ['nullable', 'string', 'max:50', 'regex:/^(?:\+237)?6\d{8}$/'],
+            'mm_phone' => ['nullable', 'string', 'max:50'],
             'manager' => 'nullable|string|max:255',
-            'phone' => ['nullable', 'string', 'max:50', 'regex:/^(?:\+237)?(?:2|6)\d{8}$/'],
+            'phone' => ['nullable', 'string', 'max:50'],
             'email' => 'nullable|email|max:100',
             'forme_id' => 'nullable|integer|min:0',
             'systeme' => 'nullable|in:Normal,Minimal',
@@ -162,7 +160,7 @@ class CompanyController extends ExtendedController
             'nb_personnel_permanent' => 'nullable|integer|min:0',
             'nb_personnel_saisonier' => 'nullable|integer|min:0',
             'manager_sexe' => 'nullable|in:Homme,Femme',
-            'manager_contact' => 'nullable|string|max:100',
+            'manager_contact' => 'nullable|string|max:255',
             'manager_niveau' => 'nullable|string|max:50',
             'manager_dtn' => 'nullable|date|before_or_equal:'.$adultLimitDate,
             'manager_promoteur' => 'nullable|in:0,1',
@@ -176,10 +174,7 @@ class CompanyController extends ExtendedController
             'appuisnf' => 'nullable|array',
             'appuisnf.*' => 'integer|min:1',
         ], [
-            'rccm.regex' => 'Le RCCM doit respecter un format camerounais valide, par exemple RC/YAO/2024/B/123.',
             'niu.regex' => 'Le NIU doit respecter un format camerounais valide, par exemple M123456789012A.',
-            'phone.regex' => 'Le telephone doit suivre la numerotation camerounaise, par exemple 6XXXXXXXX ou +2376XXXXXXXX.',
-            'mm_phone.regex' => 'Le numero Mobile Money doit suivre la numerotation camerounaise mobile, par exemple 6XXXXXXXX ou +2376XXXXXXXX.',
             'dt_creation.before_or_equal' => 'La date de creation formelle ne peut pas etre dans le futur.',
             'dt_start.before_or_equal' => 'La date de debut des activites ne peut pas etre dans le futur.',
             'manager_dtn.before_or_equal' => 'La date de naissance du dirigeant doit etre coherente: le dirigeant doit etre majeur.',
@@ -865,22 +860,6 @@ class CompanyController extends ExtendedController
         Session::flash('success', 'Enregistrement effectué avec succès!');
 
         return redirect(route('gestionnaire.entreprises.index'));
-    }
-
-    public function getEngagementReport($token)
-    {
-        $entreprise = Entreprise::where('token', $token)->first();
-        if (! $entreprise) {
-            return back();
-        }
-
-        $service = app(EngagementReportService::class);
-        $engagements = $service->buildRowsForEntreprise($entreprise->id);
-        $banques = Banque::all();
-        $canEdit = false;
-        $setEngagementUrl = null;
-
-        return view('Gestionnaire.Companies.engagement_report', compact('engagements', 'entreprise', 'banques', 'canEdit', 'setEngagementUrl'));
     }
 
     /**

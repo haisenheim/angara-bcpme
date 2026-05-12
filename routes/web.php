@@ -1,7 +1,11 @@
 <?php
 
-use App\Http\Controllers\RoleSpace\PortfolioController;
+use App\Http\Controllers\DocumentTemplateLibraryController;
+use App\Http\Controllers\Engagement\EngagementController;
+use App\Http\Controllers\Engagement\EngagementLigneController;
+use App\Http\Controllers\Engagement\EngagementPartenaireController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\RoleSpace\PortfolioController;
 use App\Imports\ApmeImport;
 use App\Models\Agence;
 use App\Models\Question;
@@ -69,6 +73,39 @@ Route::get('/', function () {
     return view('accueil');
 })->name('accueil');
 
+/*
+|--------------------------------------------------------------------------
+| Fonctionnalité « Grille des engagements » (refonte 2026-05).
+|--------------------------------------------------------------------------
+| Endpoints unifiés (auth-only) ; les contrôles fins (lecture / écriture)
+| sont délégués à App\Services\Engagement\EngagementAccessService.
+*/
+Route::middleware(['auth'])
+    ->prefix('engagements')
+    ->name('engagements.')
+    ->group(function () {
+        Route::get('partenaires', [EngagementPartenaireController::class, 'index'])->name('partenaires.index');
+        Route::post('partenaires', [EngagementPartenaireController::class, 'store'])->name('partenaires.store');
+
+        Route::get('{token}', [EngagementController::class, 'show'])->name('show');
+        Route::get('{token}/data', [EngagementController::class, 'data'])->name('data');
+        Route::get('{token}/export', [EngagementController::class, 'export'])->name('export');
+        Route::post('{token}/lignes', [EngagementLigneController::class, 'store'])->name('lignes.store');
+        Route::match(['put', 'patch'], '{token}/lignes/{ligne}', [EngagementLigneController::class, 'update'])->name('lignes.update');
+        Route::delete('{token}/lignes/{ligne}', [EngagementLigneController::class, 'destroy'])->name('lignes.destroy');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Modèles de documents (admin : gestion — tous profils : consultation).
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
+    Route::get('document-templates', [DocumentTemplateLibraryController::class, 'index'])->name('document-templates.index');
+    Route::get('document-templates/{documentTemplate}/download', [DocumentTemplateLibraryController::class, 'download'])
+        ->name('document-templates.download');
+});
+
 $registerGovernanceSpace = function (string $prefix, string $middleware, string $name) {
     Route::prefix($prefix)
         ->middleware(['auth', $middleware])
@@ -79,7 +116,7 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
             Route::get('dashboard/todos', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'todos'])->name('dashboard.todos');
             Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
             Route::get('entreprises-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
-            Route::get('entreprises/{token}/engagements', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
+            Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
             Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
             Route::get('entreprises/{token}/fiche/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
             Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
@@ -262,6 +299,7 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::resource('banques', 'BanqueController')->except(['create', 'edit']);
         Route::resource('pieces-exigibles', 'PieceExigibleDefinitionController')->except(['destroy']);
         Route::resource('fichiers-types', 'FichierTypeController');
+        Route::resource('document-templates', 'DocumentTemplateController')->only(['index', 'create', 'store', 'destroy']);
         Route::get('fichiers-types/{fichiers_type}/enable', 'FichierTypeController@enable')->name('fichiers-types.enable');
         Route::get('fichiers-types/{fichiers_type}/disable', 'FichierTypeController@disable')->name('fichiers-types.disable');
         Route::get('fichiers-types/data/paginated', 'FichierTypeController@fetchPaginated')->name('fichiers-types.paginated');
@@ -280,7 +318,6 @@ Route::namespace('App\Http\Controllers\Admin')
         // Route::resource('entreprises','EntrepriseController');
         Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
         Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-        Route::post('engagement', 'EntrepriseController@setEngagement')->name('entreprise.set.engagement');
 
         Route::post('dossier/analyse', 'EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
 
@@ -347,7 +384,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::get('entreprise/questionnaire/{token}', 'CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire', 'CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
-        Route::get('entreprise/engagements/{token}', 'CompanyController@getEngagementReport')->name('entreprise.get.engagements');
+        Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
 
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::resource('dossiers', 'DossierController');
@@ -382,7 +419,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         // Route::resource('entreprises','EntrepriseController');
         Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
         Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-        Route::post('engagement', 'EntrepriseController@setEngagement')->name('entreprise.set.engagement');
 
         Route::post('dossier/analyse', 'EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
 
@@ -420,11 +456,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/tiers/physique/{token}', 'CompanyController@createTiersPhysique')->name('entreprise.physique.create');
         Route::post('entreprise/tiers/physique', 'CompanyController@saveTiersPhysique')->name('entreprise.physique.save');
-        Route::get('entreprise/engagements/{token}', 'EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
-        Route::get('entreprise/engagements/{token}/data', 'EntrepriseController@fetchEngagementReport')->name('entreprise.engagements.data');
-        Route::get('entreprise/engagements/{token}/stats', 'EntrepriseController@fetchEngagementReportStats')->name('entreprise.engagements.stats');
-        Route::get('entreprise/engagements/{token}/filter-options', 'EntrepriseController@fetchEngagementReportFilterOptions')->name('entreprise.engagements.filter-options');
-        Route::get('entreprise/engagements/{token}/export', 'EntrepriseController@exportEngagementReport')->name('entreprise.engagements.export');
+        Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
         Route::get('grille/analyse/{token}', 'DossierController@getGrilleAnalyse')->name('dossier.get.grille.analyse');
 
         Route::get('entreprise/tiers/morale/{token}', 'CompanyController@createTiersMorale')->name('entreprise.morale.create');
@@ -463,7 +495,6 @@ Route::namespace('App\Http\Controllers\Analyste')
         // Route::resource('entreprises','EntrepriseController');
         Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
         Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
-        Route::post('engagement', 'EntrepriseController@setEngagement')->name('entreprise.set.engagement');
 
         Route::post('dossier/analyse', 'DossierController@setAnalyse')->name('dossier.set.analyse');
 
@@ -498,12 +529,7 @@ Route::namespace('App\Http\Controllers\AnalysteCredit')
         Route::post('dossiers/{token}/soumettre-reng', 'DossierController@submitToReng')->name('dossiers.soumettre-reng');
         Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('entreprise/engagements/{token}', 'EntrepriseController@getEngagementReport')->name('entreprise.get.engagements');
-        Route::get('entreprise/engagements/{token}/data', 'EntrepriseController@fetchEngagementReport')->name('entreprise.engagements.data');
-        Route::get('entreprise/engagements/{token}/stats', 'EntrepriseController@fetchEngagementReportStats')->name('entreprise.engagements.stats');
-        Route::get('entreprise/engagements/{token}/filter-options', 'EntrepriseController@fetchEngagementReportFilterOptions')->name('entreprise.engagements.filter-options');
-        Route::get('entreprise/engagements/{token}/export', 'EntrepriseController@exportEngagementReport')->name('entreprise.engagements.export');
-        Route::post('entreprise/engagement', 'EntrepriseController@setEngagement')->name('entreprise.set.engagement');
+        Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
@@ -530,7 +556,7 @@ Route::namespace('App\Http\Controllers\AnalysteRisques')
         Route::post('dossiers/{token}/soumettre-rerx', 'DossierController@submitToRerx')->name('dossiers.soumettre-rerx');
         Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('entreprises/{token}/engagements', [PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
+        Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
@@ -556,7 +582,7 @@ Route::namespace('App\Http\Controllers\AnalysteJuridique')
         Route::post('dossiers/{token}/soumettre-reju', 'DossierController@submitToReju')->name('dossiers.soumettre-reju');
         Route::post('dossiers/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('entreprises/{token}/engagements', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
+        Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
         Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
@@ -589,7 +615,7 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('entreprises/{token}', 'CompanyController@show')->name('entreprises.show');
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
-        Route::get('entreprise/engagements/{token}', 'CompanyController@getEngagementReport')->name('entreprise.get.engagements');
+        Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
 
         Route::resource('dossiers', 'DossierController');
         Route::get('programmes', 'ProgrammeController@index')->name('programmes.index');
@@ -770,7 +796,7 @@ Route::namespace('App\Http\Controllers\Juridique')
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
         Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
-        Route::get('entreprises/{token}/engagements', [PortfolioController::class, 'entrepriseEngagementReport'])->name('entreprises.engagements');
+        Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
         Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');

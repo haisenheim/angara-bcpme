@@ -90,11 +90,11 @@
                 <div class="border rounded p-3 bg-body-tertiary small rich-text-rendered mb-3">{!! $dossier->reng_analyste_credit_avis !!}</div>
                 @if($dossier->entreprise?->token)
                     <p class="small text-muted mb-0">
-                        L’état des engagements du client est celui de la fiche entreprise (répartition par banque et type d’engagement).
+                        La grille des engagements du client est celle de la fiche entreprise (répartition par banque et type d’engagement).
                         @if($isAnalysteAc)
-                            <a href="{{ route('analyste-credit.entreprise.get.engagements', $dossier->entreprise->token) }}">Ouvrir l’état des engagements</a>
+                            <a href="{{ route('analyste-credit.entreprise.get.engagements', $dossier->entreprise->token) }}">Ouvrir la grille des engagements</a>
                         @elseif($r === 'reng' && \Illuminate\Support\Facades\Route::has('reng.entreprises.engagements'))
-                            <a href="{{ route('reng.entreprises.engagements', $dossier->entreprise->token) }}">Consulter l’état des engagements</a>
+                            <a href="{{ route('reng.entreprises.engagements', $dossier->entreprise->token) }}">Consulter la grille des engagements</a>
                         @endif
                     </p>
                 @endif

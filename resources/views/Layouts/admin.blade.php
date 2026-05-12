@@ -308,6 +308,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('admin.document-templates.index') }}" class="nav-link mininav-toggle {{ $active==808?'active':'' }}">
+                    <span class="icon-nav"><img src="{{ asset('img/new/navigation/prospect.svg')}}" alt=""></span>
+                    <span class="nav-label mininav-content ms-1">Modèles de documents</span>
+                </a>
+            </li>
+
          <!-- Link with submenu -->
          <li class="nav-item has-sub">
              <a href="#" class="mininav-toggle nav-link {{ ($active>700&&$active<800)?'active':'' }}">

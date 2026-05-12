@@ -23,7 +23,8 @@
     <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.morale.create',$item->token) }}"><i class="demo-psi-building me-2"></i>Tiers personne morale</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.edit',$item->token) }}"><i class="demo-psi-pen-5 me-2"></i>Completer la fiche</a></li>
-    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+    <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements',$item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements</a></li>
+    @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprises.analyse-critique.show',$item->token) }}"><i class="demo-psi-file-edit me-2"></i>Dossier d'analyse critique</a></li>
 </x-page-actions-dropdown>
 @endsection

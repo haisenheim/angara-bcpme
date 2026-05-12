@@ -24,6 +24,7 @@
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" href="#">Soumissionner à un programme</a></li>
         <li><a class="dropdown-item" href="#">Editer des information de l'entreprise</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     </ul>
  </div>
 @endsection
@@ -188,7 +189,7 @@
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Grille des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
@@ -314,7 +315,7 @@
                              </div>
                        </div>
                        <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>ETAT DES ENGAGEMENTS</h5>
+                            <h5>GRILLE DES ENGAGEMENTS</h5>
                        </div>
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <h5>SOUMISSIONS AUX DIFFERENTS PROGRAMMES</h5>

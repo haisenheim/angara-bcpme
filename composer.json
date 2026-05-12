@@ -32,6 +32,7 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Modules\\Simulator\\": "Modules/Simulator/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
@@ -61,7 +62,10 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [],
+            "providers": [
+                "Modules\\Simulator\\SimulatorServiceProvider"
+            ]
         }
     },
     "config": {

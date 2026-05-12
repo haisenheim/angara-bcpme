@@ -7,7 +7,6 @@ use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
 use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Models\Agence;
-use App\Models\Banque;
 use App\Models\Dossier;
 use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
@@ -16,7 +15,6 @@ use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
 use App\Services\DossierInstructionShowPresenter;
 use App\Services\DossierTableExportService;
-use App\Services\EngagementReportService;
 use App\Services\InstructionAnalyseCritiqueDossierDocumentService;
 use App\Services\InstructionDossierConsultationService;
 use App\Services\WorkflowEmailNotificationService;
@@ -246,46 +244,6 @@ class PortfolioController extends Controller
         $filename = ($item->prospect ? 'fiche-prospect-' : 'fiche-client-').$nameSlug.'.pdf';
 
         return $pdf->download($filename);
-    }
-
-    /**
-     * État des engagements (répartition) — lecture seule, données au niveau entreprise.
-     */
-    public function entrepriseEngagementReport(string $token)
-    {
-        $space = $this->resolveSpace();
-
-        $entreprise = Entreprise::query()->where('token', $token)->first();
-
-        if (! $entreprise) {
-            $dossier = Dossier::query()
-                ->where('token', $token)
-                ->with('entreprise')
-                ->first();
-            $entrepriseToken = $dossier?->entreprise?->token;
-            if ($entrepriseToken) {
-                return redirect()->route($space['route'].'.entreprises.engagements', $entrepriseToken);
-            }
-
-            abort(404);
-        }
-
-        $this->assertPortfolioEntrepriseAccess($entreprise, $space);
-
-        $service = app(EngagementReportService::class);
-        $engagements = $service->buildRowsForEntreprise($entreprise->id);
-        $banques = Banque::all();
-        $canEdit = false;
-        $setEngagementUrl = null;
-
-        return view('RoleSpace.entreprises.engagement_report', compact(
-            'space',
-            'entreprise',
-            'engagements',
-            'banques',
-            'canEdit',
-            'setEngagementUrl'
-        ));
     }
 
     protected function assertPortfolioEntrepriseAccess(Entreprise $item, array $space): void

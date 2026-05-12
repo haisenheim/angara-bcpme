@@ -18,6 +18,7 @@
         <li><a class="dropdown-item" href="{{ route('admin.entreprise.morale.create',$item->token) }}">Ajouter un tiers personne morale</a></li>
         <li><a class="dropdown-item" href="#">Editer un engagement de l'entreprise</a></li>
         <li><a class="dropdown-item" href="#">Editer des information de l'entreprise</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     </x-page-actions-dropdown>
 @endsection
 
@@ -126,7 +127,7 @@
                                 <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">La mise en relation</button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Etat des engagements</button>
+                                <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Grille des engagements</button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab7" type="button" role="tab" aria-controls="tab7" aria-selected="false" tabindex="-1">Dossiers d'instruction par programme</button>
@@ -447,7 +448,7 @@
                              </div>
                        </div>
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>ETAT DES ENGAGEMENTS</h5>
+                            <h5>GRILLE DES ENGAGEMENTS</h5>
                        </div>
                        <div id="_tab7" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">

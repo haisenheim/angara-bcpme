@@ -20,6 +20,7 @@
         <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#besoins"><i class="demo-psi-file-edit me-2"></i>Modifier les besoins (appuis)</a></li>
         <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#produit-principal"><i class="demo-psi-file-edit me-2"></i>Modifier le produit principal</a></li>
         <li><a class="dropdown-item" href="{{ route('chef-filiere.clients.besoins-produits.edit', $item->token) }}#produits-secondaires"><i class="demo-psi-file-edit me-2"></i>Modifier les produits secondaires</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     </x-page-actions-dropdown>
 @endsection
 

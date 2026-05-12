@@ -15,7 +15,7 @@
     <x-page-actions-dropdown button-id="gestionnaireDossierShowActions">
         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#report1Modal"><i class="demo-psi-pen-5 me-2"></i> Saisir recommandations</a></li>
         @if($item->entreprise)
-            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
+            <li><a class="dropdown-item" href="{{ route('gestionnaire.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> Grille des engagements</a></li>
         @endif
         <li><a class="dropdown-item" href="{{ route('gestionnaire.dossier.get.grille.analyse', $item->token) }}"><i class="demo-psi-magnifi-glass me-2"></i> Grille d'analyse critique</a></li>
         <li><hr class="dropdown-divider"></li>

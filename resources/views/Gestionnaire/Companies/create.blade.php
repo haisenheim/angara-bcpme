@@ -50,7 +50,7 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-4">
                                     <label for="rccm" class="form-label">N° Registre de commerce</label>
-                                    <input required type="text" id="rccm" name="rccm" placeholder="Numéro de registre de commerce" class="form-control">
+                                    <input type="text" id="rccm" name="rccm" placeholder="Numéro de registre de commerce" class="form-control">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="niu" class="form-label">N° d’identifiant unique</label>
@@ -68,7 +68,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label for="mm_phone" class="form-label">Numéro Mobile Money</label>
-                                    <input required type="text" id="mm_phone" placeholder="Numéro Mobile Money" name="mm_phone" class="form-control">
+                                    <input type="text" id="mm_phone" placeholder="Numéro Mobile Money" name="mm_phone" class="form-control">
                                 </div>
                             </div>
                             <div class="row g-3 mb-3">
@@ -188,7 +188,7 @@
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-4">
                                         <label for="manager_contact" class="form-label">Contact</label>
-                                        <input required type="text" id="manager_contact" placeholder="Contact du dirigeant" name="manager_contact" class="form-control">
+                                        <input type="text" id="manager_contact" placeholder="Contact du dirigeant" name="manager_contact" class="form-control">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="manager_niveau" class="form-label">Niveau d'instruction</label>

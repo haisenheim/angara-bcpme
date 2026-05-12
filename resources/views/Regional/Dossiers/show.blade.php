@@ -81,7 +81,7 @@
                              <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseProfile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">RAPPORT D'ANALYSE CRITIQUE</button>
                           </li>
                           <li class="nav-item" role="presentation">
-                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">ETAT DES ENGAGEMENTS</button>
+                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_dm-coTabsBaseContact" type="button" role="tab" aria-controls="contact" aria-selected="false" tabindex="-1">GRILLE DES ENGAGEMENTS</button>
                           </li>
                        </ul>
 
@@ -222,35 +222,18 @@
                                 </div>
                           </div>
                           <div id="_dm-coTabsBaseContact" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <table class="table sm table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th colspan="1"></th>
-                                        <th colspan="3">ENCOURS</th>
-                                        <th colspan="3">SOLLICITES</th>
-                                        <th colspan="2">TOTAL</th>
-                                    </tr>
-                                    <tr>
-                                        <th>ENGAGEMENT</th>
-                                        <th>MONTANT</th>
-                                        <th>IMPAYES</th>
-                                        <th>DATE DE VALIDITE</th>
-
-                                        <th>MONTANT</th>
-                                        <th>DATE DE VALIDITE</th>
-                                        <th>VARIATION</th>
-
-                                        <th>MONTANT</th>
-                                        <th>DATE DE VALIDITE</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($engagements as $eng)
-                                        <x-engagement :eng="json_encode($eng)"></x-engagement>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                              <div class="alert alert-info d-flex align-items-center justify-content-between">
+                                  <div>
+                                      <strong>Grille des engagements</strong><br>
+                                      <small class="text-muted">La grille des engagements consolidée par produit, par banque/EMF et par partenaire financier est désormais disponible sur une page dédiée.</small>
+                                  </div>
+                                  @if (! empty($entreprise['token']))
+                                      <a class="btn btn-primary"
+                                         href="{{ route('engagements.show', $entreprise['token']) }}">
+                                          Ouvrir la grille
+                                      </a>
+                                  @endif
+                              </div>
                           </div>
                        </div>
                     </div>

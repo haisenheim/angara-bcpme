@@ -296,7 +296,7 @@
                         @enderror
                     </div>
                     <div class="col-md-4">
-                        <label for="phone" class="form-label">Telephone <span class="text-danger">*</span></label>
+                        <label for="phone" class="form-label">Telephone</label>
                         <input
                             type="text"
                             name="phone"
@@ -354,7 +354,7 @@
                         <input type="text" name="manager" id="manager" value="{{ $val('manager') }}" class="form-control">
                     </div>
                     <div class="col-md-4">
-                        <label for="manager_contact" class="form-label">Contact dirigeant <span class="text-danger">*</span></label>
+                        <label for="manager_contact" class="form-label">Contact dirigeant</label>
                         <input type="text" name="manager_contact" id="manager_contact" value="{{ $val('manager_contact') }}" class="form-control">
                     </div>
                     <div class="col-md-4">
@@ -1160,24 +1160,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const validations = [
             {
-                fieldId: 'rccm',
-                regex: /^RC\/[A-Z0-9-]+\/\d{4}\/[A-Z0-9]+\/\d+$/i,
-                message: 'Le RCCM doit respecter un format camerounais valide, par exemple RC/YAO/2024/B/123.',
-            },
-            {
                 fieldId: 'niu',
                 regex: /^[A-Z][A-Z0-9]{10,19}$/i,
                 message: 'Le NIU doit respecter un format camerounais valide, par exemple M123456789012A.',
-            },
-            {
-                fieldId: 'phone',
-                regex: /^(?:\+237)?(?:2|6)\d{8}$/,
-                message: 'Le telephone doit suivre la numerotation camerounaise, par exemple 6XXXXXXXX, 2XXXXXXXX ou +2376XXXXXXXX.',
-            },
-            {
-                fieldId: 'mm_phone',
-                regex: /^(?:\+237)?6\d{8}$/,
-                message: 'Le numero Mobile Money doit suivre la numerotation camerounaise mobile, par exemple 6XXXXXXXX ou +2376XXXXXXXX.',
             },
         ];
 

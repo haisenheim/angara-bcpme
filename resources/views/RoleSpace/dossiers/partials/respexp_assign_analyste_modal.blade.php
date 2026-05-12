@@ -14,7 +14,7 @@
                 </div>
                 <div class="modal-body">
                     <p class="small text-muted mb-3">
-                        Choisissez l’analyste financier chargé d’<strong>instruire ce dossier</strong> : notation, état des engagements, analyses et suites jusqu’à la préparation de la décision.
+                        Choisissez l’analyste financier chargé d’<strong>instruire ce dossier</strong> : notation, grille des engagements, analyses et suites jusqu’à la préparation de la décision.
                         La personne sélectionnée retrouvera le dossier dans <strong>son espace dédié</strong> pour mener l’instruction.
                     </p>
                     <div class="mb-0">

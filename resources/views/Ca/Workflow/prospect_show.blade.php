@@ -82,6 +82,7 @@
                 <i class="demo-psi-information me-1"></i> Fiche prospect complète
             </a>
         </li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     </x-page-actions-dropdown>
 @endsection
 

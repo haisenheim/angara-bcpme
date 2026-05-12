@@ -18,7 +18,7 @@
 @section('actions')
     <x-page-actions-dropdown button-id="analysteDossierShowActions">
         @if($item->entreprise)
-            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> État des engagements</a></li>
+            <li><a class="dropdown-item" href="{{ route('analyste.entreprise.get.engagements', $item->entreprise->token) }}"><i class="demo-psi-file-text-image me-2"></i> Grille des engagements</a></li>
             <li><hr class="dropdown-divider"></li>
         @endif
         @if($item->analyste_id && ! $item->isInstructionSubmittedToExploitation())
@@ -263,6 +263,11 @@
             </div>
         </div>
     @endif
+
+    <div class="mt-3">
+        <h1>Simulations de credit</h1>
+        <x-simulator::scenarios-panel :dossier="$item" />
+    </div>
 
 @endsection
 

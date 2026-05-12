@@ -30,6 +30,7 @@
 
 @section('actions')
 <x-page-actions-dropdown button-id="roleSpaceEntreprisePiecesActions">
+    @include('partials.entreprise-fiche-li-simulation-credit', ['entreprise' => $entreprise])
     <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}"><i class="demo-pli-arrow-left me-2"></i>Retour à l'entreprise</a></li>
     <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}"><i class="demo-pli-building me-2"></i>Liste des {{ strtolower($entityListLabel) }}</a></li>
 </x-page-actions-dropdown>

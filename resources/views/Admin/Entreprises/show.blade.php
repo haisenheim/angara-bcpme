@@ -73,113 +73,22 @@
     <div style="height: 300px; overflow:scroll" class="mt-2">
         <div class="card">
             <div class="card-body">
-                <h4>ETAT DES ENGAGEMENTS</h4>
-                <table class="table sm table-bordered">
-                    <thead>
-                        <tr>
-                            <th colspan="1"></th>
-                            <th colspan="4">ENCOURS</th>
-                            <th colspan="4">SOLLICITES</th>
-                            <th colspan="3">TOTAL</th>
-                        </tr>
-                        <tr>
-                            <th>ENGAGEMENT</th>
-                            <th>MONTANT</th>
-                            <th>PART</th>
-                            <th>IMPAYES</th>
-                            <th>DATE DE VALIDITE</th>
-
-                            <th>MONTANT</th>
-                            <th>PART</th>
-                            <th>DATE DE VALIDITE</th>
-                            <th>VARIATION</th>
-
-                            <th>MONTANT</th>
-                            <th>PART</th>
-                            <th>DATE DE VALIDITE</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($engagements as $eng)
-                            <x-engagement :eng="json_encode($eng)"></x-engagement>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="modal fade" id="editModal">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header justify-content-between">
-                    <h5 class="modal-title">Editer</h5>
-                    <div style="float: right">
-                        <button data-bs-dismiss="modal" class="btn btn-sm" >x</button>
+                <h4>GRILLE DES ENGAGEMENTS</h4>
+                <div class="alert alert-info d-flex align-items-center justify-content-between">
+                    <div>
+                        <strong>Grille des engagements</strong><br>
+                        <small class="text-muted">La grille des engagements consolidée par produit, par banque/EMF et par partenaire financier est désormais disponible sur une page dédiée.</small>
                     </div>
-                </div>
-                <div class="modal-body">
-                    <form enctype="multipart/form-data" action="{{ route('admin.entreprise.set.engagement') }}" method="post">
-                        <input type="hidden" name="engagement_id" id="engagement_id">
-                        <input type="hidden" name="entreprise_id" value="{{ $item['id'] }}">
-                        @csrf
-                            <div class="">
-                                <div>
-                                    <label for="">Banque</label>
-                                    <select required name="banque_id" id="banque_id" class="form-control">
-                                        <option value="">Selectionner la banque</option>
-                                        @foreach ($banques as $item)
-                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="mt-1">
-                                    <fieldset>
-                                        <legend>Enagagements en cours</legend>
-                                        <div class="mt-1">
-                                            <label for="">Montant</label>
-                                            <input required value="0" type="number" class="form-control" name="encours_montant">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Impayé</label>
-                                            <input required value="0" type="number" class="form-control" name="encours_impaye">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Date de validité</label>
-                                            <input required value="0" type="date" class="form-control" name="encours_dt_validite">
-                                        </div>
-                                    </fieldset>
-                                    <fieldset>
-                                        <legend>Enagagements en sollicités</legend>
-                                        <div class="mt-1">
-                                            <label for="">Montant</label>
-                                            <input required value="0" type="number" class="form-control" name="sollicite_montant">
-                                        </div>
-                                        <div class="mt-1">
-                                            <label for="">Date de validité</label>
-                                            <input required value="0" type="date" class="form-control" name="sollicite_dt_validite">
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        <div class="mt-5">
-                            <button type="submit" class="btn-primary btn">ENREGISTRER</button>
-                        </div>
-                    </form>
+                    @if (! empty($item['token']))
+                        <a class="btn btn-primary"
+                           href="{{ route('engagements.show', $item['token']) }}">
+                            Ouvrir la grille
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
-
-    <script>
-        $('.btn-edit').click(function(){
-            var id = $(this).data('engagement_id')
-            $('#engagement_id').val(id)
-        })
-    </script>
-
 
 
 @endsection

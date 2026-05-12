@@ -14,15 +14,25 @@
 
 @section('page-header')
     <div>
-        <div class="d-flex justify-content-between">
-            <h5 class="page-title mb-0 mt-2">{{ $item->name }}</h5>
-            @if($item->prospect)
-                <div class="mt-4"><span class="badge bg-danger">prospect</span></div>
-            @endif
+        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+            <div>
+                <div class="d-flex justify-content-between">
+                    <h5 class="page-title mb-0 mt-2">{{ $item->name }}</h5>
+                    @if($item->prospect)
+                        <div class="mt-4"><span class="badge bg-danger">prospect</span></div>
+                    @endif
 
+                </div>
+                <p class="lead">Dossier de l'entreprise</p>
+            </div>
         </div>
-        <p class="lead">Dossier de l'entreprise</p>
     </div>
+@endsection
+
+@section('actions')
+    <x-page-actions-dropdown button-id="regionalEntrepriseShowActions">
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
+    </x-page-actions-dropdown>
 @endsection
 
 @section('content')
@@ -182,7 +192,7 @@
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false" tabindex="-1">La mise en relation</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Etat des engagements</button>
+                            <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab5" type="button" role="tab" aria-controls="tab5" aria-selected="false" tabindex="-1">Grille des engagements</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link px-3" data-bs-toggle="tab" data-bs-target="#_tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false" tabindex="-1">Programmes</button>
@@ -366,7 +376,7 @@
                              </div>
                        </div>
                        <div id="_tab5" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
-                            <h5>ETAT DES ENGAGEMENTS</h5>
+                            <h5>GRILLE DES ENGAGEMENTS</h5>
                        </div>
                        <div id="_tab6" class="tab-pane fade" role="tabpanel" aria-labelledby="contact-tab">
                             <table class="table table-striped">

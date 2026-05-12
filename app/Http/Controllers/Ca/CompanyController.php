@@ -7,22 +7,20 @@ use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
 use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EntrepriseListResource;
-use App\Models\Banque;
+use App\Models\Agence;
 use App\Models\Dossier;
 use App\Models\DossierEntreeRelation;
-use App\Models\Agence;
 use App\Models\Entreprise;
 use App\Models\Forme;
 use App\Models\Person;
-use App\Services\ClientEntrepriseTableExportService;
-use App\Services\EngagementReportService;
-use App\Services\ProspectEntrepriseTableExportService;
-use App\Services\TableDocumentExportService;
 use App\Models\QuestionAnswer;
 use App\Models\QuestionSousCritere;
 use App\Models\Region;
 use App\Models\Tier;
 use App\Models\User;
+use App\Services\ClientEntrepriseTableExportService;
+use App\Services\ProspectEntrepriseTableExportService;
+use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -365,22 +363,6 @@ class CompanyController extends Controller
         $formes = Forme::all();
 
         return view('/Ca/Companies/create', compact('formes'));
-    }
-
-    public function getEngagementReport($token)
-    {
-        $entreprise = Entreprise::where('token', $token)->first();
-        if (! $entreprise) {
-            return back();
-        }
-
-        $service = app(EngagementReportService::class);
-        $engagements = $service->buildRowsForEntreprise($entreprise->id);
-        $banques = Banque::all();
-        $canEdit = false;
-        $setEngagementUrl = null;
-
-        return view('Ca.Companies.engagement_report', compact('engagements', 'entreprise', 'banques', 'canEdit', 'setEngagementUrl'));
     }
 
     public function saveProgramme(Request $request)

@@ -83,7 +83,7 @@
                 </div>
                 @if($isRespexp)
                 <div class="small text-muted" style="max-width: 22rem;">
-                    L’instruction (grilles, état des engagements, soumission) se fait dans l’<strong>espace Analyste</strong> (connexion dédiée).
+                    L’instruction (notation, grille des engagements, soumission) se fait dans l’<strong>espace Analyste</strong> (connexion dédiée).
                     <span class="d-block mt-1">Pour <strong>réaffecter</strong> le dossier : menu <strong>Actions</strong>.</span>
                 </div>
                 @endif

@@ -16,7 +16,8 @@
 @section('actions')
     <x-page-actions-dropdown button-id="caProspectShowActions">
         <li><a class="dropdown-item" href="{{ route('ca.entreprises.prospects') }}">Retour liste</a></li>
-        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
         @if($item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at)
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item text-success fw-semibold" href="{{ route('ca.workflow.prospects.show', $item->token) }}">Validation / refus prospect (chef d'agence)</a></li>

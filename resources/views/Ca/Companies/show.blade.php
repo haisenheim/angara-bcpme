@@ -20,7 +20,8 @@
 @section('actions')
     <x-page-actions-dropdown button-id="caEntrepriseShowActions">
         <li><a class="dropdown-item" href="{{ route('ca.entreprises.index') }}">Retour liste entreprises</a></li>
-        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>État des engagements</a></li>
+        <li><a class="dropdown-item" href="{{ route('ca.entreprise.get.engagements', $item->token) }}"><i class="demo-psi-file-text-image me-2"></i>Grille des engagements</a></li>
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
     </x-page-actions-dropdown>
 @endsection
 

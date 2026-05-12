@@ -2,6 +2,12 @@
 
 @section('title', $item->name)
 
+@section('actions')
+    <x-page-actions-dropdown button-id="juridiqueEntrepriseShowActions">
+        @include('partials.entreprise-fiche-li-simulation-credit', ['item' => $item])
+    </x-page-actions-dropdown>
+@endsection
+
 @section('page-header')
     <div>
         <nav aria-label="breadcrumb" class="mb-2">

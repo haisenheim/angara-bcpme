@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Instruction\EngagementEntreprise;
+use App\Models\Engagement\EngagementLigne;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,9 +38,9 @@ class Entreprise extends Model
         return $this->hasMany('App\Models\Tier', 'entreprise_id');
     }
 
-    public function engagementEntreprises(): HasMany
+    public function engagementLignes(): HasMany
     {
-        return $this->hasMany(EngagementEntreprise::class, 'entreprise_id');
+        return $this->hasMany(EngagementLigne::class, 'entreprise_id');
     }
 
     public function dossierEntreeRelation()

@@ -7,28 +7,24 @@ use App\Models\Banque;
 use App\Models\Dossier;
 use App\Models\FichierType;
 use App\Models\Instruction\Critere;
-use App\Models\Instruction\Engagement;
-use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Instruction\IndicateurFinancier;
 
 /**
- * Données nécessaires à l’affichage du dossier d’instruction (grille de notation, engagements, etc.)
+ * Données nécessaires à l’affichage du dossier d’instruction (grille de notation, etc.)
  * — partagé entre l’espace analyste et le responsable exploitation (lecture seule).
+ *
+ * NB : depuis la refonte 2026-05 de la grille des engagements,
+ * le détail des engagements n'est plus injecté ici. La consultation se fait
+ * via la page dédiée {@see \App\Http\Controllers\Engagement\EngagementController}.
  */
 class DossierInstructionShowPresenter
 {
     /**
-     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, criteres: array, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>, instructionConsultation: array, fichierTypes: \Illuminate\Support\Collection}
+     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, criteres: array, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>, instructionConsultation: array, fichierTypes: \Illuminate\Support\Collection, engagementGridUrl: string}
      */
     public function presentForDossier(Dossier $item): array
     {
-        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
-
-        $engagements = Engagement::where('parent_id', 0)->get();
-        $data = [];
-        foreach ($engagements as $eng) {
-            $data[] = $this->parseEngagement($eng, 1);
-        }
+        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy', 'entreprise']);
 
         $criteres = Critere::all();
         $id = $item->id;
@@ -50,57 +46,21 @@ class DossierInstructionShowPresenter
 
         $instructionConsultation = app(InstructionDossierConsultationService::class)->build($item);
 
+        $engagementGridUrl = $item->entreprise
+            ? route('engagements.show', $item->entreprise->token)
+            : '#';
+
         return [
             'item' => $item,
             'indicateurs' => $indicateurs,
             'criteres' => $criteres->values()->all(),
             'sme' => $sme,
             'banques' => $banques,
-            'engagements' => $data,
+            'engagements' => [],
+            'engagementGridUrl' => $engagementGridUrl,
             'instructionConsultation' => $instructionConsultation,
             'fichierTypes' => FichierType::query()->orderBy('name')->get(['id', 'name']),
         ];
-    }
-
-    private function parseEngagement(Engagement $eng, int $entrepriseId): array
-    {
-        $data = [
-            'id' => $eng->id,
-            'name' => $eng->name,
-            'montant' => $eng->montant ?? 0,
-            'encours_montant' => $eng->encours_montant ?? 0,
-            'encours_impaye' => $eng->encours_impaye ?? 0,
-            'sollicite_montant' => $eng->sollicite_montant ?? 0,
-            'parent_id' => $eng->parent_id,
-            'is_title' => $eng->is_title,
-            'is_leaf' => $eng->is_leaf,
-            'niveau' => $eng->niveau,
-        ];
-        if ($data['is_leaf']) {
-            $elts = EngagementEntreprise::where('engagement_id', $eng->id)->where('entreprise_id', $entrepriseId)->get();
-            $data['encours_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + $item->encours_montant;
-            }, 0);
-            $data['sollicite_montant'] = $elts->reduce(function ($carry, $item) {
-                return $carry + $item->sollicite_montant;
-            }, 0);
-            $data['encours_impaye'] = $elts->reduce(function ($carry, $item) {
-                return $carry + $item->encours_impaye;
-            }, 0);
-            $data['elts'] = $elts;
-
-        } else {
-            $data['children'] = $eng->children->map(function ($child) use ($entrepriseId) {
-                return $this->parseEngagement($child, $entrepriseId);
-            });
-            foreach ($data['children'] as $child) {
-                $data['encours_montant'] += $child['encours_montant'];
-                $data['sollicite_montant'] += $child['sollicite_montant'];
-                $data['encours_impaye'] += $child['encours_impaye'];
-            }
-        }
-
-        return $data;
     }
 
     private function parseCriterePourGrille(Critere $critere): array

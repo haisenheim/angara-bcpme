@@ -6,8 +6,6 @@ use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
 use App\Models\Dossier;
-use App\Models\Instruction\Engagement;
-use App\Models\Instruction\EngagementEntreprise;
 use App\Models\Instruction\IndicateurFinancier;
 use App\Models\User;
 use App\Services\DossierInstructionShowPresenter;
@@ -17,7 +15,6 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 
 class DossierController extends Controller
@@ -422,25 +419,6 @@ class DossierController extends Controller
         $this->authorizeAnalysteDossier($dossier);
 
         return $this->completeDossierPieceUpload($request, $dossier, 'analyste.dossiers.show', $dossier);
-    }
-
-    public function show_($token)
-    {
-
-        $item = Dossier::where('token', $token)->first();
-        $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$item->id);
-        dd(json_decode($resp->body(), true));
-        $resp = json_decode($resp->body(), true);
-        $dossier = $resp['dossier'];
-        // dd($dossier);
-        $entreprise = $resp['entreprise'];
-        $engagements = $resp['engagements'];
-        $criteres = $resp['criteres'];
-        $indicateurs = $dossier['indicateurs'];
-        $banques = $resp['banques'];
-        $sme = $resp['sme'];
-
-        return view('Analyste/Dossiers/show',compact('item','dossier','entreprise','engagements','indicateurs','criteres','sme','banques'));
     }
 
     private function fillExploitationAfInstructionSectionsFromRequest(Dossier $dossier, Request $request): void
