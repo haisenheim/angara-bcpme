@@ -16,7 +16,7 @@ use App\Models\User;
  *  - Tous les autres acteurs du portefeuille consultent en lecture
  *    seule la même grille.
  */
-class EngagementAccessService
+class EngagementAccessService  
 {
     /**
      * Rôles autorisés en lecture (vue de la grille).
