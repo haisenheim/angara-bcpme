@@ -14,9 +14,9 @@ use App\Models\User;
  *  - Les analystes financiers (exploitation) et les analystes crédit
  *    saisissent la grille des engagements.
  *  - Tous les autres acteurs du portefeuille consultent en lecture
- *    seule la même grille.
+ *    seule la même grille. // TODO: Ajouter les acteurs qui peuvent consulter la grille des engagements.
  */
-class EngagementAccessService  
+class EngagementAccessService
 {
     /**
      * Rôles autorisés en lecture (vue de la grille).
