@@ -171,9 +171,13 @@ return [
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Ladumor\OneSignal\OneSignalServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
-        Modules\Simulator\SimulatorServiceProvider::class,
 
-    ])->toArray(),
+    ])->merge(
+        /** Module Simulator : évite une erreur si le dossier n’est pas déployé ou avant composer dump-autoload */
+        file_exists(base_path('Modules/Simulator/src/SimulatorServiceProvider.php'))
+            ? ['Modules\\Simulator\\SimulatorServiceProvider']
+            : []
+    )->toArray(),
 
     /*
     |--------------------------------------------------------------------------

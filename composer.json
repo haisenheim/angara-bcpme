@@ -62,10 +62,7 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [],
-            "providers": [
-                "Modules\\Simulator\\SimulatorServiceProvider"
-            ]
+            "dont-discover": []
         }
     },
     "config": {
