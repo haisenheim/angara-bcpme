@@ -225,4 +225,4 @@ Le principe de la delagation de pouvoir stipule que l'accord ou le rejet du doss
 En fonction des montants maximum defini dans la grille de delegation de pouvoir
 En dernier ressort c'est de la DG ou le deja qui dispose de la possibilite de cloturer le dossier.
 Toute cloture doit etre accompagnee de la saisie d'une note de cloture.
-
+// etc...
