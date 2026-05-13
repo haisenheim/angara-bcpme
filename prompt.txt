@@ -226,3 +226,17 @@ En fonction des montants maximum defini dans la grille de delegation de pouvoir
 En dernier ressort c'est de la DG ou le deja qui dispose de la possibilite de cloturer le dossier.
 Toute cloture doit etre accompagnee de la saisie d'une note de cloture.
 // etc...
+
+
+je dois generer des modeles de documents indispensables pour la recette.
+Sachant que l'entreprise editrice de la solution ANGARA s'appelle ANGARA SOLUTIONS
+et le client ici est la BCPME (banque camerounaise des petites et moyennes entreprises) :
+ci-dessous les modeles de documents a preparer:
+- Procédures d’installation
+- PV d'installation de la version standard
+- PV de livraison de la version cible
+- PV d'installation de la version cible
+- PV de validation des paramétrages
+- PV de recette de la version cible
+- PV de recette opérationnelle
+- PV de recette provisoire
