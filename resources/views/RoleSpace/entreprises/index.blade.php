@@ -12,8 +12,26 @@
 })
 
 @php
-    $isDgDga = in_array($space['route'] ?? '', ['dg', 'dga'], true);
-    $entityListLabel = $isDgDga ? 'Clients' : 'Entreprises';
+    $listeKind = $listeKind ?? 'all';
+    $entityListLabel = match ($listeKind) {
+        'clients' => 'Clients',
+        'prospects' => 'Prospects',
+        default => 'Entreprises',
+    };
+    $pageSubtitle = match ($listeKind) {
+        'clients' => 'Vue transverse de tous les clients du portefeuille.',
+        'prospects' => 'Vue transverse de tous les prospects du portefeuille.',
+        default => 'Vue transverse de toutes les entreprises du portefeuille.',
+    };
+    $countLabel = match ($listeKind) {
+        'clients' => 'client(s)',
+        'prospects' => 'prospect(s)',
+        default => 'entreprise(s)',
+    };
+    $listRouteName = $listeKind === 'prospects' ? $space['route'].'.prospects.index' : $space['route'].'.entreprises.index';
+    $exportRouteName = $listeKind === 'prospects' ? $space['route'].'.prospects.export' : $space['route'].'.entreprises.export';
+    $showClientOnlyFilters = $listeKind !== 'prospects';
+    $emptyTableColspan = 4 + ($listeKind === 'all' ? 1 : 0) + ($showClientOnlyFilters ? 1 : 0);
 @endphp
 
 @section('title', $entityListLabel.' - '.$space['title'])
@@ -30,7 +48,7 @@
 @section('page-header')
     <div>
         <h5 class="page-title mb-0">{{ $entityListLabel }}</h5>
-        <p class="text-muted mb-0">{{ $isDgDga ? 'Vue transverse de tous les clients du portefeuille.' : 'Vue transverse de toutes les entreprises du portefeuille.' }}</p>
+        <p class="text-muted mb-0">{{ $pageSubtitle }}</p>
     </div>
 @endsection
 
@@ -39,8 +57,9 @@
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
-                    <span class="text-muted small">{{ $entreprises->total() }} {{ $isDgDga ? 'client(s)' : 'entreprise(s)' }}</span>
-                    <form method="get" action="{{ route($space['route'].'.entreprises.index') }}" class="d-flex flex-wrap gap-2 align-items-end">
+                    <span class="text-muted small">{{ $entreprises->total() }} {{ $countLabel }}</span>
+                    <form method="get" action="{{ route($listRouteName) }}" class="d-flex flex-wrap gap-2 align-items-end">
+                        @if($showClientOnlyFilters)
                         <div style="min-width: 14rem;">
                             @include('partials.client-structuration-filter-select', [
                                 'id' => 'rolespace_entreprises_struct',
@@ -48,6 +67,7 @@
                                 'selected' => $structurationStatus ?? null,
                             ])
                         </div>
+                        @endif
                         <div>
                             <label class="form-label small text-muted mb-0">Agence</label>
                             <select name="agence_id" class="form-select form-select-sm" style="min-width: 11rem;">
@@ -66,6 +86,7 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if($showClientOnlyFilters)
                         <div>
                             <label class="form-label small text-muted mb-0">Promu client du</label>
                             <input type="date" name="promu_client_from" value="{{ request('promu_client_from') }}" class="form-control form-control-sm">
@@ -74,14 +95,15 @@
                             <label class="form-label small text-muted mb-0">au</label>
                             <input type="date" name="promu_client_to" value="{{ request('promu_client_to') }}" class="form-control form-control-sm">
                         </div>
+                        @endif
                         <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="rolespace-entreprises-actions" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="rolespace-entreprises-actions">
-                                <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.export', array_merge(request()->except('format'), ['format' => 'xlsx'])) }}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exporter en Excel</a></li>
-                                <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.export', array_merge(request()->except('format'), ['format' => 'pdf'])) }}"><i class="bi bi-file-earmark-pdf me-2"></i>Exporter en PDF</a></li>
+                                <li><a class="dropdown-item" href="{{ route($exportRouteName, array_merge(request()->except('format'), ['format' => 'xlsx'])) }}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Exporter en Excel</a></li>
+                                <li><a class="dropdown-item" href="{{ route($exportRouteName, array_merge(request()->except('format'), ['format' => 'pdf'])) }}"><i class="bi bi-file-earmark-pdf me-2"></i>Exporter en PDF</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route($space['route'].'.entreprises.index') }}"><i class="bi bi-arrow-counterclockwise me-2"></i>Réinitialiser</a></li>
+                                <li><a class="dropdown-item" href="{{ route($listRouteName) }}"><i class="bi bi-arrow-counterclockwise me-2"></i>Réinitialiser</a></li>
                             </ul>
                         </div>
                     </form>
@@ -92,8 +114,12 @@
                         <thead>
                             <tr>
                                 <th>Entreprise</th>
+                                @if($listeKind === 'all')
                                 <th>Statut</th>
+                                @endif
+                                @if($showClientOnlyFilters)
                                 <th>Structuration</th>
+                                @endif
                                 <th>Gestionnaire</th>
                                 <th>Dossiers</th>
                                 <th></th>
@@ -106,11 +132,14 @@
                                         <div class="fw-semibold">{{ $entreprise->name }}</div>
                                         <small class="text-muted">{{ $entreprise->forme?->name ?? '—' }}</small>
                                     </td>
+                                    @if($listeKind === 'all')
                                     <td>
                                         <span class="badge bg-{{ $entreprise->prospect ? 'warning' : 'success' }}">
                                             {{ $entreprise->prospect ? 'Prospect' : 'Client' }}
                                         </span>
                                     </td>
+                                    @endif
+                                    @if($showClientOnlyFilters)
                                     <td>
                                         @if($entreprise->promu_client_at)
                                             @include('partials.client-structuration-badge', ['eer' => $entreprise->dossierEntreeRelation])
@@ -118,6 +147,7 @@
                                             <span class="text-muted small">—</span>
                                         @endif
                                     </td>
+                                    @endif
                                     <td>{{ $entreprise->gestionnaire?->name ?? $entreprise->user?->name ?? '—' }}</td>
                                     <td>{{ $entreprise->dossiers_count }}</td>
                                     <td class="text-end">
@@ -126,7 +156,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">Aucune entreprise trouvée.</td>
+                                    <td colspan="{{ $emptyTableColspan }}" class="text-center text-muted py-4">Aucune entreprise trouvée.</td>
                                 </tr>
                             @endforelse
                         </tbody>

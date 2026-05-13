@@ -40,6 +40,11 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('dg.prospects.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'dg.prospects') ? 'active' : '' }}"><i class="bi bi-telephone fs-5 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Prospects</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('dg.programmes.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'dg.programmes') ? 'active' : '' }}"><i class="bi bi-diagram-3 fs-5 me-2"></i>
                 <span class="nav-label mininav-content ms-1">Programmes</span>
             </a>

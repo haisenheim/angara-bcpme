@@ -34,16 +34,25 @@ class PortfolioController extends Controller
     /**
      * Requête liste entreprises avec les mêmes filtres que la page index (export inclus).
      *
+     * @param  bool|null  $prospectFilter  null = tous ; true = prospects uniquement ; false = clients uniquement (non prospect)
      * @return Builder<\App\Models\Entreprise>
      */
-    protected function entreprisesFilteredListQuery(Request $request): Builder
+    protected function entreprisesFilteredListQuery(Request $request, ?bool $prospectFilter = null): Builder
     {
-        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        $structurationStatus = $prospectFilter === true
+            ? null
+            : DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
         $filters = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+        if ($prospectFilter === true) {
+            $filters['promu_client_from'] = null;
+            $filters['promu_client_to'] = null;
+        }
 
         $query = Entreprise::query()
             ->with(['forme', 'user', 'dossierEntreeRelation', 'agence', 'gestionnaire'])
             ->withCount('dossiers')
+            ->when($prospectFilter === true, fn ($q) => $q->where('prospect', true))
+            ->when($prospectFilter === false, fn ($q) => $q->where('prospect', false))
             ->when($structurationStatus, fn ($q) => $q->whereClientStructurationStatus($structurationStatus));
         $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
 
@@ -54,15 +63,38 @@ class PortfolioController extends Controller
     {
         $space = $this->resolveSpace();
         $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        $listeKind = in_array($space['route'], ['dg', 'dga'], true) ? 'clients' : 'all';
+        $prospectFilter = $listeKind === 'clients' ? false : null;
 
-        $entreprises = $this->entreprisesFilteredListQuery($request)->orderByDesc('id')->paginate(25)->withQueryString();
+        $entreprises = $this->entreprisesFilteredListQuery($request, $prospectFilter)->orderByDesc('id')->paginate(25)->withQueryString();
 
         $agenceIds = Entreprise::query()->whereNotNull('agence_id')->distinct()->pluck('agence_id');
         $gestionnaireIds = Entreprise::query()->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
         $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
         $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
 
-        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires'));
+        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires', 'listeKind'));
+    }
+
+    /**
+     * Liste prospects (DG / DGA) : vue transverse, distincte des clients.
+     */
+    public function prospectsIndex(Request $request)
+    {
+        $space = $this->resolveSpace();
+        abort_unless(in_array($space['route'], ['dg', 'dga'], true), 404);
+
+        $structurationStatus = null;
+        $listeKind = 'prospects';
+
+        $entreprises = $this->entreprisesFilteredListQuery($request, true)->orderByDesc('id')->paginate(25)->withQueryString();
+
+        $agenceIds = Entreprise::query()->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = Entreprise::query()->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
+        $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
+        $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
+
+        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires', 'listeKind'));
     }
 
     public function entreprisesExport(Request $request)
@@ -73,15 +105,41 @@ class PortfolioController extends Controller
             abort(400, 'Format invalide');
         }
 
-        $items = $this->entreprisesFilteredListQuery($request)->orderByDesc('id')->get();
+        $prospectFilter = in_array($space['route'], ['dg', 'dga'], true) ? false : null;
+        $items = $this->entreprisesFilteredListQuery($request, $prospectFilter)->orderByDesc('id')->get();
         $rows = ClientEntrepriseTableExportService::rowsPortfolio($items);
-        $title = ($space['title'] ?? 'Angara').' — liste entreprises / clients';
+        $suffix = $prospectFilter === false ? ' — clients' : ' — liste entreprises / clients';
+        $title = ($space['title'] ?? 'Angara').$suffix;
+        $slug = ($prospectFilter === false ? 'clients-' : 'entreprises-').($space['route'] ?? 'espace');
 
         return ClientEntrepriseTableExportService::download(
             $rows,
             ClientEntrepriseTableExportService::headersPortfolio(),
             $format,
-            'entreprises-'.($space['route'] ?? 'espace'),
+            $slug,
+            $title,
+        );
+    }
+
+    public function prospectsExport(Request $request)
+    {
+        $space = $this->resolveSpace();
+        abort_unless(in_array($space['route'], ['dg', 'dga'], true), 404);
+
+        $format = strtolower((string) $request->query('format', 'xlsx'));
+        if (! in_array($format, ['xlsx', 'pdf'], true)) {
+            abort(400, 'Format invalide');
+        }
+
+        $items = $this->entreprisesFilteredListQuery($request, true)->orderByDesc('id')->get();
+        $rows = ClientEntrepriseTableExportService::rowsPortfolio($items);
+        $title = ($space['title'] ?? 'Angara').' — prospects';
+
+        return ClientEntrepriseTableExportService::download(
+            $rows,
+            ClientEntrepriseTableExportService::headersPortfolio(),
+            $format,
+            'prospects-'.($space['route'] ?? 'espace'),
             $title,
         );
     }
@@ -281,15 +339,7 @@ class PortfolioController extends Controller
             }
         }
 
-        if (in_array($space['route'] ?? '', ['dg', 'dga'], true)) {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $item->id)
-                ->instructionValidesParChefAgence()
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
+        // DG / DGA : consultation transverse de toutes les fiches prospects et clients (pas de restriction dossier instruction).
     }
 
     public function entreprisePieces(string $token)
@@ -338,15 +388,7 @@ class PortfolioController extends Controller
             }
         }
 
-        if (in_array($space['route'] ?? '', ['dg', 'dga'], true)) {
-            $allowed = Dossier::query()
-                ->where('entreprise_id', $entreprise->id)
-                ->instructionValidesParChefAgence()
-                ->exists();
-            if (! $allowed) {
-                abort(403);
-            }
-        }
+        // DG / DGA : même périmètre que la fiche entreprise (consultation transverse).
 
         $checklist = $entreprise->piecesExigiblesChecklist();
 

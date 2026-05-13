@@ -116,6 +116,10 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
             Route::get('dashboard/todos', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'todos'])->name('dashboard.todos');
             Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
             Route::get('entreprises-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
+            if (in_array($name, ['dg', 'dga'], true)) {
+                Route::get('prospects', [PortfolioController::class, 'prospectsIndex'])->name('prospects.index');
+                Route::get('prospects-export', [PortfolioController::class, 'prospectsExport'])->name('prospects.export');
+            }
             Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
             Route::get('entreprises/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
             Route::get('entreprises/{token}/fiche/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
