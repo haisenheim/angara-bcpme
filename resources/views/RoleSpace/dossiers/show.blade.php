@@ -9,6 +9,9 @@
     'dg' => 'Layouts.dg',
     'dga' => 'Layouts.dga',
     'gestionnaire' => 'Layouts.gestionnaire',
+    'analyste' => 'Layouts.analyste',
+    'ca' => 'Layouts.ca',
+    'conformite' => 'Layouts.conformite',
     default => 'Layouts.app',
 })
 
@@ -24,18 +27,37 @@
 @endpush
 @endif
 
+@if(($space['route'] ?? '') === 'analyste' && ! $readonly)
+@push('styles')
+@include('partials.summernote-fr-styles')
+@endpush
+@endif
+
+@if(($space['route'] ?? '') === 'ca' && ! $readonly)
+@push('styles')
+<style>
+    .table-notation th { font-weight: 600; }
+    .table-notation .vertical-align { vertical-align: middle !important; text-align: center; }
+    .ca-dossier-show__notation-wrap .card-body { max-height: min(78vh, 42rem); overflow: auto; }
+</style>
+@if($dossier->isInstructionValidatedByAgence() && ! $dossier->isInstructionCaTransmittedToExploitation())
+@include('partials.summernote-fr-styles')
+@endif
+@endpush
+@endif
+
 @section('title', 'Dossier - '.$space['title'])
 
 @section('breadcrumb')
 @php
-    $dossiersListRoute = in_array($space['route'] ?? '', ['dg', 'dga'], true)
+    $dossiersRouteList = $dossiersListRoute ?? (in_array($space['route'] ?? '', ['dg', 'dga'], true)
         ? $space['route'].'.dossiers.valides-chef-agence'
-        : $space['route'].'.dossiers.index';
+        : $space['route'].'.dossiers.index');
 @endphp
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route($dossiersListRoute) }}">Dossiers</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($dossiersRouteList) }}">Dossiers</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ Str::limit($dossier->programmesLabel() ?: 'Dossier', 42) }}</li>
     </ol>
 </nav>
@@ -45,9 +67,9 @@
 @if(! $readonly)
 @php
     $spaceRoute = (string) ($space['route'] ?? '');
-    $dossiersListRoute = in_array($spaceRoute, ['dg', 'dga'], true)
+    $dossiersRouteList = $dossiersListRoute ?? (in_array($spaceRoute, ['dg', 'dga'], true)
         ? $spaceRoute.'.dossiers.valides-chef-agence'
-        : $spaceRoute.'.dossiers.index';
+        : $spaceRoute.'.dossiers.index');
     $showGestionDossier = $spaceRoute === 'respexp'
         || ($spaceRoute === 'juridique' && ! $dossier->isSubmittedToEngagementsFromJuridique() && ! $dossier->isJuridiqueAnalysteAvisSubmittedToReju())
         || ($spaceRoute === 'reng' && ! $dossier->isSubmittedToRisquesFromReng())
@@ -56,7 +78,7 @@
 <x-page-actions-dropdown button-id="dossierActionsDropdown" menu-class="dropdown-menu dropdown-menu-end border shadow-sm py-2" menu-style="min-width: 15rem;">
         <li><h6 class="dropdown-header text-uppercase small text-muted px-3 mb-0">Navigation</h6></li>
         <li>
-            <a class="dropdown-item rounded-0 py-2" href="{{ route($dossiersListRoute) }}">
+            <a class="dropdown-item rounded-0 py-2" href="{{ route($dossiersRouteList) }}">
                 <i class="demo-pli-arrow-left me-2 text-body-secondary"></i>Retour aux dossiers
             </a>
         </li>
@@ -68,9 +90,67 @@
             </li>
         @endif
 
+        @if($spaceRoute === 'analyste' && $dossier->entreprise)
+            <li><h6 class="dropdown-header text-uppercase small text-muted px-3 mb-0">Engagements</h6></li>
+            <li>
+                <a class="dropdown-item rounded-0 py-2" href="{{ $engagementGridUrl ?? route('engagements.show', $dossier->entreprise->token) }}">
+                    <i class="demo-psi-file-text-image me-2 text-body-secondary"></i>Grille des engagements
+                </a>
+            </li>
+            @php
+                $uAct = auth()->user();
+                $nationalAfAct = $uAct && method_exists($uAct, 'isAnalysteFinancierNational') && $uAct->isAnalysteFinancierNational();
+                $canJumpMontantsConsult = $dossier->analysteFinancierPeutMettreAJourBudgetsEtEngagements()
+                    && ((int) ($dossier->analyste_id ?? 0) === (int) auth()->id() || $nationalAfAct);
+            @endphp
+            @if($canJumpMontantsConsult)
+                <li>
+                    <a class="dropdown-item rounded-0 py-2" href="#consultation-af-engagements-budgets">
+                        <i class="demo-psi-credit-card-2 me-2 text-body-secondary"></i>Montants & budgets (consultation)
+                    </a>
+                </li>
+            @endif
+        @endif
+        @if($spaceRoute === 'analyste' && $dossier->analyste_id && ! $dossier->isInstructionSubmittedToExploitation())
+            <li><h6 class="dropdown-header text-uppercase small text-muted px-3 mb-0">Saisie analyse financière</h6></li>
+            @foreach(\App\Models\Dossier::EXPLOITATION_AF_INSTRUCTION_SECTIONS as $column => $label)
+                <li>
+                    <a class="dropdown-item rounded-0 py-2" href="#af-saisie-{{ $loop->iteration }}">
+                        <span class="text-body-secondary me-1">{{ $loop->iteration }}.</span>{{ $label }}
+                    </a>
+                </li>
+            @endforeach
+        @endif
+        @if($spaceRoute === 'ca')
+            <li><h6 class="dropdown-header text-uppercase small text-muted px-3 mb-0">Instruction agence</h6></li>
+            @if(($canApproveRejectInstructionTransmission ?? false) && $dossier->isInstructionPendingAgenceValidation())
+                <li>
+                    <button type="button" class="dropdown-item rounded-0 py-2" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionApproveModal">
+                        <i class="demo-psi-check me-2 text-success"></i>Valider la transmission
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="dropdown-item rounded-0 py-2" data-bs-toggle="modal" data-bs-target="#caInstructionTransmissionRejectModal">
+                        <i class="demo-psi-cross me-2 text-danger"></i>Rejeter la transmission
+                    </button>
+                </li>
+            @endif
+            <li>
+                <a class="dropdown-item rounded-0 py-2" href="{{ route('ca.dossier.analyse-critique.synthese', $dossier->token) }}">
+                    <i class="demo-psi-file-text me-2 text-body-secondary"></i>Dossier d’analyse critique
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item rounded-0 py-2" href="{{ route('ca.dossier.analyse-critique.synthese.pdf', $dossier->token) }}" target="_blank" rel="noopener">
+                    <i class="demo-psi-download me-2 text-body-secondary"></i>Exporter le dossier en PDF
+                </a>
+            </li>
+        @endif
+
         <li><hr class="dropdown-divider my-2"></li>
         @php
-            $instructionPdfRoute = $spaceRoute.'.dossiers.instruction.pdf';
+            $dossiersRoutePrefix = $roleSpaceDossiersRoutePrefix ?? ($spaceRoute.'.dossiers');
+            $instructionPdfRoute = $dossiersRoutePrefix.'.instruction.pdf';
             $hasInstructionPdfRoute = \Illuminate\Support\Facades\Route::has($instructionPdfRoute);
         @endphp
         @if($hasInstructionPdfRoute)
@@ -307,7 +387,7 @@
             </span>
         @endif
     </div>
-    @if(in_array($space['route'] ?? '', ['respexp', 'juridique'], true) && $dossier->exploitation_analyste_assigned_at)
+    @if(in_array($space['route'] ?? '', ['respexp', 'juridique', 'analyste'], true) && $dossier->exploitation_analyste_assigned_at)
         <p class="small text-muted mb-0 mt-2 ps-3 border-start border-3 border-brand">
             <span class="fw-semibold">Cotation du dossier</span> —
             le {{ $dossier->exploitation_analyste_assigned_at->format('d/m/Y') }} à {{ $dossier->exploitation_analyste_assigned_at->format('H:i') }}
@@ -364,13 +444,22 @@
                 <ul class="mb-0">@foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach</ul>
             </div>
         @endif
+        @error('submission')
+            <div class="alert alert-danger">{{ $message }}</div>
+        @enderror
 
         @php
             $spaceRoute = (string) ($space['route'] ?? '');
-            $isHubSpace = in_array($spaceRoute, ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga', 'gestionnaire'], true);
+            $isHubSpace = in_array($spaceRoute, ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga', 'gestionnaire', 'analyste', 'ca', 'conformite'], true);
             $timeline = $dossier->instructionWorkflowHistoryTimeline();
             $structurationSvc = app(\App\Services\StructurationClosureService::class);
         @endphp
+
+        @if($spaceRoute === 'analyste' && ($instructionConsultation ?? null) === null)
+            @php
+                $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($dossier);
+            @endphp
+        @endif
 
         {{-- Chronologie « actes » (résumé) pour repli ; chronologie complète sur les espaces hub --}}
         @php
@@ -405,6 +494,7 @@
             'dossier' => $dossier,
             'instructionConsultation' => $instructionConsultation ?? null,
             'showConsultationTimeline' => ! $isHubSpace,
+            'allowAnalysteInstructionMontantsEdit' => $spaceRoute === 'analyste' && ! $readonly,
         ])
 
         @if($showChronologyCard)
@@ -453,10 +543,28 @@
             @endif
         @endif
 
+        @php
+            $routePiecesStore = match ($spaceRoute) {
+                'analyste' => 'analyste.dossier.pieces.store',
+                'ca' => 'ca.dossier.pieces.store',
+                'gestionnaire' => 'gestionnaire.dossier.pieces.store',
+                default => ($roleSpaceDossiersRoutePrefix ?? ($spaceRoute.'.dossiers')).'.pieces.store',
+            };
+        @endphp
+
+        @if($spaceRoute === 'analyste')
+            @include('RoleSpace.dossiers.partials.instruction_workspace_analyste')
+        @elseif($spaceRoute === 'ca')
+            @if(($canApproveRejectInstructionTransmission ?? false) && $dossier->isInstructionPendingAgenceValidation())
+                @include('partials.ca-instruction-transmission-modals', ['dossier' => $dossier])
+            @endif
+            @include('RoleSpace.dossiers.partials.instruction_workspace_ca')
+        @endif
+
         <div class="mt-3">
             @include('partials.dossier-pieces-jointes', [
                 'dossier' => $dossier,
-                'routePiecesStore' => ($spaceRoute).'.dossiers.pieces.store',
+                'routePiecesStore' => $routePiecesStore,
                 'modalId' => $piecesModalId ?? 'dossierPieceUploadModal',
                 'fichierTypes' => $fichierTypes ?? collect(),
                 'showUpload' => ! $readonly,
@@ -582,4 +690,142 @@ jQuery(window).on('load', function () {
 });
 </script>
 @endpush
+@endif
+
+@if(in_array($space['route'] ?? '', ['analyste', 'ca'], true))
+@section('modal')
+    @include('RoleSpace.dossiers.partials.instruction_critere_modal', [
+        'critereChoicesRoute' => ($space['route'] ?? '') === 'analyste' ? 'analyste.instruction.critere.choices' : 'ca.instruction.critere.choices',
+        'critereReponseRoute' => ($space['route'] ?? '') === 'analyste' ? 'analyste.instruction.critere.reponse' : 'ca.instruction.critere.reponse',
+    ])
+@endsection
+@endif
+
+@if(($space['route'] ?? '') === 'analyste')
+@section('script')
+@if($dossier->analyste_id && ! $dossier->isInstructionSubmittedToExploitation())
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>
+<script>
+(function ($) {
+    function baseOptions(height, placeholder) {
+        return {
+            lang: 'fr-FR',
+            height: height,
+            dialogsInBody: true,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'hr']],
+                ['view', ['codeview']]
+            ],
+            placeholder: placeholder || '…',
+            callbacks: {
+                onChange: function (contents) {
+                    $(this).val(contents);
+                }
+            }
+        };
+    }
+    function syncSummernoteToTextarea($ta) {
+        if ($ta.length && $ta.next('.note-editor').length) {
+            $ta.val($ta.summernote('code'));
+        }
+    }
+    function avisHasSubstance(html) {
+        var t = $('<div>').html(html || '').text().replace(/\u00a0/g, ' ').trim();
+        return t.length > 0;
+    }
+    jQuery(window).on('load', function () {
+        var $editors = $('.js-af-instruction-summernote');
+        if (!$editors.length) return;
+        $editors.each(function () {
+            var $ta = $(this);
+            var ph = $ta.data('placeholder') || '';
+            $ta.summernote($.extend({}, baseOptions(220, ph)));
+        });
+        var $form = $('#form-analyste-af-sections');
+        var $submit = $('#btn-soumettre-rexp-analyste');
+        function refreshSubmitState() {
+            $editors.each(function () { syncSummernoteToTextarea($(this)); });
+            var allSeven = true;
+            $editors.each(function () {
+                if (!avisHasSubstance($(this).val())) {
+                    allSeven = false;
+                }
+            });
+            $submit.prop('disabled', !allSeven);
+        }
+        $editors.on('summernote.change', refreshSubmitState);
+        refreshSubmitState();
+        $form.find('button[type="submit"]').on('mousedown', function () {
+            $editors.each(function () { syncSummernoteToTextarea($(this)); });
+        });
+        $form.on('submit', function (e) {
+            $editors.each(function () { syncSummernoteToTextarea($(this)); });
+            var target = e.originalEvent && e.originalEvent.submitter;
+            var action = target && (target.getAttribute('formaction') || '');
+            if (action.indexOf('soumettre-exploitation') === -1) {
+                return true;
+            }
+            var allSeven = true;
+            $editors.each(function () {
+                if (!avisHasSubstance($(this).val())) {
+                    allSeven = false;
+                }
+            });
+            if (!allSeven) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+})(window.jQuery);
+</script>
+@endif
+@endsection
+@endif
+
+@if(($space['route'] ?? '') === 'ca')
+@section('script')
+@if($dossier->isInstructionValidatedByAgence() && ! $dossier->isInstructionCaTransmittedToExploitation())
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-fr-FR.min.js"></script>
+<script>
+(function ($) {
+    function baseOptions(height) {
+        return {
+            lang: 'fr-FR',
+            height: height,
+            dialogsInBody: true,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'hr']],
+                ['view', ['codeview']]
+            ],
+            placeholder: 'Rédigez l’avis du chef d’agence sur ce dossier d’instruction…',
+        };
+    }
+    function syncSummernoteToTextarea($ta) {
+        if ($ta.length && $ta.next('.note-editor').length) {
+            $ta.val($ta.summernote('code'));
+        }
+    }
+    jQuery(function () {
+        var $ta = $('#instruction_agence_ca_avis');
+        if (!$ta.length) {
+            return;
+        }
+        $ta.summernote($.extend({}, baseOptions(260)));
+        $('#form-ca-instruction-agence-avis').on('submit', function () {
+            syncSummernoteToTextarea($ta);
+        });
+    });
+})(window.jQuery);
+</script>
+@endif
+@endsection
 @endif

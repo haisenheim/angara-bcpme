@@ -11,6 +11,12 @@
     default => 'Layouts.app',
 })
 
+@push('styles')
+    @if(in_array($space['route'] ?? '', ['dg', 'dga'], true))
+        <link rel="stylesheet" href="{{ asset('css/chef-filiere.css') }}">
+    @endif
+@endpush
+
 @section('title', $space['title'])
 
 @section('breadcrumb')
@@ -35,6 +41,8 @@
                 Dossiers reçus du responsable engagements pour le pôle risques — affectation analyste risques et transmission direction.
             @elseif($space['route'] === 'analyste-risques')
                 Dossiers du pôle risques qui vous sont affectés en tant qu’analyste risques.
+            @elseif(in_array($space['route'] ?? '', ['dg', 'dga'], true))
+                Vue d’ensemble nationale : portefeuille, structuration des clients, dossiers d’instruction et priorités pour l’avis direction.
             @else
                 Consultation transverse des clients, dossiers et pièces du portefeuille.
             @endif
@@ -43,6 +51,9 @@
 @endsection
 
 @section('content')
+    @if(in_array($space['route'] ?? '', ['dg', 'dga'], true))
+        @include('RoleSpace.partials.dashboard-dg-dga', ['space' => $space])
+    @else
     <div class="container-fluid">
         <div class="row g-3 mb-4">
             <div class="col-md-4">
@@ -291,4 +302,5 @@
             @endif
         });
     </script>
+    @endif
 @endsection

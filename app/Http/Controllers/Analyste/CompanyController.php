@@ -221,7 +221,7 @@ class CompanyController extends Controller
 
     private function prospectsQuery()
     {
-        return Entreprise::where('prospect', 1);
+        return Entreprise::query()->submittedProspect();
     }
 
     public function fetchProspectsStats(Request $request)
@@ -315,7 +315,7 @@ class CompanyController extends Controller
             $format,
             'analyste-prospects',
             'Analyste — liste des prospects',
-            'Vue transverse des dossiers prospect',
+            'Vue transverse — prospects soumis (brouillons exclus)',
         );
     }
 
@@ -335,7 +335,7 @@ class CompanyController extends Controller
 
     public function fetchProspectsFilterOptions()
     {
-        $p = Entreprise::query()->where('prospect', 1);
+        $p = Entreprise::query()->submittedProspect();
         $agenceIds = (clone $p)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
         $gestionnaireIds = (clone $p)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
 
@@ -403,7 +403,7 @@ class CompanyController extends Controller
 
     /**
      * Display the specified resource.
-     * Accès réservé aux entreprises pour lesquelles l'analyste a des dossiers.
+     * Accès : dossiers assignés ; ou tout prospect explicitement soumis (consultation transverse).
      */
     public function show(string $token)
     {
@@ -443,8 +443,12 @@ class CompanyController extends Controller
             ])
             ->firstOrFail();
 
+        $isSubmittedProspectConsultation = $item->prospect && $item->prospect_submitted_at !== null;
+
         $user = auth()->user();
-        if ($user instanceof User && $user->isAnalysteFinancierNational()) {
+        if ($isSubmittedProspectConsultation) {
+            $dossiersAnalyste = collect();
+        } elseif ($user instanceof User && $user->isAnalysteFinancierNational()) {
             $dossiersAnalyste = $item->dossiers()->with('programme')->get();
             if ($dossiersAnalyste->isEmpty()) {
                 abort(403, 'Aucun dossier d\'instruction pour cette entreprise.');

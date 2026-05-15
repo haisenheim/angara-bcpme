@@ -328,6 +328,15 @@ class Dossier extends Model
         return $this->chef_filiere_submitted_to_agence_at !== null;
     }
 
+    /**
+     * Totaux engagements et budgets programme : l’analyste financier peut les ajuster sur tout dossier
+     * dont l’instruction n’est pas clos (contrôle d’accès effectué par {@see \App\Http\Controllers\Analyste\DossierController::authorizeAnalysteDossier}).
+     */
+    public function analysteFinancierPeutMettreAJourBudgetsEtEngagements(): bool
+    {
+        return ! $this->isInstructionClosed();
+    }
+
     /** Responsable exploitation ayant transmis le dossier au pôle juridique. */
     public function juridiqueInstructionSubmittedBy()
     {

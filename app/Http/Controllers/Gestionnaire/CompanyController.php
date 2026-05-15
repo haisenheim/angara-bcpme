@@ -709,9 +709,12 @@ class CompanyController extends ExtendedController
     {
         $uid = auth()->id();
 
-        return Entreprise::where('prospect', 1)
+        return Entreprise::query()
+            ->where('prospect', true)
             ->where(function ($q) use ($uid) {
-                $q->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
+                $q->whereNotNull('prospect_submitted_at')
+                    ->orWhere('gestionnaire_id', $uid)
+                    ->orWhere('user_id', $uid);
             });
     }
 
@@ -875,6 +878,12 @@ class CompanyController extends ExtendedController
         if (! $item) {
             return back();
         }
+        if ($item->prospect && $item->prospect_submitted_at === null) {
+            $uid = auth()->id();
+            if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+                abort(403);
+            }
+        }
         $item->load([
             'promuClientUser',
             'prospectRejectedUser',
@@ -963,9 +972,11 @@ class CompanyController extends ExtendedController
             ->orWhere('id', (int) $token)
             ->firstOrFail();
 
-        // Accès gestionnaire : propriétaire (user) ou gestionnaire.
+        // Brouillon : propriétaire uniquement ; prospect soumis : tout gestionnaire (consultation transverse).
         $uid = auth()->id();
-        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+        $isOwner = (int) $item->gestionnaire_id === (int) $uid || (int) $item->user_id === (int) $uid;
+        $sharedSubmittedProspect = $item->prospect && $item->prospect_submitted_at !== null;
+        if (! $isOwner && ! $sharedSubmittedProspect) {
             abort(403);
         }
 
@@ -1379,6 +1390,10 @@ class CompanyController extends ExtendedController
             return back();
         }
         if ($item->prospect) {
+            $uid = auth()->id();
+            if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+                abort(403);
+            }
             $item->load(['produits:id,name,code', 'appuis:id,name,financier,type_id']);
 
             return view('Gestionnaire.Companies.edit_prospect', array_merge(

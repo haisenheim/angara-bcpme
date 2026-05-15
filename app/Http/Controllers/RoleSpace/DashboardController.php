@@ -4,8 +4,10 @@ namespace App\Http\Controllers\RoleSpace;
 
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
+use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Models\EntreprisePieceExigible;
+use App\Services\DossierInstructionStatutService;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
@@ -91,6 +93,25 @@ class DashboardController extends Controller
                 ->whereNotNull('rerx_responsable_avis_at')
                 ->whereNull('rerx_submitted_to_direction_at')
                 ->count();
+        } elseif (in_array($space['route'], ['dg', 'dga'], true)) {
+            $baseValides = Dossier::query()->instructionValidesParChefAgence();
+            $stats['prospects_soumis'] = Entreprise::query()->submittedProspect()->count();
+            $stats['clients'] = Entreprise::query()->where('prospect', false)->count();
+            $stats['dossiers_valides_agence'] = (clone $baseValides)->count();
+            $stats['dossiers_attente_direction'] = Dossier::query()
+                ->instructionValidesParChefAgence()
+                ->awaitingDirectionGeneralConclusion()
+                ->count();
+            $stats['dossiers_instruction_en_cours'] = (clone $baseValides)
+                ->whereInstructionStatut(DossierInstructionStatutService::CODE_EN_COURS)
+                ->count();
+            $stats['dossiers_instruction_clos'] = (clone $baseValides)
+                ->whereInstructionStatut(DossierInstructionStatutService::CODE_VALIDE)
+                ->count();
+            $sommeSol = (float) (clone $baseValides)->sum('engagements_sollicites_total');
+            $sommeEnc = (float) (clone $baseValides)->sum('engagements_en_cours_total');
+            $stats['somme_engagements_sollicites_valides_agence'] = number_format($sommeSol, 0, ',', ' ').' XAF';
+            $stats['somme_engagements_en_cours_valides_agence'] = number_format($sommeEnc, 0, ',', ' ').' XAF';
         }
 
         return response()->json($stats);
@@ -211,5 +232,108 @@ class DashboardController extends Controller
             ->values();
 
         return response()->json(['todos' => $rows]);
+    }
+
+    /**
+     * Données agrégées pour le tableau de bord direction (DG / DGA) : graphiques et listes.
+     */
+    public function insights()
+    {
+        $space = $this->resolveSpace();
+
+        if (! in_array($space['route'], ['dg', 'dga'], true)) {
+            return response()->json([]);
+        }
+
+        $struct = [
+            'structure' => Entreprise::query()
+                ->whereNotNull('promu_client_at')
+                ->whereClientStructurationStatus(DossierEntreeRelation::CLIENT_STRUCT_STATUS_STRUCTURE)
+                ->count(),
+            'en_cours' => Entreprise::query()
+                ->whereNotNull('promu_client_at')
+                ->whereClientStructurationStatus(DossierEntreeRelation::CLIENT_STRUCT_STATUS_EN_COURS)
+                ->count(),
+            'attente' => Entreprise::query()
+                ->whereNotNull('promu_client_at')
+                ->whereClientStructurationStatus(DossierEntreeRelation::CLIENT_STRUCT_STATUS_ATTENTE)
+                ->count(),
+            'rejetee' => Entreprise::query()
+                ->whereNotNull('promu_client_at')
+                ->whereClientStructurationStatus(DossierEntreeRelation::CLIENT_STRUCT_STATUS_REJETEE)
+                ->count(),
+        ];
+
+        $base = Dossier::query()->instructionValidesParChefAgence();
+
+        $pipelineOpen = function (\Illuminate\Contracts\Database\Query\Builder $q): void {
+            $q->whereNull('instruction_closure_validated_at')
+                ->whereNull('instruction_closure_rejected_at');
+        };
+
+        $pipeline = [
+            'exploitation' => (clone $base)->where($pipelineOpen)->whereNull('juridique_instruction_submitted_at')->count(),
+            'juridique' => (clone $base)->where($pipelineOpen)
+                ->whereNotNull('juridique_instruction_submitted_at')
+                ->whereNull('juridique_submitted_to_engagements_at')
+                ->count(),
+            'engagements' => (clone $base)->where($pipelineOpen)
+                ->whereNotNull('juridique_submitted_to_engagements_at')
+                ->whereNull('reng_submitted_to_risques_at')
+                ->count(),
+            'risques' => (clone $base)->where($pipelineOpen)
+                ->whereNotNull('reng_submitted_to_risques_at')
+                ->whereNull('rerx_submitted_to_direction_at')
+                ->count(),
+            'direction' => (clone $base)->where($pipelineOpen)
+                ->whereNotNull('rerx_submitted_to_direction_at')
+                ->count(),
+            'clos' => (clone $base)->whereNotNull('instruction_closure_validated_at')->count(),
+        ];
+
+        $trends = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+            $trends[] = [
+                'label' => $start->translatedFormat('M Y'),
+                'count' => Dossier::query()
+                    ->instructionValidesParChefAgence()
+                    ->whereBetween('created_at', [$start, $end])
+                    ->count(),
+            ];
+        }
+
+        $portefeuille = [
+            'prospects_soumis' => Entreprise::query()->submittedProspect()->count(),
+            'clients' => Entreprise::query()->where('prospect', false)->count(),
+        ];
+
+        $attenteDirection = Dossier::query()
+            ->instructionValidesParChefAgence()
+            ->awaitingDirectionGeneralConclusion()
+            ->with(['entreprise', 'instructionProgrammes.programme', 'programme'])
+            ->orderBy('rerx_submitted_to_direction_at', 'asc')
+            ->limit(8)
+            ->get()
+            ->map(function (Dossier $d) {
+                return [
+                    'token' => $d->token,
+                    'entreprise' => $d->entreprise?->name ?? '—',
+                    'programmes' => method_exists($d, 'programmesLabel') ? $d->programmesLabel() : ($d->programme?->name ?? '—'),
+                    'since' => $d->rerx_submitted_to_direction_at instanceof Carbon
+                        ? $d->rerx_submitted_to_direction_at->diffForHumans()
+                        : null,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'structuration' => $struct,
+            'pipeline' => $pipeline,
+            'trends' => $trends,
+            'portefeuille' => $portefeuille,
+            'attente_direction' => $attenteDirection,
+        ]);
     }
 }

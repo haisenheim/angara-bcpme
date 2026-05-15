@@ -75,6 +75,11 @@ trait ResolvesRoleSpace
                 'label' => 'Resp. risques',
                 'title' => 'Responsable risques',
             ],
+            'conformite' => [
+                'route' => 'conformite',
+                'label' => 'Resp. conformité',
+                'title' => 'Responsable conformité',
+            ],
             'controleur' => [
                 'route' => 'controleur',
                 'label' => 'Contrôleur',

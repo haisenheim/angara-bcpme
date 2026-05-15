@@ -31,6 +31,36 @@ class PortfolioController extends Controller
     use ResolvesRoleSpace;
     use StoresDossierPieces;
 
+    protected function isJuridiquePortefeuilleConsultationRoute(): bool
+    {
+        $name = (string) (request()->route()?->getName() ?? '');
+
+        return str_starts_with($name, 'juridique.portefeuille.');
+    }
+
+    /**
+     * Préfixes de routes dossier pour les vues (hub, instruction, analyse critique).
+     *
+     * @param  array<string, mixed>  $space
+     * @return array{prefix: string, list: string}
+     */
+    protected function roleSpaceDossierRoutesForViews(array $space): array
+    {
+        $prefix = $space['route'].'.dossiers';
+        $list = in_array($space['route'], ['dg', 'dga'], true)
+            ? $space['route'].'.dossiers.valides-chef-agence'
+            : $space['route'].'.dossiers.index';
+
+        if (($space['route'] ?? '') === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute()) {
+            return [
+                'prefix' => 'juridique.portefeuille.dossiers',
+                'list' => 'juridique.portefeuille.dossiers.index',
+            ];
+        }
+
+        return ['prefix' => $prefix, 'list' => $list];
+    }
+
     /**
      * Requête liste entreprises avec les mêmes filtres que la page index (export inclus).
      *
@@ -51,7 +81,7 @@ class PortfolioController extends Controller
         $query = Entreprise::query()
             ->with(['forme', 'user', 'dossierEntreeRelation', 'agence', 'gestionnaire'])
             ->withCount('dossiers')
-            ->when($prospectFilter === true, fn ($q) => $q->where('prospect', true))
+            ->when($prospectFilter === true, fn ($q) => $q->submittedProspect())
             ->when($prospectFilter === false, fn ($q) => $q->where('prospect', false))
             ->when($structurationStatus, fn ($q) => $q->whereClientStructurationStatus($structurationStatus));
         $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
@@ -82,7 +112,7 @@ class PortfolioController extends Controller
     public function prospectsIndex(Request $request)
     {
         $space = $this->resolveSpace();
-        abort_unless(in_array($space['route'], ['dg', 'dga'], true), 404);
+        abort_unless(in_array($space['route'], ['dg', 'dga', 'conformite', 'juridique'], true), 404);
 
         $structurationStatus = null;
         $listeKind = 'prospects';
@@ -94,7 +124,23 @@ class PortfolioController extends Controller
         $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
         $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
 
-        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires', 'listeKind'));
+        $portfolioProspectsListRoute = in_array($space['route'], ['conformite', 'juridique'], true)
+            ? $space['route'].'.tous-prospects.index'
+            : null;
+        $portfolioProspectsExportRoute = in_array($space['route'], ['conformite', 'juridique'], true)
+            ? $space['route'].'.tous-prospects.export'
+            : null;
+
+        return view('RoleSpace.entreprises.index', compact(
+            'space',
+            'entreprises',
+            'structurationStatus',
+            'agences',
+            'gestionnaires',
+            'listeKind',
+            'portfolioProspectsListRoute',
+            'portfolioProspectsExportRoute',
+        ));
     }
 
     public function entreprisesExport(Request $request)
@@ -124,7 +170,7 @@ class PortfolioController extends Controller
     public function prospectsExport(Request $request)
     {
         $space = $this->resolveSpace();
-        abort_unless(in_array($space['route'], ['dg', 'dga'], true), 404);
+        abort_unless(in_array($space['route'], ['dg', 'dga', 'conformite', 'juridique'], true), 404);
 
         $format = strtolower((string) $request->query('format', 'xlsx'));
         if (! in_array($format, ['xlsx', 'pdf'], true)) {
@@ -416,7 +462,27 @@ class PortfolioController extends Controller
         $query = $this->dossiersFilteredListQuery(request(), $space, $dossiersVue, $dossiersFilter);
         $dossiers = $query->orderByDesc('id')->paginate(25)->withQueryString();
 
-        return view('RoleSpace.dossiers.index', compact('space', 'dossiers', 'dossiersFilter', 'dossiersVue'));
+        $portfolioDossiersIndexRoute = null;
+        $portfolioDossiersExportRoute = null;
+        $portfolioDossiersShowRoute = null;
+        if ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute()) {
+            $portfolioDossiersIndexRoute = 'juridique.portefeuille.dossiers.index';
+            $portfolioDossiersExportRoute = 'juridique.portefeuille.dossiers.export';
+            $portfolioDossiersShowRoute = 'juridique.portefeuille.dossiers.show';
+        }
+        $dossiersListUsesProgrammesLabel = in_array($space['route'], ['dg', 'dga'], true)
+            || $portfolioDossiersShowRoute !== null;
+
+        return view('RoleSpace.dossiers.index', compact(
+            'space',
+            'dossiers',
+            'dossiersFilter',
+            'dossiersVue',
+            'portfolioDossiersIndexRoute',
+            'portfolioDossiersExportRoute',
+            'portfolioDossiersShowRoute',
+            'dossiersListUsesProgrammesLabel',
+        ));
     }
 
     /**
@@ -440,10 +506,12 @@ class PortfolioController extends Controller
         if (in_array($space['route'], ['reng', 'analyste-credit', 'rerx'], true)) {
             $with[] = 'rengAnalysteCreditUser';
         }
-        if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga'], true)) {
+        if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga', 'conformite'], true)
+            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute())) {
             $with[] = 'rerxAnalysteRisquesUser';
         }
-        if (in_array($space['route'], ['dg', 'dga'], true)) {
+        if (in_array($space['route'], ['dg', 'dga', 'conformite'], true)
+            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute())) {
             $with[] = 'instructionProgrammes.programme';
         }
 
@@ -454,7 +522,7 @@ class PortfolioController extends Controller
             $query->whereNull('analyste_id');
             $dossiersFilter = 'a_affecter';
         }
-        if ($space['route'] === 'juridique') {
+        if ($space['route'] === 'juridique' && ! $this->isJuridiquePortefeuilleConsultationRoute()) {
             $query->whereNotNull('juridique_instruction_submitted_at');
         }
         if ($space['route'] === 'analyste-juridique') {
@@ -566,7 +634,7 @@ class PortfolioController extends Controller
             'instructionAgenceValidatedBy',
             'instructionAgenceRejectedBy',
         ];
-        $hubSpace = in_array($space['route'], ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga'], true);
+        $hubSpace = in_array($space['route'], ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga', 'conformite'], true);
         if ($hubSpace) {
             $with[] = 'exploitationAvisCreditUser';
             $with[] = 'exploitationEngagementsDecisionUser';
@@ -597,7 +665,8 @@ class PortfolioController extends Controller
             $with[] = 'rerxAnalysteRisquesSubmittedBy';
             $with[] = 'rerxSubmittedToDirectionBy';
         }
-        if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga'], true)) {
+        if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga', 'conformite'], true)
+            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute())) {
             $with[] = 'rerxAnalysteRisquesUser';
             $with[] = 'rerxAnalysteRisquesAssignedBy';
             $with[] = 'rerxAnalysteRisquesSubmittedBy';
@@ -703,6 +772,16 @@ class PortfolioController extends Controller
         $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
         $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
 
+        $readonly = in_array($space['route'], ['gestionnaire', 'conformite'], true)
+            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute());
+        if ($readonly) {
+            $canCloseInstruction = false;
+        }
+
+        $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
+        $roleSpaceDossiersRoutePrefix = $routesForViews['prefix'];
+        $dossiersListRoute = $routesForViews['list'];
+
         return view('RoleSpace.dossiers.show', compact(
             'space',
             'dossier',
@@ -718,6 +797,9 @@ class PortfolioController extends Controller
             'canCloseInstruction',
             'instructionClosureRuleDescription',
             'instructionClosureStatutLabel',
+            'readonly',
+            'roleSpaceDossiersRoutePrefix',
+            'dossiersListRoute',
         ));
     }
 
@@ -729,7 +811,7 @@ class PortfolioController extends Controller
         $space = $this->resolveSpace();
         $dossierQuery = Dossier::query()->where('token', $token);
 
-        if ($space['route'] === 'juridique') {
+        if ($space['route'] === 'juridique' && ! $this->isJuridiquePortefeuilleConsultationRoute()) {
             $dossierQuery->whereNotNull('juridique_instruction_submitted_at');
         }
 
@@ -1488,9 +1570,17 @@ class PortfolioController extends Controller
             'fichiersDossier.uploadedBy',
         ]);
         $space = $this->resolveSpace();
+        $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
         $data = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
 
-        return view('RoleSpace.dossiers.instruction_detail', array_merge(compact('space'), $data));
+        return view('RoleSpace.dossiers.instruction_detail', array_merge(
+            compact('space'),
+            [
+                'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
+                'dossiersListRoute' => $routesForViews['list'],
+            ],
+            $data,
+        ));
     }
 
     /**
@@ -1566,14 +1656,28 @@ class PortfolioController extends Controller
         $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
         $space = $this->resolveSpace();
         $item = $dossier;
+        $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
 
-        return view('RoleSpace.dossiers.analyse_critique', compact('space', 'item'));
+        return view('RoleSpace.dossiers.analyse_critique', [
+            'space' => $space,
+            'item' => $item,
+            'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
+            'dossiersListRoute' => $routesForViews['list'],
+        ]);
     }
 
     private function redirectUnlessCanViewAnalystInstructionWork(Dossier $dossier): ?RedirectResponse
     {
         $space = $this->resolveSpace();
         $back = $space['route'].'.dossiers.show';
+
+        if (($space['route'] ?? '') === 'conformite') {
+            return null;
+        }
+
+        if (($space['route'] ?? '') === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute()) {
+            return null;
+        }
 
         if ($space['route'] === 'juridique' && ! $dossier->juridique_instruction_submitted_at) {
             return redirect()
@@ -1671,8 +1775,15 @@ class PortfolioController extends Controller
         $space = $this->resolveSpace();
         $item = $dossier;
         $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($dossier);
+        $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
 
-        return view('RoleSpace.dossiers.dossier_analyse_critique', compact('space', 'item', 'doc'));
+        return view('RoleSpace.dossiers.dossier_analyse_critique', [
+            'space' => $space,
+            'item' => $item,
+            'doc' => $doc,
+            'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
+            'dossiersListRoute' => $routesForViews['list'],
+        ]);
     }
 
     public function dossierAnalyseCritiqueSynthesePdf(string $token)

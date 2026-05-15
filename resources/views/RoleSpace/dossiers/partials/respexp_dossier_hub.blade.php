@@ -114,12 +114,15 @@
                     @endphp
                     <p class="mb-3 text-muted small">Accédez au <strong>contenu d’instruction</strong> (grille de notation, indicateurs DSF) et au <strong>dossier d’analyse critique</strong> : <strong>analyse critique faite par {{ $dossier->analyste?->name ?? 'l’analyste financier' }}</strong> (section ci-dessous ou document PDF).</p>
                     @php
-                        $instructionRouteName = $spaceRoute.'.dossiers.instruction';
-                        $analyseCritiqueRouteName = $spaceRoute.'.dossiers.dossier-analyse-critique';
+                        $dossiersRoutePrefix = $roleSpaceDossiersRoutePrefix ?? ($spaceRoute.'.dossiers');
+                        $instructionRouteName = $dossiersRoutePrefix.'.instruction';
+                        $analyseCritiqueRouteName = $dossiersRoutePrefix.'.dossier-analyse-critique';
                         $hasInstructionRoute = \Illuminate\Support\Facades\Route::has($instructionRouteName);
                         $hasAnalyseCritiqueRoute = \Illuminate\Support\Facades\Route::has($analyseCritiqueRouteName);
+                        $showSynthèseInstructionLinks = ($hasInstructionRoute || $hasAnalyseCritiqueRoute)
+                            && (! $readonly || in_array($spaceRoute, ['conformite', 'juridique'], true));
                     @endphp
-                    @if(empty($readonly) && ($hasInstructionRoute || $hasAnalyseCritiqueRoute))
+                    @if($showSynthèseInstructionLinks)
                         <div class="d-flex flex-wrap gap-2">
                             @if($hasInstructionRoute)
                                 <a href="{{ route($instructionRouteName, $dossier->token) }}" class="btn btn-sm btn-primary">

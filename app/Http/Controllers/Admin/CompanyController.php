@@ -91,7 +91,7 @@ class CompanyController extends Controller
 
     public function fetchProspects()
     {
-        $items = Entreprise::where('prospect', 1)->get();
+        $items = $this->prospectsQuery()->get();
         $items = EntrepriseListResource::collection($items);
 
         return response()->json($items);
@@ -99,7 +99,7 @@ class CompanyController extends Controller
 
     private function prospectsQuery()
     {
-        return Entreprise::query()->where('prospect', 1);
+        return Entreprise::query()->submittedProspect();
     }
 
     public function fetchProspectsStats(Request $request)
@@ -192,13 +192,13 @@ class CompanyController extends Controller
             $format,
             'admin-prospects',
             'Administration — liste des prospects',
-            'Vue nationale des dossiers prospect',
+            'Vue nationale — prospects soumis (brouillons exclus)',
         );
     }
 
     public function fetchProspectsFilterOptions()
     {
-        $p = Entreprise::query()->where('prospect', 1);
+        $p = $this->prospectsQuery();
         $agenceIds = (clone $p)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
         $gestionnaireIds = (clone $p)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
 

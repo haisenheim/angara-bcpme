@@ -2,15 +2,10 @@
 
 namespace App\Http\Controllers\Ca;
 
-use App\Helpers\DossierHelper;
 use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
-use App\Models\Banque;
 use App\Models\Dossier;
-use App\Models\FichierType;
-use App\Models\Instruction\Critere;
-use App\Models\Instruction\IndicateurFinancier;
 use App\Services\InstructionAnalyseCritiqueDossierDocumentService;
 use App\Services\WorkflowEmailNotificationService;
 use Dompdf\Canvas;
@@ -140,8 +135,7 @@ class DossierController extends Controller
 
     public function show($token)
     {
-
-        $item = Dossier::query()
+        $dossier = Dossier::query()
             ->where('token', $token)
             ->where('agence_id', auth()->user()->agence_id)
             ->with([
@@ -156,45 +150,82 @@ class DossierController extends Controller
                 'instructionAgenceRejectedBy',
                 'instructionAgenceCaAvisSavedBy',
                 'instructionCaTransmittedToExploitationBy',
+                'exploitationAnalysteAssignedBy',
+                'exploitationAnalysteTransmittedToExploitationBy',
                 'fichiersDossier.type',
                 'fichiersDossier.uploadedBy',
+                'exploitationAvisCreditUser',
+                'exploitationEngagementsDecisionUser',
+                'juridiqueInstructionSubmittedBy',
+                'juridiqueAnalysteUser',
+                'juridiqueAnalysteAssignedBy',
+                'juridiqueAnalysteSubmittedToRejuBy',
+                'juridiqueSubmittedToEngagementsBy',
+                'rengAnalysteCreditUser',
+                'rengAnalysteCreditAssignedBy',
+                'rengAnalysteCreditSubmittedBy',
+                'rengSubmittedToRisquesBy',
+                'rerxAnalysteRisquesUser',
+                'rerxAnalysteRisquesAssignedBy',
+                'rerxAnalysteRisquesSubmittedBy',
+                'rerxSubmittedToDirectionBy',
             ])
             ->firstOrFail();
-        $criteres = Critere::all();
-        $id = $item->id;
-        $criteres = $criteres->map(function ($critere) use ($id) {
-            $critere->souscriteres = $critere->sousCriteres->map(function ($souscritere) use ($id) {
-                $souscritere->reponse = $souscritere->reponses->where('dossier_id', $id)->first();
 
-                return $souscritere;
-            });
-
-            return $critere;
-        });
-
-        $criteres = $criteres->map(function ($ct) {
-            return $this->parseCriteres($ct);
-        });
-
-        $indicateurs = IndicateurFinancier::where('dossier_id', $item->id)->get();
-        $banques = Banque::all();
-        $sme = DossierHelper::getSme($item->note);
-        $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($item);
+        $presented = app(\App\Services\DossierInstructionShowPresenter::class)->presentForDossier($dossier);
+        $dossier = $presented['item'];
+        $criteres = $presented['criteres'];
+        $indicateurs = $presented['indicateurs'];
+        $sme = $presented['sme'];
+        $banques = $presented['banques'];
+        $engagementGridUrl = $presented['engagementGridUrl'];
+        $instructionConsultation = $presented['instructionConsultation'];
+        $fichierTypes = $presented['fichierTypes'];
 
         $structuration = app(\App\Services\StructurationClosureService::class);
-        $canApproveRejectInstructionTransmission = $structuration->canChefAgenceDecide(auth()->user(), $item);
+        $canApproveRejectInstructionTransmission = $structuration->canChefAgenceDecide(auth()->user(), $dossier);
 
-        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+        $space = [
+            'route' => 'ca',
+            'title' => "Chef d'agence",
+        ];
+        $readonly = false;
+        $piecesModalId = 'dossierPieceUploadModal_ca';
+        $exploitationSteps = $dossier->exploitationWorkflowSteps();
 
-        return view('Ca/Dossiers/show', compact(
-            'item',
-            'indicateurs',
+        $delegation = app(\App\Services\InstructionDelegationService::class);
+        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
+        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
+        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
+
+        $analystesExploitation = collect();
+        $analystesJuridique = collect();
+        $analystesCredit = collect();
+        $analystesRisques = collect();
+        $respexpInstructionLocked = false;
+
+        return view('RoleSpace.dossiers.show', compact(
+            'space',
+            'dossier',
             'criteres',
+            'indicateurs',
             'sme',
             'banques',
+            'engagementGridUrl',
             'instructionConsultation',
-            'canApproveRejectInstructionTransmission',
             'fichierTypes',
+            'canApproveRejectInstructionTransmission',
+            'readonly',
+            'piecesModalId',
+            'exploitationSteps',
+            'canCloseInstruction',
+            'instructionClosureRuleDescription',
+            'instructionClosureStatutLabel',
+            'analystesExploitation',
+            'analystesJuridique',
+            'analystesCredit',
+            'analystesRisques',
+            'respexpInstructionLocked',
         ));
     }
 
@@ -430,47 +461,5 @@ class DossierController extends Controller
         }
 
         return redirect()->back()->with('success', 'Enregistrement effectué.');
-    }
-
-    private function parseCriteres(Critere $critere)
-    {
-        $dsc = [];
-        $note = 0;
-        foreach ($critere->souscriteres as $sc) {
-            $r = $sc->reponse;
-            $ch = $r?->choice;
-            if ($r) {
-                $note += $r->value;
-            }
-            $dsc[] = [
-                'id' => $sc->id,
-                'name' => $sc->name,
-                'critereId' => $sc->critere_id,
-                'sequence' => $sc->sequence,
-                'default' => $sc->default,
-                'note' => $r ? $r->note : 0,
-                'reponse' => $r ? [
-                    'id' => $r->id,
-                    'dossierId' => $r->dossier_id,
-                    'critereId' => $r->critere_id,
-                    'choiceId' => $r->choice_id,
-                    'note' => $r->note,
-                    'choice' => [
-                        'id' => $ch->id,
-                        'valeur' => $ch->valeur,
-                        'note' => $ch->note,
-                        'critereId' => $sc->critere_id,
-                    ],
-
-                ] : [],
-            ];
-        }
-
-        return [
-            'id' => $critere->id,
-            'name' => $critere->name,
-            'note' => $note,
-            'souscriteres' => $dsc,
-        ];
     }
 }

@@ -8,8 +8,16 @@
     'rerx' => 'Layouts.rerx',
     'dg' => 'Layouts.dg',
     'dga' => 'Layouts.dga',
+    'conformite' => 'Layouts.conformite',
     default => 'Layouts.app',
 })
+
+@php
+    $dossiersRouteList = $dossiersListRoute ?? (in_array($space['route'] ?? '', ['dg', 'dga'], true)
+        ? $space['route'].'.dossiers.valides-chef-agence'
+        : $space['route'].'.dossiers.index');
+    $dossiersRoutePrefix = $roleSpaceDossiersRoutePrefix ?? (($space['route'] ?? '').'.dossiers');
+@endphp
 
 @section('title', 'Analyse critique analyste — '.$space['title'])
 
@@ -17,8 +25,8 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dashboard') }}">Tableau de bord</a></li>
-        <li class="breadcrumb-item"><a href="{{ route(in_array($space['route'] ?? '', ['dg', 'dga'], true) ? $space['route'].'.dossiers.valides-chef-agence' : $space['route'].'.dossiers.index') }}">Dossiers</a></li>
-        <li class="breadcrumb-item"><a href="{{ route($space['route'].'.dossiers.show', $item->token) }}">{{ Str::limit($item->programme?->name ?? 'Dossier', 42) }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($dossiersRouteList) }}">Dossiers</a></li>
+        <li class="breadcrumb-item"><a href="{{ route($dossiersRoutePrefix.'.show', $item->token) }}">{{ Str::limit($item->programme?->name ?? 'Dossier', 42) }}</a></li>
         <li class="breadcrumb-item active" aria-current="page">Sept zones — analyse critique</li>
     </ol>
 </nav>
@@ -27,14 +35,14 @@
 @section('actions')
     <x-page-actions-dropdown>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique (PDF / export)</a>
+            <a href="{{ route($dossiersRoutePrefix.'.dossier-analyse-critique', $item->token) }}" class="dropdown-item">Dossier d’analyse critique (PDF / export)</a>
         </li>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.instruction', $item->token) }}" class="dropdown-item">Contenu d’instruction (grille détaillée)</a>
+            <a href="{{ route($dossiersRoutePrefix.'.instruction', $item->token) }}" class="dropdown-item">Contenu d’instruction (grille détaillée)</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
-            <a href="{{ route($space['route'].'.dossiers.show', $item->token) }}" class="dropdown-item">
+            <a href="{{ route($dossiersRoutePrefix.'.show', $item->token) }}" class="dropdown-item">
                 <i class="demo-pli-arrow-left me-1"></i> Retour au dossier
             </a>
         </li>

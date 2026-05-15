@@ -42,9 +42,7 @@ class WorkflowController extends Controller
     public function prospectIndex()
     {
         $items = Entreprise::query()
-            ->where('prospect', true)
-            ->whereNotNull('prospect_submitted_at')
-            ->where('agence_id', auth()->user()->agence_id)
+            ->submittedProspect()
             ->with(['agence', 'juridiqueAvisUser', 'conformiteAvisUser'])
             ->orderByDesc('prospect_submitted_at')
             ->get();
@@ -56,9 +54,7 @@ class WorkflowController extends Controller
     {
         $item = Entreprise::query()
             ->where('token', $token)
-            ->where('prospect', true)
-            ->whereNotNull('prospect_submitted_at')
-            ->where('agence_id', auth()->user()->agence_id)
+            ->submittedProspect()
             ->with([
                 'agence',
                 'region',
@@ -79,6 +75,7 @@ class WorkflowController extends Controller
         $item = Entreprise::query()
             ->where('token', $token)
             ->where('prospect', true)
+            ->whereNotNull('prospect_submitted_at')
             ->where('agence_id', auth()->user()->agence_id)
             ->firstOrFail();
 

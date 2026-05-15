@@ -50,8 +50,6 @@
             </div>
         </div>
 
-        @include('partials.dossier-engagements-totaux-cards', ['dossier' => $dossier])
-
         @if($dossier->exploitation_analyste_transmitted_to_exploitation_at)
             <p class="small text-muted mb-3">
                 Transmission analyste à l’exploitation le {{ $dossier->exploitation_analyste_transmitted_to_exploitation_at->format('d/m/Y H:i') }}

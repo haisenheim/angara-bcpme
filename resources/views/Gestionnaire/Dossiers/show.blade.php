@@ -99,8 +99,6 @@
         @endif
     </div>
 
-    @include('partials.dossier-engagements-totaux-cards', ['dossier' => $item])
-
     @php
         $timeline = $item->instructionWorkflowHistoryTimeline();
         $timelineSorted = collect($timeline)

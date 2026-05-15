@@ -9,6 +9,7 @@
     'rerx' => 'Layouts.rerx',
     'dg' => 'Layouts.dg',
     'dga' => 'Layouts.dga',
+    'conformite' => 'Layouts.conformite',
     default => 'Layouts.app',
 })
 

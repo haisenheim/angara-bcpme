@@ -20,21 +20,36 @@
     </ul>
 </div>
 <div class="mainnav__categoriy py-3">
-    <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE</h6>
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">PORTEFEUILLE (CONSULTATION)</h6>
     <ul class="mainnav__menu nav flex-column">
         <li class="nav-item">
-            <a href="{{ route('juridique.dossiers.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.dossiers') ? 'active' : '' }}"><i class="bi bi-folder2 fs-5 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Dossiers d’instruction</span>
+            <a href="{{ route('juridique.tous-prospects.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.tous-prospects') ? 'active' : '' }}"><i class="bi bi-people fs-5 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Tous les prospects (soumis)</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('juridique.entreprises.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.entreprises') ? 'active' : '' }}"><i class="bi bi-bank fs-5 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Entreprises</span>
+            <a href="{{ route('juridique.entreprises.index') }}" class="nav-link mininav-toggle {{ $r === 'juridique.entreprises.index' ? 'active' : '' }}"><i class="bi bi-bank fs-5 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Entreprises &amp; clients</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('juridique.portefeuille.dossiers.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.portefeuille.dossiers') ? 'active' : '' }}"><i class="bi bi-folder2-open fs-5 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Tous les dossiers d’instruction</span>
+            </a>
+        </li>
+    </ul>
+</div>
+<div class="mainnav__categoriy py-3">
+    <h6 class="mainnav__caption mt-0 px-3 fw-bold">PÔLE JURIDIQUE</h6>
+    <ul class="mainnav__menu nav flex-column">
+        <li class="nav-item">
+            <a href="{{ route('juridique.dossiers.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.dossiers') && ! str_starts_with($r, 'juridique.portefeuille.') ? 'active' : '' }}"><i class="bi bi-folder2 fs-5 me-2"></i>
+                <span class="nav-label mininav-content ms-1">Dossiers transmis au pôle</span>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('juridique.prospects.index') }}" class="nav-link mininav-toggle {{ str_starts_with($r, 'juridique.prospects') ? 'active' : '' }}"><i class="bi bi-telephone fs-5 me-2"></i>
-                <span class="nav-label mininav-content ms-1">Prospects</span>
+                <span class="nav-label mininav-content ms-1">File avis juridique (prospects)</span>
             </a>
         </li>
     </ul>

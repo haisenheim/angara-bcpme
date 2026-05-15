@@ -8,11 +8,13 @@
     'rerx' => 'Layouts.rerx',
     'dg' => 'Layouts.dg',
     'dga' => 'Layouts.dga',
+    'conformite' => 'Layouts.conformite',
     default => 'Layouts.app',
 })
 
 @php
     $listeKind = $listeKind ?? 'all';
+    $isDgDga = in_array($space['route'] ?? '', ['dg', 'dga'], true);
     $entityListLabel = match ($listeKind) {
         'clients' => 'Clients',
         'prospects' => 'Prospects',
@@ -28,8 +30,12 @@
         'prospects' => 'prospect(s)',
         default => 'entreprise(s)',
     };
-    $listRouteName = $listeKind === 'prospects' ? $space['route'].'.prospects.index' : $space['route'].'.entreprises.index';
-    $exportRouteName = $listeKind === 'prospects' ? $space['route'].'.prospects.export' : $space['route'].'.entreprises.export';
+    $listRouteName = $listeKind === 'prospects'
+        ? ($portfolioProspectsListRoute ?? $space['route'].'.prospects.index')
+        : $space['route'].'.entreprises.index';
+    $exportRouteName = $listeKind === 'prospects'
+        ? ($portfolioProspectsExportRoute ?? $space['route'].'.prospects.export')
+        : $space['route'].'.entreprises.export';
     $showClientOnlyFilters = $listeKind !== 'prospects';
     $emptyTableColspan = 4 + ($listeKind === 'all' ? 1 : 0) + ($showClientOnlyFilters ? 1 : 0);
 @endphp
@@ -54,11 +60,16 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
+        @if($isDgDga)
+        <div class="angara-table" id="rolespace-{{ $space['route'] }}-entreprises">
+        @endif
+        <div class="card {{ $isDgDga ? 'border-0 shadow-sm' : 'shadow-sm border-0' }}">
+            <div class="card-body {{ $isDgDga ? 'p-3 p-md-4' : '' }}">
                 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
-                    <span class="text-muted small">{{ $entreprises->total() }} {{ $countLabel }}</span>
-                    <form method="get" action="{{ route($listRouteName) }}" class="d-flex flex-wrap gap-2 align-items-end">
+                    @if(! $isDgDga)
+                        <span class="text-muted small">{{ $entreprises->total() }} {{ $countLabel }}</span>
+                    @endif
+                    <form method="get" action="{{ route($listRouteName) }}" class="d-flex flex-wrap gap-2 align-items-end{{ $isDgDga ? ' ms-0 ms-md-auto' : '' }}">
                         @if($showClientOnlyFilters)
                         <div style="min-width: 14rem;">
                             @include('partials.client-structuration-filter-select', [
@@ -110,8 +121,8 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
+                    <table class="table table-hover align-middle{{ $isDgDga ? ' table-bordered mb-0' : '' }}" @if($isDgDga) style="width:100%" @endif>
+                        <thead @if($isDgDga) class="table-light" @endif>
                             <tr>
                                 <th>Entreprise</th>
                                 @if($listeKind === 'all')
@@ -122,15 +133,21 @@
                                 @endif
                                 <th>Gestionnaire</th>
                                 <th>Dossiers</th>
-                                <th></th>
+                                <th class="text-end" style="width: 64px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($entreprises as $entreprise)
+                                @php($entrepriseShowUrl = route($space['route'].'.entreprises.show', $entreprise->token))
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold">{{ $entreprise->name }}</div>
-                                        <small class="text-muted">{{ $entreprise->forme?->name ?? '—' }}</small>
+                                        @if($isDgDga)
+                                            <a href="{{ $entrepriseShowUrl }}" class="fw-medium text-decoration-none text-body">{{ $entreprise->name }}</a>
+                                            <div><small class="text-muted">{{ $entreprise->forme?->name ?? '—' }}</small></div>
+                                        @else
+                                            <div class="fw-semibold">{{ $entreprise->name }}</div>
+                                            <small class="text-muted">{{ $entreprise->forme?->name ?? '—' }}</small>
+                                        @endif
                                     </td>
                                     @if($listeKind === 'all')
                                     <td>
@@ -150,21 +167,52 @@
                                     @endif
                                     <td>{{ $entreprise->gestionnaire?->name ?? $entreprise->user?->name ?? '—' }}</td>
                                     <td>{{ $entreprise->dossiers_count }}</td>
-                                    <td class="text-end">
-                                        <a href="{{ route($space['route'].'.entreprises.show', $entreprise->token) }}" class="btn btn-sm btn-primary">Ouvrir</a>
+                                    <td class="text-end angara-table-actions">
+                                        @if($isDgDga)
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="{{ $entrepriseShowUrl }}"><i class="bi bi-eye me-2"></i>Ouvrir</a></li>
+                                                    <li><button class="dropdown-item" type="button" data-copy-text="{{ $entrepriseShowUrl }}"><i class="bi bi-link-45deg me-2"></i>Copier le lien</button></li>
+                                                </ul>
+                                            </div>
+                                        @else
+                                            <a href="{{ $entrepriseShowUrl }}" class="btn btn-sm btn-primary">Ouvrir</a>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
+                                @if(! $isDgDga)
                                 <tr>
                                     <td colspan="{{ $emptyTableColspan }}" class="text-center text-muted py-4">Aucune entreprise trouvée.</td>
                                 </tr>
+                                @endif
                             @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                {{ $entreprises->links() }}
+                @if($isDgDga)
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                        <div data-angara-table-info>
+                            @if($entreprises->total() > 0)
+                                Affichage de {{ $entreprises->firstItem() }} à {{ $entreprises->lastItem() }} sur {{ $entreprises->total() }} entrées
+                            @else
+                                Affichage de 0 à 0 sur 0 entrées
+                            @endif
+                        </div>
+                        <div data-angara-table-paging>{{ $entreprises->withQueryString()->links() }}</div>
+                    </div>
+                    <div class="angara-table-empty {{ $entreprises->total() > 0 ? 'd-none' : '' }} px-0 pt-2" data-angara-table-empty>Aucune donnée.</div>
+                @else
+                    {{ $entreprises->links() }}
+                @endif
             </div>
         </div>
+        @if($isDgDga)
+        </div>
+        @endif
     </div>
 @endsection

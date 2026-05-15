@@ -113,6 +113,7 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
         ->group(function () use ($name) {
             Route::get('dashboard', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'index'])->name('dashboard');
             Route::get('dashboard/stats', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'stats'])->name('dashboard.stats');
+            Route::get('dashboard/insights', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'insights'])->name('dashboard.insights');
             Route::get('dashboard/todos', [\App\Http\Controllers\RoleSpace\DashboardController::class, 'todos'])->name('dashboard.todos');
             Route::get('entreprises', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
             Route::get('entreprises-export', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
@@ -469,6 +470,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('entreprise/questionnaire/{token}', 'CompanyController@createQuestionnaire')->name('entreprise.questionnaire');
         Route::post('entreprise/questionnaire', 'CompanyController@saveQuestionnaire')->name('entreprise.questionnaire.save');
 
+        Route::post('dossiers/{dossier}/instruction-budgets-engagements', 'DossierController@updateInstructionBudgetsEngagements')->name('dossiers.instruction-budgets-engagements');
         Route::post('dossiers/{dossier}/instruction-avis-brouillon', 'DossierController@saveInstructionAvisDraft')->name('dossiers.instruction-avis-brouillon');
         Route::post('dossiers/{dossier}/soumettre-exploitation', 'DossierController@soumettreExploitation')->name('dossiers.soumettre-exploitation');
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
@@ -782,6 +784,19 @@ Route::namespace('App\Http\Controllers\Juridique')
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('dashboard/stats', 'DashboardController@getStats')->name('dashboard.stats');
         Route::get('dashboard/todos', 'DashboardController@getTodos')->name('dashboard.todos');
+
+        // Portefeuille national (consultation) — distinct du périmètre « dossiers transmis au pôle juridique » ci-dessous.
+        Route::get('tous-prospects', [PortfolioController::class, 'prospectsIndex'])->name('tous-prospects.index');
+        Route::get('tous-prospects-export', [PortfolioController::class, 'prospectsExport'])->name('tous-prospects.export');
+        Route::get('portefeuille/dossiers', [PortfolioController::class, 'dossiersIndex'])->name('portefeuille.dossiers.index');
+        Route::get('portefeuille/dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('portefeuille.dossiers.export');
+        Route::get('portefeuille/dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('portefeuille.dossiers.instruction');
+        Route::get('portefeuille/dossiers/{token}/instruction/pdf', [PortfolioController::class, 'dossierInstructionPdf'])->name('portefeuille.dossiers.instruction.pdf');
+        Route::get('portefeuille/dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('portefeuille.dossiers.dossier-analyse-critique');
+        Route::get('portefeuille/dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('portefeuille.dossiers.dossier-analyse-critique.pdf');
+        Route::get('portefeuille/dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('portefeuille.dossiers.analyse-critique');
+        Route::get('portefeuille/dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('portefeuille.dossiers.show');
+
         Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
         Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
         Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
@@ -818,6 +833,25 @@ Route::namespace('App\Http\Controllers\Conformite')
         Route::get('dashboard', 'DashboardController@index')->name('dashboard');
         Route::get('dashboard/stats', 'DashboardController@getStats')->name('dashboard.stats');
         Route::get('dashboard/todos', 'DashboardController@getTodos')->name('dashboard.todos');
+
+        // Portefeuille national (consultation) — distinct de la file métier « avis conformité » ci-dessous.
+        Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
+        Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
+        Route::get('tous-prospects', [PortfolioController::class, 'prospectsIndex'])->name('tous-prospects.index');
+        Route::get('tous-prospects-export', [PortfolioController::class, 'prospectsExport'])->name('tous-prospects.export');
+        Route::get('dossiers', [PortfolioController::class, 'dossiersIndex'])->name('dossiers.index');
+        Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
+        Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
+        Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
+        Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
+        Route::get('entreprises/{token}', [PortfolioController::class, 'entrepriseShow'])->name('entreprises.show');
+        Route::get('dossiers/{token}/instruction', [PortfolioController::class, 'dossierInstructionShow'])->name('dossiers.instruction');
+        Route::get('dossiers/{token}/instruction/pdf', [PortfolioController::class, 'dossierInstructionPdf'])->name('dossiers.instruction.pdf');
+        Route::get('dossiers/{token}/dossier-analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueSyntheseShow'])->name('dossiers.dossier-analyse-critique');
+        Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
+        Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
+        Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
+
         Route::get('prospects', 'ProspectController@index')->name('prospects.index');
         Route::get('prospects/export', 'ProspectController@exportOpenProspectsConformite')->name('prospects.export');
         Route::get('dossiers-traites', 'ProspectController@treatedIndex')->name('prospects.treated');

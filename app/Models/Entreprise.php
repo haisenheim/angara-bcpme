@@ -188,6 +188,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Fiches prospect hors brouillon (soumission gestionnaire enregistrée).
+     */
+    public function scopeSubmittedProspect(Builder $query): Builder
+    {
+        return $query->where('prospect', true)->whereNotNull('prospect_submitted_at');
+    }
+
+    /**
      * Statut métier global de l'entreprise (référence : prompt.txt l.30-36).
      *
      * Gère les états « cycle de vie » au-delà du cas client structuré (prospect en cours / rejeté / etc.).

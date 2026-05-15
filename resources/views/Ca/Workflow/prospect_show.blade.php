@@ -108,6 +108,8 @@
     $hasJuridique = (bool) $item->juridique_avis_at;
     $hasConformite = (bool) $item->conformite_avis_at;
     $canDecide = $hasJuridique && $hasConformite && ! $item->prospect_rejected_at && ! $item->promu_client_at;
+    $isChefAgenceDossier = (int) auth()->user()->agence_id === (int) ($item->agence_id ?? 0);
+    $canActDecision = $canDecide && $isChefAgenceDossier;
 @endphp
 
 <div class="container-fluid">
@@ -267,6 +269,16 @@
                         <strong>Prospect promu client</strong> par <strong>{{ $item->promuClientUser?->name ?? '—' }}</strong>
                         le {{ $fmtDt($item->promu_client_at) }}.
                     </div>
+                @elseif($canDecide && ! $isChefAgenceDossier)
+                    <p class="text-body-secondary small mb-0">
+                        <span class="badge bg-info text-dark me-1">Consultation</span>
+                        Les avis sont disponibles. La validation ou le refus relève du chef d'agence
+                        @if($item->agence?->name)
+                            ({{ $item->agence->name }}).
+                        @else
+                            de l'agence porteuse du dossier.
+                        @endif
+                    </p>
                 @elseif($canDecide)
                     <p class="text-body-secondary small mb-0">
                         Les deux avis sont disponibles. Vous pouvez promouvoir le prospect au statut client ou le refuser. Le refus est définitif et les responsables ne pourront plus modifier les avis.
@@ -279,7 +291,7 @@
                 @endif
             </div>
             <div class="col-lg-5">
-                @if($canDecide)
+                @if($canActDecision)
                     <div class="d-grid gap-2">
                         <form method="post" action="{{ route('ca.workflow.prospects.approve', $item->token) }}" onsubmit="return confirm('Valider ce prospect comme client ?');">
                             @csrf

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Analyste\UpdateDossierInstructionBudgetsRequest;
 use App\Http\Resources\DossierListResource;
 use App\Models\Dossier;
+use App\Models\DossierInstructionProgramme;
 use App\Models\Instruction\IndicateurFinancier;
 use App\Models\User;
 use App\Services\DossierInstructionShowPresenter;
@@ -15,7 +17,9 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
 class DossierController extends Controller
 {
@@ -58,6 +62,62 @@ class DossierController extends Controller
         if ((int) ($dossier->analyste_id ?? 0) !== (int) auth()->id()) {
             abort(403);
         }
+    }
+
+    /**
+     * Mise à jour des totaux engagements (structuration) et des budgets appuis par programme.
+     */
+    public function updateInstructionBudgetsEngagements(UpdateDossierInstructionBudgetsRequest $request, Dossier $dossier)
+    {
+        $this->authorizeAnalysteDossier($dossier);
+
+        if (! $dossier->analysteFinancierPeutMettreAJourBudgetsEtEngagements()) {
+            return redirect()
+                ->back()
+                ->withErrors(['submission' => 'Les montants d’engagements et les budgets ne sont plus modifiables à ce stade du dossier.']);
+        }
+
+        $validated = $request->validated();
+
+        foreach ($validated['programme_budgets'] ?? [] as $row) {
+            $bf = isset($row['budget_appui_financier']) ? (float) $row['budget_appui_financier'] : 0.0;
+            $bnf = isset($row['budget_appui_non_financier']) ? (float) $row['budget_appui_non_financier'] : 0.0;
+            if ($bf <= 0 && $bnf <= 0) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->withErrors([
+                        'programme_budgets' => 'Renseignez au moins un budget (appui financier ou non financier) pour chaque programme.',
+                    ]);
+            }
+        }
+
+        $connection = $dossier->getConnectionName();
+
+        DB::connection($connection)->transaction(function () use ($dossier, $validated, $connection) {
+            $fresh = Dossier::on($connection)->whereKey($dossier->id)->lockForUpdate()->firstOrFail();
+            if (! $fresh->analysteFinancierPeutMettreAJourBudgetsEtEngagements()) {
+                throw ValidationException::withMessages([
+                    'submission' => 'Le dossier a évolué : les montants ne sont plus modifiables à ce stade.',
+                ]);
+            }
+            $fresh->engagements_sollicites_total = $validated['engagements_sollicites_total'];
+            $fresh->engagements_en_cours_total = $validated['engagements_en_cours_total'];
+            $fresh->save();
+
+            foreach ($validated['programme_budgets'] ?? [] as $row) {
+                $dip = DossierInstructionProgramme::query()
+                    ->whereKey($row['id'])
+                    ->where('dossier_id', $fresh->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $dip->budget_appui_financier = isset($row['budget_appui_financier']) ? (float) $row['budget_appui_financier'] : 0.0;
+                $dip->budget_appui_non_financier = isset($row['budget_appui_non_financier']) ? (float) $row['budget_appui_non_financier'] : 0.0;
+                $dip->save();
+            }
+        });
+
+        return redirect()->back()->with('success', 'Totaux engagements et budgets par programme ont été mis à jour.');
     }
 
     /**
@@ -403,14 +463,95 @@ class DossierController extends Controller
 
     public function show($token)
     {
-
-        $item = Dossier::query()
-            ->with(['exploitationAnalysteAssignedBy', 'exploitationAnalysteTransmittedToExploitationBy'])
+        $dossier = Dossier::query()
             ->where('token', $token)
+            ->with([
+                'entreprise',
+                'programme',
+                'instructionProgrammes.programme',
+                'gestionnaire',
+                'analyste',
+                'agence',
+                'exploitationAnalysteAssignedBy',
+                'exploitationAnalysteTransmittedToExploitationBy',
+                'exploitationAnalysteRejectedBy',
+                'chefFiliereSubmittedToAgenceBy',
+                'instructionAgenceValidatedBy',
+                'instructionAgenceRejectedBy',
+                'exploitationAvisCreditUser',
+                'exploitationEngagementsDecisionUser',
+                'instructionCaTransmittedToExploitationBy',
+                'juridiqueInstructionSubmittedBy',
+                'juridiqueAnalysteUser',
+                'juridiqueAnalysteAssignedBy',
+                'juridiqueAnalysteSubmittedToRejuBy',
+                'juridiqueSubmittedToEngagementsBy',
+                'rengAnalysteCreditUser',
+                'rengAnalysteCreditAssignedBy',
+                'rengAnalysteCreditSubmittedBy',
+                'rengSubmittedToRisquesBy',
+                'rerxAnalysteRisquesUser',
+                'rerxAnalysteRisquesAssignedBy',
+                'rerxAnalysteRisquesSubmittedBy',
+                'rerxSubmittedToDirectionBy',
+                'fichiersDossier.type',
+                'fichiersDossier.uploadedBy',
+            ])
             ->firstOrFail();
-        $this->authorizeAnalysteDossier($item);
 
-        return view('Analyste/Dossiers/show', app(DossierInstructionShowPresenter::class)->presentForDossier($item));
+        $this->authorizeAnalysteDossier($dossier);
+
+        $presented = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
+        $dossier = $presented['item'];
+        $criteres = $presented['criteres'];
+        $indicateurs = $presented['indicateurs'];
+        $sme = $presented['sme'];
+        $banques = $presented['banques'];
+        $engagementGridUrl = $presented['engagementGridUrl'];
+        $instructionConsultation = $presented['instructionConsultation'];
+        $fichierTypes = $presented['fichierTypes'];
+
+        $space = [
+            'route' => 'analyste',
+            'title' => 'Analyste financier',
+        ];
+        $readonly = false;
+        $piecesModalId = 'dossierPieceUploadModal_analyste';
+        $exploitationSteps = $dossier->exploitationWorkflowSteps();
+
+        $delegation = app(\App\Services\InstructionDelegationService::class);
+        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
+        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
+        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
+
+        $analystesExploitation = collect();
+        $analystesJuridique = collect();
+        $analystesCredit = collect();
+        $analystesRisques = collect();
+        $respexpInstructionLocked = false;
+
+        return view('RoleSpace.dossiers.show', compact(
+            'space',
+            'dossier',
+            'criteres',
+            'indicateurs',
+            'sme',
+            'banques',
+            'engagementGridUrl',
+            'instructionConsultation',
+            'fichierTypes',
+            'readonly',
+            'piecesModalId',
+            'exploitationSteps',
+            'canCloseInstruction',
+            'instructionClosureRuleDescription',
+            'instructionClosureStatutLabel',
+            'analystesExploitation',
+            'analystesJuridique',
+            'analystesCredit',
+            'analystesRisques',
+            'respexpInstructionLocked',
+        ));
     }
 
     public function storeDossierPiece(Request $request, string $token)

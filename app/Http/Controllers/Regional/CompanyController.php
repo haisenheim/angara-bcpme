@@ -98,9 +98,7 @@ class CompanyController extends Controller
 
     private function prospectsQuery()
     {
-        return Entreprise::query()
-            ->where('prospect', 1)
-            ->where('representation_id', auth()->user()->representation_id);
+        return Entreprise::query()->submittedProspect();
     }
 
     public function fetchProspectsStats(Request $request)
@@ -193,7 +191,7 @@ class CompanyController extends Controller
             $format,
             'regional-prospects',
             'Régional — liste des prospects',
-            'Périmètre représentation',
+            'Prospects soumis — visibilité nationale (brouillons exclus)',
         );
     }
 

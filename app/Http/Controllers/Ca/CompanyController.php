@@ -231,16 +231,14 @@ class CompanyController extends Controller
      */
     public function fetchProspectsFilterOptions()
     {
-        $agenceId = (int) auth()->user()->agence_id;
-        $gestionnaireIds = $this->prospectsQuery()
-            ->whereNotNull('gestionnaire_id')
-            ->distinct()
-            ->pluck('gestionnaire_id');
+        $p = $this->prospectsQuery();
+        $agenceIds = (clone $p)->whereNotNull('agence_id')->distinct()->pluck('agence_id');
+        $gestionnaireIds = (clone $p)->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
 
         return response()->json([
             'regions' => Region::orderBy('name')->get(['id', 'name']),
             'formes' => Forme::orderBy('name')->get(['id', 'name']),
-            'agences' => Agence::query()->where('id', $agenceId)->orderBy('name')->get(['id', 'name']),
+            'agences' => Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']),
             'gestionnaires' => User::query()
                 ->whereIn('id', $gestionnaireIds)
                 ->orderBy('name')
@@ -250,10 +248,7 @@ class CompanyController extends Controller
 
     private function prospectsQuery()
     {
-        return Entreprise::query()
-            ->where('prospect', 1)
-            ->whereNotNull('prospect_submitted_at')
-            ->where('agence_id', auth()->user()->agence_id);
+        return Entreprise::query()->submittedProspect();
     }
 
     public function fetchProspectsStats(Request $request)
@@ -350,7 +345,7 @@ class CompanyController extends Controller
             $format,
             'ca-prospects',
             'Chef d\'agence — liste des prospects',
-            'Prospects soumis pour avis — périmètre agence',
+            'Prospects soumis pour avis — visibilité nationale (brouillons exclus)',
         );
     }
 
@@ -388,14 +383,15 @@ class CompanyController extends Controller
      */
     public function show(string $token)
     {
+        $aid = (int) auth()->user()->agence_id;
         $item = Entreprise::query()
             ->where('token', $token)
-            ->where('agence_id', auth()->user()->agence_id)
-            ->where(function ($q) {
-                $q->where('prospect', 0)
-                    ->orWhere(function ($q2) {
-                        $q2->where('prospect', 1)->whereNotNull('prospect_submitted_at');
-                    });
+            ->where(function ($q) use ($aid) {
+                $q->where(function ($qClient) use ($aid) {
+                    $qClient->where('prospect', 0)->where('agence_id', $aid);
+                })->orWhere(function ($qProspect) {
+                    $qProspect->submittedProspect();
+                });
             })
             ->with([
                 'forme',
