@@ -39,18 +39,29 @@
             </div>
         </div>
 
-        @if($sme ?? null)
+        @if(($noteFinale ?? null) !== null || ($sme ?? null))
             <div class="card border-0 shadow-sm mt-3">
                 <div class="card-header bg-transparent border-0 py-3">
                     <h6 class="mb-0 fw-semibold"><i class="demo-psi-information me-2 text-primary"></i>Notation PME</h6>
                 </div>
                 <div class="card-body">
-                    <h6 class="fw-semibold">{{ $sme->name ?? $sme['name'] }}</h6>
-                    @if(isset($sme->mention) || isset($sme['mention']))
-                        <p class="text-muted small mb-2">{{ $sme->mention ?? $sme['mention'] }}</p>
+                    @if(($noteFinale ?? null) !== null)
+                        <p class="small text-muted mb-2">Note pondérée finale : <strong>{{ $noteFinale }}</strong></p>
                     @endif
-                    @if(isset($sme->description) || isset($sme['description']))
-                        <p class="mb-0 small">{{ $sme->description ?? $sme['description'] }}</p>
+                    @if($sme ?? null)
+                        <h6 class="fw-semibold">{{ $sme->name ?? $sme['name'] ?? '—' }}</h6>
+                        @if(!empty($smeMention ?? null) || !empty($sme->mention ?? $sme['mention'] ?? null))
+                            <div class="mb-2">
+                                <span class="text-muted small d-block mb-1">Mention</span>
+                                @include('RoleSpace.dossiers.partials._sme_mention_badge', [
+                                    'mention' => $smeMention ?? $sme->mention ?? $sme['mention'] ?? null,
+                                ])
+                            </div>
+                        @endif
+                        @if(!empty($smeDescription ?? null) || !empty($sme->description ?? $sme['description'] ?? null))
+                            <p class="small text-muted mb-1 fw-semibold">Avis SME</p>
+                            <p class="mb-0 small">{{ $smeDescription ?? $sme->description ?? $sme['description'] }}</p>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -62,7 +73,11 @@
             'item' => $dossier,
             'criteres' => $criteres ?? [],
             'indicateurs' => $indicateurs ?? [],
+            'indicateurReference' => $indicateurReference ?? null,
+            'noteFinale' => $noteFinale ?? null,
             'sme' => $sme ?? null,
+            'smeMention' => $smeMention ?? null,
+            'smeDescription' => $smeDescription ?? null,
             'readOnly' => false,
         ])
     </div>

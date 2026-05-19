@@ -20,11 +20,17 @@ use App\Models\Instruction\IndicateurFinancier;
 class DossierInstructionShowPresenter
 {
     /**
-     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, criteres: array, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>, instructionConsultation: array, fichierTypes: \Illuminate\Support\Collection, engagementGridUrl: string}
+     * @return array{item: Dossier, indicateurs: \Illuminate\Support\Collection, indicateurReference: ?IndicateurFinancier, criteres: array, noteFinale: ?int, sme: mixed, banques: \Illuminate\Support\Collection, engagements: array<int, mixed>, instructionConsultation: array, fichierTypes: \Illuminate\Support\Collection, engagementGridUrl: string}
      */
     public function presentForDossier(Dossier $item): array
     {
-        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy', 'entreprise']);
+        $item->loadMissing([
+            'fichiersDossier.type',
+            'fichiersDossier.uploadedBy',
+            'entreprise',
+            'indicateurs',
+            'reponses',
+        ]);
 
         $criteres = Critere::all();
         $id = $item->id;
@@ -40,9 +46,16 @@ class DossierInstructionShowPresenter
 
         $criteres = $criteres->map(fn ($ct) => $this->parseCriterePourGrille($ct));
 
-        $indicateurs = IndicateurFinancier::where('dossier_id', $item->id)->get();
+        $indicateurs = IndicateurFinancier::query()
+            ->where('dossier_id', $item->id)
+            ->orderByDesc('annee')
+            ->get();
         $banques = Banque::all();
-        $sme = DossierHelper::getSme($item->note);
+        $notation = DossierHelper::resolveInstructionNotation($item);
+        $noteFinale = $notation['note_finale'];
+        $sme = $notation['sme'];
+        $smeMentionEtDescription = DossierHelper::smeMentionEtDescription($sme);
+        $indicateurReference = $indicateurs->first();
 
         $instructionConsultation = app(InstructionDossierConsultationService::class)->build($item);
 
@@ -53,8 +66,12 @@ class DossierInstructionShowPresenter
         return [
             'item' => $item,
             'indicateurs' => $indicateurs,
+            'indicateurReference' => $indicateurReference,
             'criteres' => $criteres->values()->all(),
+            'noteFinale' => $noteFinale,
             'sme' => $sme,
+            'smeMention' => $smeMentionEtDescription['mention'],
+            'smeDescription' => $smeMentionEtDescription['description'],
             'banques' => $banques,
             'engagements' => [],
             'engagementGridUrl' => $engagementGridUrl,

@@ -1,5 +1,16 @@
 @php
     $readOnly = $readOnly ?? false;
+    $noteFinale = $noteFinale ?? ($item->note ?? null);
+    if (($sme ?? null) === null && $noteFinale !== null && (int) $noteFinale >= 1) {
+        $sme = \App\Helpers\DossierHelper::resolveSmeFromNoteFinale((int) $noteFinale);
+    }
+    if (! isset($smeMention) && ! isset($smeDescription) && ($sme ?? null)) {
+        $smeParts = \App\Helpers\DossierHelper::smeMentionEtDescription($sme);
+        $smeMention = $smeParts['mention'];
+        $smeDescription = $smeParts['description'];
+    }
+    $indicateurReference = $indicateurReference ?? ($indicateurs[0] ?? null);
+    $notationFinance = $indicateurReference?->notation ?? ($indicateurReference['notation'] ?? null);
 @endphp
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent border-0 py-3 d-flex align-items-center justify-content-between">
@@ -73,11 +84,11 @@
                             </tr>
                         @endif
 
-                        @if(isset($indicateurs[0]['notation']['details']))
+                        @if(!empty($notationFinance['details']))
                             <tr>
-                                <th class="vertical-align bg-white" rowspan="{{ count($indicateurs[0]['notation']['details']) + 1 }}">Finance</th>
+                                <th class="vertical-align bg-white" rowspan="{{ count($notationFinance['details']) + 1 }}">Finance</th>
                             </tr>
-                            @foreach($indicateurs[0]['notation']['details'] as $sc)
+                            @foreach($notationFinance['details'] as $sc)
                                 <tr>
                                     <td>{{ $sc['sequence'] ?? '-' }}</td>
                                     <td>{{ $sc['pourcentage'] ?? 0 }}%</td>
@@ -90,7 +101,7 @@
                             <tr class="table-light">
                                 <td colspan="4"></td>
                                 <th colspan="2">Note critère pondérée</th>
-                                <th>{{ $indicateurs[0]['notation']['note'] ?? 0 }}</th>
+                                <th>{{ $notationFinance['note'] ?? 0 }}</th>
                             </tr>
                         @endif
 
@@ -127,9 +138,25 @@
                         </tr>
                         <tr class="table-dark">
                             <th colspan="4"></th>
-                            <th class="fw-bold" colspan="2">{{ $item->note ?? '—' }}</th>
+                            <th class="fw-bold" colspan="2">{{ $noteFinale ?? '—' }}</th>
                             <th class="fw-bold" colspan="2">{{ $sme->name ?? $sme['name'] ?? '—' }}</th>
                         </tr>
+                        @if($sme && (!empty($smeMention ?? null) || !empty($sme->mention ?? $sme['mention'] ?? null)))
+                            <tr class="table-dark">
+                                <th colspan="4" class="align-top">Mention</th>
+                                <td colspan="4">
+                                    @include('RoleSpace.dossiers.partials._sme_mention_badge', [
+                                        'mention' => $smeMention ?? $sme->mention ?? $sme['mention'] ?? null,
+                                    ])
+                                </td>
+                            </tr>
+                        @endif
+                        @if($sme && (!empty($smeDescription ?? null) || !empty($sme->description ?? $sme['description'] ?? null)))
+                            <tr class="table-dark">
+                                <th colspan="4" class="align-top">Avis SME</th>
+                                <td colspan="4" class="small">{{ $smeDescription ?? $sme->description ?? $sme['description'] }}</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>

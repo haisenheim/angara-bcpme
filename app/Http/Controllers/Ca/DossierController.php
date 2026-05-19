@@ -176,7 +176,11 @@ class DossierController extends Controller
         $dossier = $presented['item'];
         $criteres = $presented['criteres'];
         $indicateurs = $presented['indicateurs'];
+        $indicateurReference = $presented['indicateurReference'];
+        $noteFinale = $presented['noteFinale'];
         $sme = $presented['sme'];
+        $smeMention = $presented['smeMention'];
+        $smeDescription = $presented['smeDescription'];
         $banques = $presented['banques'];
         $engagementGridUrl = $presented['engagementGridUrl'];
         $instructionConsultation = $presented['instructionConsultation'];
@@ -209,7 +213,11 @@ class DossierController extends Controller
             'dossier',
             'criteres',
             'indicateurs',
+            'indicateurReference',
+            'noteFinale',
             'sme',
+            'smeMention',
+            'smeDescription',
             'banques',
             'engagementGridUrl',
             'instructionConsultation',

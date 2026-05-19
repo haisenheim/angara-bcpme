@@ -94,6 +94,18 @@ En **production**, la génération de la grille de notation par l’**analyste f
 6. S’assurer que la variable d’environnement Laravel (nom exact selon livraison, ex. URL de service instruction) **correspond** à cette base URL.
 7. **Politique de redémarrage** : `unless-stopped` ou équivalent afin que le service reprenne après reboot du serveur ; documenter toute dépendance (fichiers montés, secrets).
 
+### 4.4.1 Référentiel notation PME (`sme_notes`)
+
+La **notation PME** et l’**avis SME** affichés dans la grille d’instruction sont lus dans la table `sme_notes` : la ligne est sélectionnée par la colonne **`note`** (égale à la note pondérée finale arrondie) ; la **mention** et la **description** de cette ligne constituent l’avis SME.
+
+Après migration, exécuter au minimum :
+
+```bash
+php artisan db:seed --class=SmeNotesSeeder
+```
+
+(`DatabaseSeeder` appelle aussi ce seeder ; en recette, vérifier `SELECT COUNT(*) FROM sme_notes` → **10** lignes.)
+
 ### 4.5 Optimisation et services
 
 1. Mise en cache configuration / routes / vues si applicable :  
@@ -113,6 +125,7 @@ En **production**, la génération de la grille de notation par l’**analyste f
 | Tâche planifiée / queue (si applicable) | Exécution observée | | |
 | Conteneur `alliages/angara-instruction` | `docker ps` — état Up ; port 8080 joignable en local | | |
 | Génération grille de notation (parcours analyste financier) | Appel au microservice OK (pas d’erreur métier bloquante) | | |
+| Référentiel `sme_notes` (notation PME / avis SME) | 10 lignes ; avis SME visible après note finale | | |
 
 ---
 

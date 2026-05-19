@@ -116,11 +116,23 @@
                 <div class="card-body">
                     <p class="small text-muted mb-2">Import DSF et saisies effectués par l’analyste dans son espace.</p>
                     <p class="mb-2 small">Indicateurs financiers enregistrés : <strong>{{ $indicateurs->count() }}</strong></p>
+                    @if(($noteFinale ?? null) !== null)
+                        <p class="small mb-2">Note pondérée finale : <strong>{{ $noteFinale }}</strong></p>
+                    @endif
                     @if($sme)
                         <div class="border rounded p-3 bg-light mt-2">
                             <h6 class="fw-semibold mb-1">{{ $sme->name ?? $sme['name'] ?? '—' }}</h6>
-                            @if(isset($sme->mention) || isset($sme['mention']))
-                                <p class="text-muted small mb-2">{{ $sme->mention ?? $sme['mention'] }}</p>
+                            @if(!empty($smeMention ?? null) || !empty($sme->mention ?? $sme['mention'] ?? null))
+                                <div class="mb-2">
+                                    <span class="text-muted small d-block mb-1">Mention</span>
+                                    @include('RoleSpace.dossiers.partials._sme_mention_badge', [
+                                        'mention' => $smeMention ?? $sme->mention ?? $sme['mention'] ?? null,
+                                    ])
+                                </div>
+                            @endif
+                            @if(!empty($smeDescription ?? null) || !empty($sme->description ?? $sme['description'] ?? null))
+                                <p class="small text-muted mb-1 fw-semibold">Avis SME</p>
+                                <p class="small mb-0">{{ $smeDescription ?? $sme->description ?? $sme['description'] }}</p>
                             @endif
                         </div>
                     @endif
@@ -135,6 +147,8 @@
                 'item' => $item,
                 'criteres' => $criteres,
                 'indicateurs' => $indicateurs,
+                'indicateurReference' => $indicateurReference ?? null,
+                'noteFinale' => $noteFinale ?? null,
                 'sme' => $sme,
                 'readOnly' => true,
             ])
