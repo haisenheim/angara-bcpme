@@ -98,13 +98,13 @@ En **production**, la génération de la grille de notation par l’**analyste f
 
 La **notation PME** et l’**avis SME** affichés dans la grille d’instruction sont lus dans la table `sme_notes` : la ligne est sélectionnée par la colonne **`note`** (égale à la note pondérée finale arrondie) ; la **mention** et la **description** de cette ligne constituent l’avis SME.
 
-Après migration, exécuter au minimum :
+Après migration, charger le référentiel depuis le fichier `sme_notes.sql` à la racine du projet :
 
 ```bash
 php artisan db:seed --class=SmeNotesSeeder
 ```
 
-(`DatabaseSeeder` appelle aussi ce seeder ; en recette, vérifier `SELECT COUNT(*) FROM sme_notes` → **10** lignes.)
+(`DatabaseSeeder` appelle aussi ce seeder. Source : `sme_notes.sql` ou chemin `SME_NOTES_SQL_PATH` dans `.env`. En recette, vérifier `SELECT COUNT(*) FROM sme_notes` → **10** lignes.)
 
 ### 4.5 Optimisation et services
 
