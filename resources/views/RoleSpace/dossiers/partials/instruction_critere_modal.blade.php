@@ -34,8 +34,48 @@
     </div>
 </div>
 
+<style>
+    .grille-souscritere-row { scroll-margin-top: 6rem; }
+    .grille-souscritere-row.grille-souscritere-row--flash {
+        animation: grille-souscritere-flash 1.8s ease-out;
+    }
+    @keyframes grille-souscritere-flash {
+        0%, 100% { background-color: transparent; }
+        25% { background-color: rgba(var(--bs-primary-rgb), 0.12); }
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function scrollToGrilleAnchor() {
+        var hash = window.location.hash;
+        if (!hash || hash.length < 2) {
+            return;
+        }
+        var target = document.querySelector(hash);
+        if (!target) {
+            return;
+        }
+        requestAnimationFrame(function() {
+            var scrollParent = target.closest('.overflow-auto');
+            if (scrollParent && scrollParent.scrollHeight > scrollParent.clientHeight) {
+                var parentRect = scrollParent.getBoundingClientRect();
+                var targetRect = target.getBoundingClientRect();
+                var top = targetRect.top - parentRect.top + scrollParent.scrollTop - (parentRect.height / 2) + (targetRect.height / 2);
+                scrollParent.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            } else {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (target.classList.contains('grille-souscritere-row')) {
+                target.classList.add('grille-souscritere-row--flash');
+                window.setTimeout(function() {
+                    target.classList.remove('grille-souscritere-row--flash');
+                }, 1800);
+            }
+        });
+    }
+
+    scrollToGrilleAnchor();
+
     var choicesUrlBase = @json($critereChoicesUrl);
     document.querySelectorAll('.btn-critere').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -51,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('critere_id_input').value = id;
 
             fetch(choicesUrlBase + sep + 'id=' + encodeURIComponent(id))
-                .then(r => r.json())
+                .then(function(r) { return r.json(); })
                 .then(function(data) {
                     var select = document.getElementById('critere_choices');
                     select.innerHTML = '<option value="">Choisir...</option>';

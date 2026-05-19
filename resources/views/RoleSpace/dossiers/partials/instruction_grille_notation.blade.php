@@ -12,7 +12,7 @@
     $indicateurReference = $indicateurReference ?? ($indicateurs[0] ?? null);
     $notationFinance = $indicateurReference?->notation ?? ($indicateurReference['notation'] ?? null);
 @endphp
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm" id="grille-notation">
     <div class="card-header bg-transparent border-0 py-3 d-flex align-items-center justify-content-between">
         <h6 class="mb-0 fw-semibold"><i class="demo-psi-bar-chart me-2 text-primary"></i>Grille de notation</h6>
     </div>
@@ -37,7 +37,7 @@
                                 <th class="vertical-align bg-white" rowspan="{{ count($criteres[0]['souscriteres'] ?? []) + 1 }}">{{ $criteres[0]['name'] }}</th>
                             </tr>
                             @foreach($criteres[0]['souscriteres'] ?? [] as $sc)
-                                <tr>
+                                <tr id="grille-souscritere-{{ $sc['id'] ?? '' }}" class="grille-souscritere-row">
                                     <td>{{ $sc['sequence'] ?? '-' }}</td>
                                     <td>{{ $sc['default'] ?? 0 }}%</td>
                                     <td>{{ $sc['name'] ?? '-' }}</td>
@@ -63,7 +63,7 @@
                                 <th class="vertical-align bg-white" rowspan="{{ count($criteres[1]['souscriteres'] ?? []) + 1 }}">{{ $criteres[1]['name'] }}</th>
                             </tr>
                             @foreach($criteres[1]['souscriteres'] ?? [] as $sc)
-                                <tr>
+                                <tr id="grille-souscritere-{{ $sc['id'] ?? '' }}" class="grille-souscritere-row">
                                     <td>{{ $sc['sequence'] ?? '-' }}</td>
                                     <td>{{ $sc['default'] ?? 0 }}%</td>
                                     <td>{{ $sc['name'] ?? '-' }}</td>
@@ -110,7 +110,7 @@
                                 <th class="vertical-align bg-white" rowspan="{{ count($criteres[3]['souscriteres'] ?? []) + 1 }}">{{ $criteres[3]['name'] }}</th>
                             </tr>
                             @foreach($criteres[3]['souscriteres'] ?? [] as $sc)
-                                <tr>
+                                <tr id="grille-souscritere-{{ $sc['id'] ?? '' }}" class="grille-souscritere-row">
                                     <td>{{ $sc['sequence'] ?? '-' }}</td>
                                     <td>{{ $sc['default'] ?? 0 }}%</td>
                                     <td>{{ $sc['name'] ?? '-' }}</td>

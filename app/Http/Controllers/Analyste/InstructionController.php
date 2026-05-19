@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Analyste;
 
+use App\Http\Controllers\Concerns\RedirectsBackToGrilleSousCritere;
 use App\Http\Controllers\Controller;
 use App\Models\Compte;
 use App\Models\Dossier;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Http;
 
 class InstructionController extends Controller
 {
+    use RedirectsBackToGrilleSousCritere;
+
     /**
      * Display a listing of the resource.
      *
@@ -96,8 +99,9 @@ class InstructionController extends Controller
             'critere_id'=>$critere_id,
             'dossier_id'=>$dossier_id
         ],$data);
-        //$response = Http::post('http://localhost:8080/critere/reponse',$data);
-        return back();
+
+        return $this->redirectBackToGrilleSousCritere($critere_id)
+            ->with('success', 'Choix enregistré.');
     }
 
 
