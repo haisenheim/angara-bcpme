@@ -85,4 +85,16 @@ class InstructionController extends Controller
 
         return $this->completeDossierPieceDestroy($dossier, $fichier, 'chef-filiere.instructions.dossier.show', $dossier->token);
     }
+
+    public function updateDossierPiece(Request $request, string $token, int $piece)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
+            ->firstOrFail();
+
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceUpdate($request, $dossier, $fichier, 'chef-filiere.instructions.dossier.show', $dossier->token);
+    }
 }

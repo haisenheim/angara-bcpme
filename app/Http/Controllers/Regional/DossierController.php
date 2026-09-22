@@ -80,4 +80,16 @@ class DossierController extends Controller
 
         return $this->completeDossierPieceDestroy($dossier, $fichier, 'regional.dossiers.show', $dossier);
     }
+
+    public function updateDossierPiece(Request $request, string $token, int $piece)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->where('representation_id', auth()->user()->representation_id)
+            ->firstOrFail();
+
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceUpdate($request, $dossier, $fichier, 'regional.dossiers.show', $dossier);
+    }
 }

@@ -133,6 +133,7 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
             Route::get('dossiers-export', [PortfolioController::class, 'dossiersExport'])->name('dossiers.export');
             Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
             Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
+            Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
             Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         });
 };
@@ -285,6 +286,7 @@ Route::namespace('App\Http\Controllers\Admin')
 
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::delete('dossier/{token}/pieces/{piece}', 'DossierController@destroyDossierPiece')->name('dossier.pieces.destroy');
+        Route::put('dossier/{token}/pieces/{piece}', 'DossierController@updateDossierPiece')->name('dossier.pieces.update');
         Route::resource('dossiers', 'DossierController');
 
         Route::resource('delegation-pouvoirs', 'DelegationPouvoirController')->except(['show']);
@@ -395,6 +397,7 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
 
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::delete('dossier/{token}/pieces/{piece}', 'DossierController@destroyDossierPiece')->name('dossier.pieces.destroy');
+        Route::put('dossier/{token}/pieces/{piece}', 'DossierController@updateDossierPiece')->name('dossier.pieces.update');
         Route::resource('dossiers', 'DossierController');
 
         Route::resource('programmes', 'ProgrammeController', ['except' => ['create', 'store']]);
@@ -478,6 +481,7 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('dossiers/{dossier}/soumettre-exploitation', 'DossierController@soumettreExploitation')->name('dossiers.soumettre-exploitation');
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::delete('dossier/{token}/pieces/{piece}', 'DossierController@destroyDossierPiece')->name('dossier.pieces.destroy');
+        Route::put('dossier/{token}/pieces/{piece}', 'DossierController@updateDossierPiece')->name('dossier.pieces.update');
         Route::resource('dossiers', 'DossierController');
         Route::post('dossier/dsf', 'DossierController@loadDsf')->name('dossier.dsf');
         Route::resource('programmes', 'ProgrammeController', ['except' => ['create', 'store']]);
@@ -539,6 +543,7 @@ Route::namespace('App\Http\Controllers\AnalysteCredit')
         Route::post('dossiers/{token}/soumettre-reng', 'DossierController@submitToReng')->name('dossiers.soumettre-reng');
         Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
+        Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
@@ -567,6 +572,7 @@ Route::namespace('App\Http\Controllers\AnalysteRisques')
         Route::post('dossiers/{token}/soumettre-rerx', 'DossierController@submitToRerx')->name('dossiers.soumettre-rerx');
         Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
+        Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
@@ -594,6 +600,7 @@ Route::namespace('App\Http\Controllers\AnalysteJuridique')
         Route::post('dossiers/{token}/soumettre-reju', 'DossierController@submitToReju')->name('dossiers.soumettre-reju');
         Route::post('dossiers/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::delete('dossiers/{token}/pieces/{piece}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
+        Route::put('dossiers/{token}/pieces/{piece}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
@@ -665,6 +672,7 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('dossier/{token}/analyse-critique/pdf', 'DossierController@dossierAnalyseCritiqueSynthesePdf')->name('dossier.analyse-critique.synthese.pdf');
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::delete('dossier/{token}/pieces/{piece}', 'DossierController@destroyDossierPiece')->name('dossier.pieces.destroy');
+        Route::put('dossier/{token}/pieces/{piece}', 'DossierController@updateDossierPiece')->name('dossier.pieces.update');
 
         Route::get('workflow/prospects', [\App\Http\Controllers\Ca\WorkflowController::class, 'prospectIndex'])->name('workflow.prospects.index');
         Route::get('workflow/prospects/{token}', [\App\Http\Controllers\Ca\WorkflowController::class, 'prospectShow'])->name('workflow.prospects.show');
@@ -694,6 +702,7 @@ Route::namespace('App\Http\Controllers\Regional')
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('dossier/{token}/pieces', 'DossierController@storeDossierPiece')->name('dossier.pieces.store');
         Route::delete('dossier/{token}/pieces/{piece}', 'DossierController@destroyDossierPiece')->name('dossier.pieces.destroy');
+        Route::put('dossier/{token}/pieces/{piece}', 'DossierController@updateDossierPiece')->name('dossier.pieces.update');
         Route::resource('dossiers', 'DossierController');
         Route::get('programmes', 'ProgrammeController@index')->name('programmes.index');
         Route::get('programmes/{token}', 'ProgrammeController@show')->name('programmes.show');
@@ -737,6 +746,7 @@ Route::namespace('App\Http\Controllers\ChefFiliere')
         Route::get('instructions/en-cours', 'InstructionController@inProgress')->name('instructions.in-progress');
         Route::post('instructions/dossiers/{token}/pieces', 'InstructionController@storeDossierPiece')->name('instructions.dossier.pieces.store');
         Route::delete('instructions/dossiers/{token}/pieces/{piece}', 'InstructionController@destroyDossierPiece')->name('instructions.dossier.pieces.destroy');
+        Route::put('instructions/dossiers/{token}/pieces/{piece}', 'InstructionController@updateDossierPiece')->name('instructions.dossier.pieces.update');
         Route::get('instructions/dossiers/{token}', 'InstructionController@showDossier')->name('instructions.dossier.show');
         Route::get('entreprises/{token}/pieces-exigibles', 'PieceExigibleController@index')->name('entreprises.pieces-exigibles.index');
         Route::post('entreprises/{token}/pieces-exigibles/{definition}', 'PieceExigibleController@store')->name('entreprises.pieces-exigibles.store');
@@ -823,6 +833,7 @@ Route::namespace('App\Http\Controllers\Juridique')
         Route::post('dossiers/{token}/rejeter-vers-exploitation', [PortfolioController::class, 'rejectJuridiqueToExploitation'])->name('dossiers.rejeter-vers-exploitation');
         Route::post('dossiers/{token}/pieces', [PortfolioController::class, 'storeDossierPiece'])->name('dossiers.pieces.store');
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
+        Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
         Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');

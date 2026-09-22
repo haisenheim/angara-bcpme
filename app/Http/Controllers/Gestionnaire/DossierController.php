@@ -252,6 +252,25 @@ class DossierController extends Controller
         return $this->completeDossierPieceDestroy($dossier, $fichier, 'gestionnaire.dossiers.show', $dossier);
     }
 
+    public function updateDossierPiece(Request $request, string $token, int $piece)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->whereHas('entreprise', function ($q) {
+                $uid = (int) auth()->id();
+                $q->where('prospect', 0)
+                    ->whereNotNull('promu_client_at')
+                    ->where(function ($q2) use ($uid) {
+                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
+                    });
+            })
+            ->firstOrFail();
+
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceUpdate($request, $dossier, $fichier, 'gestionnaire.dossiers.show', $dossier);
+    }
+
     private function parseCriteres(Critere $critere){
         $dsc = [];
         $note = 0;

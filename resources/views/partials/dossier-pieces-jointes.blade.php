@@ -4,6 +4,7 @@
   @param bool $showUpload  Afficher dépôt (défaut : true)
   @param string|null $routePiecesStore  Nom de route POST si showUpload
   @param string|null $routePiecesDestroy  Nom de route DELETE (déduit de routePiecesStore si absent)
+  @param string|null $routePiecesUpdate  Nom de route PUT (déduit de routePiecesStore si absent)
   @param string $modalId  ID unique du modal
   @param \Illuminate\Support\Collection|null $fichierTypes  Types pour le formulaire
 --}}
@@ -13,6 +14,8 @@
     $modalId = $modalId ?? 'dossierPieceUploadModal';
     $fichierTypes = $fichierTypes ?? collect();
     $routePiecesDestroy = $routePiecesDestroy ?? (isset($routePiecesStore) ? preg_replace('/\.store$/', '.destroy', $routePiecesStore) : null);
+    $routePiecesUpdate = $routePiecesUpdate ?? (isset($routePiecesStore) ? preg_replace('/\.store$/', '.update', $routePiecesStore) : null);
+    $canManageOwnPieces = (bool) ($routePiecesDestroy || $routePiecesUpdate);
 @endphp
 @if($dossier)
 <div class="card border-0 shadow-sm mb-4">
@@ -36,13 +39,17 @@
                             <th>Fichier</th>
                             <th>Date et heure</th>
                             <th>Déposé par</th>
-                            @if($routePiecesDestroy)
+                            @if($canManageOwnPieces)
                                 <th class="text-end" style="width: 1%;">Actions</th>
                             @endif
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($dossier->fichiersDossier as $f)
+                            @php
+                                $isOwnPiece = $f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) auth()->id();
+                                $editModalId = $modalId.'_edit_'.$f->id;
+                            @endphp
                             <tr>
                                 <td>{{ $f->type?->name ?? '—' }}</td>
                                 <td>
@@ -54,16 +61,25 @@
                                 </td>
                                 <td>{{ $f->uploaded_at ? $f->uploaded_at->format('d/m/Y H:i') : '—' }}</td>
                                 <td>{{ $f->uploadedBy?->name ?? '—' }}</td>
-                                @if($routePiecesDestroy)
+                                @if($canManageOwnPieces)
                                     <td class="text-end">
-                                        @if($f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) auth()->id())
-                                            <form method="post" action="{{ route($routePiecesDestroy, ['token' => $dossier->token, 'piece' => $f->id]) }}" class="d-inline" onsubmit="return confirm('Supprimer cette pièce jointe ?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer la pièce que vous avez déposée">
-                                                    <i class="demo-psi-trash"></i>
-                                                </button>
-                                            </form>
+                                        @if($isOwnPiece)
+                                            <div class="d-inline-flex gap-1">
+                                                @if($routePiecesUpdate)
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}" title="Modifier la pièce que vous avez déposée">
+                                                        <i class="demo-psi-pencil"></i>
+                                                    </button>
+                                                @endif
+                                                @if($routePiecesDestroy)
+                                                    <form method="post" action="{{ route($routePiecesDestroy, ['token' => $dossier->token, 'piece' => $f->id]) }}" class="d-inline" onsubmit="return confirm('Supprimer cette pièce jointe ?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer la pièce que vous avez déposée">
+                                                            <i class="demo-psi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif
@@ -88,6 +104,7 @@
             </div>
             <form action="{{ route($routePiecesStore, $dossier->token) }}" method="post" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="dossier_piece_form" value="create">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="{{ $modalId }}_type" class="form-label">Type de pièce</label>
@@ -113,15 +130,74 @@
         </div>
     </div>
 </div>
+@endif
+
+@if($routePiecesUpdate && $fichierTypes->isNotEmpty())
+    @foreach($dossier->fichiersDossier as $f)
+        @if($f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) auth()->id())
+            @php $editModalId = $modalId.'_edit_'.$f->id; @endphp
+            <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-labelledby="{{ $editModalId }}Label" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="{{ $editModalId }}Label">Modifier la pièce</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <form action="{{ route($routePiecesUpdate, ['token' => $dossier->token, 'piece' => $f->id]) }}" method="post" enctype="multipart/form-data">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="dossier_piece_form" value="update">
+                            <input type="hidden" name="dossier_piece_id" value="{{ $f->id }}">
+                            <div class="modal-body">
+                                <p class="small text-muted mb-3">Fichier actuel : <strong>{{ $f->original_name ?: basename($f->name ?? '') }}</strong></p>
+                                <div class="mb-3">
+                                    <label for="{{ $editModalId }}_type" class="form-label">Type de pièce</label>
+                                    <select name="type_id" id="{{ $editModalId }}_type" class="form-select @if(old('dossier_piece_id') == $f->id) @error('type_id') is-invalid @enderror @endif" required>
+                                        @foreach($fichierTypes as $ft)
+                                            <option value="{{ $ft->id }}" @selected(
+                                                old('dossier_piece_id') == $f->id
+                                                    ? (string) old('type_id') === (string) $ft->id
+                                                    : (string) $f->type_id === (string) $ft->id
+                                            )>{{ $ft->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if(old('dossier_piece_id') == $f->id)
+                                        @error('type_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    @endif
+                                </div>
+                                <div class="mb-0">
+                                    <label for="{{ $editModalId }}_file" class="form-label">Nouveau fichier (PDF, JPG ou PNG, max. 10 Mo)</label>
+                                    <input type="file" name="fichier" id="{{ $editModalId }}_file" class="form-control @if(old('dossier_piece_id') == $f->id) @error('fichier') is-invalid @enderror @endif" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required>
+                                    @if(old('dossier_piece_id') == $f->id)
+                                        @error('fichier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
+@endif
+
 @if($errors->has('fichier') || $errors->has('type_id'))
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var el = document.getElementById(@json($modalId));
+    var formKind = @json(old('dossier_piece_form', 'create'));
+    var pieceId = @json(old('dossier_piece_id'));
+    var targetId = formKind === 'update' && pieceId
+        ? @json($modalId) + '_edit_' + pieceId
+        : @json($modalId);
+    var el = document.getElementById(targetId);
     if (el && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(el).show();
     }
 });
 </script>
-@endif
 @endif
 @endif

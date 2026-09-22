@@ -52,19 +52,63 @@ trait StoresDossierPieces
             ->with('success', 'La pièce a été enregistrée sur le dossier.');
     }
 
+    protected function completeDossierPieceUpdate(
+        Request $request,
+        Dossier $dossier,
+        Fichier $fichier,
+        string $redirectRouteName,
+        mixed $redirectRouteParameter = null
+    ): RedirectResponse {
+        $this->assertDossierPieceOwnedByUploader(
+            $dossier,
+            $fichier,
+            'Seul l’utilisateur ayant déposé cette pièce peut la modifier.'
+        );
+
+        $data = $request->validate([
+            'fichier' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'type_id' => ['required', 'integer', Rule::exists(FichierType::class, 'id')],
+        ]);
+
+        $uploaded = $request->file('fichier');
+        $fileToken = sha1('dossier-piece-update-'.$fichier->id.'-'.microtime(true));
+        $relativePath = $this->storeDossierPieceFileOnDisk($uploaded, $fileToken);
+
+        $redirectKey = $redirectRouteParameter ?? $dossier;
+
+        if ($relativePath === null) {
+            return redirect()
+                ->route($redirectRouteName, $redirectKey)
+                ->withInput()
+                ->withErrors(['fichier' => 'Format de fichier non accepté (PDF, JPG ou PNG uniquement).']);
+        }
+
+        $this->deleteDossierPieceFileFromDisk($fichier->name);
+
+        $fichier->update([
+            'name' => $relativePath,
+            'original_name' => $uploaded->getClientOriginalName(),
+            'type_id' => (int) $data['type_id'],
+            'token' => $fileToken,
+            'uploaded_at' => now(),
+        ]);
+
+        return redirect()
+            ->route($redirectRouteName, $redirectKey)
+            ->with('success', 'La pièce a été mise à jour.');
+    }
+
     protected function completeDossierPieceDestroy(
         Dossier $dossier,
         Fichier $fichier,
         string $redirectRouteName,
         mixed $redirectRouteParameter = null
     ): RedirectResponse {
-        if ((int) $fichier->dossier_id !== (int) $dossier->id) {
-            abort(404);
-        }
-
-        if ((int) $fichier->uploaded_by_user_id !== (int) auth()->id()) {
-            abort(403, 'Seul l’utilisateur ayant déposé cette pièce peut la supprimer.');
-        }
+        $this->assertDossierPieceOwnedByUploader(
+            $dossier,
+            $fichier,
+            'Seul l’utilisateur ayant déposé cette pièce peut la supprimer.'
+        );
 
         $this->deleteDossierPieceFileFromDisk($fichier->name);
         $fichier->delete();
@@ -74,6 +118,17 @@ trait StoresDossierPieces
         return redirect()
             ->route($redirectRouteName, $redirectKey)
             ->with('success', 'La pièce a été supprimée du dossier.');
+    }
+
+    protected function assertDossierPieceOwnedByUploader(Dossier $dossier, Fichier $fichier, string $forbiddenMessage): void
+    {
+        if ((int) $fichier->dossier_id !== (int) $dossier->id) {
+            abort(404);
+        }
+
+        if ((int) $fichier->uploaded_by_user_id !== (int) auth()->id()) {
+            abort(403, $forbiddenMessage);
+        }
     }
 
     protected function findDossierPiece(Dossier $dossier, int $pieceId): Fichier
