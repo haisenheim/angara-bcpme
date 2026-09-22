@@ -8,19 +8,28 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class TableDocumentExportService
 {
-    public static function defaultLogoDataUri(): ?string
+    public static function defaultLogoFilesystemPath(): ?string
     {
         foreach (['img/logo-bcpme.png', 'img/logo.png'] as $rel) {
             $path = public_path($rel);
-            if (! File::isReadable($path)) {
-                continue;
+            if (File::isReadable($path)) {
+                return $path;
             }
-            $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
-
-            return 'data:'.$mime.';base64,'.base64_encode((string) File::get($path));
         }
 
         return null;
+    }
+
+    public static function defaultLogoDataUri(): ?string
+    {
+        $path = self::defaultLogoFilesystemPath();
+        if ($path === null) {
+            return null;
+        }
+
+        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) File::get($path));
     }
 
     /**

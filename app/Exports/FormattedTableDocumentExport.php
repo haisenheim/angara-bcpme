@@ -28,7 +28,7 @@ class FormattedTableDocumentExport implements FromView, ShouldAutoSize, WithTitl
             'headers' => $this->headers,
             'title' => $this->title,
             'subtitle' => $this->subtitle,
-            'logoDataUri' => TableDocumentExportService::defaultLogoDataUri(),
+            'logoFilesystemPath' => TableDocumentExportService::defaultLogoFilesystemPath(),
             'generatedAt' => now()->format('d/m/Y H:i'),
         ]);
     }

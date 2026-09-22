@@ -1,9 +1,9 @@
 <table>
     @php $colCount = max(1, count($headers)); @endphp
-    @if(!empty($logoDataUri))
+    @if(!empty($logoFilesystemPath))
         <tr>
             <td colspan="{{ $colCount }}" style="vertical-align:middle;padding-bottom:8px;">
-                <img src="{{ $logoDataUri }}" alt="" height="48" style="display:block;">
+                <img src="{{ $logoFilesystemPath }}" alt="" height="48" style="display:block;">
             </td>
         </tr>
     @endif
