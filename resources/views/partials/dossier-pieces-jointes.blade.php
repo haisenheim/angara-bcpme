@@ -3,6 +3,7 @@
   @param \App\Models\Dossier $dossier
   @param bool $showUpload  Afficher dépôt (défaut : true)
   @param string|null $routePiecesStore  Nom de route POST si showUpload
+  @param string|null $routePiecesDestroy  Nom de route DELETE (déduit de routePiecesStore si absent)
   @param string $modalId  ID unique du modal
   @param \Illuminate\Support\Collection|null $fichierTypes  Types pour le formulaire
 --}}
@@ -11,6 +12,7 @@
     $showUpload = (bool) ($showUpload ?? true);
     $modalId = $modalId ?? 'dossierPieceUploadModal';
     $fichierTypes = $fichierTypes ?? collect();
+    $routePiecesDestroy = $routePiecesDestroy ?? (isset($routePiecesStore) ? preg_replace('/\.store$/', '.destroy', $routePiecesStore) : null);
 @endphp
 @if($dossier)
 <div class="card border-0 shadow-sm mb-4">
@@ -34,6 +36,9 @@
                             <th>Fichier</th>
                             <th>Date et heure</th>
                             <th>Déposé par</th>
+                            @if($routePiecesDestroy)
+                                <th class="text-end" style="width: 1%;">Actions</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -49,6 +54,21 @@
                                 </td>
                                 <td>{{ $f->uploaded_at ? $f->uploaded_at->format('d/m/Y H:i') : '—' }}</td>
                                 <td>{{ $f->uploadedBy?->name ?? '—' }}</td>
+                                @if($routePiecesDestroy)
+                                    <td class="text-end">
+                                        @if($f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) auth()->id())
+                                            <form method="post" action="{{ route($routePiecesDestroy, ['token' => $dossier->token, 'piece' => $f->id]) }}" class="d-inline" onsubmit="return confirm('Supprimer cette pièce jointe ?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer la pièce que vous avez déposée">
+                                                    <i class="demo-psi-trash"></i>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>

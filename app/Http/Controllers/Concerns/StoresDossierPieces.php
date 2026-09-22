@@ -52,6 +52,38 @@ trait StoresDossierPieces
             ->with('success', 'La pièce a été enregistrée sur le dossier.');
     }
 
+    protected function completeDossierPieceDestroy(
+        Dossier $dossier,
+        Fichier $fichier,
+        string $redirectRouteName,
+        mixed $redirectRouteParameter = null
+    ): RedirectResponse {
+        if ((int) $fichier->dossier_id !== (int) $dossier->id) {
+            abort(404);
+        }
+
+        if ((int) $fichier->uploaded_by_user_id !== (int) auth()->id()) {
+            abort(403, 'Seul l’utilisateur ayant déposé cette pièce peut la supprimer.');
+        }
+
+        $this->deleteDossierPieceFileFromDisk($fichier->name);
+        $fichier->delete();
+
+        $redirectKey = $redirectRouteParameter ?? $dossier;
+
+        return redirect()
+            ->route($redirectRouteName, $redirectKey)
+            ->with('success', 'La pièce a été supprimée du dossier.');
+    }
+
+    protected function findDossierPiece(Dossier $dossier, int $pieceId): Fichier
+    {
+        return Fichier::query()
+            ->where('id', $pieceId)
+            ->where('dossier_id', $dossier->id)
+            ->firstOrFail();
+    }
+
     /**
      * Enregistre sous public/files/dossiers_pieces/ (PDF ou image).
      */
@@ -78,5 +110,17 @@ trait StoresDossierPieces
         $file->move($dir, $filename);
 
         return $entity.'/'.$filename;
+    }
+
+    private function deleteDossierPieceFileFromDisk(?string $relativePath): void
+    {
+        if (! $relativePath) {
+            return;
+        }
+
+        $full = public_path('files/'.$relativePath);
+        if (is_file($full)) {
+            @unlink($full);
+        }
     }
 }

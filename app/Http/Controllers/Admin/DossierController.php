@@ -67,4 +67,12 @@ class DossierController extends Controller
 
         return $this->completeDossierPieceUpload($request, $dossier, 'admin.dossiers.show', $dossier);
     }
+
+    public function destroyDossierPiece(string $token, int $piece)
+    {
+        $dossier = Dossier::query()->where('token', $token)->firstOrFail();
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceDestroy($dossier, $fichier, 'admin.dossiers.show', $dossier);
+    }
 }

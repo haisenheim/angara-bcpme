@@ -247,6 +247,18 @@ class DossierController extends Controller
         return $this->completeDossierPieceUpload($request, $dossier, 'ca.dossiers.show', $dossier);
     }
 
+    public function destroyDossierPiece(string $token, int $piece)
+    {
+        $dossier = Dossier::query()
+            ->where('token', $token)
+            ->where('agence_id', auth()->user()->agence_id)
+            ->firstOrFail();
+
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceDestroy($dossier, $fichier, 'ca.dossiers.show', $dossier);
+    }
+
     public function saveInstructionAgenceCaAvis(Request $request, string $token)
     {
         $data = $request->validate([

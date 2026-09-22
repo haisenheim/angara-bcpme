@@ -570,6 +570,15 @@ class DossierController extends Controller
         return $this->completeDossierPieceUpload($request, $dossier, 'analyste.dossiers.show', $dossier);
     }
 
+    public function destroyDossierPiece(string $token, int $piece)
+    {
+        $dossier = Dossier::query()->where('token', $token)->first();
+        $this->authorizeAnalysteDossier($dossier);
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceDestroy($dossier, $fichier, 'analyste.dossiers.show', $dossier);
+    }
+
     private function fillExploitationAfInstructionSectionsFromRequest(Dossier $dossier, Request $request): void
     {
         foreach (Dossier::exploitationAfInstructionSectionColumns() as $column) {

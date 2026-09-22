@@ -863,6 +863,23 @@ class PortfolioController extends Controller
         return $this->completeDossierPieceUpload($request, $dossier, $redirectRoute, $dossier->token);
     }
 
+    public function destroyDossierPiece(string $token, int $piece): RedirectResponse
+    {
+        $space = $this->resolveSpace();
+        $dossier = $this->dossierQueryForCurrentSpace($token)->firstOrFail();
+        $redirectRoute = $space['route'].'.dossiers.show';
+
+        if ($dossier->isInstructionClosed()) {
+            return redirect()
+                ->route($redirectRoute, $dossier->token)
+                ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');
+        }
+
+        $fichier = $this->findDossierPiece($dossier, $piece);
+
+        return $this->completeDossierPieceDestroy($dossier, $fichier, $redirectRoute, $dossier->token);
+    }
+
     public function assignRerxAnalysteRisques(Request $request, string $token)
     {
         $dossier = Dossier::query()
