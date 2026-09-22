@@ -21,7 +21,7 @@ class ClientEntreprisesTableExport implements FromView, ShouldAutoSize, WithTitl
 
     public function view(): View
     {
-        return view('exports.client_entreprises_excel', [
+        return view('Exports.client_entreprises_excel', [
             'rows' => $this->rows,
             'headers' => $this->headers,
         ]);

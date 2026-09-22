@@ -41,7 +41,7 @@ class TableDocumentExportService
 
         if ($format === 'pdf') {
             $pdf = app('dompdf.wrapper');
-            $pdf->loadView('exports.formatted_table_pdf', [
+            $pdf->loadView('Exports.formatted_table_pdf', [
                 'title' => $documentTitle,
                 'subtitle' => $subtitle,
                 'headers' => $headers,

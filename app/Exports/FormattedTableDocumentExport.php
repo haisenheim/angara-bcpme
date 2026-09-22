@@ -23,7 +23,7 @@ class FormattedTableDocumentExport implements FromView, ShouldAutoSize, WithTitl
 
     public function view(): View
     {
-        return view('exports.formatted_table_excel', [
+        return view('Exports.formatted_table_excel', [
             'rows' => $this->rows,
             'headers' => $this->headers,
             'title' => $this->title,
