@@ -9,6 +9,7 @@ import WorkflowStepper from '@/Components/workflow/WorkflowStepper.vue';
 import PoleCard from '@/Components/workflow/PoleCard.vue';
 import ActionPanel from '@/Components/workflow/ActionPanel.vue';
 import Timeline from '@/Components/workflow/Timeline.vue';
+import PiecesManager from '@/Components/workflow/PiecesManager.vue';
 
 const props = defineProps({
     space: Object,
@@ -21,6 +22,7 @@ const props = defineProps({
     delegation: Object,
     actions: Array,
     links: Object,
+    fichierTypes: { type: Array, default: () => [] },
 });
 
 const tabs = computed(() => [
@@ -47,7 +49,7 @@ const metrics = computed(() => [
     { label: 'Étape courante', value: props.dossier.currentStep || '—', sub: props.dossier.createdAt ? `Créé le ${props.dossier.createdAt}` : null, highlight: true },
 ]);
 
-const legacyTools = computed(() => [
+const toolLinks = computed(() => [
     ['Grille de notation & instruction', 'table_view', props.links.instruction],
     ['Synthèse d\'analyse critique', 'summarize', props.links.analyseCritique],
     ['Fiche entreprise & grille des engagements', 'storefront', props.links.entreprise],
@@ -78,7 +80,6 @@ const legacyTools = computed(() => [
             <div class="flex shrink-0 flex-wrap items-center gap-2.5">
                 <Button v-if="links.instructionPdf" :href="links.instructionPdf" icon="picture_as_pdf">Fiche d'instruction PDF</Button>
                 <Button v-if="links.analyseCritiquePdf" :href="links.analyseCritiquePdf" icon="description">Synthèse PDF</Button>
-                <Button :href="links.legacy" icon="open_in_new">Ancienne interface</Button>
             </div>
         </div>
 
@@ -112,11 +113,11 @@ const legacyTools = computed(() => [
             <span v-if="t.count" class="ml-1.5 rounded-full bg-secondary/15 px-1.5 text-[10px] font-bold text-secondary">{{ t.count }}</span>
         </button>
         <a
-            v-for="[label, icon, href] in legacyTools"
+            v-for="[label, icon, href] in toolLinks"
             :key="href"
             :href="href"
             class="flex items-center gap-1 whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-on-surface-variant hover:text-on-surface"
-            :title="'Ouvre l\'écran existant'"
+            
         >
             {{ label }} <Icon name="open_in_new" class="text-sm" />
         </a>
@@ -160,24 +161,7 @@ const legacyTools = computed(() => [
                 </div>
             </Card>
 
-            <Card v-else-if="tab === 'pieces'" title="Pièces justificatives">
-                <template #actions>
-                    <a :href="links.legacy" class="text-xs font-semibold text-secondary hover:underline">Déposer une pièce</a>
-                </template>
-                <ul class="divide-y divide-surface-container-highest text-xs">
-                    <li v-for="piece in pieces" :key="piece.id" class="flex items-center justify-between gap-3 py-2.5">
-                        <div class="flex min-w-0 items-center gap-2">
-                            <Icon name="draft" class="text-on-surface-variant" />
-                            <div class="min-w-0">
-                                <a :href="piece.url" target="_blank" rel="noopener" class="block truncate font-semibold text-on-surface hover:text-secondary">{{ piece.name }}</a>
-                                <span class="text-[11px] text-on-surface-variant">{{ piece.type ?? 'Type non précisé' }}</span>
-                            </div>
-                        </div>
-                        <span class="shrink-0 text-[11px] text-on-surface-variant">{{ piece.uploadedBy }} • {{ piece.uploadedAt }}</span>
-                    </li>
-                    <li v-if="!pieces.length" class="py-4 text-center text-on-surface-variant">Aucune pièce déposée.</li>
-                </ul>
-            </Card>
+            <PiecesManager v-else-if="tab === 'pieces'" :pieces="pieces" :types="fichierTypes" :store-url="links.piecesStore" />
 
             <Card v-else title="Historique complet">
                 <Timeline :events="timeline" />

@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => fn () => [
                 'success' => $request->session()->get('success') ?? $request->session()->get('status'),
                 'error' => $request->session()->get('error'),
+                'info' => $request->session()->get('info'),
             ],
             'urls' => fn () => [
                 'home' => route('home'),

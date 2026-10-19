@@ -92,55 +92,94 @@ class PortfolioController extends Controller
     public function entreprisesIndex(Request $request)
     {
         $space = $this->resolveSpace();
-        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
         $listeKind = in_array($space['route'], ['dg', 'dga'], true) ? 'clients' : 'all';
         $prospectFilter = $listeKind === 'clients' ? false : null;
 
         $entreprises = $this->entreprisesFilteredListQuery($request, $prospectFilter)->orderByDesc('id')->paginate(25)->withQueryString();
 
-        $agenceIds = Entreprise::query()->whereNotNull('agence_id')->distinct()->pluck('agence_id');
-        $gestionnaireIds = Entreprise::query()->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
-        $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
-        $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
-
-        return view('RoleSpace.entreprises.index', compact('space', 'entreprises', 'structurationStatus', 'agences', 'gestionnaires', 'listeKind'));
+        return $this->renderEntreprisesList($request, $space, $entreprises, $listeKind,
+            $space['route'].'.entreprises.export');
     }
 
     /**
-     * Liste prospects (DG / DGA) : vue transverse, distincte des clients.
+     * Liste prospects (DG / DGA, conformité, juridique) : vue transverse, distincte des clients.
      */
     public function prospectsIndex(Request $request)
     {
         $space = $this->resolveSpace();
         abort_unless(in_array($space['route'], ['dg', 'dga', 'conformite', 'juridique'], true), 404);
 
-        $structurationStatus = null;
-        $listeKind = 'prospects';
-
         $entreprises = $this->entreprisesFilteredListQuery($request, true)->orderByDesc('id')->paginate(25)->withQueryString();
+        $exportRoute = in_array($space['route'], ['conformite', 'juridique'], true)
+            ? $space['route'].'.tous-prospects.export'
+            : $space['route'].'.prospects.export';
 
+        return $this->renderEntreprisesList($request, $space, $entreprises, 'prospects', $exportRoute);
+    }
+
+    /**
+     * Page Inertia commune aux listes entreprises / clients / prospects des espaces centraux.
+     */
+    protected function renderEntreprisesList(Request $request, array $space, $entreprises, string $listeKind, string $exportRoute): \Inertia\Response
+    {
         $agenceIds = Entreprise::query()->whereNotNull('agence_id')->distinct()->pluck('agence_id');
         $gestionnaireIds = Entreprise::query()->whereNotNull('gestionnaire_id')->distinct()->pluck('gestionnaire_id');
-        $agences = Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->get(['id', 'name']);
-        $gestionnaires = User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->get(['id', 'name']);
+        $labels = [
+            'clients' => ['Clients', 'Vue transverse de tous les clients du portefeuille.', 'client(s)'],
+            'prospects' => ['Prospects', 'Vue transverse de tous les prospects du portefeuille.', 'prospect(s)'],
+            'all' => ['Entreprises', 'Vue transverse de toutes les entreprises du portefeuille.', 'entreprise(s)'],
+        ][$listeKind];
+        $withStructuration = $listeKind !== 'prospects';
 
-        $portfolioProspectsListRoute = in_array($space['route'], ['conformite', 'juridique'], true)
-            ? $space['route'].'.tous-prospects.index'
-            : null;
-        $portfolioProspectsExportRoute = in_array($space['route'], ['conformite', 'juridique'], true)
-            ? $space['route'].'.tous-prospects.export'
-            : null;
+        $columns = [['key' => 'entreprise', 'label' => 'Entreprise']];
+        if ($listeKind === 'all') {
+            $columns[] = ['key' => 'type', 'label' => 'Statut'];
+        }
+        if ($withStructuration) {
+            $columns[] = ['key' => 'structuration', 'label' => 'Structuration'];
+        }
+        $columns[] = ['key' => 'agence', 'label' => 'Agence'];
+        $columns[] = ['key' => 'gestionnaire', 'label' => 'Gestionnaire'];
+        $columns[] = ['key' => 'dossiers', 'label' => 'Dossiers', 'align' => 'right'];
 
-        return view('RoleSpace.entreprises.index', compact(
-            'space',
-            'entreprises',
-            'structurationStatus',
-            'agences',
-            'gestionnaires',
-            'listeKind',
-            'portfolioProspectsListRoute',
-            'portfolioProspectsExportRoute',
-        ));
+        $table = \App\Support\Inertia\DataTable::make($entreprises, $request)
+            ->columns($columns)
+            ->row(fn (Entreprise $e) => [
+                'href' => route($space['route'].'.entreprises.show', $e->token),
+                'cells' => [
+                    'entreprise' => ['title' => $e->name, 'subtitle' => $e->forme?->name],
+                    'type' => ['badge' => $e->prospect ? 'Prospect' : 'Client', 'variant' => $e->prospect ? 'warning' : 'success'],
+                    'structuration' => $e->promu_client_at
+                        ? \App\Support\Inertia\Badge::fromPresentation(DossierEntreeRelation::clientStructurationPresentation($e->dossierEntreeRelation))
+                        : null,
+                    'agence' => $e->agence?->name,
+                    'gestionnaire' => $e->gestionnaire?->name ?? $e->user?->name,
+                    'dossiers' => $e->dossiers_count,
+                ],
+            ])
+            ->empty('Aucune entreprise trouvée.');
+
+        if ($withStructuration) {
+            $table->select('client_structuration_status', 'Structuration', DossierEntreeRelation::clientStructurationStatusFilterLabels());
+        }
+        $table->select('agence_id', 'Agence', Agence::query()->whereIn('id', $agenceIds)->orderBy('name')->pluck('name', 'id'), 'Toutes')
+            ->select('gestionnaire_id', 'Gestionnaire', User::query()->whereIn('id', $gestionnaireIds)->orderBy('name')->pluck('name', 'id'));
+        if ($withStructuration) {
+            $table->date('promu_client_from', 'Promu client du')->date('promu_client_to', 'au');
+        }
+        $table->export('Excel', route($exportRoute, ['format' => 'xlsx']), 'table_view')
+            ->export('PDF', route($exportRoute, ['format' => 'pdf']), 'picture_as_pdf');
+
+        return \Inertia\Inertia::render('Entreprises/Index', [
+            'title' => $labels[0],
+            'subtitle' => $labels[1],
+            'countLabel' => $labels[2],
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route($space['route'].'.dashboard')],
+                ['label' => $labels[0]],
+            ],
+        ]);
     }
 
     public function entreprisesExport(Request $request)
@@ -212,44 +251,35 @@ class PortfolioController extends Controller
 
         $this->assertPortfolioEntrepriseAccess($item, $space);
 
-        $item->load([
-            'user',
-            'forme',
-            'filiere',
-            'branche',
-            'produit',
-            'produits.filiere',
-            'produits.branche',
-            'appuis.type',
-            'critereAvis.user',
-            'village',
-            'quartier',
-            'arrondissement',
-            'departement',
-            'region',
-            'agence.representation',
-            'tiers.person',
-            'tiers.company.produit',
-            'dossiers.programme',
-            'dossiers.analyste',
-            'dossiers.gestionnaire',
-            'dossierEntreeRelation.qualificationUser',
-            'dossierEntreeRelation.programmesSubmittedBy',
-            'dossierEntreeRelation.qualificationValidatedByAgenceUser',
-            'dossierEntreeRelation.instructionValidatedBy',
-            'dossierEntreeRelation.programmeSelections.programme',
-            'dossierEntreeRelation.programmeSelections.instructionDossier',
-            'dossierAnalyseCritique',
-            'juridiqueAvisUser',
-            'conformiteAvisUser',
-            'promuClientUser',
-            'prospectRejectedUser',
+        $item->load(\App\Services\Inertia\EntrepriseSheetPresenter::RELATIONS);
+
+        $sheet = app(\App\Services\Inertia\EntrepriseSheetPresenter::class)->present(
+            $item,
+            $this->buildQuestionnaireResults($item),
+            $item->piecesExigiblesChecklist(),
+            ['routePrefix' => $space['route']]
+        );
+
+        $p = $space['route'];
+        $listLabel = in_array($p, ['dg', 'dga'], true) ? 'Clients' : 'Entreprises';
+        $link = fn (string $name, string $label, string $icon) => \Illuminate\Support\Facades\Route::has($name)
+            ? ['label' => $label, 'icon' => $icon, 'href' => route($name, $item->token)]
+            : null;
+        $engagementsRoute = $p === 'analyste-credit' ? 'analyste-credit.entreprise.get.engagements' : "$p.entreprises.engagements";
+
+        return \Inertia\Inertia::render('Entreprises/Show', $sheet + [
+            'links' => array_values(array_filter([
+                $link("$p.entreprises.fiche.pdf", 'Fiche PDF', 'picture_as_pdf'),
+                $link($engagementsRoute, 'Grille des engagements', 'table_view'),
+                $link("$p.entreprises.pieces", 'Pièces exigibles', 'checklist'),
+            ])),
+            'actions' => [],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route("$p.dashboard")],
+                ['label' => $listLabel, 'href' => route("$p.entreprises.index")],
+                ['label' => \Illuminate\Support\Str::limit($item->name, 40)],
+            ],
         ]);
-
-        $mr = $this->buildQuestionnaireResults($item);
-        $checklist = $item->piecesExigiblesChecklist();
-
-        return view('RoleSpace.entreprises.show', compact('space', 'item', 'mr', 'checklist'));
     }
 
     /**
@@ -436,9 +466,20 @@ class PortfolioController extends Controller
 
         // DG / DGA : même périmètre que la fiche entreprise (consultation transverse).
 
+        $sheet = app(\App\Services\Inertia\EntrepriseSheetPresenter::class);
         $checklist = $entreprise->piecesExigiblesChecklist();
+        $p = $space['route'];
 
-        return view('RoleSpace.entreprises.pieces', compact('space', 'entreprise', 'checklist'));
+        return \Inertia\Inertia::render('Entreprises/Pieces', [
+            'entreprise' => ['name' => $entreprise->name, 'token' => $entreprise->token,
+                'href' => route("$p.entreprises.show", $entreprise->token)],
+            'checklist' => $sheet->checklist($checklist),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route("$p.dashboard")],
+                ['label' => \Illuminate\Support\Str::limit($entreprise->name, 40), 'href' => route("$p.entreprises.show", $entreprise->token)],
+                ['label' => 'Pièces exigibles'],
+            ],
+        ]);
     }
 
     public function dossiersIndex()
@@ -462,27 +503,75 @@ class PortfolioController extends Controller
         $query = $this->dossiersFilteredListQuery(request(), $space, $dossiersVue, $dossiersFilter);
         $dossiers = $query->orderByDesc('id')->paginate(25)->withQueryString();
 
-        $portfolioDossiersIndexRoute = null;
-        $portfolioDossiersExportRoute = null;
-        $portfolioDossiersShowRoute = null;
-        if ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute()) {
-            $portfolioDossiersIndexRoute = 'juridique.portefeuille.dossiers.index';
-            $portfolioDossiersExportRoute = 'juridique.portefeuille.dossiers.export';
-            $portfolioDossiersShowRoute = 'juridique.portefeuille.dossiers.show';
-        }
-        $dossiersListUsesProgrammesLabel = in_array($space['route'], ['dg', 'dga'], true)
-            || $portfolioDossiersShowRoute !== null;
+        $p = $space['route'];
+        $isDgDga = in_array($p, ['dg', 'dga'], true);
+        $portefeuilleJuridique = $p === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute();
+        $showRoute = $portefeuilleJuridique ? 'juridique.portefeuille.dossiers.show' : "$p.dossiers.show";
+        $exportRoute = $portefeuilleJuridique ? 'juridique.portefeuille.dossiers.export' : "$p.dossiers.export";
+        $programmesLabel = $isDgDga || $portefeuilleJuridique || $p === 'conformite';
 
-        return view('RoleSpace.dossiers.index', compact(
-            'space',
-            'dossiers',
-            'dossiersFilter',
-            'dossiersVue',
-            'portfolioDossiersIndexRoute',
-            'portfolioDossiersExportRoute',
-            'portfolioDossiersShowRoute',
-            'dossiersListUsesProgrammesLabel',
-        ));
+        [$title, $subtitle] = match (true) {
+            $isDgDga && $dossiersVue === 'direction_pending' => ['Dossiers en attente de votre avis (direction)',
+                'Dossiers transmis à la direction par le responsable risques, sans conclusion de la direction.'],
+            $isDgDga => ['Dossiers validés par le chef d\'agence',
+                'Tous les dossiers d\'instruction ayant reçu la validation du chef d\'agence, à tous les stades du circuit.'],
+            $p === 'respexp' && $dossiersFilter === 'a_affecter' => ['Dossiers à affecter', 'Dossiers sans analyste financier affecté.'],
+            $p === 'respexp' => ['Dossiers d\'instruction', 'Consultation, cotation analyste, avis de crédit et validation des engagements.'],
+            $portefeuilleJuridique => ['Portefeuille des dossiers', 'Vue transverse : tous les dossiers d\'instruction (consultation).'],
+            $p === 'juridique' => ['Dossiers d\'instruction', 'Dossiers transmis au pôle juridique.'],
+            $p === 'analyste-juridique' => ['Mes dossiers', 'Dossiers qui vous sont affectés par le responsable juridique.'],
+            $p === 'reng' => ['Dossiers d\'instruction', 'Dossiers transmis par le pôle juridique au responsable engagements.'],
+            $p === 'analyste-credit' => ['Mes dossiers', 'Dossiers du pôle engagements qui vous sont affectés.'],
+            $p === 'rerx' => ['Dossiers d\'instruction', 'Dossiers transmis par le responsable engagements au responsable risques.'],
+            $p === 'analyste-risques' => ['Mes dossiers', 'Dossiers du pôle risques qui vous sont affectés.'],
+            $p === 'conformite' => ['Dossiers d\'instruction', 'Vue transverse : tous les dossiers (toutes agences, tous stades) — consultation.'],
+            default => ['Dossiers d\'instruction', 'Vue transverse des dossiers liés aux entreprises.'],
+        };
+
+        $columns = [
+            ['key' => 'entreprise', 'label' => 'Entreprise'],
+            ['key' => 'programme', 'label' => 'Programme(s)'],
+            ['key' => 'analyste', 'label' => 'Analyste'],
+        ];
+        if ($p === 'respexp') {
+            $columns[] = ['key' => 'cotation', 'label' => 'Cotation'];
+        }
+        $columns[] = ['key' => 'gestionnaire', 'label' => 'Gestionnaire'];
+        $columns[] = ['key' => 'statut', 'label' => 'Statut'];
+        $columns[] = ['key' => 'etape', 'label' => 'Étape'];
+
+        $table = \App\Support\Inertia\DataTable::make($dossiers, request())
+            ->columns($columns)
+            ->row(fn (Dossier $d) => [
+                'href' => route($showRoute, $d->token),
+                'cells' => [
+                    'entreprise' => ['title' => $d->entreprise?->name ?? '—', 'subtitle' => $d->created_at?->format('d/m/Y')],
+                    'programme' => $programmesLabel ? ($d->programmesLabel() ?: null) : $d->programme?->name,
+                    'analyste' => $d->analyste?->name,
+                    'cotation' => $d->exploitation_analyste_assigned_at?->format('d/m/Y'),
+                    'gestionnaire' => $d->gestionnaire?->name,
+                    'statut' => \App\Support\Inertia\Badge::fromPresentation($d->instructionStatutPresentation()),
+                    'etape' => $d->currentOrganisationLabel() ?: null,
+                ],
+            ])
+            ->search('Entreprise, programme…')
+            ->select('instruction_state', 'Instruction', ['pending' => 'En attente', 'in_progress' => 'En cours'], 'Toutes')
+            ->select('instruction_statut', 'Statut', \App\Services\DossierInstructionStatutService::filterLabels())
+            ->date('created_from', 'Créé du')
+            ->date('created_to', 'au')
+            ->export('Excel', route($exportRoute, ['format' => 'xlsx', 'vue' => $dossiersVue]), 'table_view')
+            ->export('PDF', route($exportRoute, ['format' => 'pdf', 'vue' => $dossiersVue]), 'picture_as_pdf')
+            ->empty('Aucun dossier.');
+
+        return \Inertia\Inertia::render('Dossiers/Index', [
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route("$p.dashboard")],
+                ['label' => $title],
+            ],
+        ]);
     }
 
     /**
@@ -621,186 +710,45 @@ class PortfolioController extends Controller
     public function dossierShow(string $token)
     {
         $space = $this->resolveSpace();
-        $with = [
-            'entreprise',
-            'programme',
-            'instructionProgrammes.programme',
-            'analyste',
-            'gestionnaire',
-            'agence',
-            'indicateurs',
-            'reponses',
-            'chefFiliereSubmittedToAgenceBy',
-            'instructionAgenceValidatedBy',
-            'instructionAgenceRejectedBy',
+        $route = $space['route'];
+
+        $dossier = $this->dossierQueryForCurrentSpace($token)
+            ->with(\App\Services\Inertia\DossierInstructionPagePresenter::RELATIONS)
+            ->firstOrFail();
+
+        $readonly = in_array($route, ['gestionnaire', 'conformite'], true)
+            || ($route === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute());
+
+        // Espace responsable → profil des analystes qu'il peut affecter.
+        $assignable = [
+            'respexp' => ['role_analyste_financier', 17],
+            'juridique' => ['role_analyste_juridique', 19],
+            'reng' => ['role_analyste_credit', 20],
+            'rerx' => ['role_analyste_risques', 18],
         ];
-        $hubSpace = in_array($space['route'], ['respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit', 'rerx', 'analyste-risques', 'dg', 'dga', 'conformite'], true);
-        if ($hubSpace) {
-            $with[] = 'exploitationAvisCreditUser';
-            $with[] = 'exploitationEngagementsDecisionUser';
-            $with[] = 'exploitationAnalysteAssignedBy';
-            $with[] = 'exploitationAnalysteTransmittedToExploitationBy';
-            $with[] = 'instructionCaTransmittedToExploitationBy';
-            $with[] = 'juridiqueInstructionSubmittedBy';
-        }
-        if (in_array($space['route'], ['juridique', 'analyste-juridique'], true)) {
-            $with[] = 'juridiqueAnalysteUser';
-            $with[] = 'juridiqueAnalysteAssignedBy';
-            $with[] = 'juridiqueAnalysteSubmittedToRejuBy';
-            $with[] = 'juridiqueSubmittedToEngagementsBy';
-        }
-        if (in_array($space['route'], ['reng', 'analyste-credit', 'rerx'], true)) {
-            $with[] = 'rengAnalysteCreditUser';
-            $with[] = 'rengAnalysteCreditAssignedBy';
-            $with[] = 'rengAnalysteCreditSubmittedBy';
-            $with[] = 'rengSubmittedToRisquesBy';
-            $with[] = 'juridiqueSubmittedToEngagementsBy';
-        }
-        if ($space['route'] === 'analyste-credit') {
-            $with[] = 'juridiqueAnalysteUser';
-            $with[] = 'juridiqueAnalysteAssignedBy';
-            $with[] = 'juridiqueAnalysteSubmittedToRejuBy';
-            $with[] = 'rerxAnalysteRisquesUser';
-            $with[] = 'rerxAnalysteRisquesAssignedBy';
-            $with[] = 'rerxAnalysteRisquesSubmittedBy';
-            $with[] = 'rerxSubmittedToDirectionBy';
-        }
-        if (in_array($space['route'], ['rerx', 'analyste-risques', 'dg', 'dga', 'conformite'], true)
-            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute())) {
-            $with[] = 'rerxAnalysteRisquesUser';
-            $with[] = 'rerxAnalysteRisquesAssignedBy';
-            $with[] = 'rerxAnalysteRisquesSubmittedBy';
-            $with[] = 'rerxSubmittedToDirectionBy';
-        }
-
-        $with[] = 'fichiersDossier.type';
-        $with[] = 'fichiersDossier.uploadedBy';
-
-        $dossier = $this->dossierQueryForCurrentSpace($token)->with($with)->firstOrFail();
-
-        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
-
-        $analystesExploitation = collect();
-        $analystesJuridique = collect();
-        $analystesCredit = collect();
-        $analystesRisques = collect();
-
-        if ($space['route'] === 'respexp') {
-            $profilInstructionId = (int) config('angara.role_analyste_financier', 17);
-            if ($profilInstructionId < 1) {
-                $profilInstructionId = 17;
-            }
-
-            // Tous les utilisateurs au profil instruction : même liste pour 1re affectation ou réaffectation
-            $analystesExploitation = User::query()
-                ->where('role_id', $profilInstructionId)
-                ->where(function ($q) {
-                    $q->where('active', true)
-                        ->orWhere('active', 1)
-                        ->orWhereNull('active');
-                })
+        $analystes = [];
+        if (! $readonly && isset($assignable[$route])) {
+            [$key, $default] = $assignable[$route];
+            $analystes[$route] = User::query()
+                ->where('role_id', (int) (config('angara.'.$key) ?: $default))
+                ->where(fn ($q) => $q->where('active', true)->orWhereNull('active'))
                 ->with('agence:id,name')
                 ->orderBy('name')
-                ->get(['id', 'name', 'email', 'agence_id']);
+                ->get(['id', 'name', 'agence_id']);
         }
 
-        if ($space['route'] === 'juridique') {
-            $profilAjId = (int) config('angara.role_analyste_juridique', 19);
-            if ($profilAjId < 1) {
-                $profilAjId = 19;
-            }
-            $analystesJuridique = User::query()
-                ->where('role_id', $profilAjId)
-                ->where(function ($q) {
-                    $q->where('active', true)
-                        ->orWhere('active', 1)
-                        ->orWhereNull('active');
-                })
-                ->with('agence:id,name')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'agence_id']);
-        }
+        $routes = $this->roleSpaceDossierRoutesForViews($space);
+        $props = app(\App\Services\Inertia\DossierInstructionPagePresenter::class)->present(
+            $dossier, $space, auth()->user(), $readonly, $analystes, $routes
+        );
+        $props['fichierTypes'] = $readonly ? [] : FichierType::query()->orderBy('name')->get(['id', 'name']);
+        $props['breadcrumb'] = [
+            ['label' => 'Tableau de bord', 'href' => route("$route.dashboard")],
+            ['label' => 'Dossiers d\'instruction', 'href' => \Illuminate\Support\Facades\Route::has($routes['list']) ? route($routes['list']) : null],
+            ['label' => $props['dossier']['reference']],
+        ];
 
-        if ($space['route'] === 'reng') {
-            $profilAcId = (int) config('angara.role_analyste_credit', 20);
-            if ($profilAcId < 1) {
-                $profilAcId = 20;
-            }
-            $analystesCredit = User::query()
-                ->where('role_id', $profilAcId)
-                ->where(function ($q) {
-                    $q->where('active', true)
-                        ->orWhere('active', 1)
-                        ->orWhereNull('active');
-                })
-                ->with('agence:id,name')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'agence_id']);
-        }
-
-        if ($space['route'] === 'rerx') {
-            $profilArId = (int) config('angara.role_analyste_risques', 18);
-            if ($profilArId < 1) {
-                $profilArId = 18;
-            }
-            $analystesRisques = User::query()
-                ->where('role_id', $profilArId)
-                ->where(function ($q) {
-                    $q->where('active', true)
-                        ->orWhere('active', 1)
-                        ->orWhereNull('active');
-                })
-                ->with('agence:id,name')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'agence_id']);
-        }
-
-        $exploitationSteps = $hubSpace
-            ? $dossier->exploitationWorkflowSteps()
-            : [];
-
-        $respexpInstructionLocked = $space['route'] === 'respexp'
-            && (bool) $dossier->analyste_id
-            && ! $dossier->isInstructionVisibleToResponsableExploitation();
-
-        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
-
-        $piecesModalId = 'dossierPieceUploadModal_'.preg_replace('/\W+/', '_', $space['route']);
-
-        $delegation = app(\App\Services\InstructionDelegationService::class);
-        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
-        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
-        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
-
-        $readonly = in_array($space['route'], ['gestionnaire', 'conformite'], true)
-            || ($space['route'] === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute());
-        if ($readonly) {
-            $canCloseInstruction = false;
-        }
-
-        $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
-        $roleSpaceDossiersRoutePrefix = $routesForViews['prefix'];
-        $dossiersListRoute = $routesForViews['list'];
-
-        return view('RoleSpace.dossiers.show', compact(
-            'space',
-            'dossier',
-            'analystesExploitation',
-            'analystesJuridique',
-            'analystesCredit',
-            'analystesRisques',
-            'exploitationSteps',
-            'respexpInstructionLocked',
-            'instructionConsultation',
-            'fichierTypes',
-            'piecesModalId',
-            'canCloseInstruction',
-            'instructionClosureRuleDescription',
-            'instructionClosureStatutLabel',
-            'readonly',
-            'roleSpaceDossiersRoutePrefix',
-            'dossiersListRoute',
-        ));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     /**

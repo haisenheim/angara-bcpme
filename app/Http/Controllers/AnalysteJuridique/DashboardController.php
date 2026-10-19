@@ -9,9 +9,21 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('AnalysteJuridique.dashboard');
+        return $this->renderInertiaDashboard('Mon espace', [
+            ['key' => 'dossiers_assignes', 'label' => 'Dossiers affectés', 'icon' => 'folder_shared', 'href' => $this->routeIfExists('analyste-juridique.dossiers.index')],
+            ['key' => 'a_traiter', 'label' => 'À traiter', 'icon' => 'edit_note', 'tone' => 'warning'],
+            ['key' => 'soumis_reju', 'label' => 'Soumis au resp. juridique', 'icon' => 'task_alt', 'tone' => 'success'],
+            ['key' => 'en_retard', 'label' => 'En retard', 'icon' => 'schedule', 'tone' => 'warning'],
+        ], fn () => $this->getStats()->getData(true), fn () => collect($this->getTodos()->getData(true)['todos'] ?? [])
+            ->map(fn ($t) => $t + [
+                'when_human' => $t['assigned_human'] ?? null,
+                'kind' => ['label' => 'Affecté', 'variant' => 'info'],
+                'href' => $this->routeIfExists('analyste-juridique.dossiers.show', $t['token']),
+            ])->values()->all());
     }
 
     public function getStats()

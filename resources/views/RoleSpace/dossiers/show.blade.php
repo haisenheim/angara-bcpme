@@ -373,11 +373,6 @@
         <x-statut-badge :statut="$dossier->instructionStatutPresentation()" :show-detail="false" />
     </div>
     <p class="text-body-secondary mb-0 mt-1">{{ $dossier->entreprise?->name ?? 'Entreprise non renseignée' }}</p>
-    @if(\Illuminate\Support\Facades\Route::has($spaceRoute.'.v2.dossiers.show'))
-        <a href="{{ route($spaceRoute.'.v2.dossiers.show', $dossier->token) }}" class="btn btn-sm btn-outline-secondary mt-2">
-            Nouvelle interface (aperçu)
-        </a>
-    @endif
     <div class="d-flex flex-wrap gap-2 mt-2">
         <span class="badge bg-light text-dark border">
             <span class="text-muted">Agence :</span> <strong>{{ $dossier->agence?->name ?? '—' }}</strong>

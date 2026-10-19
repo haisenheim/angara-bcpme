@@ -21,39 +21,67 @@ class ProspectReviewController extends Controller
 
     public function indexJuridique()
     {
-        $items = $this->openProspectsQuery()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
-
-        return view('Prospects.review_index', [
-            'title' => 'Prospects — avis juridique',
-            'role' => 'juridique',
-            'items' => $items,
-            'exportRoute' => route('juridique.prospects.export'),
-        ]);
+        return $this->renderReviewList('juridique', 'open', 'Prospects — avis juridique',
+            $this->openProspectsQuery()->orderBy('prospect_submitted_at', 'asc'), route('juridique.prospects.export'));
     }
 
     public function indexConformite()
     {
-        $items = $this->openProspectsQuery()->with('agence')->orderBy('prospect_submitted_at', 'asc')->get();
-
-        return view('Prospects.review_index', [
-            'title' => 'Prospects — avis conformité',
-            'role' => 'conformite',
-            'items' => $items,
-            'listMode' => 'open',
-            'exportRoute' => route('conformite.prospects.export'),
-        ]);
+        return $this->renderReviewList('conformite', 'open', 'Prospects — avis conformité',
+            $this->openProspectsQuery()->orderBy('prospect_submitted_at', 'asc'), route('conformite.prospects.export'));
     }
 
     public function indexConformiteTreated()
     {
-        $items = $this->closedProspectsQuery()->with('agence')->orderByRaw('COALESCE(promu_client_at, prospect_rejected_at) DESC')->get();
+        return $this->renderReviewList('conformite', 'treated', 'Dossiers traités — avis conformité',
+            $this->closedProspectsQuery()->orderByRaw('COALESCE(promu_client_at, prospect_rejected_at) DESC'), null);
+    }
 
-        return view('Prospects.review_index', [
-            'title' => 'Dossiers traités — avis conformité',
-            'role' => 'conformite',
-            'items' => $items,
-            'listMode' => 'treated',
-            'exportRoute' => null,
+    /**
+     * Liste Inertia des prospects soumis à avis (juridique / conformité).
+     */
+    private function renderReviewList(string $role, string $mode, string $title, $query, ?string $exportUrl): \Inertia\Response
+    {
+        $avisField = $role === 'juridique' ? 'juridique_avis_at' : 'conformite_avis_at';
+        $items = $query->with('agence')->paginate(25)->withQueryString();
+
+        $table = \App\Support\Inertia\DataTable::make($items)
+            ->columns([
+                ['key' => 'name', 'label' => 'Dénomination'],
+                ['key' => 'soumis', 'label' => 'Soumis le'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'statut', 'label' => 'Statut'],
+            ])
+            ->row(fn (Entreprise $e) => [
+                'href' => route("$role.prospects.show", $e->token),
+                'cells' => [
+                    'name' => ['title' => $e->name, 'subtitle' => $e->rccm],
+                    'soumis' => $e->prospect_submitted_at ? \Carbon\Carbon::parse($e->prospect_submitted_at)->format('d/m/Y H:i') : null,
+                    'agence' => $e->agence?->name,
+                    'statut' => match (true) {
+                        $e->promu_client_at !== null => ['badge' => 'Promu client', 'variant' => 'success'],
+                        $e->prospect_rejected_at !== null => ['badge' => 'Refusé', 'variant' => 'danger'],
+                        $e->{$avisField} !== null => ['badge' => 'Avis rendu — modifiable', 'variant' => 'success'],
+                        default => ['badge' => 'En attente de votre avis', 'variant' => 'warning'],
+                    },
+                ],
+            ])
+            ->empty($mode === 'treated' ? 'Aucun dossier traité.' : 'Aucun prospect en attente d\'avis.');
+        if ($exportUrl) {
+            $table->export('Excel', $exportUrl.'?format=xlsx', 'table_view')->export('PDF', $exportUrl.'?format=pdf', 'picture_as_pdf');
+        }
+
+        return \Inertia\Inertia::render('Entreprises/Index', [
+            'title' => $title,
+            'subtitle' => $mode === 'treated'
+                ? 'Prospects dont le circuit est clos par le chef d\'agence (lecture seule).'
+                : 'Prospects soumis par les gestionnaires, en attente de décision du chef d\'agence.',
+            'countLabel' => 'prospect(s)',
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route("$role.dashboard")],
+                ['label' => $title],
+            ],
         ]);
     }
 
@@ -89,42 +117,12 @@ class ProspectReviewController extends Controller
 
     public function showJuridique(string $token)
     {
-        $item = $this->findProspectForReview($token);
-        if (! $item) {
-            abort(404);
-        }
-        [$item, $mr, $checklist] = $this->prepareReviewPayload($item);
-
-        $avisLocked = $item->isProspectAvisCircuitClosed();
-
-        return view('Prospects.review_show', [
-            'role' => 'juridique',
-            'item' => $item,
-            'mr' => $mr,
-            'checklist' => $checklist,
-            'avisLocked' => $avisLocked,
-            'canEditAvis' => ! $avisLocked,
-        ]);
+        return $this->renderReview('juridique', $token);
     }
 
     public function showConformite(string $token)
     {
-        $item = $this->findProspectForReview($token);
-        if (! $item) {
-            abort(404);
-        }
-        [$item, $mr, $checklist] = $this->prepareReviewPayload($item);
-
-        $avisLocked = $item->isProspectAvisCircuitClosed();
-
-        return view('Prospects.review_show', [
-            'role' => 'conformite',
-            'item' => $item,
-            'mr' => $mr,
-            'checklist' => $checklist,
-            'avisLocked' => $avisLocked,
-            'canEditAvis' => ! $avisLocked,
-        ]);
+        return $this->renderReview('conformite', $token);
     }
 
     public function storeJuridique(Request $request, string $token)
@@ -257,6 +255,55 @@ class ProspectReviewController extends Controller
         Session::flash('success', 'Avis conformité enregistré le '.now()->format('d/m/Y à H:i').'.');
 
         return redirect()->route('conformite.prospects.show', $token);
+    }
+
+    /**
+     * Fiche prospect (page Inertia Entreprises/Show) avec l'action « avis » du métier.
+     */
+    private function renderReview(string $role, string $token): \Inertia\Response
+    {
+        $item = $this->findProspectForReview($token);
+        if (! $item) {
+            abort(404);
+        }
+        $item->load(\App\Services\Inertia\EntrepriseSheetPresenter::RELATIONS);
+
+        $sheet = app(\App\Services\Inertia\EntrepriseSheetPresenter::class)->present(
+            $item, $this->buildQuestionnaireResults($item), $item->piecesExigiblesChecklist(),
+            ['routePrefix' => $role]
+        );
+
+        $field = $role === 'juridique' ? 'juridique_avis' : 'conformite_avis';
+        $label = $role === 'juridique' ? 'avis juridique' : 'avis conformité';
+        $workflowActions = [];
+        if (! $item->isProspectAvisCircuitClosed()) {
+            $workflowActions[] = [
+                'key' => 'avis',
+                'label' => $item->{$field} ? 'Modifier mon '.$label : 'Saisir mon '.$label,
+                'icon' => 'rate_review',
+                'variant' => 'primary',
+                'title' => ucfirst($label),
+                'description' => 'L\'avis reste modifiable jusqu\'à la décision du chef d\'agence.',
+                'fields' => [['name' => $field, 'label' => 'Avis', 'type' => 'richtext', 'required' => true, 'value' => $item->{$field}]],
+                'submits' => [['label' => 'Enregistrer l\'avis', 'url' => route("$role.prospects.avis", $item->token), 'variant' => 'primary']],
+                'wide' => true,
+            ];
+        }
+
+        return \Inertia\Inertia::render('Entreprises/Show', $sheet + [
+            'links' => [],
+            'actions' => [],
+            'workflowActions' => $workflowActions,
+            'notice' => $item->isProspectAvisCircuitClosed()
+                ? 'Circuit clos par le chef d\'agence : les avis ne sont plus modifiables.'
+                : null,
+            'initialTab' => 'avis',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route("$role.dashboard")],
+                ['label' => 'Prospects', 'href' => route("$role.prospects.index")],
+                ['label' => \Illuminate\Support\Str::limit($item->name, 40)],
+            ],
+        ]);
     }
 
     /**

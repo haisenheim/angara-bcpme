@@ -16,8 +16,76 @@ class DashboardController extends Controller
 
     public function index()
     {
-        return view('RoleSpace.dashboard', [
-            'space' => $this->resolveSpace(),
+        $space = $this->resolveSpace();
+        $p = $space['route'];
+        $has = fn (string $name) => \Illuminate\Support\Facades\Route::has($name) ? route($name) : null;
+
+        // Indicateurs affichés par espace (clés de stats()).
+        $kpis = [
+            ['key' => 'entreprises', 'label' => 'Entreprises', 'icon' => 'storefront', 'href' => $has("$p.entreprises.index")],
+            ['key' => 'dossiers', 'label' => 'Dossiers', 'icon' => 'folder_shared', 'href' => $has("$p.dossiers.index")],
+            ['key' => 'pieces', 'label' => 'Pièces fournies', 'icon' => 'checklist'],
+        ];
+        $kpis = array_merge($kpis, match ($p) {
+            'respexp' => [
+                ['key' => 'dossiers_a_affecter', 'label' => 'À affecter', 'icon' => 'person_add', 'tone' => 'warning',
+                    'href' => route('respexp.dossiers.index', ['filter' => 'a_affecter'])],
+                ['key' => 'dossiers_en_instruction', 'label' => 'En instruction (analyste)', 'icon' => 'edit_note'],
+                ['key' => 'dossiers_a_valider', 'label' => 'Avis de crédit à saisir', 'icon' => 'rate_review', 'tone' => 'info'],
+                ['key' => 'validation_engagements_a_faire', 'label' => 'Engagements à valider', 'icon' => 'fact_check'],
+                ['key' => 'a_soumettre_juridique', 'label' => 'À soumettre au Juridique', 'icon' => 'arrow_forward'],
+            ],
+            'reng' => [
+                ['key' => 'a_affecter_analyste_credit', 'label' => 'À affecter', 'icon' => 'person_add', 'tone' => 'warning'],
+                ['key' => 'analyste_credit_en_cours', 'label' => 'Contre-analyse en cours', 'icon' => 'edit_note'],
+                ['key' => 'a_valider_avis_engagements', 'label' => 'Avis à saisir', 'icon' => 'rate_review', 'tone' => 'info'],
+                ['key' => 'a_soumettre_risques', 'label' => 'À soumettre aux Risques', 'icon' => 'arrow_forward'],
+            ],
+            'rerx' => [
+                ['key' => 'a_affecter_analyste_risques', 'label' => 'À affecter', 'icon' => 'person_add', 'tone' => 'warning'],
+                ['key' => 'analyste_risques_en_cours', 'label' => 'Analyse en cours', 'icon' => 'edit_note'],
+                ['key' => 'a_valider_avis_risques', 'label' => 'Avis à saisir', 'icon' => 'rate_review', 'tone' => 'info'],
+                ['key' => 'a_soumettre_direction', 'label' => 'À soumettre à la Direction', 'icon' => 'arrow_forward'],
+            ],
+            'dg', 'dga' => [
+                ['key' => 'prospects_soumis', 'label' => 'Prospects soumis', 'icon' => 'person_search', 'href' => $has("$p.prospects.index")],
+                ['key' => 'clients', 'label' => 'Clients', 'icon' => 'storefront'],
+                ['key' => 'dossiers_valides_agence', 'label' => 'Dossiers validés agence', 'icon' => 'verified', 'href' => $has("$p.dossiers.valides-chef-agence")],
+                ['key' => 'dossiers_attente_direction', 'label' => 'En attente de votre décision', 'icon' => 'pending_actions', 'tone' => 'warning',
+                    'href' => $has("$p.dossiers.en-attente-direction")],
+                ['key' => 'dossiers_instruction_en_cours', 'label' => 'Instruction en cours', 'icon' => 'autorenew'],
+                ['key' => 'dossiers_instruction_clos', 'label' => 'Dossiers validés', 'icon' => 'task_alt', 'tone' => 'success'],
+                ['key' => 'somme_engagements_sollicites_valides_agence', 'label' => 'Engagements sollicités', 'icon' => 'payments'],
+                ['key' => 'somme_engagements_en_cours_valides_agence', 'label' => 'Engagements en cours', 'icon' => 'account_balance_wallet'],
+            ],
+            default => [],
+        });
+        if (in_array($p, ['dg', 'dga'], true)) {
+            $kpis = array_values(array_filter($kpis, fn ($k) => ! in_array($k['key'], ['entreprises', 'dossiers', 'pieces'], true)));
+        }
+
+        $dossierShow = \Illuminate\Support\Facades\Route::has("$p.dossiers.show") ? "$p.dossiers.show" : null;
+        $withHref = fn (array $rows) => array_map(
+            fn ($r) => $r + ['href' => $dossierShow ? route($dossierShow, $r['token']) : null],
+            $rows
+        );
+
+        return \Inertia\Inertia::render('Dashboard/Index', [
+            'title' => 'Espace '.$space['title'],
+            'kpis' => $kpis,
+            'hasTodos' => in_array($p, ['respexp', 'reng', 'rerx'], true),
+            'hasInsights' => in_array($p, ['dg', 'dga'], true),
+            'stats' => \Inertia\Inertia::defer(fn () => $this->stats()->getData(true)),
+            'todos' => \Inertia\Inertia::defer(fn () => $withHref($this->todos()->getData(true)['todos'] ?? [])),
+            'insights' => \Inertia\Inertia::defer(function () use ($withHref) {
+                $data = $this->insights()->getData(true);
+                if (isset($data['attente_direction'])) {
+                    $data['attente_direction'] = $withHref($data['attente_direction']);
+                }
+
+                return $data;
+            }),
+            'breadcrumb' => [['label' => 'Tableau de bord']],
         ]);
     }
 

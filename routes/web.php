@@ -135,7 +135,6 @@ $registerGovernanceSpace = function (string $prefix, string $middleware, string 
             Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
             Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
             Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-            Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
         });
 };
 
@@ -546,7 +545,6 @@ Route::namespace('App\Http\Controllers\AnalysteCredit')
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
         Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
         Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
@@ -576,7 +574,6 @@ Route::namespace('App\Http\Controllers\AnalysteRisques')
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
         Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
         Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
@@ -605,7 +602,6 @@ Route::namespace('App\Http\Controllers\AnalysteJuridique')
         Route::delete('dossiers/{token}/pieces/{piece}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
         Route::put('dossiers/{token}/pieces/{piece}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
         Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
         Route::get('entreprises/{token}/pieces', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entreprisePieces'])->name('entreprises.pieces');
         Route::get('entreprises/{token}/fiche/pdf', [\App\Http\Controllers\RoleSpace\PortfolioController::class, 'entrepriseFichePdf'])->name('entreprises.fiche.pdf');
@@ -839,7 +835,6 @@ Route::namespace('App\Http\Controllers\Juridique')
         Route::delete('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'destroyDossierPiece'])->name('dossiers.pieces.destroy');
         Route::put('dossiers/{token}/pieces/{piece}', [PortfolioController::class, 'updateDossierPiece'])->name('dossiers.pieces.update');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
         Route::get('entreprises', [PortfolioController::class, 'entreprisesIndex'])->name('entreprises.index');
         Route::get('entreprises-export', [PortfolioController::class, 'entreprisesExport'])->name('entreprises.export');
         Route::get('entreprises/{token}/engagements', [EngagementController::class, 'redirectLegacy'])->name('entreprises.engagements');
@@ -878,7 +873,6 @@ Route::namespace('App\Http\Controllers\Conformite')
         Route::get('dossiers/{token}/dossier-analyse-critique/pdf', [PortfolioController::class, 'dossierAnalyseCritiqueSynthesePdf'])->name('dossiers.dossier-analyse-critique.pdf');
         Route::get('dossiers/{token}/analyse-critique', [PortfolioController::class, 'dossierAnalyseCritiqueShow'])->name('dossiers.analyse-critique');
         Route::get('dossiers/{token}', [PortfolioController::class, 'dossierShow'])->name('dossiers.show');
-        Route::get('v2/dossiers/{token}', [\App\Http\Controllers\RoleSpace\DossierPageController::class, 'show'])->middleware('inertia')->name('v2.dossiers.show');
 
         Route::get('prospects', 'ProspectController@index')->name('prospects.index');
         Route::get('prospects/export', 'ProspectController@exportOpenProspectsConformite')->name('prospects.export');

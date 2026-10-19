@@ -34,7 +34,7 @@ final class WorkspaceNavigation
                 self::item('Prospects', 'person_search', [
                     "$p.entreprises.prospects", "$p.prospects.index", "$p.tous-prospects.index",
                 ]),
-                self::item('Clients', 'storefront', [
+                self::item(in_array($p, ['dg', 'dga'], true) ? 'Clients' : 'Entreprises', 'storefront', [
                     "$p.entreprises.index", "$p.clients.index",
                 ], ["$p.entreprises.show", "$p.clients.show"]),
                 self::item('Dossiers d\'instruction', 'folder_shared', [

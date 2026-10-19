@@ -7,9 +7,13 @@ use App\Models\Entreprise;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('AnalysteConformite.dashboard');
+        return $this->renderInertiaDashboard('Mon espace', [
+            ['key' => 'prospects_soumis', 'label' => 'Prospects soumis', 'icon' => 'person_search'],
+        ], fn () => $this->getStats()->getData(true));
     }
 
     public function getStats()

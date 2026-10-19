@@ -8,9 +8,19 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('Conformite.dashboard');
+        return $this->renderInertiaDashboard('Espace Responsable Conformité', [
+            ['key' => 'pending_prospects', 'label' => 'Avis prospects à rendre', 'icon' => 'rate_review', 'tone' => 'warning', 'href' => $this->routeIfExists('conformite.prospects.index')],
+            ['key' => 'bloques_juridique', 'label' => 'En attente de l\'avis juridique', 'icon' => 'hourglass_top'],
+        ], fn () => $this->getStats()->getData(true), fn () => collect($this->getTodos()->getData(true)['prospects'] ?? [])
+            ->map(fn ($p) => [
+                'token' => $p['token'], 'entreprise' => $p['name'], 'programmes' => 'Prospect — avis conformité attendu',
+                'when_human' => $p['when_human'], 'kind' => ['label' => 'Avis prospect', 'variant' => 'warning'],
+                'href' => $this->routeIfExists('conformite.prospects.show', $p['token']),
+            ])->values()->all());
     }
 
     public function getStats()

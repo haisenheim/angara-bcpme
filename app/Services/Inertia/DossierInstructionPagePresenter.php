@@ -50,8 +50,9 @@ class DossierInstructionPagePresenter
     /**
      * @param  array{route: string, label: string, title: string}  $space
      * @param  array<string, Collection<int, User>>  $analystes  analystes affectables par espace responsable
+     * @param  array{prefix: string, list: string}  $routes  préfixe des routes dossier de l'espace (PortfolioController::roleSpaceDossierRoutesForViews)
      */
-    public function present(Dossier $dossier, array $space, User $user, bool $readonly, array $analystes, string $legacyUrl): array
+    public function present(Dossier $dossier, array $space, User $user, bool $readonly, array $analystes, array $routes): array
     {
         $route = $space['route'];
         $isHub = in_array($route, self::HUB_SPACES, true);
@@ -64,14 +65,14 @@ class DossierInstructionPagePresenter
             'steps' => $this->steps($dossier),
             'poles' => $isHub ? $this->poles($dossier) : [],
             'timeline' => $this->timeline($dossier),
-            'pieces' => $this->pieces($dossier),
+            'pieces' => $this->pieces($dossier, $user, $readonly, $routes['prefix']),
             'delegation' => [
                 'rule' => $this->delegation->describeRuleForInstructionClosure($dossier),
                 'status' => $this->delegation->instructionClosureStatutLabel($dossier),
                 'canClose' => $canClose,
             ],
             'actions' => $readonly ? [] : $this->actions($dossier, $route, $user, $analystes, $canClose),
-            'links' => $this->links($dossier, $route, $legacyUrl),
+            'links' => $this->links($dossier, $route, $routes),
         ];
     }
 
@@ -557,23 +558,23 @@ class DossierInstructionPagePresenter
         return $actions;
     }
 
-    private function links(Dossier $d, string $route, string $legacyUrl): array
+    private function links(Dossier $d, string $route, array $routes): array
     {
-        $links = ['legacy' => $legacyUrl];
+        $prefix = $routes['prefix'];
+        $links = [];
         foreach ([
-            'instruction' => "$route.dossiers.instruction",
-            'instructionPdf' => "$route.dossiers.instruction.pdf",
-            'analyseCritique' => "$route.dossiers.dossier-analyse-critique",
-            'analyseCritiquePdf' => "$route.dossiers.dossier-analyse-critique.pdf",
-            'list' => "$route.dossiers.index",
+            'instruction' => "$prefix.instruction",
+            'instructionPdf' => "$prefix.instruction.pdf",
+            'analyseCritique' => "$prefix.dossier-analyse-critique",
+            'analyseCritiquePdf' => "$prefix.dossier-analyse-critique.pdf",
         ] as $key => $name) {
-            $links[$key] = Route::has($name)
-                ? route($name, $key === 'list' ? [] : $d->token)
-                : null;
+            $links[$key] = Route::has($name) ? route($name, $d->token) : null;
         }
-        if ($d->entreprise?->token && Route::has("$route.entreprises.show")) {
-            $links['entreprise'] = route("$route.entreprises.show", $d->entreprise->token);
-        }
+        $links['list'] = Route::has($routes['list']) ? route($routes['list']) : null;
+        $links['entreprise'] = $d->entreprise?->token && Route::has("$route.entreprises.show")
+            ? route("$route.entreprises.show", $d->entreprise->token)
+            : null;
+        $links['piecesStore'] = Route::has("$prefix.pieces.store") ? route("$prefix.pieces.store", $d->token) : null;
 
         return $links;
     }
@@ -592,16 +593,29 @@ class DossierInstructionPagePresenter
             ->all();
     }
 
-    private function pieces(Dossier $d): array
+    /**
+     * Pièces jointes du dossier. Seul l'auteur d'une pièce peut la remplacer ou la supprimer
+     * (règle de StoresDossierPieces), et rien n'est modifiable une fois le dossier clos.
+     */
+    private function pieces(Dossier $d, User $user, bool $readonly, string $prefix): array
     {
-        return $d->fichiersDossier->map(fn ($f) => [
-            'id' => $f->id,
-            'name' => $f->original_name ?: basename((string) $f->name),
-            'type' => $f->type?->name,
-            'url' => $f->path,
-            'uploadedBy' => $f->uploadedBy?->name,
-            'uploadedAt' => $this->date($f->uploaded_at, true),
-        ])->values()->all();
+        $editable = ! $readonly && ! $d->isInstructionClosed();
+
+        return $d->fichiersDossier->map(function ($f) use ($d, $user, $editable, $prefix) {
+            $mine = $editable && (int) $f->uploaded_by_user_id === (int) $user->id;
+
+            return [
+                'id' => $f->id,
+                'name' => $f->original_name ?: basename((string) $f->name),
+                'type' => $f->type?->name,
+                'typeId' => $f->type_id,
+                'url' => $f->path,
+                'uploadedBy' => $f->uploadedBy?->name,
+                'uploadedAt' => $this->date($f->uploaded_at, true),
+                'updateUrl' => $mine && Route::has("$prefix.pieces.update") ? route("$prefix.pieces.update", [$d->token, $f->id]) : null,
+                'destroyUrl' => $mine && Route::has("$prefix.pieces.destroy") ? route("$prefix.pieces.destroy", [$d->token, $f->id]) : null,
+            ];
+        })->values()->all();
     }
 
     private function person(?User $user, ?CarbonInterface $at, ?User $by): ?array

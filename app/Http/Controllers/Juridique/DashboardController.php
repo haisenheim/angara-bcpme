@@ -9,9 +9,30 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('Juridique.dashboard');
+        return $this->renderInertiaDashboard('Espace Responsable Juridique', [
+            ['key' => 'pending_prospects', 'label' => 'Avis prospects à rendre', 'icon' => 'rate_review', 'tone' => 'warning', 'href' => $this->routeIfExists('juridique.prospects.index')],
+            ['key' => 'instruction_dossiers', 'label' => 'Dossiers au pôle', 'icon' => 'folder_shared', 'href' => $this->routeIfExists('juridique.dossiers.index')],
+            ['key' => 'a_affecter_analyste', 'label' => 'À affecter', 'icon' => 'person_add', 'tone' => 'warning'],
+            ['key' => 'avis_analyste_a_traiter', 'label' => 'Avis à saisir', 'icon' => 'edit_note', 'tone' => 'info'],
+            ['key' => 'a_soumettre_engagements', 'label' => 'À soumettre aux Engagements', 'icon' => 'arrow_forward'],
+        ], fn () => $this->getStats()->getData(true), function () {
+            $data = $this->getTodos()->getData(true);
+            $prospects = collect($data['prospects'] ?? [])->map(fn ($p) => [
+                'token' => $p['token'], 'entreprise' => $p['name'], 'programmes' => 'Prospect — avis juridique attendu',
+                'when_human' => $p['when_human'], 'kind' => ['label' => 'Avis prospect', 'variant' => 'warning'],
+                'href' => $this->routeIfExists('juridique.prospects.show', $p['token']),
+            ]);
+            $dossiers = collect($data['dossiers'] ?? [])->map(fn ($d) => $d + [
+                'when_human' => null, 'kind' => ['label' => 'Dossier', 'variant' => 'info'],
+                'href' => $this->routeIfExists('juridique.dossiers.show', $d['token']),
+            ]);
+
+            return $prospects->concat($dossiers)->values()->all();
+        });
     }
 
     public function getStats()
