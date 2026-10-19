@@ -19,12 +19,17 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\AnalyseCritiqueService;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseSheetPresenter;
+use App\Services\Inertia\StructurationPresenter;
 use App\Services\WorkflowEmailNotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ClientController extends Controller
 {
@@ -98,39 +103,14 @@ class ClientController extends Controller
     public function show(string $token)
     {
         $item = $this->entrepriseForAgence($token);
-        $item->load([
-            'dossierEntreeRelation.qualificationUser',
-            'dossierEntreeRelation.programmesSubmittedBy',
-            'dossierEntreeRelation.instructionValidatedBy',
-            'dossierEntreeRelation.qualificationValidatedByAgenceUser',
+        $item->load(array_merge(EntrepriseSheetPresenter::RELATIONS, [
             'dossierEntreeRelation.instructionBundleRejectedBy',
-            'dossierEntreeRelation.programmeSelections.programme',
             'dossierEntreeRelation.programmeSelections.instructionDossier',
-            'promuClientUser',
-            'prospectRejectedUser',
-            'produit',
-            'filiere',
-            'branche',
             'produits.filiere',
             'produits.branche',
-            'appuis.type',
-            'dossiers.programme',
-            'dossiers.instructionProgrammes.programme',
-            'dossiers.chefFiliereSubmittedToAgenceBy',
             'dossiers.instructionAgenceValidatedBy',
             'dossiers.instructionAgenceRejectedBy',
-            'arrondissement',
-            'departement',
-            'region',
-            'forme',
-            'village',
-            'quartier',
-            'agence.representation',
-            'tiers.person',
-            'tiers.company.produit',
-            'juridiqueAvisUser',
-            'conformiteAvisUser',
-        ]);
+        ]));
 
         $mr = $this->buildQuestionnaireResults($item);
         $checklist = $item->piecesExigiblesChecklist();
@@ -155,7 +135,45 @@ class ClientController extends Controller
 
         Session::put('chef_filiere_dossier_consulte_'.$token, true);
 
-        return view('ChefFiliere.clients.show', compact('item', 'mr', 'checklist', 'bundleAvailableProgrammes', 'bundleEditDossier'));
+        $sheet = app(EntrepriseSheetPresenter::class)->present($item, $mr, $checklist, [
+            'routePrefix' => 'chef-filiere',
+            'dossierShowRoute' => 'chef-filiere.instructions.dossier.show',
+            'entrepriseShowRoute' => 'chef-filiere.clients.show',
+        ]);
+        $workflow = app(StructurationPresenter::class)->clientWorkflow($item, auth()->user(), $bundleEditDossier, $bundleAvailableProgrammes);
+
+        $qualifUrl = route('chef-filiere.qualifications.show', $item->token);
+        $besoinsUrl = route('chef-filiere.clients.besoins-produits.edit', $item->token);
+        $strip = $workflow['structuration'];
+
+        return Inertia::render('Structuration/Client', [
+            'sheet' => $sheet + [
+                'links' => array_values(array_filter([
+                    ['label' => 'Retour à la liste', 'icon' => 'arrow_back', 'href' => route('chef-filiere.clients.index')],
+                    ['label' => 'Besoins & produits', 'icon' => 'edit_note', 'href' => $besoinsUrl],
+                    $strip['showDetail'] ? ['label' => 'Écran structuration', 'icon' => 'account_tree', 'href' => $qualifUrl] : null,
+                    Route::has('simulator.index') ? ['label' => 'Simulation de crédit', 'icon' => 'calculate', 'href' => route('simulator.index', ['entreprise_id' => $item->id])] : null,
+                ])),
+                'actions' => array_values(array_filter([
+                    $strip['canStart'] ? ['label' => 'Structurer', 'icon' => 'account_tree', 'href' => $qualifUrl] : null,
+                    $strip['canEdit'] ? ['label' => 'Modifier la structuration', 'icon' => 'edit', 'href' => $qualifUrl] : null,
+                    $workflow['composer'] ? [
+                        'label' => $workflow['composer']['editDossierId'] ? 'Corriger le dossier d\'instruction' : 'Nouveau dossier d\'instruction',
+                        'icon' => 'post_add', 'href' => '#composition-dossier-instruction', 'variant' => 'success',
+                    ] : null,
+                ])),
+                'workflowActions' => [],
+                'notice' => null,
+                'initialTab' => 'structuration',
+            ],
+            'workflow' => $workflow,
+            'besoinsUrl' => $besoinsUrl,
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Clients', 'href' => route('chef-filiere.clients.index')],
+                ['label' => Str::limit($item->name, 40)],
+            ],
+        ]);
     }
 
     public function editBesoinsProduits(string $token)
@@ -175,15 +193,37 @@ class ClientController extends Controller
         $selectedNonFinanciers = $item->appuis->where('financier', 0)->pluck('id')->all();
         $selectedSecondaires = $item->produits->pluck('id')->all();
 
-        return view('ChefFiliere.clients.besoins_produits_edit', compact(
-            'item',
-            'produitsListe',
-            'appuisFinanciers',
-            'appuisNonFinanciers',
-            'selectedFinanciers',
-            'selectedNonFinanciers',
-            'selectedSecondaires',
-        ));
+        $service = fn ($s) => ['value' => (int) $s->id, 'label' => $s->name.($s->type ? ' ('.$s->type->name.')' : '')];
+
+        return Inertia::render('Structuration/BesoinsProduits', [
+            'entreprise' => ['name' => $item->name, 'token' => $item->token],
+            'options' => [
+                'produits' => $produitsListe->map(fn ($p) => [
+                    'value' => (int) $p->id,
+                    'label' => trim(($p->code ? $p->code.' ' : '').$p->name),
+                    'hint' => $p->filiere?->name,
+                ])->values()->all(),
+                'appuisFinanciers' => $appuisFinanciers->map($service)->values()->all(),
+                'appuisNonFinanciers' => $appuisNonFinanciers->map($service)->values()->all(),
+            ],
+            'values' => [
+                'produit_id' => $item->produit_id ? (int) $item->produit_id : '',
+                'produit_year_start' => $item->produit_year_start,
+                'autres' => array_map('intval', $selectedSecondaires),
+                'appuisf' => array_map('intval', $selectedFinanciers),
+                'appuisnf' => array_map('intval', $selectedNonFinanciers),
+            ],
+            'urls' => [
+                'update' => route('chef-filiere.clients.besoins-produits.update', $item->token),
+                'client' => route('chef-filiere.clients.show', $item->token),
+            ],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Clients', 'href' => route('chef-filiere.clients.index')],
+                ['label' => Str::limit($item->name, 35), 'href' => route('chef-filiere.clients.show', $item->token)],
+                ['label' => 'Besoins & produits'],
+            ],
+        ]);
     }
 
     public function updateBesoinsProduits(Request $request, string $token)
