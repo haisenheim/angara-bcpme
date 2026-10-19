@@ -15,6 +15,10 @@ const errorList = computed(() => Object.values(props.errors ?? {}).flat());
         <Icon name="check_circle" class="text-emerald-700" />
         <span>{{ flash.success }}</span>
     </div>
+    <div v-if="flash?.warning" class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <Icon name="warning" class="text-amber-700" />
+        <span>{{ flash.warning }}</span>
+    </div>
     <div v-if="flash?.info" class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
         <Icon name="info" class="text-blue-700" />
         <span>{{ flash.info }}</span>
