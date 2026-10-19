@@ -9,6 +9,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "google/apiclient": "^2.0",
         "guzzlehttp/guzzle": "^7.2",
+        "inertiajs/inertia-laravel": "^2.0",
         "ladumor/one-signal": "1.0.0",
         "laravel/fortify": "^1.24",
         "laravel/framework": "^10.10",

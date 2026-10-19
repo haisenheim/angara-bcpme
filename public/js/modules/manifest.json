@@ -1,0 +1,17 @@
+{
+  "resources/js/app.js": {
+    "file": "assets/app-CHLcByDk.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/inertia/app.js": {
+    "file": "assets/app-BiC8fUvs.js",
+    "name": "app",
+    "src": "resources/js/inertia/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-dHJFJxnY.css"
+    ]
+  }
+}
