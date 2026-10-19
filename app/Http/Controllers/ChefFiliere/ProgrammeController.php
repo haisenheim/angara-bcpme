@@ -5,14 +5,20 @@ namespace App\Http\Controllers\ChefFiliere;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
 use App\Models\Programme;
+use App\Services\Inertia\ProgrammePagePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
 class ProgrammeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('ChefFiliere.Programmes.index');
+        return app(ProgrammePagePresenter::class)->index(
+            $request,
+            'chef-filiere',
+            fn () => $this->fetchStats($request)->getData(true),
+            $this->fetchFilterOptions()->getData(true)['signataires'] ?? [],
+        );
     }
 
     public function fetchAll()
@@ -111,14 +117,7 @@ class ProgrammeController extends Controller
     {
         $item = Programme::query()
             ->where('token', $token)
-            ->with([
-                'produits.filiere',
-                'produits.branche',
-                'appuis.type',
-                'composantes',
-                'resultats.indicateur',
-                'entreprises',
-            ])
+            ->with(ProgrammePagePresenter::SHOW_RELATIONS)
             ->first();
 
         if (! $item) {
@@ -127,6 +126,6 @@ class ProgrammeController extends Controller
             return redirect()->route('chef-filiere.programmes.index');
         }
 
-        return view('ChefFiliere.Programmes.show', compact('item'));
+        return app(ProgrammePagePresenter::class)->show($item, 'chef-filiere');
     }
 }

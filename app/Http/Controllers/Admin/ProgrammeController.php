@@ -5,16 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Concerns\ParsesProgrammeRelationIds;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
-use App\Models\Banque;
 use App\Models\Composante;
-use App\Models\Indicateur;
-use App\Models\Organisme;
 use App\Models\Programme;
 use App\Models\ProgrammeAppui;
 use App\Models\ProgrammeIndicateur;
 use App\Models\ProgrammeOrgamisme;
 use App\Models\ProgrammeProduit;
-use App\Models\Service;
+use App\Services\Inertia\ProgrammePagePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -25,10 +22,15 @@ class ProgrammeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Admin/Programmes/index');
+        return app(ProgrammePagePresenter::class)->index(
+            $request,
+            'admin',
+            fn () => $this->fetchStats($request)->getData(true),
+            $this->fetchFilterOptions()->getData(true)['signataires'] ?? [],
+            canCreate: true,
+        );
     }
 
     public function fetchAll()
@@ -128,7 +130,7 @@ class ProgrammeController extends Controller
      */
     public function create()
     {
-        return view('/Admin/Programmes/create');
+        return app(ProgrammePagePresenter::class)->form(null, 'admin');
     }
 
     /**
@@ -237,30 +239,15 @@ class ProgrammeController extends Controller
         //
         $item = Programme::query()
             ->where('token', $token)
-            ->with([
-                'produits.filiere',
-                'produits.branche',
-                'appuis.type',
-                'composantes',
-                'resultats.indicateur',
-                'entreprises',
-                'dossiers' => function ($q) {
-                    $q->with(['entreprise', 'gestionnaire', 'analyste', 'agence', 'indicateurs'])
-                        ->orderByDesc('created_at');
-                },
-            ])
+            ->with(ProgrammePagePresenter::relationsWithDossiers())
             ->first();
         if (! $item) {
             Session::flash('error', 'Accès non autorisé à ce programme!');
 
             return back();
         }
-        $banques = Banque::all();
-        $organismes = Organisme::all();
-        $indicateurs = Indicateur::all();
-        $services = Service::all();
 
-        return view('Admin/Programmes/show', compact('item', 'banques', 'organismes', 'indicateurs', 'services'));
+        return app(ProgrammePagePresenter::class)->show($item, 'admin', ['dossiers' => true, 'editable' => true]);
     }
 
     public function saveComposante(Request $request)
@@ -341,37 +328,7 @@ class ProgrammeController extends Controller
             ->with(['produits', 'appuis'])
             ->firstOrFail();
 
-        $organismeIds = ProgrammeOrgamisme::query()
-            ->where('programme_id', $item->id)
-            ->pluck('organisme_id')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
-            ->values()
-            ->all();
-
-        $produitIds = $item->produits->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
-
-        $afsIds = [];
-        $anfIds = [];
-        foreach ($item->appuis as $svc) {
-            $sid = (int) $svc->id;
-            if ($sid <= 0) {
-                continue;
-            }
-            if (! empty($svc->financier)) {
-                $afsIds[] = $sid;
-            } else {
-                $anfIds[] = $sid;
-            }
-        }
-
-        return view('/Admin/Programmes/edit', compact(
-            'item',
-            'produitIds',
-            'organismeIds',
-            'afsIds',
-            'anfIds'
-        ));
+        return app(ProgrammePagePresenter::class)->form($item, 'admin');
     }
 
     /**

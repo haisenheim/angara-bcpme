@@ -5,15 +5,13 @@ namespace App\Http\Controllers\Gestionnaire;
 use App\Concerns\ParsesProgrammeRelationIds;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
-use App\Models\Banque;
 use App\Models\Composante;
-use App\Models\Indicateur;
-use App\Models\Organisme;
 use App\Models\Programme;
 use App\Models\ProgrammeAppui;
 use App\Models\ProgrammeIndicateur;
 use App\Models\ProgrammeOrgamisme;
 use App\Models\ProgrammeProduit;
+use App\Services\Inertia\ProgrammePagePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -24,10 +22,14 @@ class ProgrammeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Gestionnaire/Programmes/index');
+        return app(ProgrammePagePresenter::class)->index(
+            $request,
+            'gestionnaire',
+            fn () => $this->fetchStats($request)->getData(true),
+            $this->fetchFilterOptions()->getData(true)['signataires'] ?? [],
+        );
     }
 
     public function fetchAll()
@@ -187,29 +189,16 @@ class ProgrammeController extends Controller
         //
         $item = Programme::query()
             ->where('token', $token)
-            ->with([
-                'produits.filiere',
-                'produits.branche',
-                'appuis.type',
-                'composantes',
-                'resultats.indicateur',
-                'entreprises',
-                'dossiers' => function ($q) {
-                    $q->with(['entreprise', 'gestionnaire', 'analyste', 'agence', 'indicateurs'])
-                        ->orderByDesc('created_at');
-                },
-            ])
+            ->with(ProgrammePagePresenter::relationsWithDossiers())
             ->first();
         if (! $item) {
             Session::flash('error', 'Accès non autorisé à ce programme!');
 
             return back();
         }
-        $banques = Banque::all();
-        $organismes = Organisme::all();
-        $indicateurs = Indicateur::all();
 
-        return view('Gestionnaire/Programmes/show', compact('item', 'banques', 'organismes', 'indicateurs'));
+        // Fiche en lecture (aucune modale d'édition dans l'écran Blade d'origine).
+        return app(ProgrammePagePresenter::class)->show($item, 'gestionnaire', ['dossiers' => true]);
     }
 
     public function saveComposante(Request $request)
