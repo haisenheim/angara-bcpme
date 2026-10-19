@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
+use App\Http\Controllers\Concerns\RendersEntrepriseFormPages;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EntrepriseListResource;
 use App\Models\Arrondissement;
@@ -22,6 +23,8 @@ use App\Models\QuestionSousCritere;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseListPresenter;
+use App\Services\Inertia\EntrepriseShowPage;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
@@ -32,20 +35,73 @@ class CompanyController extends Controller
 {
     use AppliesEntrepriseListIndexFilters;
     use AppliesProspectListIndexFilters;
+    use RendersEntrepriseFormPages;
 
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Admin/Companies/index');
+        // Même périmètre que fetchAll et mêmes filtres que exportEntreprisesClients.
+        $query = $this->clientsListQuery($request);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Entreprises',
+            'subtitle' => 'Liste de toutes les entreprises clientes.',
+            'countLabel' => 'entreprise(s)',
+            'showRoute' => 'admin.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'capital', 'agence', 'structuration'],
+            'filters' => ['client_structuration_status', 'agence_id', 'gestionnaire_id', 'promu_client'],
+            'orderBy' => ['name', 'asc'],
+            'exportRoute' => 'admin.entreprises.export',
+            'exportSearch' => false,
+            'actions' => [['label' => 'Ajouter', 'icon' => 'add', 'href' => route('admin.entreprises.create')]],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('admin.dashboard')],
+                ['label' => 'Entreprises'],
+            ],
+        ] + $list->agenceGestionnaireOptions(Entreprise::query()->where('prospect', 0)));
     }
 
-    public function getProspects()
+    /**
+     * Clients (prospect = 0) avec les filtres de l'export (structuration, promotion, agence, gestionnaire).
+     */
+    private function clientsListQuery(Request $request)
     {
-        //
-        return view('/Admin/Companies/prospects');
+        $query = Entreprise::query()->where('prospect', 0);
+        $filters = $this->parsePromuClientAndAgenceGestionnaireFilters($request, true);
+        $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $filters, true);
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        if ($structurationStatus) {
+            $query->whereClientStructurationStatus($structurationStatus);
+        }
+
+        return $query;
+    }
+
+    public function getProspects(Request $request)
+    {
+        // Même périmètre et mêmes filtres que fetchProspectsPaginated / fetchProspectsStats.
+        $query = $this->applyProspectIndexFilters($this->prospectsQuery(), $this->parseProspectIndexFilters($request), []);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Prospects',
+            'subtitle' => 'Vue nationale des dossiers prospect (brouillons exclus).',
+            'countLabel' => 'prospect(s)',
+            'showRoute' => 'admin.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'agence', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'agence_id', 'gestionnaire_id', 'submission', 'created'],
+            'exportRoute' => 'admin.prospects.export',
+            'stats' => $list->standardStats($this->fetchProspectsStats($request)->getData(true), 'Total prospects'),
+            'actions' => [['label' => 'Nouvelle entreprise', 'icon' => 'add', 'href' => route('admin.entreprises.create')]],
+            'empty' => 'Aucun prospect trouvé.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('admin.dashboard')],
+                ['label' => 'Prospects'],
+            ],
+        ] + $list->agenceGestionnaireOptions($this->prospectsQuery()));
     }
 
     public function fetchAll()
@@ -218,7 +274,7 @@ class CompanyController extends Controller
         //
         $formes = Forme::all();
 
-        return view('/Admin/Companies/create', compact('formes'));
+        return $this->entrepriseCreatePage('admin');
     }
 
     /**
@@ -274,53 +330,15 @@ class CompanyController extends Controller
         if (! $item) {
             return back();
         }
-        $item->load([
-            'promuClientUser',
-            'prospectRejectedUser',
-            'dossierEntreeRelation.qualificationUser',
-            'dossierEntreeRelation.programmesSubmittedBy',
-            'dossierEntreeRelation.instructionValidatedBy',
-            'dossierEntreeRelation.programmeSelections.programme',
-            'dossierEntreeRelation.programmeSelections.instructionDossier',
+        $page = app(EntrepriseShowPage::class);
+        $sheet = $page->sheet($item, ['routePrefix' => 'admin']);
+
+        return $page->render($item, 'admin', $sheet, [
+            $page->link('admin.entreprise.questionnaire', $item->token, 'Questionnaire', 'quiz'),
+            $page->link('admin.entreprise.physique.create', $item->token, 'Tiers personne physique', 'person_add'),
+            $page->link('admin.entreprise.morale.create', $item->token, 'Tiers personne morale', 'domain_add'),
+            $page->simulationLink($item),
         ]);
-        // dd($item);
-        $reponses = $item->reponses;
-        $groups = $reponses->groupBy('critere_id');
-        $groups = $groups->map(function ($v, $k) {
-            $critere = Critere::find($k);
-
-            return ['critere' => $critere,
-                'items' => $v->groupBy('sous_critere_id')
-                    ->map(function ($m, $n) {
-                        $sc = QuestionSousCritere::find($n);
-
-                        return [
-                            'sous_critere' => $sc,
-                            'items' => $m,
-                        ];
-                    }),
-            ];
-        });
-        // dd($groups);
-        $mr = $groups;
-
-        return view('/Admin/Companies/show', compact('item', 'mr'));
-        /* $data=[];
-        $cpt=0;
-        foreach($groups as $k=>$v){
-            $critere = Critere::find($k);
-            $data[$k] = ['critere'=>$critere];
-            foreach($v as $n=>$m){
-                $sc = QuestionSousCritere::find($n);
-                $data[$k]['items']= [
-                    'sous_critere'=>$sc,'reponses'=>$m
-                ];
-            }
-           $cpt++;
-        }
-        dd($data);
-        $mr = $data;
-        return view('/Admin/Companies/show',compact('item','mr')); */
     }
 
     public function saveProgramme(Request $request)
@@ -353,7 +371,7 @@ class CompanyController extends Controller
             return back();
         }
 
-        return view('/Admin/Companies/tiers_physique', compact('item'));
+        return $this->tiersPhysiquePage('admin', $item);
     }
 
     public function createTiersMorale(string $token)
@@ -365,7 +383,7 @@ class CompanyController extends Controller
         }
         $formes = Forme::all();
 
-        return view('/Admin/Companies/tiers_morale', compact('item', 'formes'));
+        return $this->tiersMoralePage('admin', $item);
     }
 
     public function saveTiersPhysique(Request $request)
@@ -438,7 +456,7 @@ class CompanyController extends Controller
         $criteres = QuestionSousCritere::all();
         $isOpen = false; // Pour contrôller l'ouverture de l'accordeon
 
-        return view('/Admin/Companies/questionnaire', compact('item', 'criteres', 'isOpen'));
+        return $this->questionnairePage('admin', $item);
     }
 
     public function saveQuestionnaire(Request $request)

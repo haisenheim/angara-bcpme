@@ -31,9 +31,18 @@ class AnalyseCritiqueController extends Controller
 
         $item->refresh()->load(['dossierAnalyseCritique.avis.emisPar', 'dossiers.programme', 'dossierEntreeRelation.programmeSelections.programme']);
 
-        return view('ChefFiliere.Companies.analyse_critique', [
-            'item' => $item,
-            'analyseCritique' => $item->dossierAnalyseCritique,
+        $back = route('chef-filiere.qualifications.show', $token);
+
+        return \Inertia\Inertia::render('Entreprises/AnalyseCritique', [
+            'entreprise' => ['name' => $item->name, 'href' => $back],
+            'backLabel' => 'Retour à la structuration',
+            'analyseCritique' => app(\App\Services\Inertia\EntrepriseSheetPresenter::class)->analyseCritique($item),
+            'updateUrl' => null,
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Structuration', 'href' => $back],
+                ['label' => 'Analyse critique'],
+            ],
         ]);
     }
 }

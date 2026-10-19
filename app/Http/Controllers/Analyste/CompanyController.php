@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Analyste;
 
 use App\Http\Controllers\Concerns\AppliesEntrepriseListIndexFilters;
 use App\Http\Controllers\Concerns\AppliesProspectListIndexFilters;
+use App\Http\Controllers\Concerns\RendersEntrepriseFormPages;
 use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EntrepriseListResource;
@@ -16,6 +17,8 @@ use App\Models\EntrepriseProduit;
 use App\Models\Agence;
 use App\Models\Forme;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseListPresenter;
+use App\Services\Inertia\EntrepriseShowPage;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
 use App\Models\Person;
@@ -32,24 +35,62 @@ class CompanyController extends Controller
 {
     use AppliesEntrepriseListIndexFilters;
     use AppliesProspectListIndexFilters;
+    use RendersEntrepriseFormPages;
     use BuildsEntrepriseQuestionnaireResults;
 
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $regions = \App\Models\Region::orderBy('name')->get(['id', 'name']);
-        $departements = \App\Models\Departement::orderBy('name')->get(['id', 'name', 'region_id']);
-        $formes = Forme::orderBy('name')->get(['id', 'name']);
+        // Même périmètre (dossiers de l'analyste) et mêmes filtres que fetchPaginated / fetchEntreprisesIndexStats.
+        $query = $this->applyEntreprisesIndexFilters($this->analysteEntreprisesBaseQuery(), $this->parseEntreprisesIndexFilters($request));
+        $stats = $this->fetchEntreprisesIndexStats($request)->getData(true);
+        $list = app(EntrepriseListPresenter::class);
 
-        return view('/Analyste/Companies/index', compact('regions', 'departements', 'formes'));
+        return $list->render($request, $query, [
+            'title' => 'Entreprises',
+            'subtitle' => 'Entreprises pour lesquelles vous avez des dossiers d\'instruction.',
+            'countLabel' => 'entreprise(s)',
+            'showRoute' => 'analyste.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'region', 'forme', 'agence', 'structuration'],
+            'filters' => ['region_id', 'departement_id', 'forme_id', 'client_structuration_status', 'agence_id', 'gestionnaire_id', 'promu_client'],
+            'searchColumns' => ['name', 'rccm', 'niu', 'manager'],
+            'orderBy' => ['name', 'asc'],
+            'exportRoute' => 'analyste.entreprises.export',
+            'stats' => [
+                ['label' => 'Total entreprises', 'value' => (int) ($stats['total'] ?? 0), 'icon' => 'domain'],
+                ['label' => 'Avec RCCM', 'value' => (int) ($stats['avec_rccm'] ?? 0), 'icon' => 'badge'],
+                ['label' => 'Avec NIU', 'value' => (int) ($stats['avec_niu'] ?? 0), 'icon' => 'fingerprint'],
+            ],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('analyste.dashboard')],
+                ['label' => 'Entreprises'],
+            ],
+        ] + $list->agenceGestionnaireOptions($this->analysteEntreprisesBaseQuery()));
     }
 
-    public function getProspects()
+    public function getProspects(Request $request)
     {
-        //
-        return view('/Analyste/Companies/prospects');
+        // Même périmètre (prospects soumis) et mêmes filtres que fetchProspectsPaginated / fetchProspectsStats.
+        $query = $this->applyProspectIndexFilters($this->prospectsQuery(), $this->parseProspectIndexFilters($request), []);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Prospects',
+            'subtitle' => 'Vue transverse des prospects soumis (brouillons exclus).',
+            'countLabel' => 'prospect(s)',
+            'showRoute' => 'analyste.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'agence', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'agence_id', 'gestionnaire_id', 'submission', 'created'],
+            'exportRoute' => 'analyste.prospects.export',
+            'stats' => $list->standardStats($this->fetchProspectsStats($request)->getData(true), 'Total prospects'),
+            'empty' => 'Aucun prospect trouvé.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('analyste.dashboard')],
+                ['label' => 'Prospects'],
+            ],
+        ] + $list->agenceGestionnaireOptions(Entreprise::query()->submittedProspect()));
     }
 
     /**
@@ -355,7 +396,7 @@ class CompanyController extends Controller
         //
         $formes = Forme::all();
 
-        return view('/Analyste/Companies/create', compact('formes'));
+        return $this->entrepriseCreatePage('analyste');
     }
 
     /**
@@ -460,11 +501,18 @@ class CompanyController extends Controller
             }
         }
 
-        $mr = $this->buildQuestionnaireResults($item);
-        $checklist = $item->piecesExigiblesChecklist();
+        $page = app(EntrepriseShowPage::class);
+        $sheet = $page->sheet($item, ['routePrefix' => 'analyste']);
 
-        return view('/Analyste/Companies/show', compact('item', 'mr', 'checklist', 'dossiersAnalyste'));
-
+        return $page->render($item, 'analyste', $sheet, [
+            $page->link('analyste.entreprise.get.engagements', $item->token, 'Grille des engagements', 'table_view'),
+            $page->link('analyste.entreprise.questionnaire', $item->token, 'Questionnaire', 'quiz'),
+            $page->link('analyste.entreprise.physique.create', $item->token, 'Tiers personne physique', 'person_add'),
+            $page->link('analyste.entreprise.morale.create', $item->token, 'Tiers personne morale', 'domain_add'),
+            $page->simulationLink($item),
+        ], [
+            'initialTab' => $dossiersAnalyste->isNotEmpty() ? 'dossiers' : 'synthese',
+        ]);
     }
 
     public function saveProgramme(Request $request)
@@ -497,7 +545,7 @@ class CompanyController extends Controller
             return back();
         }
 
-        return view('/Analyste/Companies/tiers_physique', compact('item'));
+        return $this->tiersPhysiquePage('analyste', $item);
     }
 
     public function createTiersMorale(string $token)
@@ -509,7 +557,7 @@ class CompanyController extends Controller
         }
         $formes = Forme::all();
 
-        return view('/Analyste/Companies/tiers_morale', compact('item', 'formes'));
+        return $this->tiersMoralePage('analyste', $item);
     }
 
     public function saveTiersPhysique(Request $request)
@@ -581,7 +629,7 @@ class CompanyController extends Controller
         }
         $criteres = QuestionSousCritere::all();
 
-        return view('/Analyste/Companies/questionnaire', compact('item', 'criteres'));
+        return $this->questionnairePage('analyste', $item);
     }
 
     public function saveQuestionnaire(Request $request)

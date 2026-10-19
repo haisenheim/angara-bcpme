@@ -58,22 +58,29 @@ class ClientController extends Controller
 
     public function index(Request $request)
     {
-        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
-        $items = $this->filteredChefFiliereClientsQuery($request)->orderByDesc('promu_client_at')->get();
-
+        // Même périmètre (clients promus de l'agence) et mêmes filtres que l'export.
         $agenceAuthId = (int) auth()->user()->agence_id;
-        $gestionnaireIds = Entreprise::query()
-            ->where('agence_id', $agenceAuthId)
-            ->whereNotNull('promu_client_at')
-            ->whereNotNull('gestionnaire_id')
-            ->distinct()
-            ->pluck('gestionnaire_id');
-        $gestionnaires = User::query()
-            ->whereIn('id', $gestionnaireIds)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $list = app(\App\Services\Inertia\EntrepriseListPresenter::class);
 
-        return view('ChefFiliere.clients.index', compact('items', 'structurationStatus', 'gestionnaires'));
+        return $list->render($request, $this->filteredChefFiliereClientsQuery($request), [
+            'title' => 'Clients',
+            'subtitle' => 'Portefeuille des entreprises promues au statut client pour votre agence.',
+            'countLabel' => 'client(s)',
+            'showRoute' => 'chef-filiere.clients.show',
+            'columns' => ['entreprise', 'agence', 'gestionnaire', 'promu', 'structuration'],
+            'filters' => ['client_structuration_status', 'gestionnaire_id', 'promu_client'],
+            'search' => false,
+            'orderBy' => ['promu_client_at', 'desc'],
+            'exportRoute' => 'chef-filiere.clients.export',
+            'gestionnaires' => $list->agenceGestionnaireOptions(
+                Entreprise::query()->where('agence_id', $agenceAuthId)->whereNotNull('promu_client_at')
+            )['gestionnaires'],
+            'empty' => 'Aucun client enregistré pour cette agence.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Clients'],
+            ],
+        ]);
     }
 
     public function exportClients(Request $request)
