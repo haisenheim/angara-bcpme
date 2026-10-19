@@ -185,9 +185,7 @@ class DossierController extends Controller
             ->whereHas('entreprise', function ($q) use ($uid) {
                 $q->where('prospect', 0)
                     ->whereNotNull('promu_client_at')
-                    ->where(function ($q2) use ($uid) {
-                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
-                    });
+                    ->managedBy($uid);
             })
             ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme']))
             ->firstOrFail();
@@ -213,9 +211,7 @@ class DossierController extends Controller
                 $uid = (int) auth()->id();
                 $q->where('prospect', 0)
                     ->whereNotNull('promu_client_at')
-                    ->where(function ($q2) use ($uid) {
-                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
-                    });
+                    ->managedBy($uid);
             })
             ->firstOrFail();
 
@@ -230,9 +226,7 @@ class DossierController extends Controller
                 $uid = (int) auth()->id();
                 $q->where('prospect', 0)
                     ->whereNotNull('promu_client_at')
-                    ->where(function ($q2) use ($uid) {
-                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
-                    });
+                    ->managedBy($uid);
             })
             ->firstOrFail();
 
@@ -249,9 +243,7 @@ class DossierController extends Controller
                 $uid = (int) auth()->id();
                 $q->where('prospect', 0)
                     ->whereNotNull('promu_client_at')
-                    ->where(function ($q2) use ($uid) {
-                        $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
-                    });
+                    ->managedBy($uid);
             })
             ->firstOrFail();
 

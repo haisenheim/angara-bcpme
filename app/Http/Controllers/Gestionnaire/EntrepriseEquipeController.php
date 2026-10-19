@@ -20,9 +20,7 @@ class EntrepriseEquipeController extends ExtendedController
 
         return Entreprise::query()
             ->where('token', $token)
-            ->where(function ($q) use ($uid) {
-                $q->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
-            })
+            ->managedBy($uid)
             ->firstOrFail();
     }
 

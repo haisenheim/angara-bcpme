@@ -21,9 +21,7 @@ class GestionnaireEntrepriseActions
 
     public function isOwner(Entreprise $item): bool
     {
-        $uid = (int) auth()->id();
-
-        return (int) $item->gestionnaire_id === $uid || (int) $item->user_id === $uid;
+        return $item->isManagedBy(auth()->id());
     }
 
     /**

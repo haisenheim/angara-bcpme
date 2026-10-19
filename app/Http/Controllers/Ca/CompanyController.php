@@ -472,13 +472,114 @@ class CompanyController extends Controller
                 'href' => route('ca.workflow.prospects.show', $item->token)];
         }
 
+        // Réaffectation : fiches de l'agence du chef d'agence uniquement.
+        $workflowActions = [];
+        if ((int) $item->agence_id === $aid) {
+            $currentId = (int) ($item->gestionnaire_id ?: $item->user_id);
+            $gestionnaires = User::query()
+                ->where('role_id', (int) (config('angara.role_gestionnaire') ?: 16))
+                ->where('agence_id', $aid)
+                ->where(fn ($q) => $q->where('active', true)->orWhereNull('active'))
+                ->where('id', '!=', $currentId)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+            if ($gestionnaires->isNotEmpty()) {
+                $actuel = $currentId ? User::find($currentId)?->name : null;
+                $workflowActions[] = [
+                    'key' => 'reassign',
+                    'label' => 'Changer de gestionnaire',
+                    'icon' => 'swap_horiz',
+                    'variant' => 'secondary',
+                    'title' => 'Attribuer la fiche à un autre gestionnaire',
+                    'description' => ($actuel ? "Gestionnaire actuel : $actuel. " : '')
+                        .'Le nouveau gestionnaire reprend la fiche et ses dossiers d\'instruction ; l\'ancien et le nouveau gestionnaire sont notifiés par e-mail.',
+                    'fields' => [
+                        ['name' => 'gestionnaire_id', 'label' => 'Nouveau gestionnaire', 'type' => 'select', 'required' => true,
+                            'options' => $gestionnaires->map(fn ($u) => ['value' => $u->id, 'label' => $u->name])->values()],
+                        ['name' => 'motif', 'label' => 'Motif (facultatif)', 'type' => 'textarea', 'required' => false],
+                    ],
+                    'submits' => [['label' => 'Attribuer', 'url' => route('ca.entreprises.gestionnaire.update', $item->token), 'variant' => 'primary']],
+                ];
+            }
+        }
+
         return $page->render($item, 'ca', $sheet, [
             $page->link('ca.entreprise.get.engagements', $item->token, 'Grille des engagements', 'table_view'),
             $page->simulationLink($item),
         ], [
             'actions' => $actions,
+            'workflowActions' => $workflowActions,
             'initialTab' => $item->prospect ? 'avis' : 'synthese',
         ]);
+    }
+
+    /**
+     * Réaffectation d'un client / prospect de l'agence à un autre gestionnaire de la même agence.
+     * Les dossiers d'instruction du client suivent ; l'ancien et le nouveau gestionnaire sont notifiés.
+     */
+    public function reassignGestionnaire(Request $request, string $token)
+    {
+        $aid = (int) auth()->user()->agence_id;
+        $item = Entreprise::query()->where('token', $token)->where('agence_id', $aid)->firstOrFail();
+
+        $roleGestionnaire = (int) (config('angara.role_gestionnaire') ?: 16);
+        $data = $request->validate([
+            'gestionnaire_id' => [
+                'required', 'integer',
+                \Illuminate\Validation\Rule::exists(User::class, 'id')
+                    ->where('role_id', $roleGestionnaire)
+                    ->where('agence_id', $aid),
+            ],
+            'motif' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'gestionnaire_id.exists' => 'Le gestionnaire choisi doit appartenir à votre agence.',
+        ]);
+
+        $nouveau = User::findOrFail((int) $data['gestionnaire_id']);
+        if ($nouveau->active === 0 || $nouveau->active === false) {
+            return back()->withErrors(['gestionnaire_id' => 'Ce gestionnaire est désactivé.']);
+        }
+        $ancienId = $item->gestionnaire_id ?: $item->user_id;
+        if ((int) $ancienId === (int) $nouveau->id) {
+            return back()->with('info', 'Ce gestionnaire est déjà en charge de la fiche.');
+        }
+        $ancien = $ancienId ? User::find($ancienId) : null;
+
+        DB::transaction(function () use ($item, $nouveau) {
+            $item->gestionnaire_id = $nouveau->id;
+            $item->save();
+            Dossier::query()->where('entreprise_id', $item->id)->update(['gestionnaire_id' => $nouveau->id]);
+        });
+
+        \Illuminate\Support\Facades\Log::info('Réaffectation gestionnaire', [
+            'entreprise_id' => $item->id,
+            'ancien_gestionnaire_id' => $ancienId,
+            'nouveau_gestionnaire_id' => $nouveau->id,
+            'par_user_id' => auth()->id(),
+            'motif' => $data['motif'] ?? null,
+        ]);
+
+        $notifier = app(\App\Services\WorkflowEmailNotificationService::class);
+        $nature = $item->prospect ? 'le prospect' : 'le client';
+        $motif = filled($data['motif'] ?? null) ? "\n\nMotif : ".$data['motif'] : '';
+        $notifier->notifyUser($nouveau, auth()->user(), $notifier->buildPayload(
+            subject: 'Nouveau portefeuille : '.$item->name,
+            title: 'Une fiche vous a été attribuée',
+            body: "Le chef d'agence vous a attribué $nature « {$item->name} ».$motif",
+            ctaLabel: 'Ouvrir la fiche',
+            ctaUrl: route('gestionnaire.entreprises.show', $item->token),
+            event: 'entreprise.gestionnaire.reassigned',
+        ), $notifier->contextForEntreprise($item));
+        if ($ancien) {
+            $notifier->notifyUser($ancien, auth()->user(), $notifier->buildPayload(
+                subject: 'Fiche réaffectée : '.$item->name,
+                title: 'Une fiche de votre portefeuille a été réaffectée',
+                body: "Le chef d'agence a attribué $nature « {$item->name} » à {$nouveau->name}.$motif",
+                event: 'entreprise.gestionnaire.reassigned',
+            ), $notifier->contextForEntreprise($item));
+        }
+
+        return back()->with('success', 'Fiche attribuée à '.$nouveau->name.'.');
     }
 
     public function saveTiersPhysique(Request $request)

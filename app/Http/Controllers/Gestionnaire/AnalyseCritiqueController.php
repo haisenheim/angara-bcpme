@@ -73,7 +73,7 @@ class AnalyseCritiqueController extends Controller
     private function authorizeEntreprise(Entreprise $entreprise): void
     {
         $userId = auth()->id();
-        if ((int) $entreprise->gestionnaire_id !== (int) $userId && (int) $entreprise->user_id !== (int) $userId) {
+        if (! $entreprise->isManagedBy($userId)) {
             abort(403);
         }
     }

@@ -188,6 +188,29 @@ class Entreprise extends Model
     }
 
     /**
+     * Gestionnaire en charge de la fiche : le gestionnaire affecté (gestionnaire_id) ; à défaut,
+     * l'auteur de la saisie (user_id, fiches anciennes sans gestionnaire). Après une réaffectation
+     * par le chef d'agence, l'auteur initial perd donc la main.
+     */
+    public function isManagedBy(int|string|null $userId): bool
+    {
+        $owner = $this->gestionnaire_id ?: $this->user_id;
+
+        return $owner !== null && (int) $owner === (int) $userId;
+    }
+
+    /**
+     * Fiches dont l'utilisateur est le gestionnaire en charge (même règle que isManagedBy()).
+     */
+    public function scopeManagedBy(Builder $query, int|string $userId): Builder
+    {
+        return $query->where(function (Builder $q) use ($userId) {
+            $q->where('gestionnaire_id', $userId)
+                ->orWhere(fn (Builder $qq) => $qq->whereNull('gestionnaire_id')->where('user_id', $userId));
+        });
+    }
+
+    /**
      * Fiches prospect hors brouillon (soumission gestionnaire enregistrée).
      */
     public function scopeSubmittedProspect(Builder $query): Builder

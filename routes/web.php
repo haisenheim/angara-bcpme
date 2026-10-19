@@ -616,6 +616,7 @@ Route::namespace('App\Http\Controllers\Ca')
         Route::get('prospects', 'CompanyController@getProspects')->name('entreprises.prospects');
         Route::post('entreprise/programme', 'CompanyController@saveProgramme')->name('entreprise.programme.save');
         Route::get('entreprise/engagements/{token}', [EngagementController::class, 'redirectLegacy'])->name('entreprise.get.engagements');
+        Route::post('entreprises/{token}/gestionnaire', 'CompanyController@reassignGestionnaire')->name('entreprises.gestionnaire.update');
 
         Route::resource('dossiers', 'DossierController');
         Route::get('programmes', 'ProgrammeController@index')->name('programmes.index');

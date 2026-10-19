@@ -169,7 +169,7 @@ class CompanyController extends ExtendedController
     public function updateProspectDraft(Request $request, Entreprise $entreprise): \Illuminate\Http\RedirectResponse
     {
         $uid = auth()->id();
-        if ((int) $entreprise->gestionnaire_id !== (int) $uid && (int) $entreprise->user_id !== (int) $uid) {
+        if (! $entreprise->isManagedBy($uid)) {
             abort(403);
         }
 
@@ -390,7 +390,7 @@ class CompanyController extends ExtendedController
             abort(404);
         }
         $uid = auth()->id();
-        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+        if (! $item->isManagedBy($uid)) {
             abort(403);
         }
         if ($item->prospect_submitted_at !== null) {
@@ -506,7 +506,7 @@ class CompanyController extends ExtendedController
             ->firstOrFail();
 
         $uid = auth()->id();
-        if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+        if (! $item->isManagedBy($uid)) {
             abort(403);
         }
 
@@ -583,9 +583,7 @@ class CompanyController extends ExtendedController
         $userId = auth()->user()->id;
 
         return Entreprise::where('prospect', 0)
-            ->where(function ($q) use ($userId) {
-                $q->where('user_id', $userId)->orWhere('gestionnaire_id', $userId);
-            });
+            ->managedBy($userId);
     }
 
     /**
@@ -783,8 +781,7 @@ class CompanyController extends ExtendedController
             ->where('prospect', true)
             ->where(function ($q) use ($uid) {
                 $q->whereNotNull('prospect_submitted_at')
-                    ->orWhere('gestionnaire_id', $uid)
-                    ->orWhere('user_id', $uid);
+                    ->orWhere(fn ($q2) => $q2->managedBy($uid));
             });
     }
 
@@ -950,7 +947,7 @@ class CompanyController extends ExtendedController
         }
         if ($item->prospect && $item->prospect_submitted_at === null) {
             $uid = auth()->id();
-            if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+            if (! $item->isManagedBy($uid)) {
                 abort(403);
             }
         }
@@ -995,7 +992,7 @@ class CompanyController extends ExtendedController
 
         // Brouillon : propriétaire uniquement ; prospect soumis : tout gestionnaire (consultation transverse).
         $uid = auth()->id();
-        $isOwner = (int) $item->gestionnaire_id === (int) $uid || (int) $item->user_id === (int) $uid;
+        $isOwner = $item->isManagedBy($uid);
         $sharedSubmittedProspect = $item->prospect && $item->prospect_submitted_at !== null;
         if (! $isOwner && ! $sharedSubmittedProspect) {
             abort(403);
@@ -1352,7 +1349,7 @@ class CompanyController extends ExtendedController
             if ($entreprise) {
                 $linkedExisting = true;
 
-                if ($entreprise->prospect && ((int) $entreprise->gestionnaire_id === (int) auth()->id() || (int) $entreprise->user_id === (int) auth()->id())) {
+                if ($entreprise->prospect && $entreprise->isManagedBy(auth()->id())) {
                     $entreprise->fill($prospectData);
                     $entreprise->save();
                     $this->syncAppuisEtProduits($entreprise, $request);
@@ -1433,7 +1430,7 @@ class CompanyController extends ExtendedController
         }
         if ($item->prospect) {
             $uid = auth()->id();
-            if ((int) $item->gestionnaire_id !== (int) $uid && (int) $item->user_id !== (int) $uid) {
+            if (! $item->isManagedBy($uid)) {
                 abort(403);
             }
             $item->load(['produits:id,name,code', 'appuis:id,name,financier,type_id']);
