@@ -12,7 +12,7 @@ import BrandShowcase from '@/Components/layout/BrandShowcase.vue';
 // Page sans layout : le résolveur d'app.js n'applique AppLayout que si `layout` est absent.
 defineOptions({ layout: (h, page) => page });
 
-defineProps({
+const props = defineProps({
     loginUrl: { type: String, required: true },
     email: { type: String, default: '' },
     warning: { type: String, default: null },
@@ -23,6 +23,10 @@ const page = usePage();
 const errors = computed(() => page.props.errors ?? {});
 const csrf = typeof document !== 'undefined' ? document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '' : '';
 
+// Valeurs locales (v-model) : une liaison :value ferait revenir les champs à leur valeur initiale
+// au re-rendu déclenché par la soumission (indicateur « Connexion… »), ce qui effaçait les identifiants.
+const emailValue = ref(props.email);
+const passwordValue = ref('');
 const showPassword = ref(false);
 const submitting = ref(false);
 
@@ -70,20 +74,20 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest bg-white 
                         </div>
                     </div>
 
-                    <form method="post" :action="loginUrl" class="mt-7 space-y-4" @submit="submitting = true">
+                    <form method="post" :action="loginUrl" class="mt-7 space-y-4" data-loader-message="Vérification de vos identifiants…" @submit="submitting = true">
                         <input type="hidden" name="_token" :value="csrf">
                         <div class="space-y-1.5">
                             <label for="login-email" class="block text-xs font-semibold text-on-surface">Adresse e-mail</label>
                             <div class="relative">
                                 <Icon name="mail" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-outline" />
-                                <input id="login-email" type="email" name="email" :value="email" required autofocus autocomplete="username" placeholder="prenom.nom@bcpme.cm" :class="inputClass">
+                                <input id="login-email" v-model="emailValue" type="email" name="email" required autofocus autocomplete="username" placeholder="prenom.nom@bcpme.cm" :class="inputClass">
                             </div>
                         </div>
                         <div class="space-y-1.5">
                             <label for="login-password" class="block text-xs font-semibold text-on-surface">Mot de passe</label>
                             <div class="relative">
                                 <Icon name="lock" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-outline" />
-                                <input id="login-password" :type="showPassword ? 'text' : 'password'" name="password" required autocomplete="current-password" placeholder="••••••••" :class="inputClass" class="pr-10">
+                                <input id="login-password" v-model="passwordValue" :type="showPassword ? 'text' : 'password'" name="password" required autocomplete="current-password" placeholder="••••••••" :class="inputClass" class="pr-10">
                                 <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-outline hover:text-on-surface" :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" @click="showPassword = !showPassword">
                                     <Icon :name="showPassword ? 'visibility_off' : 'visibility'" class="text-lg" />
                                 </button>
