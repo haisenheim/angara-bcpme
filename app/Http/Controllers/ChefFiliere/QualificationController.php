@@ -6,17 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\DossierEntreeRelation;
 use App\Models\Entreprise;
 use App\Services\AnalyseCritiqueService;
+use App\Services\Inertia\StructurationPresenter;
 use App\Services\WorkflowEmailNotificationService;
+use App\Support\Inertia\Badge;
+use App\Support\Inertia\DataTable;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class QualificationController extends Controller
 {
     public function __construct(private readonly AnalyseCritiqueService $analyseCritiqueService) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $agenceId = auth()->user()->agence_id;
+        $search = trim((string) $request->query('q', ''));
         $items = Entreprise::query()
             ->where('agence_id', $agenceId)
             ->whereNotNull('promu_client_at')
@@ -24,11 +31,41 @@ class QualificationController extends Controller
                 $q->whereDoesntHave('dossierEntreeRelation')
                     ->orWhereHas('dossierEntreeRelation', fn ($e) => $e->whereNull('programmes_submitted_at'));
             })
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%$search%")->orWhere('rccm', 'like', "%$search%")))
             ->with(['agence', 'dossierEntreeRelation'])
             ->orderByDesc('promu_client_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('ChefFiliere.qualifications.index', compact('items'));
+        $table = DataTable::make($items)
+            ->search('Rechercher un client (nom, RCCM)…')
+            ->columns([
+                ['key' => 'client', 'label' => 'Client'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'promu', 'label' => 'Promu client le'],
+                ['key' => 'statut', 'label' => 'État structuration'],
+            ])
+            ->row(fn (Entreprise $e) => [
+                'href' => route('chef-filiere.clients.show', $e->token),
+                'cells' => [
+                    'client' => ['title' => $e->name, 'subtitle' => $e->rccm],
+                    'agence' => $e->agence?->name,
+                    'promu' => $e->promu_client_at ? Carbon::parse($e->promu_client_at)->format('d/m/Y H:i') : null,
+                    'statut' => Badge::fromPresentation(DossierEntreeRelation::clientStructurationPresentation($e->dossierEntreeRelation)),
+                ],
+            ])
+            ->empty('Aucune structuration en attente.');
+
+        return Inertia::render('Workflow/Index', [
+            'title' => 'Structurations en attente',
+            'subtitle' => 'Clients promus dont la structuration n\'est pas encore soumise au chef d\'agence. Ouvrez le dossier client pour compléter la structuration.',
+            'countLabel' => 'client(s)',
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Structurations en attente'],
+            ],
+        ]);
     }
 
     public function show(string $token)
@@ -59,7 +96,17 @@ class QualificationController extends Controller
         $lockedAfterValidation = (bool) $eer->qualification_validated_by_agence_at;
         $qualificationEditable = ! $lockedPendingCa && ! $lockedAfterValidation;
 
-        return view('ChefFiliere.qualifications.show', compact('item', 'eer', 'qualificationEditable', 'lockedPendingCa', 'lockedAfterValidation'));
+        $eer->loadMissing('programmeSelections.programme');
+
+        return Inertia::render('Structuration/Show', app(StructurationPresenter::class)->qualification(
+            $item, $eer, $qualificationEditable, $lockedPendingCa, $lockedAfterValidation
+        ) + [
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Structurations', 'href' => route('chef-filiere.qualifications.index')],
+                ['label' => Str::limit($item->name, 40)],
+            ],
+        ]);
     }
 
     public function update(Request $request, string $token)

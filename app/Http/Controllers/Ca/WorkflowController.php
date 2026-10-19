@@ -14,13 +14,25 @@ use App\Services\InstructionDossierConsultationService;
 use App\Services\StructurationClosureService;
 use App\Services\WorkflowEmailNotificationService;
 use App\Models\User;
+use App\Http\Controllers\Concerns\BuildsEntrepriseQuestionnaireResults;
+use App\Services\Inertia\AgenceValidationPresenter;
+use App\Services\Inertia\EntrepriseSheetPresenter;
+use App\Support\Inertia\Badge;
+use App\Support\Inertia\DataTable;
+use App\Support\UserWorkspaceContextResolver;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class WorkflowController extends Controller
 {
+    use BuildsEntrepriseQuestionnaireResults;
+
     public function __construct(
         private readonly AnalyseCritiqueService $analyseCritiqueService,
         private readonly InstructionDelegationService $delegationService,
@@ -39,15 +51,47 @@ class WorkflowController extends Controller
         return $q;
     }
 
-    public function prospectIndex()
+    public function prospectIndex(Request $request)
     {
+        $search = trim((string) $request->query('q', ''));
         $items = Entreprise::query()
             ->submittedProspect()
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%$search%")->orWhere('rccm', 'like', "%$search%")))
             ->with(['agence', 'juridiqueAvisUser', 'conformiteAvisUser'])
             ->orderByDesc('prospect_submitted_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('Ca.Workflow.prospects_index', compact('items'));
+        $rendu = fn ($at) => $at ? ['badge' => 'Rendu', 'variant' => 'success'] : ['badge' => 'En attente', 'variant' => 'warning'];
+        $table = DataTable::make($items)
+            ->search('Rechercher un prospect (nom, RCCM)…')
+            ->columns([
+                ['key' => 'name', 'label' => 'Prospect'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'soumis', 'label' => 'Soumis le'],
+                ['key' => 'juridique', 'label' => 'Avis juridique'],
+                ['key' => 'conformite', 'label' => 'Avis conformité'],
+                ['key' => 'decision', 'label' => 'Décision'],
+            ])
+            ->row(fn (Entreprise $e) => [
+                'href' => route('ca.workflow.prospects.show', $e->token),
+                'cells' => [
+                    'name' => ['title' => $e->name, 'subtitle' => $e->rccm],
+                    'agence' => $e->agence?->name,
+                    'soumis' => $this->dt($e->prospect_submitted_at),
+                    'juridique' => $rendu($e->juridique_avis_at),
+                    'conformite' => $rendu($e->conformite_avis_at),
+                    'decision' => $e->juridique_avis_at && $e->conformite_avis_at
+                        ? ((int) $e->agence_id === (int) auth()->user()->agence_id
+                            ? ['badge' => 'À statuer', 'variant' => 'info']
+                            : ['badge' => 'Consultation (autre agence)', 'variant' => 'neutral'])
+                        : ['badge' => 'Avis en attente', 'variant' => 'neutral'],
+                ],
+            ])
+            ->empty('Aucun prospect soumis.');
+
+        return $this->renderQueue('prospects', 'Validation chef d\'agence — prospects',
+            'Vue consolidée des prospects soumis avant promotion en client.', 'prospect(s)', $table, 'Prospects à valider');
     }
 
     public function prospectShow(string $token)
@@ -55,19 +99,68 @@ class WorkflowController extends Controller
         $item = Entreprise::query()
             ->where('token', $token)
             ->submittedProspect()
-            ->with([
-                'agence',
-                'region',
-                'departement',
-                'arrondissement',
-                'juridiqueAvisUser',
-                'conformiteAvisUser',
-                'promuClientUser',
-                'prospectRejectedUser',
-            ])
             ->firstOrFail();
+        $item->load(EntrepriseSheetPresenter::RELATIONS);
 
-        return view('Ca.Workflow.prospect_show', compact('item'));
+        $hasJuridique = (bool) $item->juridique_avis_at;
+        $hasConformite = (bool) $item->conformite_avis_at;
+        $canDecide = $hasJuridique && $hasConformite && ! $item->prospect_rejected_at && ! $item->promu_client_at;
+        $isChefAgenceDossier = (int) auth()->user()->agence_id === (int) ($item->agence_id ?? 0);
+
+        $workflowActions = [];
+        if ($canDecide && $isChefAgenceDossier) {
+            $workflowActions = [
+                [
+                    'key' => 'approve',
+                    'label' => 'Valider et promouvoir en client',
+                    'icon' => 'how_to_reg',
+                    'variant' => 'success',
+                    'title' => 'Valider le prospect',
+                    'description' => 'Le prospect sera promu au statut client et pourra être structuré par le chef de filière.',
+                    'fields' => [],
+                    'submits' => [['label' => 'Valider et promouvoir en client', 'url' => route('ca.workflow.prospects.approve', $item->token),
+                        'variant' => 'success', 'confirm' => 'Valider ce prospect comme client ?']],
+                ],
+                [
+                    'key' => 'reject',
+                    'label' => 'Refuser le prospect',
+                    'icon' => 'block',
+                    'variant' => 'danger',
+                    'title' => 'Refuser le prospect',
+                    'description' => 'Le refus est définitif pour cette soumission : les responsables ne pourront plus modifier leurs avis. Motif optionnel, pour la traçabilité.',
+                    'fields' => [['name' => 'reject_motif', 'label' => 'Motif du refus', 'type' => 'textarea', 'required' => false]],
+                    'submits' => [['label' => 'Refuser définitivement', 'url' => route('ca.workflow.prospects.reject', $item->token),
+                        'variant' => 'danger', 'confirm' => 'Refuser ce prospect ? Les avis ne pourront plus être modifiés.']],
+                ],
+            ];
+        }
+
+        $notice = match (true) {
+            (bool) $item->prospect_rejected_at => 'Prospect refusé par '.($item->prospectRejectedUser?->name ?? '—').' le '.$this->dt($item->prospect_rejected_at).'. Cette décision est définitive pour ce dossier.',
+            (bool) $item->promu_client_at => 'Prospect promu client par '.($item->promuClientUser?->name ?? '—').' le '.$this->dt($item->promu_client_at).'.',
+            $canDecide && ! $isChefAgenceDossier => 'Consultation : les avis sont disponibles. La validation ou le refus relève du chef d\'agence '
+                .($item->agence?->name ? '('.$item->agence->name.').' : 'de l\'agence porteuse du dossier.'),
+            $canDecide => null,
+            default => 'Action bloquée : la décision n\'est possible qu\'une fois les avis juridique et conformité rendus'
+                .' (juridique : '.($hasJuridique ? 'rendu' : 'en attente').', conformité : '.($hasConformite ? 'rendu' : 'en attente').').',
+        };
+
+        return Inertia::render('Entreprises/Show', $this->entrepriseSheet($item) + [
+            'links' => array_values(array_filter([
+                ['label' => 'File d\'arbitrage', 'icon' => 'arrow_back', 'href' => route('ca.workflow.prospects.index')],
+                ['label' => 'Fiche prospect complète', 'icon' => 'storefront', 'href' => route('ca.entreprises.show', $item->token)],
+                $this->simulationLink($item),
+            ])),
+            'actions' => [],
+            'workflowActions' => $workflowActions,
+            'notice' => $notice,
+            'initialTab' => 'avis',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('ca.dashboard')],
+                ['label' => 'Arbitrage prospects', 'href' => route('ca.workflow.prospects.index')],
+                ['label' => Str::limit($item->name, 42)],
+            ],
+        ]);
     }
 
     public function prospectApprove(string $token)
@@ -209,17 +302,43 @@ class WorkflowController extends Controller
         return redirect()->route('ca.workflow.prospects.index');
     }
 
-    public function instructionIndex()
+    public function instructionIndex(Request $request)
     {
+        $search = trim((string) $request->query('q', ''));
         $items = DossierEntreeRelation::query()
             ->where('statut', DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION)
             ->whereNull('qualification_validated_by_agence_at')
-            ->whereHas('entreprise', fn ($q) => $q->where('agence_id', auth()->user()->agence_id))
+            ->whereHas('entreprise', fn ($q) => $q->where('agence_id', auth()->user()->agence_id)
+                ->when($search !== '', fn ($w) => $w->where('name', 'like', "%$search%")))
             ->with(['entreprise.agence', 'programmeSelections.programme'])
             ->orderByDesc('programmes_submitted_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('Ca.Workflow.instructions_index', compact('items'));
+        $table = DataTable::make($items)
+            ->search('Rechercher un client…')
+            ->columns([
+                ['key' => 'client', 'label' => 'Client'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'soumis', 'label' => 'Soumise le'],
+                ['key' => 'programmes', 'label' => 'Programmes (ancien flux)'],
+                ['key' => 'statut', 'label' => 'État structuration'],
+            ])
+            ->row(fn (DossierEntreeRelation $eer) => [
+                'href' => route('ca.workflow.instructions.show', $eer->token),
+                'cells' => [
+                    'client' => ['title' => $eer->entreprise?->name ?? '—', 'subtitle' => $eer->entreprise?->rccm],
+                    'agence' => $eer->entreprise?->agence?->name,
+                    'soumis' => $this->dt($eer->programmes_submitted_at),
+                    'programmes' => $eer->programmeSelections->pluck('programme.name')->filter()->implode(', ') ?: 'Aucun',
+                    'statut' => Badge::fromPresentation(DossierEntreeRelation::clientStructurationPresentation($eer)),
+                ],
+            ])
+            ->empty('Aucune structuration en attente.');
+
+        return $this->renderQueue('structurations', 'Validations structuration (EER)',
+            'Structurations soumises par le chef de filière avant validation d\'agence. Le dossier d\'instruction multi-programmes (programmes et budgets d\'appui) est ensuite validé dans « Dossiers d\'instruction à valider ».',
+            'structuration(s)', $table, 'Structurations à valider');
     }
 
     public function instructionShow(string $token)
@@ -228,8 +347,7 @@ class WorkflowController extends Controller
             ->where('token', $token)
             ->whereHas('entreprise', fn ($q) => $q->where('agence_id', auth()->user()->agence_id))
             ->with([
-                'entreprise.agence',
-                'entreprise.dossierAnalyseCritique.avis.emisPar',
+                'entreprise',
                 'programmeSelections.programme',
                 'qualificationValidatedByAgenceUser',
                 'qualificationRejectedByAgenceUser',
@@ -239,16 +357,86 @@ class WorkflowController extends Controller
         $instructionDossiersChefFiliere = Dossier::on('central_app_mysql')
             ->where('entreprise_id', $eer->entreprise_id)
             ->whereHas('instructionProgrammes')
-            ->with([
-                'instructionProgrammes.programme',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-            ])
+            ->with(['instructionProgrammes.programme'])
             ->orderByDesc('created_at')
             ->get();
 
-        return view('Ca.Workflow.instruction_show', compact('eer', 'instructionDossiersChefFiliere'));
+        $item = $eer->entreprise;
+        $item->load(EntrepriseSheetPresenter::RELATIONS);
+
+        // Mêmes conditions que la colonne « Décision chef d'agence » de l'écran Blade.
+        $workflowActions = [];
+        if (! $eer->qualification_validated_by_agence_at && ! $eer->instruction_validated_at) {
+            if ($eer->programmes_submitted_at && $eer->statut === DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION) {
+                $workflowActions[] = [
+                    'key' => 'reject',
+                    'label' => 'Refuser la structuration',
+                    'icon' => 'block',
+                    'variant' => 'danger',
+                    'title' => 'Refuser la structuration',
+                    'description' => 'Le chef de filière pourra modifier la structuration et la resoumettre.',
+                    'fields' => [['name' => 'reject_motif', 'label' => 'Motif (optionnel)', 'type' => 'textarea', 'required' => false]],
+                    'submits' => [['label' => 'Confirmer le refus', 'url' => route('ca.workflow.instructions.reject-qualification', $eer->token), 'variant' => 'danger']],
+                ];
+            }
+            $legacy = $eer->programmeSelections->isNotEmpty();
+            $workflowActions[] = [
+                'key' => 'approve',
+                'label' => $legacy ? 'Valider et créer les dossiers (ancien flux)' : 'Valider la structuration',
+                'icon' => 'task_alt',
+                'variant' => 'success',
+                'title' => $legacy ? 'Valider (ancien flux)' : 'Valider la structuration',
+                'description' => $legacy
+                    ? 'Valider et créer les dossiers d\'instruction pour les programmes listés (ancien flux) : '
+                        .$eer->programmeSelections->pluck('programme.name')->filter()->implode(', ').'.'
+                    : 'Confirmer la validation de la structuration ? Le chef de filière constituera ensuite le dossier d\'instruction multi-programmes (programmes et budgets) sur la fiche client, puis vous le validerez dans « Dossiers d\'instruction à valider ».',
+                'fields' => [],
+                'submits' => [['label' => 'Confirmer', 'url' => route('ca.workflow.instructions.approve', $eer->token), 'variant' => 'success']],
+            ];
+        }
+
+        $pendingBundles = $instructionDossiersChefFiliere->filter(fn (Dossier $d) => $d->isInstructionPendingAgenceValidation());
+
+        $notice = collect([
+            'Statut EER : '.$eer->statut_libelle.'.',
+            $eer->programmes_submitted_at ? 'Soumise par le chef de filière le '.$this->dt($eer->programmes_submitted_at).'.' : null,
+            $eer->qualification_rejected_by_agence_at && $eer->programmes_submitted_at === null && ! $eer->qualification_validated_by_agence_at
+                ? 'Dernier refus le '.$this->dt($eer->qualification_rejected_by_agence_at)
+                    .($eer->qualificationRejectedByAgenceUser ? ' par '.$eer->qualificationRejectedByAgenceUser->name : '')
+                    .($eer->qualification_reject_motif ? ' — motif : '.$eer->qualification_reject_motif : '').'.'
+                : null,
+            $eer->qualification_validated_by_agence_at
+                ? 'Structuration validée le '.$this->dt($eer->qualification_validated_by_agence_at)
+                    .($eer->qualificationValidatedByAgenceUser ? ' par '.$eer->qualificationValidatedByAgenceUser->name : '').'.'
+                : null,
+            $eer->qualification_validated_by_agence_at
+                ? ($pendingBundles->isNotEmpty()
+                    ? $pendingBundles->count().' dossier(s) d\'instruction du chef de filière en attente de votre validation.'
+                    : ($instructionDossiersChefFiliere->isEmpty() ? 'Aucun dossier d\'instruction multi-programmes soumis pour le moment.' : 'Aucune action de structuration à traiter sur cet écran.'))
+                : null,
+            $eer->programmeSelections->isEmpty() && ! $eer->qualification_validated_by_agence_at
+                ? 'Après validation, le chef de filière compose sur la fiche client un dossier d\'instruction multi-programmes (budgets d\'appui financier et non financier par programme), puis vous le soumet.'
+                : null,
+        ])->filter()->implode(' ');
+
+        $links = [['label' => 'File des structurations', 'icon' => 'arrow_back', 'href' => route('ca.workflow.instructions.index')]];
+        foreach ($pendingBundles as $d) {
+            $links[] = ['label' => 'À valider : '.Str::limit($d->programmesLabel(), 40), 'icon' => 'fact_check', 'href' => route('ca.workflow.instruction-dossiers.show', $d->token)];
+        }
+        $links[] = ['label' => 'Fiche client', 'icon' => 'storefront', 'href' => route('ca.entreprises.show', $item->token)];
+
+        return Inertia::render('Entreprises/Show', $this->entrepriseSheet($item) + [
+            'links' => $links,
+            'actions' => [],
+            'workflowActions' => $workflowActions,
+            'notice' => $notice,
+            'initialTab' => 'structuration',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('ca.dashboard')],
+                ['label' => 'Structurations à valider', 'href' => route('ca.workflow.instructions.index')],
+                ['label' => Str::limit($item->name, 42)],
+            ],
+        ]);
     }
 
     public function approveInstruction(Request $request, string $token)
@@ -416,17 +604,48 @@ class WorkflowController extends Controller
     /**
      * Dossiers d’instruction (multi-programmes) soumis par le chef de filière, en attente de validation (un ou plusieurs par client).
      */
-    public function instructionDossierBundleIndex()
+    public function instructionDossierBundleIndex(Request $request)
     {
+        $search = trim((string) $request->query('q', ''));
         $items = $this->baseInstructionDossierQuery()
             ->whereNotNull('chef_filiere_submitted_to_agence_at')
             ->whereNull('instruction_agence_validated_at')
             ->whereNull('instruction_agence_rejected_at')
+            ->when($search !== '', fn ($q) => $q->whereHas('entreprise', fn ($e) => $e->where('name', 'like', "%$search%")))
             ->with(['entreprise.agence', 'instructionProgrammes.programme', 'chefFiliereSubmittedToAgenceBy'])
             ->orderByDesc('chef_filiere_submitted_to_agence_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('Ca.Workflow.instruction_dossiers_index', compact('items'));
+        $presenter = app(AgenceValidationPresenter::class);
+        $table = DataTable::make($items)
+            ->search('Rechercher un client…')
+            ->columns([
+                ['key' => 'client', 'label' => 'Client'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'soumis', 'label' => 'Soumis le'],
+                ['key' => 'sollicites', 'label' => 'Eng. sollicités', 'align' => 'right'],
+                ['key' => 'programmes', 'label' => 'Programmes'],
+                ['key' => 'statut', 'label' => 'Statut'],
+                ['key' => 'etape', 'label' => 'Étape'],
+            ])
+            ->row(fn (Dossier $d) => [
+                'href' => route('ca.workflow.instruction-dossiers.show', $d->token),
+                'cells' => [
+                    'client' => ['title' => $d->entreprise?->name ?? '—', 'subtitle' => $d->chefFiliereSubmittedToAgenceBy?->name],
+                    'agence' => $d->entreprise?->agence?->name,
+                    'soumis' => $this->dt($d->chef_filiere_submitted_to_agence_at),
+                    'sollicites' => $presenter->money($d->engagements_sollicites_total),
+                    'programmes' => $d->instructionProgrammes->map(fn ($l) => $l->programme?->name)->filter()->implode(', ') ?: null,
+                    'statut' => Badge::fromPresentation($d->instructionStatutPresentation()),
+                    'etape' => $this->structurationClosureService->closureStatutLabel($d),
+                ],
+            ])
+            ->empty('Aucun dossier en attente.');
+
+        return $this->renderQueue('dossiers', 'Dossiers d\'instruction (multi-programmes)',
+            'Après validation de la structuration, le chef de filière peut soumettre plusieurs dossiers d\'instruction (programmes et budgets d\'appui). Chaque dossier transmis apparaît ici jusqu\'à validation ou rejet.',
+            'dossier(s)', $table, 'Dossiers d\'instruction à valider');
     }
 
     /**
@@ -451,12 +670,63 @@ class WorkflowController extends Controller
         $canApproveRejectInstructionTransmission = $this->structurationClosureService->canChefAgenceDecide(auth()->user(), $dossier);
         $closureStatutLabel = $this->structurationClosureService->closureStatutLabel($dossier);
 
-        return view('Ca.Workflow.instruction_dossier_bundle_show', compact(
-            'dossier',
-            'instructionConsultation',
-            'canApproveRejectInstructionTransmission',
-            'closureStatutLabel',
-        ));
+        $props = app(AgenceValidationPresenter::class)->bundle(
+            $dossier, $instructionConsultation, $canApproveRejectInstructionTransmission, $closureStatutLabel
+        );
+        return Inertia::render('Workflow/DossierValidation', $props + [
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => $this->dashboardUrl()],
+                ['label' => 'Dossiers d\'instruction à valider', 'href' => route('ca.workflow.instruction-dossiers.index')],
+                ['label' => Str::limit($dossier->entreprise?->name ?? 'Client', 42)],
+            ],
+        ]);
+    }
+
+    /**
+     * File de validation (page Inertia Workflow/Index) avec les onglets des autres files.
+     */
+    private function renderQueue(string $key, string $title, string $subtitle, string $countLabel, DataTable $table, string $crumb): \Inertia\Response
+    {
+        $user = auth()->user();
+
+        return Inertia::render('Workflow/Index', [
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'countLabel' => $countLabel,
+            'table' => $table->toArray(),
+            'queues' => app(AgenceValidationPresenter::class)->queues($user, $key),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => $this->dashboardUrl()],
+                ['label' => $crumb],
+            ],
+        ]);
+    }
+
+    private function entrepriseSheet(Entreprise $item): array
+    {
+        return app(EntrepriseSheetPresenter::class)->present(
+            $item, $this->buildQuestionnaireResults($item), $item->piecesExigiblesChecklist(), ['routePrefix' => 'ca']
+        );
+    }
+
+    private function simulationLink(Entreprise $item): ?array
+    {
+        return Route::has('simulator.index')
+            ? ['label' => 'Simulation de crédit', 'icon' => 'calculate', 'href' => route('simulator.index', ['entreprise_id' => $item->id])]
+            : null;
+    }
+
+    /** Tableau de bord de l'espace du profil connecté (chef d'agence, DG ou DGA). */
+    private function dashboardUrl(): string
+    {
+        $name = UserWorkspaceContextResolver::routePrefix(auth()->user()).'.dashboard';
+
+        return Route::has($name) ? route($name) : route('home');
+    }
+
+    private function dt($value): ?string
+    {
+        return $value ? Carbon::parse($value)->format('d/m/Y H:i') : null;
     }
 
     public function approveInstructionBundle(Request $request, string $token)
