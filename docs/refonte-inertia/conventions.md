@@ -44,7 +44,7 @@
   'key' => 'avis', 'label' => 'Saisir mon avis', 'icon' => 'rate_review', 'variant' => 'primary',
   'title' => 'Titre du dialogue', 'description' => 'Texte d'aide (optionnel)', 'wide' => false,
   'fields' => [[ 'name' => 'champ_post', 'label' => 'Libellé', 'required' => true, 'value' => 'valeur initiale',
-                 'type' => 'text|number|date|email|tel|textarea|richtext|select|radio|checkbox|file', 'accept' => '.pdf,.png'
+                 'type' => 'text|number|date|email|tel|textarea|richtext|select|radio|checkbox|file|hidden', 'accept' => '.pdf,.png'
                  'options' => [['value' => 1, 'label' => '…']] ]],
   'submits' => [[ 'label' => 'Enregistrer', 'url' => route(...), 'variant' => 'primary', 'confirm' => '…', 'method' => 'post|put|delete' ]],
 ]

@@ -44,7 +44,7 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                 <p v-for="(message, i) in errorList" :key="i">{{ message }}</p>
             </div>
 
-            <div v-for="field in action.fields" :key="field.name" class="space-y-1.5">
+            <div v-for="field in action.fields.filter((f) => f.type !== 'hidden')" :key="field.name" class="space-y-1.5">
                 <label :for="`f-${field.name}`" class="block text-xs font-semibold text-on-surface">
                     {{ field.label }}<span v-if="field.required" class="text-error"> *</span>
                 </label>
