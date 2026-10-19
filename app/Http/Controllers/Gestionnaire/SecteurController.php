@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Gestionnaire;
 
 use App\Http\Controllers\ExtendedController;
 use App\Models\Secteur;
+use App\Services\Inertia\Admin\SecteurPagePresenter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
 class SecteurController extends ExtendedController
@@ -17,8 +19,14 @@ class SecteurController extends ExtendedController
     public function index()
     {
         //
+        // Référentiel absent sur certaines bases : liste vide plutôt qu'une erreur SQL.
+        if (! Schema::hasTable('secteurs')) {
+            return SecteurPagePresenter::index(collect(), 'gestionnaire', [], "Le référentiel des secteurs coopératifs n'est pas disponible.");
+        }
+
         $items = Secteur::where('agence_id',auth()->user()->agence_id)->get();
-        return view('Gestionnaire/Secteurs/index')->with(compact('items'));
+
+        return SecteurPagePresenter::index($items, 'gestionnaire');
     }
 
 
@@ -56,7 +64,8 @@ class SecteurController extends ExtendedController
 	public function show($token)
 	{
 		$item = Secteur::where('token',$token)->first();
-		return view('Gestionnaire/Secteurs/show')->with(compact('item'));
+
+		return SecteurPagePresenter::show($item, 'gestionnaire');
 	}
 
 

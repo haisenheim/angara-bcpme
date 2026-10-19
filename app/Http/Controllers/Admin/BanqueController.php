@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Banque;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use App\Services\Inertia\Admin\CrudKit as K;
+use App\Support\Inertia\DataTable;
 use Illuminate\Support\Facades\Session;
+use Inertia\Inertia;
 
 class BanqueController extends Controller
 {
@@ -36,7 +39,51 @@ class BanqueController extends Controller
             'microfinances' => Banque::where('microfinance', 1)->count(),
         ];
 
-        return view('Admin/Banques/index', compact('items', 'filters', 'stats'));
+        $typeBadge = fn (Banque $b) => $b->microfinance
+            ? ['badge' => 'Microfinance', 'variant' => 'info']
+            : ['badge' => 'Banque', 'variant' => 'neutral'];
+
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'name', 'label' => 'Nom'],
+                ['key' => 'siege', 'label' => 'Siège'],
+                ['key' => 'type', 'label' => 'Type'],
+            ])
+            ->row(fn (Banque $item) => [
+                'href' => route('admin.banques.show', $item->id),
+                'cells' => [
+                    'name' => $item->name,
+                    'siege' => $item->siege ?: '-',
+                    'type' => $typeBadge($item),
+                ],
+                'actions' => [
+                    K::link('show', 'Afficher', route('admin.banques.show', $item->id)),
+                    K::destroy(route('admin.banques.destroy', $item->id), 'Supprimer cet établissement ?'),
+                ],
+            ])
+            ->search('Rechercher (nom, siège, adresse)...')
+            ->select('microfinance', 'Type', ['0' => 'Banques', '1' => 'Microfinances'], 'Tous les types')
+            ->empty('Aucun établissement');
+
+        return Inertia::render('Admin/Crud', [
+            'title' => 'Banques & microfinances',
+            'subtitle' => 'Liste des établissements financiers partenaires',
+            'countLabel' => 'établissement(s)',
+            'stats' => [
+                K::stat('Total', $stats['total']),
+                K::stat('Banques', $stats['banques'], 'info'),
+                K::stat('Microfinances', $stats['microfinances'], 'info'),
+            ],
+            'table' => $table->toArray(),
+            'actions' => [
+                K::dialog('create', 'Ajouter un établissement', 'Nouvel établissement', self::formFields(), route('admin.banques.store'), 'post', ['wide' => true]),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Paramètres'],
+                ['label' => 'Banques'],
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -52,7 +99,33 @@ class BanqueController extends Controller
     {
         $item = Banque::findOrFail($id);
 
-        return view('Admin/Banques/show', compact('item'));
+        $badge = $item->microfinance ? ['badge' => 'Microfinance', 'variant' => 'info'] : ['badge' => 'Banque', 'variant' => 'neutral'];
+
+        return Inertia::render('Admin/Fiche', [
+            'title' => $item->name,
+            'subtitle' => "Détails de l'établissement",
+            'badge' => $badge,
+            'sections' => [[
+                'title' => 'Établissement',
+                'items' => [
+                    ['label' => 'Nom', 'value' => $item->name],
+                    ['label' => 'Siège', 'value' => $item->siege ?: '-'],
+                    ['label' => 'Adresse', 'value' => $item->address ?: '-', 'multiline' => true],
+                    ['label' => 'Type', 'badge' => $badge],
+                ],
+            ]],
+            'actions' => [
+                K::dialog('edit', 'Modifier', "Modifier l'établissement", self::formFields($item), route('admin.banques.update', $item->id), 'put', ['wide' => true]),
+            ],
+            'dangerActions' => [
+                K::destroy(route('admin.banques.destroy', $item->id), 'Supprimer cet établissement ?', 'Supprimer cet établissement'),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Banques & microfinances', 'href' => route('admin.banques.index')],
+                ['label' => $item->name],
+            ],
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -72,6 +145,16 @@ class BanqueController extends Controller
         Session::flash('success', 'Établissement supprimé.');
 
         return redirect()->route('admin.banques.index');
+    }
+
+    private static function formFields(?Banque $item = null): array
+    {
+        return [
+            K::field('name', $item ? 'Nom' : "Nom de l'établissement", 'text', ['required' => true, 'value' => $item?->name ?? '']),
+            K::field('siege', 'Siège', 'text', ['value' => $item?->siege ?? '']),
+            K::field('address', 'Adresse', 'textarea', ['value' => $item?->address ?? '']),
+            K::field('microfinance', 'Microfinance', 'checkbox', ['hint' => 'Établissement de microfinance', 'value' => (int) (bool) ($item?->microfinance ?? 0)]),
+        ];
     }
 
     private function validateData(Request $request): array

@@ -8,6 +8,7 @@ use App\Models\Agence;
 use App\Models\Representation;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Inertia\Admin\AgencyUsersPresenter;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -23,11 +24,7 @@ class UserController extends Controller
     {
         $items = User::where('agence_id', auth()->user()->agence_id)->get();
 
-        return view('/Ca/Users/index', [
-            'items' => $items,
-            'layout' => $this->governanceLayout(),
-            'routePrefix' => $this->governanceRoutePrefix(),
-        ]);
+        return AgencyUsersPresenter::render($items, $this->governanceRoutePrefix());
     }
 
 
