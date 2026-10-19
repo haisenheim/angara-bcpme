@@ -132,11 +132,11 @@ class QualificationController extends Controller
         }
 
         $data = $request->validate([
-            'analyse_strategique' => 'nullable|string|max:20000',
-            'analyse_operationnelle' => 'nullable|string|max:20000',
-            'analyse_eligibilite' => 'nullable|string|max:20000',
-            'identification_besoins' => 'nullable|string|max:20000',
-            'qualification_notes' => 'nullable|string|max:20000',
+            'analyse_strategique' => 'nullable|string', // longueur illimitée (colonne LONGTEXT)
+            'analyse_operationnelle' => 'nullable|string', // longueur illimitée (colonne LONGTEXT)
+            'analyse_eligibilite' => 'nullable|string', // longueur illimitée (colonne LONGTEXT)
+            'identification_besoins' => 'nullable|string', // longueur illimitée (colonne LONGTEXT)
+            'qualification_notes' => 'nullable|string', // longueur illimitée (colonne LONGTEXT)
             'besoin_financement' => 'nullable|boolean',
             'besoin_accompagnement' => 'nullable|boolean',
             'besoin_structuration' => 'nullable|boolean',
@@ -153,7 +153,9 @@ class QualificationController extends Controller
 
         $this->analyseCritiqueService->syncChefFiliereQualification($item, $eer);
 
-        Session::flash('success', 'Structuration et identification des besoins enregistrées.');
+        $mots = collect(['analyse_strategique', 'analyse_operationnelle', 'analyse_eligibilite', 'identification_besoins', 'qualification_notes'])
+            ->sum(fn ($champ) => \App\Support\WordCount::of($eer->{$champ}));
+        Session::flash('success', 'Structuration et identification des besoins enregistrées ('.\App\Support\WordCount::format($mots).').');
 
         return redirect()->route('chef-filiere.qualifications.show', $token);
     }

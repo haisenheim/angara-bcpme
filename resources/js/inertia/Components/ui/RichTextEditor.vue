@@ -3,17 +3,21 @@
  * Éditeur riche léger (gras, italique, listes) produisant du HTML, compatible avec les avis
  * déjà saisis via Summernote côté Blade. Le HTML affiché est assaini par <SafeHtml> (DOMPurify).
  */
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DOMPurify from 'dompurify';
 import Icon from '@/Components/ui/Icon.vue';
+import { countWords, formatWords } from '@/utils/words';
 
 const props = defineProps({
     modelValue: { type: String, default: '' },
     minHeight: { type: String, default: '10rem' },
+    // Affiche le nombre de mots saisis sous la zone de texte (aucune limite n'est imposée).
+    wordCount: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:modelValue']);
 
 const editor = ref(null);
+const words = computed(() => (props.wordCount ? countWords(props.modelValue) : 0));
 
 onMounted(() => {
     editor.value.innerHTML = DOMPurify.sanitize(props.modelValue ?? '');
@@ -60,5 +64,8 @@ const tools = [
             @input="sync"
             @blur="sync"
         ></div>
+        <div v-if="wordCount" class="flex justify-end border-t border-surface-container-highest bg-surface-container-low px-3 py-1 text-[11px] font-semibold text-on-surface-variant" aria-live="polite">
+            {{ formatWords(words) }}
+        </div>
     </div>
 </template>

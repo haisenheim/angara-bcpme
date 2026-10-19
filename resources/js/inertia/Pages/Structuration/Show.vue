@@ -12,6 +12,7 @@ import StatusBadge from '@/Components/ui/StatusBadge.vue';
 import SafeHtml from '@/Components/ui/SafeHtml.vue';
 import RichTextEditor from '@/Components/ui/RichTextEditor.vue';
 import RejectionBanner from '@/Components/workflow/RejectionBanner.vue';
+import { countWords, formatWords } from '@/utils/words';
 
 const props = defineProps({
     entreprise: Object,
@@ -37,6 +38,9 @@ const notes = [
     ['identification_besoins', 'Identification des besoins', 'Besoins prioritaires tels qu\'identifiés avec l\'entreprise.'],
     ['qualification_notes', 'Notes de structuration', 'Remarques complémentaires.'],
 ];
+// Nombre de mots : aucune limite, compteur affiché sous chaque champ et total à l'enregistrement.
+const totalWords = computed(() => [...analyses, ...notes].reduce((n, [name]) => n + countWords(form[name]), 0));
+
 const besoins = [
     ['besoin_financement', 'Financement', 'payments'],
     ['besoin_accompagnement', 'Accompagnement', 'support_agent'],
@@ -103,6 +107,9 @@ const steps = ['Analyses', 'Besoins', 'Soumission chef d\'agence'];
             <p v-else class="text-xs text-on-surface-variant">Aucun besoin coché.</p>
         </Card>
         <Card v-for="s in readonly.sections" :key="s.label" :title="s.label">
+            <template #actions>
+                <span class="text-[11px] font-semibold text-on-surface-variant">{{ formatWords(countWords(s.html)) }}</span>
+            </template>
             <SafeHtml :html="s.html" class="text-xs leading-relaxed text-on-surface" />
         </Card>
         <Card v-if="readonly.programmes.length" title="Programmes retenus (ancien flux)">
@@ -127,7 +134,7 @@ const steps = ['Analyses', 'Besoins', 'Soumission chef d\'agence'];
                 <div v-for="[name, label, hint] in analyses" :key="name" class="space-y-1.5">
                     <label class="block text-xs font-semibold text-on-surface">{{ label }}</label>
                     <p class="text-[11px] text-on-surface-variant">{{ hint }}</p>
-                    <RichTextEditor v-model="form[name]" min-height="8rem" />
+                    <RichTextEditor v-model="form[name]" min-height="8rem" word-count />
                     <p v-if="form.errors[name]" class="text-xs text-error">{{ form.errors[name] }}</p>
                 </div>
             </div>
@@ -139,7 +146,7 @@ const steps = ['Analyses', 'Besoins', 'Soumission chef d\'agence'];
                 <div v-for="[name, label, hint] in notes" :key="name" class="space-y-1.5">
                     <label class="block text-xs font-semibold text-on-surface">{{ label }}</label>
                     <p class="text-[11px] text-on-surface-variant">{{ hint }}</p>
-                    <RichTextEditor v-model="form[name]" min-height="8rem" />
+                    <RichTextEditor v-model="form[name]" min-height="8rem" word-count />
                     <p v-if="form.errors[name]" class="text-xs text-error">{{ form.errors[name] }}</p>
                 </div>
             </div>
@@ -158,8 +165,11 @@ const steps = ['Analyses', 'Besoins', 'Soumission chef d\'agence'];
                     {{ label }}
                 </label>
             </div>
-            <div class="mt-5 flex justify-end">
-                <Button type="submit" variant="primary" icon="check" :disabled="form.processing">Enregistrer la structuration</Button>
+            <div class="mt-5 flex flex-wrap items-center justify-end gap-3">
+                <span class="text-xs text-on-surface-variant">Total rédigé : <strong class="text-on-surface">{{ formatWords(totalWords) }}</strong></span>
+                <Button type="submit" variant="primary" icon="check" :disabled="form.processing">
+                    {{ form.processing ? 'Enregistrement…' : 'Enregistrer la structuration' }}
+                </Button>
             </div>
         </Card>
 
