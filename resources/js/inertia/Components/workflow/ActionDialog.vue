@@ -19,10 +19,15 @@ const form = useForm(Object.fromEntries(props.action.fields.map((f) => [f.name, 
 
 const errorList = computed(() => Object.values(form.errors));
 
+const hasFile = props.action.fields.some((f) => f.type === 'file');
+
 const submit = (target) => {
     if (target.confirm && !window.confirm(target.confirm)) return;
-    form.post(target.url, {
+    const method = (target.method ?? 'post').toLowerCase();
+    // PUT / PATCH / DELETE simulés (_method) : compatibles avec les envois multipart.
+    form.transform((data) => (method === 'post' ? data : { ...data, _method: method })).post(target.url, {
         preserveScroll: true,
+        forceFormData: hasFile,
         onSuccess: () => emit('close'),
     });
 };
@@ -62,6 +67,24 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                 </div>
 
                 <RichTextEditor v-else-if="field.type === 'richtext'" v-model="form[field.name]" :min-height="action.wide ? '12rem' : '10rem'" />
+
+                <input
+                    v-else-if="['text', 'number', 'date', 'email', 'tel'].includes(field.type)"
+                    :id="`f-${field.name}`" v-model="form[field.name]" :type="field.type" :required="field.required"
+                    :step="field.type === 'number' ? 'any' : null" :class="inputClass"
+                >
+
+                <input
+                    v-else-if="field.type === 'file'"
+                    :id="`f-${field.name}`" type="file" :accept="field.accept ?? null" :required="field.required"
+                    class="block w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-surface-container file:px-3 file:py-2 file:text-xs file:font-semibold"
+                    @input="form[field.name] = $event.target.files[0]"
+                >
+
+                <label v-else-if="field.type === 'checkbox'" class="flex items-center gap-2 text-xs text-on-surface">
+                    <input :id="`f-${field.name}`" v-model="form[field.name]" type="checkbox" :true-value="1" :false-value="0" class="rounded text-secondary focus:ring-secondary">
+                    {{ field.hint ?? 'Oui' }}
+                </label>
 
                 <textarea v-else :id="`f-${field.name}`" v-model="form[field.name]" rows="4" :required="field.required" :class="inputClass" />
 
