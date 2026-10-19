@@ -6,6 +6,9 @@ use App\Http\Controllers\Concerns\StoresDossierPieces;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
 use App\Models\Dossier;
+use App\Services\Inertia\DossierInstructionPagePresenter;
+use App\Services\Inertia\DossierWorkspacePresenter;
+use App\Services\Inertia\InstructionDossierListPresenter;
 use App\Services\InstructionAnalyseCritiqueDossierDocumentService;
 use App\Services\WorkflowEmailNotificationService;
 use Dompdf\Canvas;
@@ -17,10 +20,19 @@ class DossierController extends Controller
     use StoresDossierPieces;
 
     //
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Ca/Dossiers/index');
+        $filtered = $this->applyFilters($this->baseQuery()->clone(), $this->parseFilters($request));
+
+        return \Inertia\Inertia::render('Dossiers/Index', app(InstructionDossierListPresenter::class)->present($request, $filtered, $this->baseQuery(), [
+            'showRoute' => 'ca.dossiers.show',
+            'dashboard' => 'ca.dashboard',
+            'title' => 'Dossiers d’instruction',
+            'subtitle' => 'Liste des dossiers de l’agence (un ou plusieurs programmes par dossier ; budgets d’appui visibles dans la fiche dossier). Les dossiers soumis par le chef de filière sont à valider dans « Dossiers à valider ».',
+            'links' => \Illuminate\Support\Facades\Route::has('ca.workflow.instruction-dossiers.index')
+                ? [['label' => 'Dossiers à valider', 'href' => route('ca.workflow.instruction-dossiers.index'), 'icon' => 'fact_check']]
+                : [],
+        ]));
     }
 
     public function fetchAll()
@@ -138,103 +150,27 @@ class DossierController extends Controller
         $dossier = Dossier::query()
             ->where('token', $token)
             ->where('agence_id', auth()->user()->agence_id)
-            ->with([
-                'entreprise',
-                'programme',
-                'instructionProgrammes.programme',
-                'gestionnaire',
-                'analyste',
-                'agence',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-                'instructionAgenceCaAvisSavedBy',
-                'instructionCaTransmittedToExploitationBy',
-                'exploitationAnalysteAssignedBy',
-                'exploitationAnalysteTransmittedToExploitationBy',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
-                'exploitationAvisCreditUser',
-                'exploitationEngagementsDecisionUser',
-                'juridiqueInstructionSubmittedBy',
-                'juridiqueAnalysteUser',
-                'juridiqueAnalysteAssignedBy',
-                'juridiqueAnalysteSubmittedToRejuBy',
-                'juridiqueSubmittedToEngagementsBy',
-                'rengAnalysteCreditUser',
-                'rengAnalysteCreditAssignedBy',
-                'rengAnalysteCreditSubmittedBy',
-                'rengSubmittedToRisquesBy',
-                'rerxAnalysteRisquesUser',
-                'rerxAnalysteRisquesAssignedBy',
-                'rerxAnalysteRisquesSubmittedBy',
-                'rerxSubmittedToDirectionBy',
-            ])
+            ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme', 'instructionAgenceCaAvisSavedBy']))
             ->firstOrFail();
 
-        $presented = app(\App\Services\DossierInstructionShowPresenter::class)->presentForDossier($dossier);
-        $dossier = $presented['item'];
-        $criteres = $presented['criteres'];
-        $indicateurs = $presented['indicateurs'];
-        $indicateurReference = $presented['indicateurReference'];
-        $noteFinale = $presented['noteFinale'];
-        $sme = $presented['sme'];
-        $smeMention = $presented['smeMention'];
-        $smeDescription = $presented['smeDescription'];
-        $banques = $presented['banques'];
-        $engagementGridUrl = $presented['engagementGridUrl'];
-        $instructionConsultation = $presented['instructionConsultation'];
-        $fichierTypes = $presented['fichierTypes'];
+        $ws = app(DossierWorkspacePresenter::class);
+        $user = auth()->user();
+        $notation = $ws->notation($dossier);
 
-        $structuration = app(\App\Services\StructurationClosureService::class);
-        $canApproveRejectInstructionTransmission = $structuration->canChefAgenceDecide(auth()->user(), $dossier);
+        $props = $ws->fiche($dossier, ['route' => 'ca', 'label' => 'Chef d\'agence', 'title' => "Chef d'agence"], $user, false, [
+            'store' => 'ca.dossier.pieces.store',
+            'update' => 'ca.dossier.pieces.update',
+            'destroy' => 'ca.dossier.pieces.destroy',
+        ], 'ca.dossiers.index', 'Dossiers d\'instruction', 'ca.entreprises.show');
 
-        $space = [
-            'route' => 'ca',
-            'title' => "Chef d'agence",
-        ];
-        $readonly = false;
-        $piecesModalId = 'dossierPieceUploadModal_ca';
-        $exploitationSteps = $dossier->exploitationWorkflowSteps();
+        $props['workspace'] = $ws->chefAgence($dossier, $notation);
+        // Validation / rejet de la structuration et transmission à l'exploitation, avant les actions de clôture.
+        $props['actions'] = array_merge($ws->chefAgenceActions($dossier, $user), $props['actions']);
+        $props['links']['analyseCritique'] = route('ca.dossier.analyse-critique.synthese', $dossier->token);
+        $props['links']['analyseCritiquePdf'] = route('ca.dossier.analyse-critique.synthese.pdf', $dossier->token);
+        $props['links']['grilleAnalyse'] = route('ca.dossier.get.grille.analyse', $dossier->token);
 
-        $delegation = app(\App\Services\InstructionDelegationService::class);
-        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
-        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
-        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
-
-        $analystesExploitation = collect();
-        $analystesJuridique = collect();
-        $analystesCredit = collect();
-        $analystesRisques = collect();
-        $respexpInstructionLocked = false;
-
-        return view('RoleSpace.dossiers.show', compact(
-            'space',
-            'dossier',
-            'criteres',
-            'indicateurs',
-            'indicateurReference',
-            'noteFinale',
-            'sme',
-            'smeMention',
-            'smeDescription',
-            'banques',
-            'engagementGridUrl',
-            'instructionConsultation',
-            'fichierTypes',
-            'canApproveRejectInstructionTransmission',
-            'readonly',
-            'piecesModalId',
-            'exploitationSteps',
-            'canCloseInstruction',
-            'instructionClosureRuleDescription',
-            'instructionClosureStatutLabel',
-            'analystesExploitation',
-            'analystesJuridique',
-            'analystesCredit',
-            'analystesRisques',
-            'respexpInstructionLocked',
-        ));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     public function storeDossierPiece(Request $request, string $token)
@@ -368,10 +304,23 @@ class DossierController extends Controller
             ])
             ->firstOrFail();
 
-        $structuration = app(\App\Services\StructurationClosureService::class);
-        $canApproveRejectInstructionTransmission = $structuration->canChefAgenceDecide(auth()->user(), $item);
+        $ws = app(DossierWorkspacePresenter::class);
 
-        return view('Ca/Dossiers/analyse_critique', compact('item', 'canApproveRejectInstructionTransmission'));
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($item, auth()->user(), [
+            'title' => 'Sept zones de l’analyse critique (analyste)',
+            'kicker' => 'Grille et sept zones',
+            'intro' => 'Dossier d’analyse critique : uniquement ces saisies analyste (la grille est dans la fiche instruction).',
+            'budgets' => true,
+            'zones' => $ws->legacyZones($item, null, [], 'sequence', true, true),
+            'actions' => $ws->chefAgenceActions($item, auth()->user(), false),
+            'links' => [
+                ['label' => 'Dossier d’analyse critique (7 zones)', 'href' => route('ca.dossier.analyse-critique.synthese', $item->token), 'icon' => 'description'],
+                ['label' => 'Exporter le dossier en PDF', 'href' => route('ca.dossier.analyse-critique.synthese.pdf', $item->token), 'icon' => 'picture_as_pdf', 'external' => true],
+            ],
+            'showRoute' => 'ca.dossiers.show',
+            'listRoute' => 'ca.dossiers.index',
+            'dashboardRoute' => 'ca.dashboard',
+        ]));
     }
 
     /**
@@ -390,8 +339,19 @@ class DossierController extends Controller
             ->firstOrFail();
 
         $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($item);
+        $ws = app(DossierWorkspacePresenter::class);
 
-        return view('Ca/Dossiers/dossier_analyse_critique', compact('item', 'doc'));
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($item, auth()->user(), $ws->analyseCritiqueDocument($item, $doc) + [
+            'title' => 'Dossier d’analyse critique',
+            'intro' => 'Analyse critique de l’analyste financier — rubriques alignées sur la fiche dossier.',
+            'links' => [
+                ['label' => 'Exporter le dossier en PDF', 'href' => route('ca.dossier.analyse-critique.synthese.pdf', $item->token), 'icon' => 'picture_as_pdf', 'external' => true],
+                ['label' => 'Grille et rubriques analyste', 'href' => route('ca.dossier.get.grille.analyse', $item->token), 'icon' => 'table_view'],
+            ],
+            'showRoute' => 'ca.dossiers.show',
+            'listRoute' => 'ca.dossiers.index',
+            'dashboardRoute' => 'ca.dashboard',
+        ]));
     }
 
     public function dossierAnalyseCritiqueSynthesePdf(string $token)

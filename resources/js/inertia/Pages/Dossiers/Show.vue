@@ -10,6 +10,9 @@ import PoleCard from '@/Components/workflow/PoleCard.vue';
 import ActionPanel from '@/Components/workflow/ActionPanel.vue';
 import Timeline from '@/Components/workflow/Timeline.vue';
 import PiecesManager from '@/Components/workflow/PiecesManager.vue';
+import AnalysteWorkspace from '@/Components/workflow/AnalysteWorkspace.vue';
+import ChefAgenceWorkspace from '@/Components/workflow/ChefAgenceWorkspace.vue';
+import ConsultationWorkspace from '@/Components/workflow/ConsultationWorkspace.vue';
 
 const props = defineProps({
     space: Object,
@@ -23,9 +26,18 @@ const props = defineProps({
     actions: Array,
     links: Object,
     fichierTypes: { type: Array, default: () => [] },
+    // Espace de travail propre au profil (analyste financier, chef d'agence, consultation admin / régional).
+    workspace: { type: Object, default: null },
 });
 
+const workspaceTab = {
+    analyste: 'Espace de travail analyste',
+    ca: 'Espace chef d\'agence',
+    consultation: 'Grille & analyse critique',
+};
+
 const tabs = computed(() => [
+    props.workspace ? { key: 'workspace', label: workspaceTab[props.workspace.kind] ?? 'Espace de travail' } : null,
     props.poles.length ? { key: 'avis', label: 'Avis des pôles', count: props.poles.filter((p) => p.state === 'done').length + '/' + props.poles.length } : null,
     { key: 'synthese', label: 'Synthèse' },
     { key: 'programmes', label: 'Programmes & budgets', count: props.dossier.programmes.length || null },
@@ -46,12 +58,14 @@ const metrics = computed(() => [
     { label: 'Engagements en cours', value: props.dossier.montants.enCours ?? '—', sub: null },
     { label: 'Programme(s) d\'appui', value: props.dossier.programmesLabel || '—', sub: null },
     { label: 'Analyste financier', value: props.dossier.analysteFinancier ?? 'Non affecté', sub: null },
-    { label: 'Étape courante', value: props.dossier.currentStep || '—', sub: props.dossier.createdAt ? `Créé le ${props.dossier.createdAt}` : null, highlight: true },
+    { label: 'Étape courante', value: props.dossier.currentStep || '—', sub: [props.dossier.suivi, props.dossier.createdAt ? `Créé le ${props.dossier.createdAt}` : null].filter(Boolean).join(' • ') || null, highlight: true },
 ]);
 
 const toolLinks = computed(() => [
     ['Grille de notation & instruction', 'table_view', props.links.instruction],
+    ['Grille d\'analyse critique', 'fact_check', props.links.grilleAnalyse],
     ['Synthèse d\'analyse critique', 'summarize', props.links.analyseCritique],
+    ['Grille des engagements', 'account_balance', props.links.engagements],
     ['Fiche entreprise & grille des engagements', 'storefront', props.links.entreprise],
 ].filter(([, , href]) => href));
 </script>
@@ -126,7 +140,13 @@ const toolLinks = computed(() => [
     <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <!-- Contenu principal -->
         <div class="space-y-5 lg:col-span-8">
-            <template v-if="tab === 'avis'">
+            <template v-if="tab === 'workspace'">
+                <AnalysteWorkspace v-if="workspace.kind === 'analyste'" :workspace="workspace" />
+                <ChefAgenceWorkspace v-else-if="workspace.kind === 'ca'" :workspace="workspace" />
+                <ConsultationWorkspace v-else :workspace="workspace" />
+            </template>
+
+            <template v-else-if="tab === 'avis'">
                 <PoleCard v-for="pole in poles" :key="pole.key" :pole="pole" />
             </template>
 
@@ -143,8 +163,8 @@ const toolLinks = computed(() => [
                 </dl>
             </Card>
 
-            <Card v-else-if="tab === 'programmes'" title="Programmes d'appui et budgets" :padded="false">
-                <div class="px-5 pb-5">
+            <Card v-else-if="tab === 'programmes'" title="Programmes d'appui et budgets">
+                <div>
                     <table class="w-full text-left text-xs">
                         <thead class="border-b border-surface-container-highest text-[11px] uppercase tracking-wider text-on-surface-variant">
                             <tr><th class="py-2">Programme</th><th class="py-2 text-right">Appui financier</th><th class="py-2 text-right">Appui non financier</th></tr>
@@ -157,6 +177,13 @@ const toolLinks = computed(() => [
                             </tr>
                             <tr v-if="!dossier.programmes.length"><td colspan="3" class="py-4 text-center text-on-surface-variant">Aucun programme rattaché.</td></tr>
                         </tbody>
+                        <tfoot v-if="dossier.programmesTotaux" class="border-t-2 border-surface-container-highest font-bold text-on-surface">
+                            <tr>
+                                <td class="py-2.5">Total (général : {{ dossier.programmesTotaux.general }})</td>
+                                <td class="py-2.5 text-right">{{ dossier.programmesTotaux.financier }}</td>
+                                <td class="py-2.5 text-right">{{ dossier.programmesTotaux.nonFinancier }}</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </Card>

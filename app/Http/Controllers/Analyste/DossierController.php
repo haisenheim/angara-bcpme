@@ -11,6 +11,9 @@ use App\Models\DossierInstructionProgramme;
 use App\Models\Instruction\IndicateurFinancier;
 use App\Models\User;
 use App\Services\DossierInstructionShowPresenter;
+use App\Services\Inertia\DossierInstructionPagePresenter;
+use App\Services\Inertia\DossierWorkspacePresenter;
+use App\Services\Inertia\InstructionDossierListPresenter;
 use App\Services\WorkflowEmailNotificationService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
@@ -26,10 +29,16 @@ class DossierController extends Controller
     use StoresDossierPieces;
 
     //
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Analyste/Dossiers/index');
+        $filtered = $this->applyFilters($this->baseQuery()->clone(), $this->parseFilters($request));
+
+        return \Inertia\Inertia::render('Dossiers/Index', app(InstructionDossierListPresenter::class)->present($request, $filtered, $this->baseQuery(), [
+            'showRoute' => 'analyste.dossiers.show',
+            'dashboard' => 'analyste.dashboard',
+            'title' => 'Dossiers d\'instruction',
+            'subtitle' => 'Liste de vos dossiers d\'instruction.',
+        ]));
     }
 
     public function fetchAll()
@@ -313,9 +322,17 @@ class DossierController extends Controller
     {
         $item = Dossier::where('token', $token)->firstOrFail();
         $this->authorizeAnalysteDossier($item);
-        $item->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
+        $item->loadMissing(['entreprise', 'fichiersDossier.type', 'fichiersDossier.uploadedBy']);
+        $ws = app(DossierWorkspacePresenter::class);
 
-        return view('Analyste/Dossiers/analyse_critique', compact('item'));
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($item, auth()->user(), [
+            'title' => 'Grille d\'analyse critique',
+            'kicker' => 'Grille d\'analyse critique',
+            'zones' => $ws->legacyZones($item, route('analyste.dossier.set.analyse'), range(1, 7), 'sequence', false, true, '8. Remarques et recommandations du chef d\'agence'),
+            'showRoute' => 'analyste.dossiers.show',
+            'listRoute' => 'analyste.dossiers.index',
+            'dashboardRoute' => 'analyste.dashboard',
+        ]));
     }
 
     public function setAnalyse()
@@ -465,101 +482,26 @@ class DossierController extends Controller
     {
         $dossier = Dossier::query()
             ->where('token', $token)
-            ->with([
-                'entreprise',
-                'programme',
-                'instructionProgrammes.programme',
-                'gestionnaire',
-                'analyste',
-                'agence',
-                'exploitationAnalysteAssignedBy',
-                'exploitationAnalysteTransmittedToExploitationBy',
-                'exploitationAnalysteRejectedBy',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-                'exploitationAvisCreditUser',
-                'exploitationEngagementsDecisionUser',
-                'instructionCaTransmittedToExploitationBy',
-                'juridiqueInstructionSubmittedBy',
-                'juridiqueAnalysteUser',
-                'juridiqueAnalysteAssignedBy',
-                'juridiqueAnalysteSubmittedToRejuBy',
-                'juridiqueSubmittedToEngagementsBy',
-                'rengAnalysteCreditUser',
-                'rengAnalysteCreditAssignedBy',
-                'rengAnalysteCreditSubmittedBy',
-                'rengSubmittedToRisquesBy',
-                'rerxAnalysteRisquesUser',
-                'rerxAnalysteRisquesAssignedBy',
-                'rerxAnalysteRisquesSubmittedBy',
-                'rerxSubmittedToDirectionBy',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
-            ])
+            ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme']))
             ->firstOrFail();
 
         $this->authorizeAnalysteDossier($dossier);
 
-        $presented = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
-        $dossier = $presented['item'];
-        $criteres = $presented['criteres'];
-        $indicateurs = $presented['indicateurs'];
-        $indicateurReference = $presented['indicateurReference'];
-        $noteFinale = $presented['noteFinale'];
-        $sme = $presented['sme'];
-        $smeMention = $presented['smeMention'];
-        $smeDescription = $presented['smeDescription'];
-        $banques = $presented['banques'];
-        $engagementGridUrl = $presented['engagementGridUrl'];
-        $instructionConsultation = $presented['instructionConsultation'];
-        $fichierTypes = $presented['fichierTypes'];
+        $ws = app(DossierWorkspacePresenter::class);
+        $user = auth()->user();
+        $notation = $ws->notation($dossier);
 
-        $space = [
-            'route' => 'analyste',
-            'title' => 'Analyste financier',
-        ];
-        $readonly = false;
-        $piecesModalId = 'dossierPieceUploadModal_analyste';
-        $exploitationSteps = $dossier->exploitationWorkflowSteps();
+        $props = $ws->fiche($dossier, ['route' => 'analyste', 'label' => 'Analyste', 'title' => 'Analyste financier'], $user, false, [
+            'store' => 'analyste.dossier.pieces.store',
+            'update' => 'analyste.dossier.pieces.update',
+            'destroy' => 'analyste.dossier.pieces.destroy',
+        ], 'analyste.dossiers.index', 'Dossiers d\'instruction', 'analyste.entreprises.show');
 
-        $delegation = app(\App\Services\InstructionDelegationService::class);
-        $canCloseInstruction = $delegation->userCanCloseInstruction(auth()->user(), $dossier);
-        $instructionClosureRuleDescription = $delegation->describeRuleForInstructionClosure($dossier);
-        $instructionClosureStatutLabel = $delegation->instructionClosureStatutLabel($dossier);
+        $props['workspace'] = $ws->analyste($dossier, $user, $notation);
+        $props['links']['engagements'] = $dossier->entreprise ? ($notation['engagementGridUrl'] ?? null) : null;
+        $props['links']['grilleAnalyse'] = route('analyste.dossier.get.grille.analyse', $dossier->token);
 
-        $analystesExploitation = collect();
-        $analystesJuridique = collect();
-        $analystesCredit = collect();
-        $analystesRisques = collect();
-        $respexpInstructionLocked = false;
-
-        return view('RoleSpace.dossiers.show', compact(
-            'space',
-            'dossier',
-            'criteres',
-            'indicateurs',
-            'indicateurReference',
-            'noteFinale',
-            'sme',
-            'smeMention',
-            'smeDescription',
-            'banques',
-            'engagementGridUrl',
-            'instructionConsultation',
-            'fichierTypes',
-            'readonly',
-            'piecesModalId',
-            'exploitationSteps',
-            'canCloseInstruction',
-            'instructionClosureRuleDescription',
-            'instructionClosureStatutLabel',
-            'analystesExploitation',
-            'analystesJuridique',
-            'analystesCredit',
-            'analystesRisques',
-            'respexpInstructionLocked',
-        ));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     public function storeDossierPiece(Request $request, string $token)
