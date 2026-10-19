@@ -31,6 +31,27 @@ class PortfolioController extends Controller
     use ResolvesRoleSpace;
     use StoresDossierPieces;
 
+    /**
+     * Analystes qui consultent tout le portefeuille des dossiers (traités et en cours), en lecture seule
+     * pour les dossiers qui ne leur sont pas affectés. Les écritures restent limitées à leurs dossiers.
+     */
+    protected const PORTFOLIO_CONSULTATION_SPACES = ['analyste-credit', 'analyste-juridique'];
+
+    protected function consultsWholePortfolio(?string $route = null): bool
+    {
+        return in_array($route ?? $this->resolveSpace()['route'], self::PORTFOLIO_CONSULTATION_SPACES, true);
+    }
+
+    /** Le dossier est-il affecté à l'analyste connecté (espaces analyste crédit / juridique) ? */
+    protected function isDossierAssignedToCurrentAnalyst(Dossier $dossier, string $route): bool
+    {
+        return match ($route) {
+            'analyste-credit' => (int) $dossier->reng_analyste_credit_user_id === (int) auth()->id(),
+            'analyste-juridique' => (int) $dossier->juridique_analyste_user_id === (int) auth()->id(),
+            default => false,
+        };
+    }
+
     protected function isJuridiquePortefeuilleConsultationRoute(): bool
     {
         $name = (string) (request()->route()?->getName() ?? '');
@@ -382,6 +403,10 @@ class PortfolioController extends Controller
 
     protected function assertPortfolioEntrepriseAccess(Entreprise $item, array $space): void
     {
+        if ($this->consultsWholePortfolio($space['route'] ?? '')) {
+            return; // Consultation de tout le portefeuille (analystes crédit et juridique).
+        }
+
         if (($space['route'] ?? '') === 'analyste-juridique') {
             $allowed = Dossier::query()
                 ->where('entreprise_id', $item->id)
@@ -431,7 +456,9 @@ class PortfolioController extends Controller
             abort(404);
         }
 
-        if (($space['route'] ?? '') === 'analyste-juridique') {
+        if ($this->consultsWholePortfolio($space['route'] ?? '')) {
+            // Consultation de tout le portefeuille : pas de restriction par affectation.
+        } elseif (($space['route'] ?? '') === 'analyste-juridique') {
             $allowed = Dossier::query()
                 ->where('entreprise_id', $entreprise->id)
                 ->where('juridique_analyste_user_id', auth()->id())
@@ -440,9 +467,7 @@ class PortfolioController extends Controller
             if (! $allowed) {
                 abort(403);
             }
-        }
-
-        if (($space['route'] ?? '') === 'analyste-credit') {
+        } elseif (($space['route'] ?? '') === 'analyste-credit') {
             $allowed = Dossier::query()
                 ->where('entreprise_id', $entreprise->id)
                 ->where('reng_analyste_credit_user_id', auth()->id())
@@ -519,9 +544,9 @@ class PortfolioController extends Controller
             $p === 'respexp' => ['Dossiers d\'instruction', 'Consultation, cotation analyste, avis de crédit et validation des engagements.'],
             $portefeuilleJuridique => ['Portefeuille des dossiers', 'Vue transverse : tous les dossiers d\'instruction (consultation).'],
             $p === 'juridique' => ['Dossiers d\'instruction', 'Dossiers transmis au pôle juridique.'],
-            $p === 'analyste-juridique' => ['Mes dossiers', 'Dossiers qui vous sont affectés par le responsable juridique.'],
+            $p === 'analyste-juridique' => ['Dossiers d\'instruction', 'Tout le portefeuille, dossiers traités et en cours. Vos dossiers affectés sont modifiables depuis leur fiche ; les autres sont en consultation.'],
             $p === 'reng' => ['Dossiers d\'instruction', 'Dossiers transmis par le pôle juridique au responsable engagements.'],
-            $p === 'analyste-credit' => ['Mes dossiers', 'Dossiers du pôle engagements qui vous sont affectés.'],
+            $p === 'analyste-credit' => ['Dossiers d\'instruction', 'Tout le portefeuille, dossiers traités et en cours. Vos dossiers affectés sont modifiables depuis leur fiche ; les autres sont en consultation.'],
             $p === 'rerx' => ['Dossiers d\'instruction', 'Dossiers transmis par le responsable engagements au responsable risques.'],
             $p === 'analyste-risques' => ['Mes dossiers', 'Dossiers du pôle risques qui vous sont affectés.'],
             $p === 'conformite' => ['Dossiers d\'instruction', 'Vue transverse : tous les dossiers (toutes agences, tous stades) — consultation.'],
@@ -554,7 +579,12 @@ class PortfolioController extends Controller
                     'etape' => $d->currentOrganisationLabel() ?: null,
                 ],
             ])
-            ->search('Entreprise, programme…')
+            ->search('Entreprise, programme…');
+        if ($this->consultsWholePortfolio($p)) {
+            $table->select('traitement', 'Traitement', ['en_cours' => 'En cours de traitement', 'traites' => 'Déjà traités (clôturés)'])
+                ->select('affectation', 'Affectation', ['moi' => 'Mes dossiers']);
+        }
+        $table
             ->select('instruction_state', 'Instruction', ['pending' => 'En attente', 'in_progress' => 'En cours'], 'Toutes')
             ->select('instruction_statut', 'Statut', \App\Services\DossierInstructionStatutService::filterLabels())
             ->date('created_from', 'Créé du')
@@ -614,16 +644,19 @@ class PortfolioController extends Controller
         if ($space['route'] === 'juridique' && ! $this->isJuridiquePortefeuilleConsultationRoute()) {
             $query->whereNotNull('juridique_instruction_submitted_at');
         }
-        if ($space['route'] === 'analyste-juridique') {
-            $query->where('juridique_analyste_user_id', auth()->id())
-                ->whereNotNull('juridique_instruction_submitted_at');
+        if ($this->consultsWholePortfolio($space['route'])) {
+            // Tout le portefeuille ; filtres « Affectation » et « Traitement ».
+            if ($request->query('affectation') === 'moi') {
+                $query->where($space['route'] === 'analyste-credit' ? 'reng_analyste_credit_user_id' : 'juridique_analyste_user_id', auth()->id());
+            }
+            if ($request->query('traitement') === 'en_cours') {
+                $query->whereNull('instruction_closure_validated_at')->whereNull('instruction_closure_rejected_at');
+            } elseif ($request->query('traitement') === 'traites') {
+                $query->where(fn (Builder $q) => $q->whereNotNull('instruction_closure_validated_at')->orWhereNotNull('instruction_closure_rejected_at'));
+            }
         }
         if ($space['route'] === 'reng') {
             $query->whereNotNull('juridique_submitted_to_engagements_at');
-        }
-        if ($space['route'] === 'analyste-credit') {
-            $query->where('reng_analyste_credit_user_id', auth()->id())
-                ->whereNotNull('juridique_submitted_to_engagements_at');
         }
         if ($space['route'] === 'rerx') {
             $query->whereNotNull('reng_submitted_to_risques_at');
@@ -717,7 +750,8 @@ class PortfolioController extends Controller
             ->firstOrFail();
 
         $readonly = in_array($route, ['gestionnaire', 'conformite'], true)
-            || ($route === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute());
+            || ($route === 'juridique' && $this->isJuridiquePortefeuilleConsultationRoute())
+            || ($this->consultsWholePortfolio($route) && ! $this->isDossierAssignedToCurrentAnalyst($dossier, $route));
 
         // Espace responsable → profil des analystes qu'il peut affecter.
         $assignable = [
@@ -754,10 +788,18 @@ class PortfolioController extends Controller
     /**
      * Requête dossier filtrée comme pour l’affichage (périmètre par espace).
      */
-    protected function dossierQueryForCurrentSpace(string $token): Builder
+    /**
+     * @param  bool  $forWrite  true pour les écritures (pièces jointes) : les analystes crédit / juridique
+     *                          restent limités à leurs dossiers affectés.
+     */
+    protected function dossierQueryForCurrentSpace(string $token, bool $forWrite = false): Builder
     {
         $space = $this->resolveSpace();
         $dossierQuery = Dossier::query()->where('token', $token);
+
+        if (! $forWrite && $this->consultsWholePortfolio($space['route'])) {
+            return $dossierQuery; // Consultation de tout le portefeuille.
+        }
 
         if ($space['route'] === 'juridique' && ! $this->isJuridiquePortefeuilleConsultationRoute()) {
             $dossierQuery->whereNotNull('juridique_instruction_submitted_at');
@@ -799,7 +841,7 @@ class PortfolioController extends Controller
     public function storeDossierPiece(Request $request, string $token): RedirectResponse
     {
         $space = $this->resolveSpace();
-        $dossier = $this->dossierQueryForCurrentSpace($token)->firstOrFail();
+        $dossier = $this->dossierQueryForCurrentSpace($token, true)->firstOrFail();
         $redirectRoute = $space['route'].'.dossiers.show';
 
         if ($dossier->isInstructionClosed()) {
@@ -814,7 +856,7 @@ class PortfolioController extends Controller
     public function destroyDossierPiece(string $token, int $piece): RedirectResponse
     {
         $space = $this->resolveSpace();
-        $dossier = $this->dossierQueryForCurrentSpace($token)->firstOrFail();
+        $dossier = $this->dossierQueryForCurrentSpace($token, true)->firstOrFail();
         $redirectRoute = $space['route'].'.dossiers.show';
 
         if ($dossier->isInstructionClosed()) {
@@ -831,7 +873,7 @@ class PortfolioController extends Controller
     public function updateDossierPiece(Request $request, string $token, int $piece): RedirectResponse
     {
         $space = $this->resolveSpace();
-        $dossier = $this->dossierQueryForCurrentSpace($token)->firstOrFail();
+        $dossier = $this->dossierQueryForCurrentSpace($token, true)->firstOrFail();
         $redirectRoute = $space['route'].'.dossiers.show';
 
         if ($dossier->isInstructionClosed()) {
@@ -1655,6 +1697,10 @@ class PortfolioController extends Controller
     {
         $space = $this->resolveSpace();
         $back = $space['route'].'.dossiers.show';
+
+        if ($this->consultsWholePortfolio($space['route'] ?? '')) {
+            return null; // Consultation de tout le portefeuille.
+        }
 
         if (($space['route'] ?? '') === 'conformite') {
             return null;
