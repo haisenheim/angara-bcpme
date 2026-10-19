@@ -7,16 +7,77 @@ use App\Http\Requests\Admin\StoreFichierTypeRequest;
 use App\Http\Requests\Admin\UpdateFichierTypeRequest;
 use App\Models\Fichier;
 use App\Models\FichierType;
+use App\Services\Inertia\Admin\CrudKit as K;
+use App\Support\Inertia\DataTable;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Session;
 
 class FichierTypeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('Admin.FichierTypes.index', [
-            'editItem' => null,
+        return $this->renderPage($request);
+    }
+
+    /**
+     * Liste paginée côté serveur (mêmes filtres que l'ancien endpoint AJAX `fetchPaginated`, conservé)
+     * ; la route `edit` ouvre directement le dialogue de modification.
+     */
+    private function renderPage(Request $request, ?FichierType $editItem = null)
+    {
+        $search = trim((string) $request->query('q', ''));
+        $active = (string) $request->query('active', '');
+
+        $items = FichierType::query()
+            ->when($active !== '', fn ($q) => $q->where('active', (int) $active === 1))
+            ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->orderBy('name')->orderBy('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'name', 'label' => 'Nom'],
+                ['key' => 'active', 'label' => 'Statut', 'width' => '140px'],
+            ])
+            ->row(fn (FichierType $t) => [
+                'cells' => [
+                    'name' => $t->name ?: '—',
+                    'active' => K::activeBadge((bool) ($t->active ?? true)),
+                ],
+                'actions' => [
+                    $this->editAction($t),
+                    K::toggle((bool) ($t->active ?? true), route('admin.fichiers-types.enable', $t), route('admin.fichiers-types.disable', $t), 'Désactiver'),
+                ],
+            ])
+            ->search('Rechercher un type…')
+            ->select('active', 'Statut', ['1' => 'Actifs', '0' => 'Inactifs'], 'Tous')
+            ->empty('Aucun type de fichier.');
+
+        return Inertia::render('Admin/Crud', [
+            'title' => 'Répertoire des pièces et documents',
+            'subtitle' => 'Gestion des types de fichiers (table fichiers_types).',
+            'countLabel' => 'type(s)',
+            'table' => $table->toArray(),
+            'actions' => [
+                K::dialog('create', 'Nouveau type', 'Nouveau type', [
+                    K::field('name', 'Nom', 'text', ['required' => true, 'value' => (string) old('name', '')]),
+                ], route('admin.fichiers-types.store'), 'post', ['submitLabel' => 'Ajouter']),
+            ],
+            'autoAction' => $editItem ? $this->editAction($editItem) : null,
+            'breadcrumb' => [
+                ['label' => 'Angara', 'href' => route('admin.dashboard')],
+                ['label' => 'Répertoire des pièces et documents'],
+            ],
         ]);
+    }
+
+    private function editAction(FichierType $t): array
+    {
+        return K::dialog('edit-'.$t->id, 'Modifier', 'Modifier un type', [
+            K::field('name', 'Nom', 'text', ['required' => true, 'value' => (string) old('name', $t->name ?? '')]),
+        ], route('admin.fichiers-types.update', $t), 'put', ['submitLabel' => 'Mettre à jour']);
     }
 
     public function create()
@@ -85,11 +146,9 @@ class FichierTypeController extends Controller
         return redirect()->route('admin.fichiers-types.edit', $fichiers_type);
     }
 
-    public function edit(FichierType $fichiers_type)
+    public function edit(Request $request, FichierType $fichiers_type)
     {
-        return view('Admin.FichierTypes.index', [
-            'editItem' => $fichiers_type,
-        ]);
+        return $this->renderPage($request, $fichiers_type);
     }
 
     public function update(UpdateFichierTypeRequest $request, FichierType $fichiers_type)

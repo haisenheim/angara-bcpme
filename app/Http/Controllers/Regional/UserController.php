@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Regional;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Inertia\Admin\AgencyUsersPresenter;
 
 class UserController extends Controller
 {
@@ -17,7 +18,7 @@ class UserController extends Controller
     {
         //
         $items = User::where('representation_id',auth()->user()->representation_id)->get();
-        return view('/Regional/Users/index')->with(compact('items'));
+        return AgencyUsersPresenter::render($items, 'regional');
     }
 
 

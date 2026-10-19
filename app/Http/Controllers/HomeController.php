@@ -140,7 +140,25 @@ class HomeController extends ExtendedController
         $user = User::with(['role', 'agence', 'organisationEntite'])
             ->findOrFail(auth()->id());
 
-        return view('Auth.profile', compact('user'));
+        return \Inertia\Inertia::render('Profile/Edit', [
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'photo' => $user->photo,
+                'role' => optional($user->role)->name,
+                'agence' => optional($user->agence)->name,
+                'entite' => optional($user->organisationEntite)->name,
+            ],
+            // « urls » est déjà partagé par le layout : clé distincte.
+            'links' => [
+                'store' => route('profile.store'),
+                'home' => route('home'),
+            ],
+            'breadcrumb' => [
+                ['label' => 'Accueil', 'href' => route('home')],
+                ['label' => 'Mon profil'],
+            ],
+        ]);
     }
 
     public function storeProfile(UpdateProfileRequest $request)
@@ -154,7 +172,7 @@ class HomeController extends ExtendedController
             } else {
                 return back()
                     ->withInput()
-                    ->with('warning', 'Le format de la photo n’est pas accepté (JPEG, PNG ou GIF).');
+                    ->with('error', 'Le format de la photo n’est pas accepté (JPEG, PNG ou GIF).');
             }
         }
 

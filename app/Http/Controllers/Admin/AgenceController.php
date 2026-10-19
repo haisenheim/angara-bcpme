@@ -7,7 +7,10 @@ use App\Models\Agence;
 use App\Models\Representation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use App\Services\Inertia\Admin\CrudKit as K;
+use App\Support\Inertia\DataTable;
 use Illuminate\Support\Facades\Session;
+use Inertia\Inertia;
 
 class AgenceController extends Controller
 {
@@ -36,7 +39,51 @@ class AgenceController extends Controller
             'locked' => Agence::where('active', 0)->count(),
         ];
 
-        return view('Admin/Agences/index', compact('items', 'representations', 'filters', 'stats'));
+        $repOptions = $representations->pluck('name', 'id');
+
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'name', 'label' => 'Agence'],
+                ['key' => 'representation', 'label' => 'Direction régionale'],
+                ['key' => 'status', 'label' => 'Statut'],
+            ])
+            ->row(fn (Agence $item) => [
+                'href' => route('admin.agences.show', $item->id),
+                'cells' => [
+                    'name' => $item->name,
+                    'representation' => $item->representation?->name,
+                    'status' => K::statusBadge($item->status),
+                ],
+                'actions' => [
+                    K::link('show', 'Afficher', route('admin.agences.show', $item->id)),
+                    K::toggle((bool) $item->active, route('admin.agences.enable', $item->id), route('admin.agences.disable', $item->id)),
+                    K::destroy(route('admin.agences.destroy', $item->id), 'Supprimer définitivement cette agence ?'),
+                ],
+            ])
+            ->search('Rechercher une agence...')
+            ->select('representation_id', 'Direction régionale', $repOptions, 'Toutes les directions')
+            ->select('active', 'Statut', ['1' => 'Actives', '0' => 'Verrouillées'], 'Tous les statuts')
+            ->empty('Aucune agence');
+
+        return Inertia::render('Admin/Crud', [
+            'title' => 'Agences',
+            'subtitle' => 'Liste des agences rattachées aux directions régionales',
+            'countLabel' => 'agence(s)',
+            'stats' => [
+                K::stat('Total', $stats['total']),
+                K::stat('Actives', $stats['active'], 'success'),
+                K::stat('Verrouillées', $stats['locked'], 'danger'),
+            ],
+            'table' => $table->toArray(),
+            'actions' => [
+                K::dialog('create', 'Ajouter une agence', 'Nouvelle agence', $this->formFields($repOptions), route('admin.agences.store')),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Réseau'],
+                ['label' => 'Agences'],
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -53,7 +100,33 @@ class AgenceController extends Controller
         $agence->load('representation');
         $representations = Representation::orderBy('name')->get();
 
-        return view('Admin/Agences/show', ['item' => $agence, 'representations' => $representations]);
+        $item = $agence;
+
+        return Inertia::render('Admin/Fiche', [
+            'title' => $item->name,
+            'subtitle' => "Détails de l'agence",
+            'badge' => K::statusBadge($item->status),
+            'sections' => [[
+                'title' => 'Agence',
+                'items' => [
+                    ['label' => 'Nom', 'value' => $item->name],
+                    ['label' => 'Direction régionale', 'value' => $item->representation?->name ?? '-'],
+                    ['label' => 'Statut', 'badge' => K::statusBadge($item->status)],
+                ],
+            ]],
+            'actions' => [
+                K::dialog('edit', 'Modifier', "Modifier l'agence", $this->formFields($representations->pluck('name', 'id'), $item), route('admin.agences.update', $item->id), 'put'),
+                K::toggle((bool) $item->active, route('admin.agences.enable', $item->id), route('admin.agences.disable', $item->id)),
+            ],
+            'dangerActions' => [
+                K::destroy(route('admin.agences.destroy', $item->id), 'Supprimer définitivement cette agence ?', 'Supprimer cette agence'),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Agences', 'href' => route('admin.agences.index')],
+                ['label' => $item->name],
+            ],
+        ]);
     }
 
     public function update(Request $request, Agence $agence)
@@ -87,6 +160,16 @@ class AgenceController extends Controller
         Session::flash('success', 'Agence verrouillée.');
 
         return back();
+    }
+
+    private function formFields($repOptions, ?Agence $item = null): array
+    {
+        return [
+            K::field('name', $item ? 'Nom' : "Nom de l'agence", 'text', ['required' => true, 'value' => $item?->name ?? '']),
+            K::field('representation_id', 'Direction régionale', 'select', ['required' => true,
+                'value' => $item ? (string) $item->representation_id : '', 'options' => K::options($repOptions)]),
+            K::field('active', 'Agence active', 'checkbox', ['hint' => 'Agence active', 'value' => $item ? ((int) (bool) $item->active) : 1]),
+        ];
     }
 
     private function validateData(Request $request, ?int $ignoreId = null): array

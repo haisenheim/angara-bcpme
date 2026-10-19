@@ -10,6 +10,7 @@ use App\Models\Quartier;
 use App\Models\Region;
 use App\Models\Representation;
 use App\Models\Village;
+use App\Services\Inertia\TerritoirePresenter;
 
 class TerritoireController extends Controller
 {
@@ -17,7 +18,7 @@ class TerritoireController extends Controller
 
     public function index(){
 
-        return view('/Regional/Territoire/index');
+        return TerritoirePresenter::render('regional');
     }
 
 

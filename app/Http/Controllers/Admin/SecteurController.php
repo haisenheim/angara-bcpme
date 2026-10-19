@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Agence;
 use App\Models\Secteur;
+use App\Services\Inertia\Admin\CrudKit as K;
+use App\Services\Inertia\Admin\SecteurPagePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
@@ -23,7 +25,15 @@ class SecteurController extends Controller
 
         $items = Secteur::all();
         $agences = Agence::all();
-        return view('/Admin/Secteurs/index',compact('items','agences'));
+
+        return SecteurPagePresenter::index($items, 'admin', [
+            K::dialog('create', 'Ajouter', 'Nouveau secteur', [
+                K::field('name', 'Nom', 'text', ['required' => true]),
+                K::field('agence_id', 'Agence de tutelle', 'select', ['required' => true, 'options' => K::options($agences->pluck('name', 'id'))]),
+                K::field('localisation', 'Localisation'),
+                K::field('contacts', 'Contacts', 'textarea'),
+            ], route('admin.secteurs.store')),
+        ]);
     }
 
 
@@ -82,7 +92,7 @@ class SecteurController extends Controller
 
         $item = Secteur::where('token',$token)->first();
 
-        return view('Admin/Secteurs/show',compact('item'));
+        return SecteurPagePresenter::show($item, 'admin');
     }
 
     /**

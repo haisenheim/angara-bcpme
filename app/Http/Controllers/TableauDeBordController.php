@@ -2,19 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agence;
+use App\Services\Inertia\PilotagePresenter;
 use App\Services\TableauDeBordService;
+use App\Support\UserWorkspaceContextResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 class TableauDeBordController extends Controller
 {
     public function __construct(private readonly TableauDeBordService $service) {}
 
-    public function index(Request $request)
+    /**
+     * Page Inertia : une famille affichée à la fois (paramètre `famille`), filtres de période `from` / `to`.
+     * Les endpoints JSON par famille (ci-dessous) restent disponibles.
+     */
+    public function index(Request $request, PilotagePresenter $presenter)
     {
-        return view('tdb.index', [
-            'familles' => $this->familles(),
-            'scope' => $this->scopeFromRequest($request),
+        $familles = $this->familles();
+        $codes = array_column($familles, 'code');
+        $active = in_array($request->query('famille'), $codes, true) ? (string) $request->query('famille') : $codes[0];
+        $scope = $this->scopeFromRequest($request);
+
+        $prefix = UserWorkspaceContextResolver::routePrefix($request->user());
+
+        return Inertia::render('Pilotage/Index', [
+            'familles' => $familles,
+            'active' => $active,
+            'filters' => [
+                'from' => (string) $request->query('from', ''),
+                'to' => (string) $request->query('to', ''),
+            ],
+            'perimetre' => ! empty($scope['agence_id']) ? optional(Agence::find($scope['agence_id']))->name : null,
+            'data' => $presenter->famille($active, $scope),
+            'baseUrl' => route('tdb.index'),
+            'breadcrumb' => [
+                ['label' => 'Angara', 'href' => $prefix && Route::has($prefix.'.dashboard') ? route($prefix.'.dashboard') : url('/')],
+                ['label' => 'Tableaux de bord'],
+            ],
         ]);
     }
 

@@ -59,8 +59,15 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
+        // Page de connexion Inertia (sans layout). Même endpoint POST (route `login`, Fortify),
+        // mêmes messages d'erreur (validation Fortify partagée via `errors`).
         Fortify::loginView(function (Request $request) {
-            return view('Auth.login');
+            return \Inertia\Inertia::render('Auth/Login', [
+                'loginUrl' => route('login'),
+                'email' => (string) $request->old('email', ''),
+                'warning' => $request->session()->get('warning'),
+                'status' => $request->session()->get('status'),
+            ]);
         });
 
         Event::listen(Attempting::class, function (Attempting $event) {

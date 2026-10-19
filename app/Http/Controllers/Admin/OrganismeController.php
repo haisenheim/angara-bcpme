@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Services\Inertia\Admin\CrudKit as K;
+use App\Support\Inertia\DataTable;
 use Illuminate\Support\Facades\Session;
+use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 
 class OrganismeController extends Controller
@@ -34,7 +37,46 @@ class OrganismeController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('Admin/Organismes/index', array_merge($this->referenceData(), compact('items', 'filters')));
+        $ref = $this->referenceData();
+
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'name', 'label' => 'Nom'],
+                ['key' => 'abb', 'label' => 'Abrév.'],
+                ['key' => 'type', 'label' => 'Type'],
+                ['key' => 'parent', 'label' => 'Parent'],
+            ])
+            ->row(fn (Organisme $item) => [
+                'href' => route('admin.organismes.show', $item->id),
+                'cells' => [
+                    'name' => $item->name,
+                    'abb' => $item->abb ?: '-',
+                    'type' => $item->type?->name ?? '-',
+                    'parent' => $item->parent?->name ?? '-',
+                ],
+                'actions' => [
+                    K::link('show', 'Afficher', route('admin.organismes.show', $item->id)),
+                    K::destroy(route('admin.organismes.destroy', $item->id), 'Supprimer cet organisme ?'),
+                ],
+            ])
+            ->search('Rechercher (nom, abréviation)...')
+            ->select('type_id', 'Type', $ref['types']->pluck('name', 'id'), 'Tous les types')
+            ->empty('Aucun organisme');
+
+        return Inertia::render('Admin/Crud', [
+            'title' => 'Organismes',
+            'subtitle' => 'Liste des bailleurs et partenaires de financement',
+            'countLabel' => 'organisme(s)',
+            'table' => $table->toArray(),
+            'actions' => [
+                K::dialog('create', 'Ajouter un organisme', 'Nouvel organisme', $this->formFields($ref), route('admin.organismes.store'), 'post', ['wide' => true]),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Paramètres'],
+                ['label' => 'Organismes'],
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -50,7 +92,42 @@ class OrganismeController extends Controller
     {
         $organisme->load(['type', 'parent', 'children']);
 
-        return view('Admin/Organismes/show', array_merge($this->referenceData(), ['item' => $organisme]));
+        $item = $organisme;
+
+        return Inertia::render('Admin/Fiche', [
+            'title' => $item->name,
+            'subtitle' => "Détails de l'organisme",
+            'sections' => [
+                [
+                    'title' => 'Organisme',
+                    'span' => 2,
+                    'items' => [
+                        ['label' => 'Nom', 'value' => $item->name],
+                        ['label' => 'Abréviation', 'value' => $item->abb ?: '-'],
+                        ['label' => 'Type', 'value' => $item->type?->name ?? '-'],
+                        ['label' => 'Organisme parent', 'value' => $item->parent?->name ?? '-',
+                            'href' => $item->parent ? route('admin.organismes.show', $item->parent->id) : null],
+                    ],
+                ],
+                [
+                    'title' => 'Organismes rattachés',
+                    'span' => 1,
+                    'links' => $item->children->map(fn ($c) => ['label' => $c->name, 'href' => route('admin.organismes.show', $c->id)])->values()->all(),
+                    'empty' => 'Aucun organisme rattaché.',
+                ],
+            ],
+            'actions' => [
+                K::dialog('edit', 'Modifier', "Modifier l'organisme", $this->formFields($this->referenceData(), $item), route('admin.organismes.update', $item->id), 'put', ['wide' => true]),
+            ],
+            'dangerActions' => [
+                K::destroy(route('admin.organismes.destroy', $item->id), 'Supprimer cet organisme ?', 'Supprimer cet organisme'),
+            ],
+            'breadcrumb' => [
+                ['label' => 'ANGARA', 'href' => route('admin.dashboard')],
+                ['label' => 'Organismes', 'href' => route('admin.organismes.index')],
+                ['label' => $item->name],
+            ],
+        ]);
     }
 
     public function update(Request $request, Organisme $organisme)
@@ -68,6 +145,25 @@ class OrganismeController extends Controller
         Session::flash('success', 'Organisme supprimé.');
 
         return redirect()->route('admin.organismes.index');
+    }
+
+    private function formFields(array $ref, ?Organisme $item = null): array
+    {
+        $parents = $ref['parents']->when($item, fn ($c) => $c->where('id', '!=', $item->id))->pluck('name', 'id');
+        $fields = [
+            K::field('name', 'Nom', 'text', ['required' => true, 'value' => $item?->name ?? '']),
+            K::field('abb', 'Abréviation', 'text', ['value' => $item?->abb ?? '']),
+            K::field('type_id', 'Type', 'select', ['required' => true, 'value' => $item ? (string) $item->type_id : '',
+                'options' => K::options($ref['types']->pluck('name', 'id'))]),
+            K::field('parent_id', $item ? 'Organisme parent' : 'Organisme parent (facultatif)', 'select', [
+                'value' => (string) ($item?->parent_id ?? 0), 'options' => K::options($parents, ['0' => 'Aucun'])]),
+        ];
+        if ($ref['pays']->isNotEmpty()) {
+            $fields[] = K::field('pay_id', $item ? 'Pays' : 'Pays (facultatif)', 'select', [
+                'value' => (string) ($item?->pay_id ?? 0), 'options' => K::options($ref['pays']->pluck('name', 'id'), ['0' => 'Aucun'])]);
+        }
+
+        return $fields;
     }
 
     private function validateData(Request $request, ?int $ignoreId = null): array
