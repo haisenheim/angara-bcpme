@@ -19,6 +19,8 @@ use App\Models\QuestionSousCritere;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseListPresenter;
+use App\Services\Inertia\EntrepriseShowPage;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
@@ -33,16 +35,56 @@ class CompanyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Regional/Companies/index');
+        // Même périmètre (direction régionale) que fetchAll et mêmes filtres que exportEntreprisesClients.
+        $scope = fn () => Entreprise::query()->where('prospect', 0)->where('representation_id', auth()->user()->representation_id);
+        $query = $scope();
+        $this->applyPromuAgenceGestionnaireFiltersToQuery($query, $this->parsePromuClientAndAgenceGestionnaireFilters($request, true), true);
+        $structurationStatus = DossierEntreeRelation::normalizeClientStructurationFilter($request->query('client_structuration_status'));
+        if ($structurationStatus) {
+            $query->whereClientStructurationStatus($structurationStatus);
+        }
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Entreprises',
+            'subtitle' => 'Entreprises clientes de votre direction régionale.',
+            'countLabel' => 'entreprise(s)',
+            'showRoute' => 'regional.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'capital', 'agence', 'structuration'],
+            'filters' => ['client_structuration_status', 'agence_id', 'gestionnaire_id', 'promu_client'],
+            'orderBy' => ['name', 'asc'],
+            'exportRoute' => 'regional.entreprises.export',
+            'exportSearch' => false,
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('regional.dashboard')],
+                ['label' => 'Entreprises'],
+            ],
+        ] + $list->agenceGestionnaireOptions($scope()));
     }
 
-    public function getProspects()
+    public function getProspects(Request $request)
     {
-        //
-        return view('/Regional/Companies/prospects');
+        // Même périmètre et mêmes filtres que fetchProspectsPaginated / fetchProspectsStats.
+        $query = $this->applyProspectIndexFilters($this->prospectsQuery(), $this->parseProspectIndexFilters($request), []);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Prospects',
+            'subtitle' => 'Prospects soumis — visibilité nationale (brouillons exclus).',
+            'countLabel' => 'prospect(s)',
+            'showRoute' => 'regional.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'agence', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'agence_id', 'gestionnaire_id', 'submission', 'created'],
+            'exportRoute' => 'regional.prospects.export',
+            'stats' => $list->standardStats($this->fetchProspectsStats($request)->getData(true), 'Total prospects'),
+            'empty' => 'Aucun prospect trouvé.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('regional.dashboard')],
+                ['label' => 'Prospects'],
+            ],
+        ] + $list->agenceGestionnaireOptions($this->prospectsQuery()));
     }
 
     public function fetchAll()
@@ -230,40 +272,12 @@ class CompanyController extends Controller
         if (! $item) {
             return back();
         }
-        $item->load([
-            'promuClientUser',
-            'prospectRejectedUser',
-            'dossierEntreeRelation.qualificationUser',
-            'dossierEntreeRelation.programmesSubmittedBy',
-            'dossierEntreeRelation.instructionValidatedBy',
-            'dossierEntreeRelation.programmeSelections.programme',
-            'dossierEntreeRelation.programmeSelections.instructionDossier',
+        $page = app(EntrepriseShowPage::class);
+        $sheet = $page->sheet($item, ['routePrefix' => 'regional']);
+
+        return $page->render($item, 'regional', $sheet, [
+            $page->simulationLink($item),
         ]);
-        // dd($item);
-        $reponses = $item->reponses;
-        $groups = $reponses->groupBy('critere_id');
-        $groups = $groups->map(function ($v, $k) {
-            $critere = Critere::find($k);
-
-            return ['critere' => $critere,
-                'items' => $v->groupBy('sous_critere_id')
-                    ->map(function ($m, $n) {
-                        $sc = QuestionSousCritere::find($n);
-
-                        return [
-                            'sous_critere' => $sc,
-                            'items' => $m,
-                        ];
-                    }),
-            ];
-        });
-        // dd($groups);
-        $mr = $groups;
-        $cas = User::where('role_id', (int) config('angara.role_analyste_financier', 17))->where('agence_id', auth()->user()->agence_id)->get();
-        $programmes = Programme::all();
-
-        return view('/Regional/Companies/show', compact('item', 'mr', 'programmes', 'cas'));
-
     }
 
     public function saveTiersPhysique(Request $request)

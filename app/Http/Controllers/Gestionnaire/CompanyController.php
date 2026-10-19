@@ -28,6 +28,11 @@ use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseFormSchema;
+use App\Services\Inertia\EntrepriseListPresenter;
+use App\Services\Inertia\EntrepriseShowPage;
+use App\Services\Inertia\GestionnaireEntrepriseActions;
+use App\Services\Inertia\QuestionnairePresenter;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
 use App\Services\WorkflowEmailNotificationService;
@@ -47,16 +52,51 @@ class CompanyController extends ExtendedController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Gestionnaire/Companies/index');
+        // Même périmètre et mêmes filtres que fetchPaginated / fetchStats.
+        $query = $this->applyFilters($this->baseQuery()->clone(), $this->parseFilters($request), true);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Entreprises',
+            'subtitle' => 'Portefeuille clients de votre gestion.',
+            'countLabel' => 'entreprise(s)',
+            'showRoute' => 'gestionnaire.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'client_structuration_status', 'promu_client'],
+            'exportRoute' => 'gestionnaire.entreprises.export',
+            'stats' => $list->standardStats($this->fetchStats($request)->getData(true), 'Total entreprises'),
+            'actions' => [['label' => 'Nouveau prospect', 'icon' => 'add', 'href' => route('gestionnaire.entreprises.prospects.create')]],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('gestionnaire.dashboard')],
+                ['label' => 'Entreprises'],
+            ],
+        ]);
     }
 
-    public function getProspects()
+    public function getProspects(Request $request)
     {
-        //
-        return view('/Gestionnaire/Companies/prospects');
+        // Même périmètre et mêmes filtres que fetchProspectsPaginated / fetchProspectsStats.
+        $query = $this->applyProspectIndexFilters($this->prospectsQuery(), $this->parseProspectIndexFilters($request), []);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Prospects',
+            'subtitle' => 'Vos brouillons et les prospects soumis pour avis juridique et conformité.',
+            'countLabel' => 'prospect(s)',
+            'showRoute' => 'gestionnaire.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'submission', 'agence_id', 'gestionnaire_id', 'created'],
+            'exportRoute' => 'gestionnaire.prospects.export',
+            'stats' => $list->standardStats($this->fetchProspectsStats($request)->getData(true), 'Total prospects'),
+            'actions' => [['label' => 'Nouveau prospect', 'icon' => 'add', 'href' => route('gestionnaire.entreprises.prospects.create')]],
+            'empty' => 'Aucun prospect trouvé.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('gestionnaire.dashboard')],
+                ['label' => 'Prospects'],
+            ],
+        ] + $list->agenceGestionnaireOptions($this->prospectsQuery()));
     }
 
     /**
@@ -64,7 +104,37 @@ class CompanyController extends ExtendedController
      */
     public function createProspect()
     {
-        return view('Gestionnaire.Companies.create_prospect', $this->prospectFormContext());
+        return \Inertia\Inertia::render('Entreprises/Form', [
+            'title' => 'Nouveau prospect',
+            'subtitle' => 'Brouillon : les champs restent modifiables jusqu\'à la soumission pour avis.',
+            'backHref' => route('gestionnaire.entreprises.prospects'),
+            'schema' => [
+                'action' => route('gestionnaire.entreprises.prospects.store'),
+                'submitLabel' => 'Enregistrer le brouillon',
+                'cancelHref' => route('gestionnaire.entreprises.prospects'),
+                'steps' => app(EntrepriseFormSchema::class)->prospectSteps(),
+            ],
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('gestionnaire.dashboard')],
+                ['label' => 'Prospects', 'href' => route('gestionnaire.entreprises.prospects')],
+                ['label' => 'Nouveau prospect'],
+            ],
+        ]);
+    }
+
+    /**
+     * Fil d'Ariane des formulaires rattachés à une fiche.
+     */
+    private function ficheBreadcrumb(Entreprise $item, string $label): array
+    {
+        return [
+            ['label' => 'Tableau de bord', 'href' => route('gestionnaire.dashboard')],
+            $item->prospect
+                ? ['label' => 'Prospects', 'href' => route('gestionnaire.entreprises.prospects')]
+                : ['label' => 'Entreprises', 'href' => route('gestionnaire.entreprises.index')],
+            ['label' => \Illuminate\Support\Str::limit((string) $item->name, 40), 'href' => route('gestionnaire.entreprises.show', $item->token)],
+            ['label' => $label],
+        ];
     }
 
     /**
@@ -871,10 +941,10 @@ class CompanyController extends ExtendedController
     public function show(string $token)
     {
         //
-        $item = Entreprise::query()
-            ->where('token', $token)
-            ->orWhere('id', (int) $token)
-            ->first();
+        // Recherche par token ; l'identifiant numérique n'est accepté que pour une URL purement numérique
+        // (avant : orWhere('id', (int) $token) pouvait ouvrir une autre fiche pour un token commençant par des chiffres).
+        $item = Entreprise::query()->where('token', $token)->first()
+            ?? (ctype_digit($token) ? Entreprise::query()->find((int) $token) : null);
         if (! $item) {
             return back();
         }
@@ -884,82 +954,32 @@ class CompanyController extends ExtendedController
                 abort(403);
             }
         }
-        $item->load([
-            'promuClientUser',
-            'prospectRejectedUser',
-            'sites.arrondissement',
-            'sites.departement',
-            'sites.region',
-            'equipeMembres.site',
-        ]);
-        $mr = $this->buildQuestionnaireResults($item);
-        $checklist = $item->piecesExigiblesChecklist();
-        if ($item->prospect) {
-            $item->load([
-                'juridiqueAvisUser',
-                'conformiteAvisUser',
-                'critereAvis.user',
-                'arrondissement',
-                'departement',
-                'region',
-                'forme',
-                'agence.representation',
-                'produit',
-                'produits',
-                'appuis.type',
-                'reponses.question',
-                'reponses.choice',
-            ]);
 
-            return view('Gestionnaire.Companies.show_prospect', compact('item', 'mr', 'checklist'));
+        $page = app(EntrepriseShowPage::class);
+        $actions = app(GestionnaireEntrepriseActions::class);
+        $sheet = $actions->decorate($item, $page->sheet($item, ['routePrefix' => 'gestionnaire']));
+        $isOwner = $actions->isOwner($item);
+        $t = $item->token;
+        $canPdf = $isOwner || ($item->prospect && $item->prospect_submitted_at !== null);
+
+        $notice = null;
+        if ($item->prospect && $item->prospect_submitted_at === null) {
+            $notice = 'Brouillon : complétez la fiche, le questionnaire et les pièces, puis soumettez le prospect pour avis juridique et conformité.';
         }
-        // dd($item);
-        $appuis = Service::all();
-        $elements = ElementConstitutif::where('active', 1)->get();
 
-        $item->load([
-            'forme',
-            'filiere',
-            'branche',
-            'produit',
-            'produits.filiere',
-            'produits.branche',
-            'appuis.type',
-            'critereAvis.user',
-            'sites.arrondissement',
-            'sites.departement',
-            'sites.region',
-            'equipeMembres.site',
-            'equipeMembres.cniFichier',
-            'village',
-            'quartier',
-            'arrondissement',
-            'departement',
-            'region',
-            'agence.representation',
-            'tiers.person',
-            'tiers.company.produit',
-            'dossiers.programme',
-            'dossiers.instructionProgrammes.programme',
-            'dossiers.chefFiliereSubmittedToAgenceBy',
-            'dossiers.instructionAgenceValidatedBy',
-            'dossiers.instructionAgenceRejectedBy',
-            'juridiqueAvisUser',
-            'conformiteAvisUser',
-            'promuClientUser',
-            'prospectRejectedUser',
-            'dossierEntreeRelation.qualificationUser',
-            'dossierEntreeRelation.programmesSubmittedBy',
-            'dossierEntreeRelation.qualificationValidatedByAgenceUser',
-            'dossierEntreeRelation.instructionValidatedBy',
-            'dossierEntreeRelation.programmeSelections.programme',
-            'dossierEntreeRelation.programmeSelections.instructionDossier',
+        return $page->render($item, 'gestionnaire', $sheet, [
+            $isOwner ? $page->link('gestionnaire.entreprises.edit', $t, 'Compléter la fiche', 'edit') : null,
+            $page->link('gestionnaire.entreprise.questionnaire', $t, 'Questionnaire', 'quiz'),
+            $isOwner ? $page->link('gestionnaire.entreprises.pieces-exigibles.index', $t, 'Pièces exigibles', 'checklist') : null,
+            $page->link('gestionnaire.entreprise.physique.create', $t, 'Tiers personne physique', 'person_add'),
+            $page->link('gestionnaire.entreprise.morale.create', $t, 'Tiers personne morale', 'domain_add'),
+            $canPdf ? $page->link('gestionnaire.entreprises.fiche.pdf', $t, 'Fiche PDF', 'picture_as_pdf') : null,
+            $page->link('gestionnaire.entreprise.get.engagements', $t, 'Grille des engagements', 'table_view'),
+            $page->simulationLink($item),
+            $isOwner ? $page->link('gestionnaire.entreprises.analyse-critique.show', $t, 'Analyse critique', 'fact_check') : null,
+        ], [
+            'notice' => $notice,
         ]);
-
-        $space = ['route' => 'gestionnaire', 'title' => 'Gestionnaire'];
-
-        return view('RoleSpace.entreprises.show', compact('item', 'mr', 'checklist', 'space', 'appuis', 'elements'));
-
     }
 
     /**
@@ -1135,7 +1155,19 @@ class CompanyController extends ExtendedController
             return back();
         }
 
-        return view('/Gestionnaire/Companies/tiers_physique', compact('item'));
+        return \Inertia\Inertia::render('Entreprises/Form', [
+            'title' => 'Nouveau tiers personne physique',
+            'subtitle' => $item->name,
+            'backHref' => route('gestionnaire.entreprises.show', $item->token),
+            'schema' => [
+                'action' => route('gestionnaire.entreprise.physique.save'),
+                'hidden' => ['entreprise_id' => $item->id, 'token' => $item->token],
+                'enforceRequired' => true,
+                'cancelHref' => route('gestionnaire.entreprises.show', $item->token),
+                'steps' => app(EntrepriseFormSchema::class)->tiersPhysiqueSteps(),
+            ],
+            'breadcrumb' => $this->ficheBreadcrumb($item, 'Tiers personne physique'),
+        ]);
     }
 
     public function createTiersMorale(string $token)
@@ -1145,10 +1177,22 @@ class CompanyController extends ExtendedController
             return back();
         }
 
-        return view('Gestionnaire.Companies.tiers_morale', array_merge(
-            ['parentEntreprise' => $parentEntreprise],
-            $this->prospectFormContext()
-        ));
+        $schema = app(EntrepriseFormSchema::class);
+
+        return \Inertia\Inertia::render('Entreprises/Tiers', [
+            'entreprise' => ['id' => $parentEntreprise->id, 'token' => $parentEntreprise->token, 'name' => $parentEntreprise->name,
+                'href' => route('gestionnaire.entreprises.show', $parentEntreprise->token)],
+            'saveUrl' => route('gestionnaire.entreprise.morale.save'),
+            'searchUrl' => route('gestionnaire.entreprise.morale.search'),
+            'liens' => EntrepriseFormSchema::LIENS_MORALE_SUGGESTIONS,
+            'prospectSchema' => [
+                'action' => route('gestionnaire.entreprise.morale.save'),
+                'hidden' => ['entreprise_id' => $parentEntreprise->id, 'token' => $parentEntreprise->token, 'tier_mode' => 'new'],
+                'submitLabel' => 'Créer et lier le tiers',
+                'steps' => $schema->prospectSteps(),
+            ],
+            'breadcrumb' => $this->ficheBreadcrumb($parentEntreprise, 'Tiers personne morale'),
+        ]);
     }
 
     public function searchTierMoralePortfolio(Request $request)
@@ -1351,18 +1395,15 @@ class CompanyController extends ExtendedController
         if (! $item) {
             return back();
         }
-        $criteresPrincipaux = InstructionCritere::query()
-            ->whereHas('questionnaireSousCriteres')
-            ->with([
-                'questionnaireSousCriteres' => function ($q) {
-                    $q->orderBy('id')->with(['questions.choices']);
-                },
-            ])
-            ->orderBy('id')
-            ->get();
-        $reponses = $item->reponses()->pluck('choice_id', 'question_id')->toArray() ?? [];
+        $questionnaire = app(QuestionnairePresenter::class);
 
-        return view('Gestionnaire.Companies.questionnaire', compact('item', 'criteresPrincipaux', 'reponses'));
+        return \Inertia\Inertia::render('Entreprises/Questionnaire', $questionnaire->props(
+            $item,
+            $questionnaire->byCriterePrincipal(),
+            route('gestionnaire.entreprise.questionnaire.save'),
+            route('gestionnaire.entreprises.show', $item->token),
+            $this->ficheBreadcrumb($item, 'Questionnaire'),
+        ));
     }
 
     public function saveQuestionnaire(Request $request)
@@ -1395,15 +1436,39 @@ class CompanyController extends ExtendedController
                 abort(403);
             }
             $item->load(['produits:id,name,code', 'appuis:id,name,financier,type_id']);
+            $submittedAt = $item->prospect_submitted_at ? \Carbon\Carbon::parse($item->prospect_submitted_at)->format('d/m/Y H:i') : null;
 
-            return view('Gestionnaire.Companies.edit_prospect', array_merge(
-                ['item' => $item],
-                $this->prospectFormContext()
-            ));
+            return \Inertia\Inertia::render('Entreprises/Form', [
+                'title' => 'Compléter le prospect',
+                'subtitle' => $item->name,
+                'notice' => $submittedAt ? null : 'Tant que le dossier n\'est pas soumis, vous pouvez enrichir la fiche. Après soumission, les avis juridique et conformité seront saisis par les responsables désignés.',
+                'locked' => $submittedAt ? 'Ce prospect a été soumis le '.$submittedAt.' — la fiche n\'est plus modifiable ici.' : null,
+                'backHref' => route('gestionnaire.entreprises.show', $item->token),
+                'schema' => $submittedAt ? null : [
+                    'action' => route('gestionnaire.entreprises.save'),
+                    'hidden' => ['token' => $item->token],
+                    'submitLabel' => 'Enregistrer les modifications',
+                    'cancelHref' => route('gestionnaire.entreprises.show', $item->token),
+                    'steps' => app(EntrepriseFormSchema::class)->prospectSteps($item),
+                ],
+                'breadcrumb' => $this->ficheBreadcrumb($item, 'Modifier'),
+            ]);
         }
-        $formes = Forme::all();
 
-        return view('Gestionnaire.Companies.edit', compact('item', 'formes'));
+        return \Inertia\Inertia::render('Entreprises/Form', [
+            'title' => 'Compléter la fiche',
+            'subtitle' => $item->name,
+            'backHref' => route('gestionnaire.entreprises.show', $item->token),
+            'schema' => [
+                'action' => route('gestionnaire.entreprises.save'),
+                'hidden' => ['token' => $item->token],
+                'enforceRequired' => true,
+                'submitLabel' => 'Enregistrer les modifications',
+                'cancelHref' => route('gestionnaire.entreprises.show', $item->token),
+                'steps' => app(EntrepriseFormSchema::class)->entrepriseSteps($item, false),
+            ],
+            'breadcrumb' => $this->ficheBreadcrumb($item, 'Modifier'),
+        ]);
     }
 
     /**

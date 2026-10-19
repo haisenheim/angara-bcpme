@@ -16,9 +16,22 @@ class PieceExigibleController extends ExtendedController
     public function index(string $token)
     {
         $item = $this->entrepriseForAgence($token);
-        $checklist = $item->piecesExigiblesChecklist();
+        $checklist = app(\App\Services\Inertia\EntrepriseSheetPresenter::class)->checklist($item->piecesExigiblesChecklist());
+        $back = route('chef-filiere.qualifications.show', $token);
 
-        return view('ChefFiliere.Companies.pieces_exigibles', compact('item', 'checklist'));
+        return \Inertia\Inertia::render('Entreprises/Pieces', [
+            'entreprise' => ['name' => $item->name, 'token' => $item->token, 'href' => $back],
+            'subtitle' => $item->name.' — documents de l\'entrée en relation.',
+            'backLabel' => 'Retour à la structuration',
+            'checklist' => array_map(fn ($row) => $row + [
+                'uploadUrl' => route('chef-filiere.entreprises.pieces-exigibles.store', [$token, $row['id']]),
+            ], $checklist),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Structuration', 'href' => $back],
+                ['label' => 'Pièces exigibles'],
+            ],
+        ]);
     }
 
     public function store(Request $request, string $token, PieceExigibleDefinition $definition)

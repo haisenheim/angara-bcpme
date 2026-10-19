@@ -25,6 +25,9 @@ const props = defineProps({
     actions: { type: Array, default: () => [] },
     // Actions de workflow décrites par le serveur (même contrat que la fiche dossier).
     workflowActions: { type: Array, default: () => [] },
+    // Actions de section (ActionDialog), par onglet : { sites: [...], equipe: [...], tiers: [...], questionnaire: [...] }.
+    // Les éléments de `sites`, `equipe` et `questionnaire` peuvent aussi porter leurs propres `actions`.
+    sectionActions: { type: Object, default: () => ({}) },
     notice: { type: String, default: null },
     initialTab: { type: String, default: 'synthese' },
 });
@@ -42,6 +45,13 @@ const tabs = computed(() => [
 const tab = ref(props.initialTab);
 const opened = ref(null);
 const critere = ref(0);
+
+// Au-delà de 4 liens d'en-tête, les suivants passent dans un menu « Plus ».
+const visibleLinks = computed(() => (props.links.length > 4 ? props.links.slice(0, 3) : props.links));
+const moreLinks = computed(() => (props.links.length > 4 ? props.links.slice(3) : []));
+const moreOpen = ref(false);
+const section = (key) => props.sectionActions?.[key] ?? [];
+const hasMemberActions = computed(() => props.equipe.some((m) => m.actions?.length));
 </script>
 
 <template>
@@ -55,6 +65,10 @@ const critere = ref(0);
                     <h1 class="text-xl font-bold tracking-tight text-on-surface">{{ entreprise.name }}</h1>
                     <StatusBadge :variant="entreprise.prospect ? 'warning' : 'success'">{{ entreprise.prospect ? 'Prospect' : 'Client' }}</StatusBadge>
                     <StatusBadge :variant="entreprise.statut.variant">{{ entreprise.statut.badge }}</StatusBadge>
+                    <template v-if="entreprise.prospect && 'submittedAt' in entreprise">
+                        <StatusBadge v-if="entreprise.submittedAt" variant="info">Soumis le {{ entreprise.submittedAt }}</StatusBadge>
+                        <StatusBadge v-else>Brouillon — non soumis</StatusBadge>
+                    </template>
                     <StatusBadge v-if="entreprise.taille">{{ entreprise.taille }}</StatusBadge>
                     <StatusBadge v-if="entreprise.caractere" :variant="entreprise.caractere === 'Formel' ? 'success' : 'warning'">{{ entreprise.caractere }}</StatusBadge>
                 </div>
@@ -63,7 +77,15 @@ const critere = ref(0);
                 </p>
             </div>
             <div class="flex shrink-0 flex-wrap items-center gap-2.5">
-                <Button v-for="l in links" :key="l.href" :href="l.href" :icon="l.icon">{{ l.label }}</Button>
+                <Button v-for="l in visibleLinks" :key="l.href" :href="l.href" :icon="l.icon">{{ l.label }}</Button>
+                <div v-if="moreLinks.length" class="relative" @mouseleave="moreOpen = false">
+                    <Button icon="more_horiz" icon-right="expand_more" @click="moreOpen = !moreOpen">Plus</Button>
+                    <div v-if="moreOpen" class="absolute right-0 z-20 mt-1 w-60 rounded-lg border border-surface-container-highest bg-white py-1 shadow-lg">
+                        <a v-for="l in moreLinks" :key="l.href" :href="l.href" class="flex items-center gap-2 px-3 py-2 text-xs text-on-surface hover:bg-surface-container-low">
+                            <Icon :name="l.icon ?? 'chevron_right'" class="text-base text-on-surface-variant" /> {{ l.label }}
+                        </a>
+                    </div>
+                </div>
                 <Button v-for="a in actions" :key="a.href" :href="a.href" :icon="a.icon" :variant="a.variant ?? 'primary'">{{ a.label }}</Button>
                 <Button v-for="a in workflowActions" :key="a.key" :icon="a.icon" :variant="a.variant" @click="opened = a">{{ a.label }}</Button>
             </div>
@@ -144,8 +166,31 @@ const critere = ref(0);
                 <span v-for="p in structuration.programmes" :key="p" class="rounded border border-surface-container-highest bg-brand-subtle px-2 py-0.5 font-semibold">{{ p }}</span>
             </div>
         </Card>
+        <Card v-if="structuration.besoins?.length" title="Besoins identifiés">
+            <div class="flex flex-wrap gap-1.5 text-xs">
+                <span v-for="b in structuration.besoins" :key="b" class="rounded border border-surface-container-highest bg-surface-container-low px-2 py-0.5 font-semibold">{{ b }}</span>
+            </div>
+        </Card>
         <Card v-for="s in structuration.sections ?? []" :key="s.label" :title="s.label">
             <SafeHtml :html="s.html" class="text-xs leading-relaxed text-on-surface" />
+        </Card>
+        <Card v-if="structuration.analyseCritique" title="Analyse critique">
+            <template v-if="structuration.analyseCritique.statut" #actions>
+                <StatusBadge>{{ structuration.analyseCritique.statut }}</StatusBadge>
+            </template>
+            <p v-if="structuration.analyseCritique.synthese" class="mb-4 whitespace-pre-wrap text-xs leading-relaxed text-on-surface">{{ structuration.analyseCritique.synthese }}</p>
+            <ul class="divide-y divide-surface-container-highest text-xs">
+                <li v-for="(a, i) in structuration.analyseCritique.avis" :key="i" class="py-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="font-semibold text-on-surface">{{ a.source }}</span>
+                        <span class="flex items-center gap-2 text-on-surface-variant">
+                            <StatusBadge v-if="a.etat">{{ a.etat }}</StatusBadge>{{ a.by }}<template v-if="a.at"> • {{ a.at }}</template>
+                        </span>
+                    </div>
+                    <p v-if="a.contenu" class="mt-1 whitespace-pre-wrap text-on-surface">{{ a.contenu }}</p>
+                </li>
+                <li v-if="!structuration.analyseCritique.avis.length" class="py-3 text-on-surface-variant">Aucun avis n'a encore été consolidé.</li>
+            </ul>
         </Card>
         <p v-if="!structuration.started" class="text-xs text-on-surface-variant">La structuration n'a pas encore été réalisée par le chef de filière.</p>
     </div>
@@ -174,9 +219,19 @@ const critere = ref(0);
     <!-- Sites & équipe -->
     <div v-else-if="tab === 'sites'" class="space-y-5">
         <Card title="Sites">
+            <template v-if="section('sites').length" #actions>
+                <Button v-for="a in section('sites')" :key="a.key" :icon="a.icon" :variant="a.variant ?? 'secondary'" @click="opened = a">{{ a.label }}</Button>
+            </template>
             <div v-if="sites.length" class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div v-for="s in sites" :key="s.id" class="rounded-lg border border-surface-container-highest p-3.5 text-xs">
-                    <div class="font-bold text-on-surface">{{ s.libelle }}</div>
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="font-bold text-on-surface">{{ s.libelle }}</div>
+                        <div v-if="s.actions?.length" class="flex shrink-0 items-center gap-1">
+                            <button v-for="a in s.actions" :key="a.key" type="button" class="rounded-lg p-1.5 hover:bg-surface-container-low" :class="a.variant === 'ghost-danger' ? 'text-error' : 'text-on-surface-variant hover:text-on-surface'" :title="a.label" @click="opened = a">
+                                <Icon :name="a.icon" class="text-base" />
+                            </button>
+                        </div>
+                    </div>
                     <div class="text-on-surface-variant">{{ s.localite }}<template v-if="s.villageQuartier"> — {{ s.villageQuartier }}</template></div>
                     <div v-if="s.gps" class="mt-1 text-on-surface-variant">GPS : {{ s.gps }}</div>
                     <div v-if="s.contact" class="text-on-surface-variant">{{ s.contact }}</div>
@@ -186,10 +241,13 @@ const critere = ref(0);
             <p v-else class="text-xs text-on-surface-variant">Aucun site renseigné.</p>
         </Card>
         <Card title="Équipe" :padded="false">
+            <div v-if="section('equipe').length" class="flex justify-end gap-2 px-5 pt-5">
+                <Button v-for="a in section('equipe')" :key="a.key" :icon="a.icon" :variant="a.variant ?? 'secondary'" @click="opened = a">{{ a.label }}</Button>
+            </div>
             <div class="overflow-x-auto px-5 pb-5">
                 <table class="w-full text-left text-xs">
                     <thead class="border-b border-surface-container-highest text-[11px] uppercase tracking-wider text-on-surface-variant">
-                        <tr><th class="py-2">Nom</th><th class="py-2">Fonction</th><th class="py-2">Âge</th><th class="py-2">Niveau</th><th class="py-2">Associé</th><th class="py-2">Site</th><th class="py-2">Contact</th></tr>
+                        <tr><th class="py-2">Nom</th><th class="py-2">Fonction</th><th class="py-2">Âge</th><th class="py-2">Niveau</th><th class="py-2">Associé</th><th class="py-2">Site</th><th class="py-2">Contact</th><th v-if="hasMemberActions" class="py-2"></th></tr>
                     </thead>
                     <tbody class="divide-y divide-surface-container-highest">
                         <tr v-for="m in equipe" :key="m.id">
@@ -199,9 +257,14 @@ const critere = ref(0);
                             <td class="py-2.5">{{ m.niveau ?? '—' }}</td>
                             <td class="py-2.5">{{ m.associe ? 'Oui' : 'Non' }}</td>
                             <td class="py-2.5">{{ m.site ?? '—' }}</td>
-                            <td class="py-2.5">{{ m.contact ?? '—' }}</td>
+                            <td class="py-2.5">{{ m.contact ?? '—' }}<a v-if="m.cni" :href="m.cni" target="_blank" rel="noopener" class="ml-1 font-semibold text-secondary hover:underline">CNI</a></td>
+                            <td v-if="hasMemberActions" class="py-2.5 text-right whitespace-nowrap">
+                                <button v-for="a in m.actions ?? []" :key="a.key" type="button" class="rounded-lg p-1.5 hover:bg-surface-container-low" :class="a.variant === 'ghost-danger' ? 'text-error' : 'text-on-surface-variant hover:text-on-surface'" :title="a.label" @click="opened = a">
+                                    <Icon :name="a.icon" class="text-base" />
+                                </button>
+                            </td>
                         </tr>
-                        <tr v-if="!equipe.length"><td colspan="7" class="py-6 text-center text-on-surface-variant">Aucun membre renseigné.</td></tr>
+                        <tr v-if="!equipe.length"><td :colspan="hasMemberActions ? 8 : 7" class="py-6 text-center text-on-surface-variant">Aucun membre renseigné.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -268,9 +331,15 @@ const critere = ref(0);
                         </div>
                     </dl>
                 </Card>
-                <Card v-if="questionnaire[critere].avisGestionnaire" title="Avis du gestionnaire sur ce critère">
-                    <p class="mb-2 text-[11px] text-on-surface-variant">{{ questionnaire[critere].avisGestionnaire.by }} • {{ questionnaire[critere].avisGestionnaire.at }}</p>
-                    <SafeHtml :html="questionnaire[critere].avisGestionnaire.html" class="text-xs leading-relaxed text-on-surface" />
+                <Card v-if="questionnaire[critere].avisGestionnaire || questionnaire[critere].actions?.length" title="Avis du gestionnaire sur ce critère">
+                    <template v-if="questionnaire[critere].actions?.length" #actions>
+                        <Button v-for="a in questionnaire[critere].actions" :key="a.key" :icon="a.icon" :variant="a.variant ?? 'secondary'" @click="opened = a">{{ a.label }}</Button>
+                    </template>
+                    <template v-if="questionnaire[critere].avisGestionnaire">
+                        <p class="mb-2 text-[11px] text-on-surface-variant">{{ questionnaire[critere].avisGestionnaire.by }} • {{ questionnaire[critere].avisGestionnaire.at }}</p>
+                        <SafeHtml :html="questionnaire[critere].avisGestionnaire.html" class="text-xs leading-relaxed text-on-surface" />
+                    </template>
+                    <p v-else class="text-xs text-on-surface-variant">Aucun avis saisi pour ce critère.</p>
                 </Card>
             </div>
         </div>

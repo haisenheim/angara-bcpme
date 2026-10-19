@@ -19,6 +19,8 @@ use App\Models\Region;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\Inertia\EntrepriseListPresenter;
+use App\Services\Inertia\EntrepriseShowPage;
 use App\Services\ProspectEntrepriseTableExportService;
 use App\Services\TableDocumentExportService;
 use Illuminate\Http\Request;
@@ -34,16 +36,50 @@ class CompanyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Ca/Companies/index');
+        // Même périmètre (agence) et mêmes filtres que fetchPaginated / fetchStats.
+        $query = $this->applyFilters($this->baseQuery()->clone(), $this->parseFilters($request), true);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Entreprises',
+            'subtitle' => 'Portefeuille clients de votre agence.',
+            'countLabel' => 'entreprise(s)',
+            'showRoute' => 'ca.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'gestionnaire', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'client_structuration_status', 'gestionnaire_id', 'promu_client'],
+            'gestionnaires' => $list->agenceGestionnaireOptions($this->baseQuery())['gestionnaires'],
+            'exportRoute' => 'ca.entreprises.export',
+            'stats' => $list->standardStats($this->fetchStats($request)->getData(true), 'Total entreprises'),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('ca.dashboard')],
+                ['label' => 'Entreprises'],
+            ],
+        ]);
     }
 
-    public function getProspects()
+    public function getProspects(Request $request)
     {
-        //
-        return view('/Ca/Companies/prospects');
+        // Même périmètre (prospects soumis) et mêmes filtres que fetchProspectsPaginated.
+        $query = $this->applyProspectIndexFilters($this->prospectsQuery(), $this->parseProspectIndexFilters($request), ['apply_submission' => false]);
+        $list = app(EntrepriseListPresenter::class);
+
+        return $list->render($request, $query, [
+            'title' => 'Prospects',
+            'subtitle' => 'Prospects soumis pour avis — visibilité nationale (brouillons exclus).',
+            'countLabel' => 'prospect(s)',
+            'showRoute' => 'ca.entreprises.show',
+            'columns' => ['entreprise', 'identifiants', 'dirigeant', 'localisation', 'taille', 'capital', 'agence', 'statut'],
+            'filters' => ['region_id', 'taille', 'forme_id', 'caractere', 'agence_id', 'gestionnaire_id', 'created'],
+            'exportRoute' => 'ca.prospects.export',
+            'stats' => $list->standardStats($this->fetchProspectsStats($request)->getData(true), 'Total prospects'),
+            'empty' => 'Aucun prospect trouvé.',
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('ca.dashboard')],
+                ['label' => 'Prospects'],
+            ],
+        ] + $list->agenceGestionnaireOptions($this->prospectsQuery()));
     }
 
     public function fetchAll()
@@ -437,30 +473,23 @@ class CompanyController extends Controller
             ])
             ->firstOrFail();
 
-        $mr = $this->buildQuestionnaireResults($item);
-        $checklist = $item->piecesExigiblesChecklist();
+        $page = app(EntrepriseShowPage::class);
+        $sheet = $page->sheet($item, ['routePrefix' => 'ca']);
 
-        if ($item->prospect) {
-            $item->load([
-                'juridiqueAvisUser',
-                'conformiteAvisUser',
-                'critereAvis.user',
-                'arrondissement',
-                'departement',
-                'region',
-                'forme',
-                'agence.representation',
-                'produit',
-                'produits',
-                'appuis.type',
-                'reponses.question',
-                'reponses.choice',
-            ]);
-
-            return view('Ca.Companies.show_prospect', compact('item', 'mr', 'checklist'));
+        // Décision du chef d'agence : écran de validation dès que les deux avis sont rendus.
+        $actions = [];
+        if ($item->prospect && $item->juridique_avis_at && $item->conformite_avis_at && ! $item->promu_client_at && ! $item->prospect_rejected_at) {
+            $actions[] = ['label' => 'Validation / refus du prospect', 'icon' => 'gavel', 'variant' => 'success',
+                'href' => route('ca.workflow.prospects.show', $item->token)];
         }
 
-        return view('Ca.Companies.show', compact('item', 'mr', 'checklist'));
+        return $page->render($item, 'ca', $sheet, [
+            $page->link('ca.entreprise.get.engagements', $item->token, 'Grille des engagements', 'table_view'),
+            $page->simulationLink($item),
+        ], [
+            'actions' => $actions,
+            'initialTab' => $item->prospect ? 'avis' : 'synthese',
+        ]);
     }
 
     public function saveTiersPhysique(Request $request)

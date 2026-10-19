@@ -28,6 +28,7 @@ class EntrepriseSheetPresenter
         'dossierEntreeRelation.programmeSelections.programme',
         'juridiqueAvisUser', 'conformiteAvisUser', 'promuClientUser', 'prospectRejectedUser',
         'sites.region', 'sites.departement', 'sites.arrondissement', 'equipeMembres.site', 'equipeMembres.cniFichier',
+        'dossierAnalyseCritique.avis.emisPar',
     ];
 
     /**
@@ -117,6 +118,7 @@ class EntrepriseSheetPresenter
             'fourni' => (bool) $row['fourni'],
             'providedAt' => $row['entreprise_piece']?->provided_at ? Carbon::parse($row['entreprise_piece']->provided_at)->format('d/m/Y H:i') : null,
             'url' => $row['entreprise_piece']?->fichier?->path,
+            'notes' => $row['entreprise_piece']?->notes,
         ])->values()->all();
     }
 
@@ -132,6 +134,8 @@ class EntrepriseSheetPresenter
             'agence' => $item->agence?->name,
             'gestionnaire' => $item->gestionnaire?->name ?? $item->user?->name,
             'statut' => Badge::fromPresentation($item->clientStatutPresentation()),
+            // Prospect : date de soumission pour avis (null = brouillon).
+            'submittedAt' => $item->prospect ? $this->dt($item->prospect_submitted_at) : null,
         ];
     }
 
@@ -194,6 +198,7 @@ class EntrepriseSheetPresenter
             $avis = $critereId ? $avisMap->get($critereId) : null;
 
             return [
+                'critereId' => $critereId ?: null,
                 'critere' => $result['critere']?->name ?? 'Critère',
                 'groups' => collect($result['items'])->map(fn ($group) => [
                     'sousCritere' => $group['sous_critere']?->name ?? 'Sous-critère',
@@ -225,8 +230,10 @@ class EntrepriseSheetPresenter
                 'by' => $item->prospectRejectedUser?->name, 'at' => $this->dt($item->prospect_rejected_at)];
         }
 
+        $analyseCritique = $this->analyseCritique($item);
+
         if (! $eer) {
-            return ['status' => $status, 'decision' => $decision, 'started' => false];
+            return ['status' => $status, 'decision' => $decision, 'started' => false, 'besoins' => [], 'analyseCritique' => $analyseCritique];
         }
 
         $sections = collect([
@@ -234,9 +241,6 @@ class EntrepriseSheetPresenter
             'Analyse opérationnelle' => $eer->analyse_operationnelle,
             'Éligibilité' => $eer->analyse_eligibilite,
             'Identification des besoins' => $eer->identification_besoins,
-            'Besoin de financement' => $eer->besoin_financement,
-            'Besoin d\'accompagnement' => $eer->besoin_accompagnement,
-            'Besoin de structuration' => $eer->besoin_structuration,
             'Notes' => $eer->qualification_notes,
         ])->filter(fn ($html) => trim(strip_tags((string) $html)) !== '')
             ->map(fn ($html, $label) => ['label' => $label, 'html' => $html])->values();
@@ -253,6 +257,37 @@ class EntrepriseSheetPresenter
             ])),
             'sections' => $sections,
             'programmes' => $eer->programmeSelections->map(fn ($sel) => $sel->programme?->name)->filter()->values(),
+            // Besoins cochés par le chef de filière (colonnes booléennes).
+            'besoins' => array_values(array_filter([
+                $eer->besoin_financement ? 'Financement' : null,
+                $eer->besoin_accompagnement ? 'Accompagnement' : null,
+                $eer->besoin_structuration ? 'Structuration' : null,
+            ])),
+            'analyseCritique' => $analyseCritique,
+        ];
+    }
+
+    /**
+     * Dossier d'analyse critique de l'entreprise (synthèse et avis consolidés), null s'il n'existe pas.
+     */
+    public function analyseCritique(Entreprise $item): ?array
+    {
+        $ac = $item->dossierAnalyseCritique;
+        if (! $ac) {
+            return null;
+        }
+
+        return [
+            'statut' => $ac->statut,
+            'synthese' => $ac->synthese,
+            'avis' => $ac->avis->map(fn ($a) => [
+                'source' => $a->source_label ?? $a->source_type,
+                'type' => $a->source_type,
+                'etat' => $a->etat,
+                'at' => $this->dt($a->emis_at),
+                'by' => $a->emisPar?->name ?? 'Système',
+                'contenu' => $a->contenu,
+            ])->values()->all(),
         ];
     }
 
