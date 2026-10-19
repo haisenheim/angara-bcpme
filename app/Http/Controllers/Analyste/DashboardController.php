@@ -12,6 +12,8 @@ use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     /** Même périmètre que `Analyste\DossierController::baseQuery()` (banque entière si AFE sans agence). */
     private function dossiersQueryForCurrentAnalyste()
     {
@@ -24,9 +26,91 @@ class DashboardController extends Controller
     }
 
     public function index()
-	{
-		return view('Analyste/dashboard');
-	}
+    {
+        $dossierShow = fn (?string $token) => $token ? $this->routeIfExists('analyste.dossiers.show', $token) : null;
+
+        return $this->renderInertiaDashboard('Tableau de bord analyste financier', [
+            ['key' => 'total_dossiers', 'label' => 'Dossiers assignés', 'icon' => 'folder_shared', 'href' => $this->routeIfExists('analyste.dossiers.index')],
+            ['key' => 'pending_analysis', 'label' => 'En attente d\'analyse', 'icon' => 'hourglass_top', 'tone' => 'warning'],
+            ['key' => 'completed_analysis', 'label' => 'Analyses complétées', 'icon' => 'task_alt', 'tone' => 'success'],
+            ['key' => 'total_entreprises', 'label' => 'Entreprises', 'icon' => 'storefront', 'href' => $this->routeIfExists('analyste.entreprises.index')],
+            ['key' => 'pending_submission', 'label' => 'À soumettre à l\'exploitation', 'icon' => 'send', 'tone' => 'info'],
+            ['key' => 'submitted_to_exploitation', 'label' => 'Déjà soumis', 'icon' => 'outbox'],
+        ], fn () => $this->getStats()->getData(true), function () use ($dossierShow) {
+            return collect($this->getTodos()->getData(true)['todos'] ?? [])->map(fn ($t) => [
+                'token' => $t['token'],
+                'entreprise' => $t['entreprise'],
+                'programmes' => $t['programmes'],
+                'when_human' => $t['assigned_human'] ? 'Affecté '.$t['assigned_human'] : null,
+                'kind' => ['label' => 'À soumettre', 'variant' => 'warning'],
+                'href' => $dossierShow($t['token']),
+            ])->values()->all();
+        }, [
+            'subtitle' => 'Vue d\'ensemble de vos analyses financières.',
+            'todosTitle' => 'Mes dossiers à soumettre (exploitation)',
+            'todosLink' => ['label' => 'Voir tous', 'href' => $this->routeIfExists('analyste.dossiers.index')],
+            'plainLinks' => true,
+            'widgets' => [
+                ['key' => 'alertes', 'type' => 'alerts', 'title' => 'Alertes', 'span' => 'full', 'empty' => 'Aucun dossier en retard.'],
+                ['key' => 'distribution', 'type' => 'bars', 'title' => 'Distribution des dossiers', 'span' => 'half'],
+                ['key' => 'mensuel', 'type' => 'columns', 'title' => 'Analyses mensuelles', 'span' => 'half',
+                    'series' => [['label' => 'Dossiers analysés', 'tone' => 'success']]],
+                ['key' => 'recents', 'type' => 'list', 'title' => 'Dossiers récents', 'span' => 'two-thirds', 'empty' => 'Aucun dossier.',
+                    'link' => ['label' => 'Voir tous', 'href' => $this->routeIfExists('analyste.dossiers.index')]],
+                ['key' => 'performance', 'type' => 'metrics', 'title' => 'Métriques de performance', 'span' => 'third'],
+                ['key' => 'programmes', 'type' => 'list', 'title' => 'Programmes actifs', 'span' => 'half', 'empty' => 'Aucun programme.',
+                    'link' => ['label' => 'Voir les programmes', 'href' => $this->routeIfExists('analyste.programmes.index')]],
+                ['key' => 'raccourcis', 'type' => 'links', 'title' => 'Actions rapides', 'span' => 'half',
+                    'items' => array_values(array_filter([
+                        ['label' => 'Gérer les dossiers', 'icon' => 'folder_open', 'href' => $this->routeIfExists('analyste.dossiers.index')],
+                        ['label' => 'Voir les entreprises', 'icon' => 'storefront', 'href' => $this->routeIfExists('analyste.entreprises.index')],
+                        ['label' => 'Programmes', 'icon' => 'volunteer_activism', 'href' => $this->routeIfExists('analyste.programmes.index')],
+                        ['label' => 'Voir les prospects', 'icon' => 'person_search', 'href' => $this->routeIfExists('analyste.entreprises.prospects')],
+                    ], fn ($l) => $l['href'] !== null))],
+            ],
+            'widgetData' => function () use ($dossierShow) {
+                $alerts = $this->getAlerts()->getData(true);
+                $dist = $this->getDossiersDistribution()->getData(true);
+                $monthly = $this->getMonthlyAnalysis()->getData(true);
+                $perf = $this->getPerformanceMetrics()->getData(true);
+
+                return [
+                    'alertes' => array_values(array_filter([
+                        ($alerts['urgent_dossiers'] ?? 0) > 0 ? ['tone' => 'warning', 'icon' => 'warning', 'title' => 'Attention',
+                            'text' => $alerts['urgent_dossiers'].' dossier(s) en attente depuis plus de 3 jours.'] : null,
+                        ($alerts['in_progress_dossiers'] ?? 0) > 0 ? ['tone' => 'info', 'icon' => 'autorenew', 'title' => 'En cours',
+                            'text' => $alerts['in_progress_dossiers'].' dossier(s) en cours d\'analyse.'] : null,
+                    ])),
+                    'distribution' => [
+                        ['label' => 'En cours', 'value' => $dist['en_cours'] ?? 0, 'tone' => 'info'],
+                        ['label' => 'En attente', 'value' => $dist['en_attente'] ?? 0, 'tone' => 'warning'],
+                        ['label' => 'Terminés', 'value' => $dist['termine'] ?? 0, 'tone' => 'success'],
+                        ['label' => 'Rejetés', 'value' => $dist['rejete'] ?? 0, 'tone' => 'danger'],
+                    ],
+                    'mensuel' => collect($monthly['labels'] ?? [])->map(fn ($label, $i) => [
+                        'label' => $label, 'values' => [$monthly['data'][$i] ?? 0],
+                    ])->values()->all(),
+                    'recents' => collect($this->getRecentDossiers()->getData(true))->map(fn ($d) => [
+                        'title' => $d['entreprise_name'],
+                        'subtitle' => $d['programme_name'],
+                        'meta' => $d['updated_at'],
+                        'badge' => ['label' => $d['statut_name'], 'variant' => (int) $d['statut'] === 1 ? 'info' : 'warning'],
+                        'href' => $dossierShow($d['token']),
+                    ])->values()->all(),
+                    'performance' => [
+                        ['label' => 'Taux de complétion', 'value' => ($perf['completion_rate'] ?? 0).' %', 'progress' => $perf['completion_rate'] ?? 0, 'tone' => 'success'],
+                        ['label' => 'Complétés ce mois', 'value' => $perf['this_month_completed'] ?? 0],
+                        ['label' => 'Total analysé', 'value' => $perf['total_analyzed'] ?? 0],
+                        ['label' => 'En attente', 'value' => $perf['pending_count'] ?? 0],
+                    ],
+                    'programmes' => collect($this->getProgrammes()->getData(true))->map(fn ($p) => [
+                        'title' => $p['name'],
+                        'meta' => $p['dossiers_count'].' dossier(s)',
+                    ])->values()->all(),
+                ];
+            },
+        ]);
+    }
 
     /**
      * Get dashboard statistics

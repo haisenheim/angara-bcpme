@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Regional;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProgrammeListResource;
-use App\Models\Banque;
-use App\Models\Indicateur;
-use App\Models\Organisme;
 use App\Models\Programme;
+use App\Services\Inertia\ProgrammePagePresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -16,10 +14,14 @@ class ProgrammeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Regional/Programmes/index');
+        return app(ProgrammePagePresenter::class)->index(
+            $request,
+            'regional',
+            fn () => $this->fetchStats($request)->getData(true),
+            $this->fetchFilterOptions()->getData(true)['signataires'] ?? [],
+        );
     }
 
 
@@ -116,15 +118,17 @@ class ProgrammeController extends Controller
     public function show(string $token)
     {
         //
-        $item = Programme::where('token',$token)->first();
-        if(!$item){
-            Session::flash('error','Accès non autorisé à ce programme!');
+        $item = Programme::query()
+            ->where('token', $token)
+            ->with(ProgrammePagePresenter::SHOW_RELATIONS)
+            ->first();
+        if (! $item) {
+            Session::flash('error', 'Accès non autorisé à ce programme!');
+
             return back();
         }
-        $banques = Banque::all();
-        $organismes = Organisme::all();
-        $indicateurs = Indicateur::all();
-        return view('Regional/Programmes/show',compact('item','banques','organismes','indicateurs'));
+
+        return app(ProgrammePagePresenter::class)->show($item, 'regional');
     }
 
 

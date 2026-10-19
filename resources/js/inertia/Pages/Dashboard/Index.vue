@@ -2,6 +2,10 @@
 /**
  * Tableau de bord générique : les indicateurs affichés sont décrits par le serveur (kpis),
  * les valeurs arrivent en différé (Inertia::defer) pour un affichage immédiat de la page.
+ *
+ * Widgets optionnels (listes, graphiques CSS, valeurs clés, tableaux, alertes, actions rapides) :
+ * décrits par `widgets`, valeurs différées dans `widgetData` (voir Components/dashboard/DashboardWidget.vue).
+ * `plainLinks` : liens en <a> classiques quand les cibles sont encore des écrans Blade.
  */
 import { computed } from 'vue';
 import { Deferred, Head, Link } from '@inertiajs/vue3';
@@ -9,17 +13,29 @@ import Icon from '@/Components/ui/Icon.vue';
 import Card from '@/Components/ui/Card.vue';
 import PageHeader from '@/Components/ui/PageHeader.vue';
 import StatusBadge from '@/Components/ui/StatusBadge.vue';
+import DashboardWidget from '@/Components/dashboard/DashboardWidget.vue';
 import { badgeVariant } from '@/utils/badge';
 
 const props = defineProps({
     title: String,
+    subtitle: { type: String, default: "Vue d'ensemble de votre activité et des actions attendues." },
     kpis: Array,
     hasTodos: Boolean,
     hasInsights: Boolean,
     stats: Object,
     todos: Array,
     insights: Object,
+    todosTitle: { type: String, default: 'À traiter maintenant' },
+    todosLink: { type: Object, default: null },
+    plainLinks: { type: Boolean, default: false },
+    widgets: { type: Array, default: () => [] },
+    widgetData: { type: Object, default: null },
 });
+
+// Lien Inertia (navigation sans rechargement) ou <a> classique selon la cible.
+const linkTag = (href) => (href ? (props.plainLinks ? 'a' : Link) : 'div');
+const spanClass = { full: 'lg:col-span-6', half: 'lg:col-span-3', third: 'lg:col-span-2', 'two-thirds': 'lg:col-span-4' };
+const needsData = (w) => w.type !== 'links';
 
 const tones = {
     warning: 'border-amber-200 bg-amber-50/70',
@@ -43,12 +59,12 @@ const structTotal = computed(() => (props.insights ? structurationSteps.reduce((
 
 <template>
     <Head :title="title" />
-    <PageHeader :title="title" subtitle="Vue d'ensemble de votre activité et des actions attendues." />
+    <PageHeader :title="title" :subtitle="subtitle" />
 
     <!-- Indicateurs -->
     <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         <component
-            :is="kpi.href ? Link : 'div'"
+            :is="linkTag(kpi.href)"
             v-for="kpi in kpis"
             :key="kpi.key"
             :href="kpi.href"
@@ -63,16 +79,22 @@ const structTotal = computed(() => (props.insights ? structurationSteps.reduce((
                 <template #fallback><div class="mt-2 h-7 w-16 animate-pulse rounded bg-surface-container-high"></div></template>
                 <div class="mt-2 text-2xl font-bold tracking-tight text-on-surface">{{ stats?.[kpi.key] ?? '—' }}</div>
             </Deferred>
+            <div v-if="kpi.hint" class="mt-1 text-[11px] text-on-surface-variant">{{ kpi.hint }}</div>
         </component>
     </div>
 
     <!-- À traiter maintenant (responsables de pôle) -->
-    <Card v-if="hasTodos" title="À traiter maintenant">
+    <Card v-if="hasTodos" :title="todosTitle">
+        <template v-if="todosLink" #actions>
+            <a :href="todosLink.href" class="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary hover:underline">
+                {{ todosLink.label }} <Icon name="arrow_forward" class="text-sm" />
+            </a>
+        </template>
         <Deferred data="todos">
             <template #fallback><div class="h-24 animate-pulse rounded-lg bg-surface-container-low"></div></template>
             <ul class="divide-y divide-surface-container-highest text-xs">
                 <li v-for="t in todos" :key="t.token">
-                    <component :is="t.href ? Link : 'div'" :href="t.href" class="flex items-center justify-between gap-3 py-2.5 hover:bg-surface-container-low/50">
+                    <component :is="linkTag(t.href)" :href="t.href" class="flex items-center justify-between gap-3 py-2.5 hover:bg-surface-container-low/50">
                         <div class="flex min-w-0 items-center gap-3">
                             <StatusBadge v-if="t.kind" :variant="badgeVariant(t.kind.variant)">{{ t.kind.label }}</StatusBadge>
                             <div class="min-w-0">
@@ -87,6 +109,17 @@ const structTotal = computed(() => (props.insights ? structurationSteps.reduce((
             </ul>
         </Deferred>
     </Card>
+
+    <!-- Widgets décrits par le serveur -->
+    <div v-if="widgets.length" class="grid grid-cols-1 gap-5 lg:grid-cols-6">
+        <div v-for="w in widgets" :key="w.key" :class="spanClass[w.span ?? 'half'] ?? spanClass.half">
+            <DashboardWidget v-if="!needsData(w)" :widget="w" />
+            <Deferred v-else data="widgetData">
+                <template #fallback><div class="h-48 animate-pulse rounded-xl bg-surface-container-low"></div></template>
+                <DashboardWidget :widget="w" :data="widgetData?.[w.key]" />
+            </Deferred>
+        </div>
+    </div>
 
     <!-- Direction générale -->
     <Deferred v-if="hasInsights" data="insights">

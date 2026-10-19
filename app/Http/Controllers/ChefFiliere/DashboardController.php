@@ -9,9 +9,61 @@ use App\Models\Entreprise;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('ChefFiliere.dashboard');
+        $qualifShow = fn (?string $token) => $token ? $this->routeIfExists('chef-filiere.qualifications.show', $token) : null;
+        $qualifIndex = $this->routeIfExists('chef-filiere.qualifications.index');
+
+        return $this->renderInertiaDashboard('Tableau de bord — chef de filière', [
+            ['key' => 'pending_qualif', 'label' => 'Structurations en attente', 'icon' => 'account_tree', 'tone' => 'warning', 'href' => $qualifIndex],
+            ['key' => 'clients_count', 'label' => 'Clients (agence)', 'icon' => 'storefront', 'href' => $this->routeIfExists('chef-filiere.clients.index')],
+            ['key' => 'instruction_pending', 'label' => 'Instruction — en attente (chef d\'agence)', 'icon' => 'pending_actions',
+                'href' => $this->routeIfExists('chef-filiere.instructions.pending')],
+            ['key' => 'instruction_en_cours', 'label' => 'Dossiers d\'instruction en cours', 'icon' => 'autorenew',
+                'href' => $this->routeIfExists('chef-filiere.instructions.in-progress')],
+        ], fn () => $this->getStats()->getData(true), null, [
+            'subtitle' => 'Pilotage de la structuration et des dossiers d\'instruction de votre agence.',
+            'plainLinks' => true,
+            'widgets' => [
+                ['key' => 'structuration', 'type' => 'stacked', 'title' => 'Structuration des clients', 'span' => 'third',
+                    'link' => $qualifIndex ? ['label' => 'Ouvrir', 'href' => $qualifIndex] : null],
+                ['key' => 'a_structurer', 'type' => 'list', 'title' => 'À structurer (priorité)', 'span' => 'third', 'empty' => 'Aucun client à structurer.',
+                    'link' => ['label' => 'Voir les clients', 'href' => $this->routeIfExists('chef-filiere.clients.index')]],
+                ['key' => 'rejets', 'type' => 'list', 'title' => 'Rejets agence à corriger', 'span' => 'third', 'empty' => 'Aucun rejet à corriger.',
+                    'link' => $qualifIndex ? ['label' => 'Ouvrir la file', 'href' => $qualifIndex] : null],
+                ['key' => 'raccourcis', 'type' => 'links', 'title' => 'Documentation', 'span' => 'full',
+                    'items' => array_values(array_filter([
+                        ['label' => 'Référentiel des programmes (fiches et critères d\'éligibilité)', 'icon' => 'volunteer_activism',
+                            'href' => $this->routeIfExists('chef-filiere.programmes.index')],
+                    ], fn ($l) => $l['href'] !== null))],
+            ],
+            'widgetData' => function () use ($qualifShow) {
+                $data = $this->getInsights()->getData(true);
+                $s = $data['structuration'] ?? [];
+
+                return [
+                    'structuration' => [
+                        ['label' => 'Structurés', 'value' => $s['structure'] ?? 0, 'tone' => 'success'],
+                        ['label' => 'En cours', 'value' => $s['en_cours'] ?? 0, 'tone' => 'info'],
+                        ['label' => 'En attente', 'value' => $s['attente'] ?? 0, 'tone' => 'neutral'],
+                        ['label' => 'Rejetés', 'value' => $s['rejetee'] ?? 0, 'tone' => 'danger'],
+                    ],
+                    'a_structurer' => collect($data['to_structure'] ?? [])->map(fn ($e) => [
+                        'title' => $e['name'] ?? '—',
+                        'meta' => ! empty($e['promu_client_at']) ? 'Client depuis le '.\Illuminate\Support\Carbon::parse($e['promu_client_at'])->format('d/m/Y') : null,
+                        'href' => $qualifShow($e['token'] ?? null),
+                    ])->values()->all(),
+                    'rejets' => collect($data['rejected_to_fix'] ?? [])->map(fn ($e) => [
+                        'title' => $e['name'] ?? '—',
+                        'subtitle' => $e['dossier_entree_relation']['qualification_reject_motif'] ?? null,
+                        'badge' => ['label' => 'Rejeté', 'variant' => 'danger'],
+                        'href' => $qualifShow($e['token'] ?? null),
+                    ])->values()->all(),
+                ];
+            },
+        ]);
     }
 
     public function getStats()

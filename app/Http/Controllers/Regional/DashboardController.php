@@ -8,9 +8,18 @@ use App\Models\Entreprise;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('Regional/dashboard');
+        return $this->renderInertiaDashboard('Tableau de bord du responsable régional', [
+            ['key' => 'entreprises', 'label' => 'Entreprises (région)', 'icon' => 'storefront', 'href' => $this->routeIfExists('regional.entreprises.index')],
+            ['key' => 'dossiers', 'label' => 'Dossiers', 'icon' => 'folder_shared', 'href' => $this->routeIfExists('regional.dossiers.index')],
+            ['key' => 'prospects', 'label' => 'Prospects soumis', 'icon' => 'person_search', 'href' => $this->routeIfExists('regional.entreprises.prospects')],
+        ], fn () => $this->getStats()->getData(true), null, [
+            'subtitle' => 'Vue d\'ensemble de l\'activité de votre région.',
+            'plainLinks' => true,
+        ]);
     }
 
     public function getStats()

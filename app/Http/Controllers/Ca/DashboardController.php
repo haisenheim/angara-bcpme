@@ -10,9 +10,96 @@ use App\Models\User;
 
 class DashboardController extends Controller
 {
+    use \App\Http\Controllers\Concerns\RendersInertiaDashboard;
+
     public function index()
     {
-        return view('Ca/dashboard');
+        $dossierShow = fn (?string $token) => $token ? $this->routeIfExists('ca.dossiers.show', $token) : null;
+        $prospectsQueue = $this->routeIfExists('ca.workflow.prospects.index');
+
+        return $this->renderInertiaDashboard('Tableau de bord — chef d\'agence', [
+            ['key' => 'total_dossiers', 'label' => 'Dossiers totaux', 'icon' => 'folder_shared', 'href' => $this->routeIfExists('ca.dossiers.index')],
+            ['key' => 'dossiers_en_cours', 'label' => 'Dossiers en cours', 'icon' => 'autorenew'],
+            ['key' => 'total_entreprises', 'label' => 'Portefeuille', 'icon' => 'storefront', 'hint' => 'Entreprises de l\'agence', 'href' => $this->routeIfExists('ca.entreprises.index')],
+            ['key' => 'total_users', 'label' => 'Équipe active', 'icon' => 'group', 'hint' => 'Utilisateurs de l\'agence', 'href' => $this->routeIfExists('ca.users.index')],
+            ['key' => 'total_prospects', 'label' => 'Prospects actifs', 'icon' => 'person_search', 'hint' => 'En cours d\'entrée en relation', 'href' => $this->routeIfExists('ca.entreprises.prospects')],
+            ['key' => 'workflow_prospects_submitted', 'label' => 'Prospects soumis', 'icon' => 'send', 'href' => $prospectsQueue],
+            ['key' => 'workflow_prospects_blocked', 'label' => 'Prospects bloqués (avis)', 'icon' => 'hourglass_top', 'href' => $prospectsQueue],
+            ['key' => 'workflow_prospects_pending', 'label' => 'Prospects prêts pour arbitrage', 'icon' => 'how_to_reg', 'tone' => 'warning', 'href' => $prospectsQueue],
+            ['key' => 'workflow_eer_pending', 'label' => 'Structurations à valider', 'icon' => 'account_tree', 'tone' => 'warning',
+                'href' => $this->routeIfExists('ca.workflow.instructions.index')],
+            ['key' => 'workflow_instruction_bundles_pending', 'label' => 'Dossiers d\'instruction à valider', 'icon' => 'fact_check', 'tone' => 'warning',
+                'href' => $this->routeIfExists('ca.workflow.instruction-dossiers.index')],
+        ], fn () => $this->getStats()->getData(true), null, [
+            'subtitle' => 'Vue d\'ensemble de votre agence et des décisions attendues.',
+            'plainLinks' => true,
+            'widgets' => [
+                ['key' => 'alertes', 'type' => 'alerts', 'title' => 'Alertes & notifications', 'span' => 'full'],
+                ['key' => 'performance', 'type' => 'columns', 'title' => 'Performance de l\'agence (6 derniers mois)', 'span' => 'two-thirds',
+                    'series' => [['label' => 'Dossiers créés', 'tone' => 'success'], ['label' => 'Entreprises créées', 'tone' => 'brand']]],
+                ['key' => 'mois', 'type' => 'metrics', 'title' => 'Statistiques du mois — '.now()->translatedFormat('F Y'), 'span' => 'third'],
+                ['key' => 'equipe', 'type' => 'table', 'title' => 'Performance de l\'équipe', 'span' => 'half', 'empty' => 'Aucun membre actif.',
+                    'link' => ['label' => 'Gérer', 'href' => $this->routeIfExists('ca.users.index')],
+                    'columns' => [
+                        ['key' => 'name', 'label' => 'Membre'],
+                        ['key' => 'role', 'label' => 'Rôle'],
+                        ['key' => 'dossiers', 'label' => 'Dossiers', 'align' => 'right'],
+                        ['key' => 'statut', 'label' => 'Statut'],
+                    ]],
+                ['key' => 'recents', 'type' => 'list', 'title' => 'Dossiers récents', 'span' => 'half', 'empty' => 'Aucun dossier récent.',
+                    'link' => ['label' => 'Voir tous', 'href' => $this->routeIfExists('ca.dossiers.index')]],
+                ['key' => 'raccourcis', 'type' => 'links', 'title' => 'Actions rapides', 'span' => 'full',
+                    'items' => array_values(array_filter([
+                        ['label' => 'File d\'arbitrage des prospects', 'icon' => 'how_to_reg', 'href' => $prospectsQueue],
+                        ['label' => 'Validations de structuration', 'icon' => 'account_tree', 'href' => $this->routeIfExists('ca.workflow.instructions.index')],
+                        ['label' => 'Dossiers d\'instruction (multi-programmes)', 'icon' => 'fact_check', 'href' => $this->routeIfExists('ca.workflow.instruction-dossiers.index')],
+                        ['label' => 'Gérer les entreprises', 'icon' => 'storefront', 'href' => $this->routeIfExists('ca.entreprises.index')],
+                        ['label' => 'Suivre les dossiers', 'icon' => 'folder_open', 'href' => $this->routeIfExists('ca.dossiers.index')],
+                        ['label' => 'Gérer l\'équipe', 'icon' => 'group', 'href' => $this->routeIfExists('ca.users.index')],
+                        ['label' => 'Voir les programmes', 'icon' => 'volunteer_activism', 'href' => $this->routeIfExists('ca.programmes.index')],
+                    ], fn ($l) => $l['href'] !== null))],
+            ],
+            'widgetData' => function () use ($dossierShow) {
+                $perf = $this->getPerformanceData()->getData(true);
+                $month = $this->getMonthlyStats()->getData(true);
+                $alerts = $this->getAlerts()->getData(true);
+                $variants = [0 => 'warning', 1 => 'info', 2 => 'success', 3 => 'danger'];
+
+                return [
+                    'alertes' => array_values(array_filter([
+                        ($alerts['pending_dossiers'] ?? 0) > 0 ? ['tone' => 'warning', 'icon' => 'schedule', 'title' => 'Dossiers en attente',
+                            'text' => $alerts['pending_dossiers'].' dossier(s) en attente de traitement.'] : null,
+                        ($alerts['old_pending'] ?? 0) > 0 ? ['tone' => 'danger', 'icon' => 'warning', 'title' => 'Attention requise',
+                            'text' => $alerts['old_pending'].' dossier(s) en attente depuis plus de 7 jours.'] : null,
+                        ($alerts['inactive_users'] ?? 0) > 0 ? ['tone' => 'info', 'icon' => 'person_off', 'title' => 'Utilisateurs inactifs',
+                            'text' => $alerts['inactive_users'].' compte(s) désactivé(s).'] : null,
+                    ])),
+                    'performance' => collect($perf['labels'] ?? [])->map(fn ($label, $i) => [
+                        'label' => $label,
+                        'values' => [$perf['dossiers'][$i] ?? 0, $perf['entreprises'][$i] ?? 0],
+                    ])->values()->all(),
+                    'mois' => [
+                        ['label' => 'Nouveaux dossiers', 'value' => $month['new_dossiers'] ?? 0],
+                        ['label' => 'Nouvelles entreprises', 'value' => $month['new_entreprises'] ?? 0],
+                        ['label' => 'Dossiers complétés', 'value' => $month['completed_dossiers'] ?? 0],
+                        ['label' => 'Prospects actifs', 'value' => $month['active_prospects'] ?? 0],
+                    ],
+                    'equipe' => ['rows' => collect($this->getTeamPerformance()->getData(true))->map(fn ($m) => ['cells' => [
+                        'name' => $m['name'],
+                        'role' => $m['role'],
+                        'dossiers' => $m['dossiers_count'],
+                        'statut' => ['badge' => $m['active'] ? 'Actif' : 'Inactif', 'variant' => $m['active'] ? 'success' : 'neutral'],
+                    ]])->values()->all()],
+                    'recents' => collect($this->getRecentDossiers()->getData(true))->map(fn ($d) => [
+                        'title' => $d['entreprise_name'],
+                        'subtitle' => $d['programme_name'].' · '.$d['gestionnaire_name'],
+                        'meta' => $d['updated_at'],
+                        'badge' => ['label' => $d['statut_name'], 'variant' => $variants[(int) $d['statut']] ?? 'neutral'],
+                        'href' => $dossierShow($d['token']),
+                    ])->values()->all(),
+                ];
+            },
+        ]);
     }
 
     /**
