@@ -987,10 +987,11 @@ class CompanyController extends ExtendedController
      */
     public function fichePdf(string $token)
     {
-        $item = Entreprise::query()
-            ->where('token', $token)
-            ->orWhere('id', (int) $token)
-            ->firstOrFail();
+        // Identifiant numérique accepté seulement pour une URL entièrement numérique
+        // (avant : orWhere('id', (int) $token) ouvrait une autre fiche pour un token commençant par des chiffres).
+        $item = Entreprise::query()->where('token', $token)->first()
+            ?? (ctype_digit($token) ? Entreprise::query()->find((int) $token) : null);
+        abort_unless($item, 404);
 
         // Brouillon : propriétaire uniquement ; prospect soumis : tout gestionnaire (consultation transverse).
         $uid = auth()->id();
