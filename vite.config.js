@@ -7,9 +7,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                // 'resources/css/app.scss',
-                'resources/js/app.js',
-                // Refonte Inertia (Vue 3 + Tailwind) — cohabite avec les écrans Blade.
+                // Application Inertia (Vue 3 + Tailwind).
                 'resources/js/inertia/app.js',
             ],
             // Sortie historique conservée : public/js/modules (manifest versionné).

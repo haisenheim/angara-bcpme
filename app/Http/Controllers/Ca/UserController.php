@@ -27,16 +27,6 @@ class UserController extends Controller
         return AgencyUsersPresenter::render($items, $this->governanceRoutePrefix());
     }
 
-
-    public function getRoles(){
-        $items = Role::where('metier',1)->get();
-        return view('/Ca/Users/roles')->with(compact('items'));
-    }
-
-
-
-
-
     /**
      * Show the form for creating a new resource.
      *
@@ -46,8 +36,6 @@ class UserController extends Controller
     {
         //
     }
-
-
 
     public function  enable($token){
         $user = User::where('token',$token)->first();
@@ -73,6 +61,5 @@ class UserController extends Controller
 	{
 
 	}
-
 
 }

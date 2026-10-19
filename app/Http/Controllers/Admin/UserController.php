@@ -95,13 +95,6 @@ class UserController extends Controller
         ]);
     }
 
-    public function getRoles()
-    {
-        $items = Role::where('metier', 1)->get();
-
-        return view('/Admin/Users/roles')->with(compact('items'));
-    }
-
     public function create()
     {
         return $this->renderForm(new User([

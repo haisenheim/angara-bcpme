@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 /**
- * Pages Inertia (refonte) : layout unique, menu et profil partagés par toutes les pages.
- * Appliqué route par route (alias « inertia ») pour cohabiter avec les écrans Blade.
+ * Pages Inertia : layout unique, menu et profil partagés par toutes les pages.
+ * Enregistré dans le groupe de middlewares « web ».
  */
 class HandleInertiaRequests extends Middleware
 {

@@ -4,13 +4,11 @@ namespace Modules\Simulator;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Modules\Simulator\Application\Simulator;
 use Modules\Simulator\Contracts\SimulatorInterface;
 use Modules\Simulator\Http\Middleware\AllowedRoles;
 use Modules\Simulator\Persistence\Repositories\ScenarioRepository;
-use Modules\Simulator\Support\SimulatorLayoutResolver;
 
 class SimulatorServiceProvider extends ServiceProvider
 {
@@ -42,7 +40,6 @@ class SimulatorServiceProvider extends ServiceProvider
 
         $this->registerBladeComponents();
 
-        $this->registerSimulatorLayoutComposer();
 
         $this->publishes([
             $this->modulePath('config/simulator.php') => config_path('simulator.php'),
@@ -74,20 +71,6 @@ class SimulatorServiceProvider extends ServiceProvider
     protected function registerBladeComponents(): void
     {
         Blade::componentNamespace('Modules\\Simulator\\View\\Components', self::NAME);
-    }
-
-    protected function registerSimulatorLayoutComposer(): void
-    {
-        View::composer([
-            'simulator::index',
-            'simulator::scenarios.index',
-            'simulator::scenarios.show',
-        ], function ($view): void {
-            $view->with(
-                'simulatorLayout',
-                SimulatorLayoutResolver::resolve(auth()->user()),
-            );
-        });
     }
 
     protected function modulePath(string $relative): string

@@ -10,27 +10,6 @@ use Illuminate\Support\Facades\Http;
 
 class InstructionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-        $items = Libelle::all();
-        return view('/Admin/Libelles/index')->with(compact('items'));
-    }
-
-    public function getCritereParamsForm(){
-        $criteres = Http::get('http://localhost:8080/test');
-        $items = json_decode($criteres->body(),true);
-        return view('/Admin/Instruction/params')->with(compact('items'));
-    }
-
-    public function createDossier(){
-        return view('/Admin/Instruction/create');
-    }
 
     public function loadDsf(){
         $upload = request('upload');
@@ -69,28 +48,6 @@ class InstructionController extends Controller
         return redirect(route('admin.instruction.dossier',$dossier_id));
     }
 
-    public function getDossier($id){
-        $dossier = Http::get('http://localhost:8080/dossier/'.$id);
-        $dossier = json_decode($dossier->body(),true);
-        $note3 = $dossier['exercices'][0]['notation'];
-       // dd($note3);
-        return view('/Admin/Instruction/dossier',compact('id','note3'));
-    }
-
-    public function findDossier(){
-        $id = request('dossier_id');
-        $programme_id = request('programme_id');
-        $dossier = Http::get('http://localhost:8080/dossier?id='.$id.'&programme_id='.$programme_id);
-        $dossier = json_decode($dossier->body(),true);
-        $note3 = $dossier['exercices'][0]['notation'];
-        $criteres = $dossier['criteres'];
-        $notes = $dossier['notes'];
-        $nf = $dossier['note'];
-        $sme = $dossier['sme'];
-       // dd($sme);
-        return view('/Admin/Instruction/dossier',compact('id','note3','criteres','notes','nf','sme'));
-    }
-
     public function getChoices(){
         //$dossier_id = request('dossier_id');
 
@@ -114,11 +71,6 @@ class InstructionController extends Controller
         return back();
     }
 
-
-
-
-
-
     /**
      * Show the form for creating a new resource.
      *
@@ -141,20 +93,5 @@ class InstructionController extends Controller
         Libelle::create($data);
         return back();
     }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Projet  $projet
-     * @return \Illuminate\Http\Response
-     */
-	public function show($token)
-	{
-		//$projet = Creance::where('token',$token)->first();
-
-
-		return view('/Consultant/Creances/show')->with(compact('projet'));
-	}
-
 
 }

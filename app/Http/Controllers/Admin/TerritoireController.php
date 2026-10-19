@@ -23,40 +23,4 @@ class TerritoireController extends Controller
         return TerritoirePresenter::render('admin');
     }
 
-
-
-    public function getCommunes(){
-        $items = Arrondissement::all();
-        return view('/Admin/Territoire/communes')->with(compact('items'));
-    }
-
-    public function getDepartements(){
-        $items = Departement::all();
-        return view('/Admin/Territoire/departements')->with(compact('items'));
-    }
-
-    public function getRegions(){
-        $items = Region::all();
-        return view('/Admin/Territoire/regions')->with(compact('items'));
-    }
-
-    public function getRepresentations(){
-        $items = Representation::all();
-        return view('/Admin/Territoire/representations')->with(compact('items'));
-    }
-
-    public function getAgences(){
-        $items = Agence::all();
-        return view('Admin/Territoire/agences')->with(compact('items'));
-    }
-
-    public function getQuartiers(){
-        $items = Quartier::all();
-        return view('Admin/Territoire/quartiers')->with(compact('items'));
-    }
-
-    public function getVillages(){
-        $items = Village::all();
-        return view('Admin/Territoire/villages')->with(compact('items'));
-    }
 }

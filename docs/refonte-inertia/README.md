@@ -1,7 +1,8 @@
-# Refonte Inertia de bcpme — socle technique
+# Interface Inertia de bcpme
 
-Branche : `refonte/inertia` (issue de `bcpme`). Les écrans Blade restent en place ; les pages Inertia
-sont ajoutées à côté et remplacent les écrans Blade un par un.
+Tous les écrans de l'application sont des pages Inertia (Vue 3 + Tailwind). Les seules vues Blade
+restantes sont les documents générés (PDF, Excel), les e-mails, les pages d'erreur et la vue racine
+`resources/views/inertia/app.blade.php`. Les conventions de développement sont dans `conventions.md`.
 
 ## Pile
 
@@ -26,26 +27,13 @@ sont ajoutées à côté et remplacent les écrans Blade un par un.
 Les règles métier restent côté serveur. Une action de workflow est décrite par le presenter
 (libellé, champs, URL du POST existant) ; `ActionDialog.vue` l'affiche sans connaître le métier.
 
-## Cohabitation Blade / Inertia
+## Sécurité
 
-- Les pages Inertia portent le middleware `inertia` route par route. Exemple : `{espace}/v2/dossiers/{token}`,
-  déclarée dans les 16 espaces qui utilisent `RoleSpace\PortfolioController::dossierShow`.
-- Les actions POST sont les routes existantes. Elles redirigent vers la fiche Blade ;
-  `RedirectLegacyDossierToInertia` (groupe `web`) renvoie vers la fiche Inertia, uniquement pour les
-  requêtes Inertia et si une page v2 existe pour l'espace concerné.
-- La fiche Blade affiche un lien « Nouvelle interface (aperçu) ». La fiche Inertia affiche un lien « Ancienne interface ».
-- Le HTML saisi par les utilisateurs (avis) est affiché via `SafeHtml.vue` (DOMPurify), jamais en `v-html` brut.
+Le HTML saisi par les utilisateurs (avis, analyses) est affiché via `SafeHtml.vue` (DOMPurify), jamais en `v-html` brut.
 
 ## Ajouter un écran
 
 1. Récupérer le HTML de l'écran dans Stitch (MCP `get_screen` → `htmlCode`).
 2. Créer la page `resources/js/inertia/Pages/<Domaine>/<Ecran>.vue` en réutilisant `Components/ui` et `Components/workflow`.
 3. Préparer les props dans un presenter (`app/Services/Inertia/...`), qui réutilise les règles d'accès existantes.
-4. Déclarer la route avec `->middleware('inertia')` et ajouter l'entrée de menu dans `WorkspaceNavigation`.
-
-## Limites du pilote
-
-- Analyste financier (espace `analyste`) et chef d'agence (`ca`) : leur fiche dossier passe par d'autres
-  contrôleurs et n'a pas encore de version Inertia.
-- Dépôt de pièces, grille de notation, analyse critique et grille des engagements : liens vers les écrans existants.
-- Le portefeuille juridique en consultation (`juridique/portefeuille/dossiers/...`) reste en Blade.
+4. Déclarer la route (le middleware Inertia est dans le groupe `web`) et ajouter l'entrée de menu dans `WorkspaceNavigation`.

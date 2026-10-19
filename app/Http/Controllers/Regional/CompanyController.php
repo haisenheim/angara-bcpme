@@ -252,17 +252,6 @@ class CompanyController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-        $formes = Forme::all();
-
-        return view('/Regional/Companies/create', compact('formes'));
-    }
-
-    /**
      * Display the specified resource.
      */
     public function show(string $token)
@@ -338,18 +327,6 @@ class CompanyController extends Controller
         Session::flash('success', 'Enregistrement effectué avec succès!');
 
         return redirect(route('ca.entreprises.show', $token));
-    }
-
-    public function createQuestionnaire(string $token)
-    {
-        //
-        $item = Entreprise::where('token', $token)->first();
-        if (! $item) {
-            return back();
-        }
-        $criteres = QuestionSousCritere::all();
-
-        return view('/Regional/Companies/questionnaire', compact('item', 'criteres'));
     }
 
     public function saveQuestionnaire(Request $request)

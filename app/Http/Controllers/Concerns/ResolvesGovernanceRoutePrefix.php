@@ -14,11 +14,4 @@ trait ResolvesGovernanceRoutePrefix
             default => 'ca',
         };
     }
-
-    protected function governanceLayout(): string
-    {
-        $p = $this->governanceRoutePrefix();
-
-        return in_array($p, ['dg', 'dga'], true) ? 'Layouts.'.$p : 'Layouts.ca';
-    }
 }

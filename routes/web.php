@@ -70,7 +70,10 @@ Route::get('questions', function () {
 | Page d’accueil de l’application centrale BC-PME.
 */
 Route::get('/', function () {
-    return view('accueil');
+    return \Inertia\Inertia::render('Accueil', [
+        'loginUrl' => route('login'),
+        'appName' => config('app.name', 'ANGARA'),
+    ]);
 })->name('accueil');
 
 /*
@@ -325,8 +328,6 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('folders/data', 'DossierController@fetchAll')->name('dossiers.all');
 
         // Route::resource('entreprises','EntrepriseController');
-        Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
-        Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
 
         Route::post('dossier/analyse', 'EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
 
@@ -335,12 +336,7 @@ Route::namespace('App\Http\Controllers\Admin')
         Route::get('user/enable/{token}', 'UserController@enable')->name('user.enable');
         Route::get('user/disable/{token}', 'UserController@disable')->name('user.disable');
 
-        Route::get('instruction/criteres/params', 'InstructionController@getCritereParamsForm');
 
-        Route::post('instruction/dossier/dsf', 'InstructionController@loadDsf')->name('instruction.dsf');
-        Route::get('instruction/dossier/create', 'InstructionController@createDossier')->name('instruction.dossier.create');
-        Route::get('instruction/dossier/{id}', 'InstructionController@getDossier')->name('instruction.dossier');
-        Route::get('instruction/dossier', 'InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices', 'InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse', 'InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
 
@@ -404,7 +400,6 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('programme/composante', 'ProgrammeController@saveComposante')->name('programme.composante.save');
         Route::post('programme/resultat', 'ProgrammeController@saveResultat')->name('programme.resultat.save');
 
-        Route::resource('users', 'UserController');
         Route::get('territoire', 'TerritoireController@index')->name('territoire');
         Route::get('companies/data', 'CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/data/paginated', 'CompanyController@fetchPaginated')->name('entreprises.paginated');
@@ -428,17 +423,10 @@ Route::namespace('App\Http\Controllers\Gestionnaire')
         Route::post('dossier/grille/analyse', 'DossierController@setAnalyse')->name('dossier.set.analyse');
 
         // Route::resource('entreprises','EntrepriseController');
-        Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
-        Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
 
         Route::post('dossier/analyse', 'EntrepriseController@setAnalyse')->name('entreprise.dossier.analyse');
 
-        Route::get('instruction/criteres/params', 'InstructionController@getCritereParamsForm');
 
-        Route::post('instruction/dossier/dsf', 'InstructionController@loadDsf')->name('instruction.dsf');
-        Route::get('instruction/dossier/create', 'InstructionController@createDossier')->name('instruction.dossier.create');
-        Route::get('instruction/dossier/{id}', 'InstructionController@getDossier')->name('instruction.dossier');
-        Route::get('instruction/dossier', 'InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices', 'InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse', 'InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
     });
@@ -488,7 +476,6 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::post('programme/composante', 'ProgrammeController@saveComposante')->name('programme.composante.save');
         Route::post('programme/resultat', 'ProgrammeController@saveResultat')->name('programme.resultat.save');
 
-        Route::resource('users', 'UserController');
         Route::get('territoire', 'TerritoireController@index')->name('territoire');
         Route::get('companies/data', 'CompanyController@fetchAll')->name('entreprises.all');
         Route::get('companies/filter-options', 'CompanyController@fetchFilterOptions')->name('entreprises.filter-options');
@@ -507,17 +494,10 @@ Route::namespace('App\Http\Controllers\Analyste')
         Route::get('folders/filter-options', 'DossierController@fetchFilterOptions')->name('dossiers.filter-options');
 
         // Route::resource('entreprises','EntrepriseController');
-        Route::get('dossier/{id}', 'EntrepriseController@getDossier')->name('dossier.show');
-        Route::get('dossier/instruction/{id}', 'EntrepriseController@getCreateInstruction')->name('dossier.instruction.create');
 
         Route::post('dossier/analyse', 'DossierController@setAnalyse')->name('dossier.set.analyse');
 
-        Route::get('instruction/criteres/params', 'InstructionController@getCritereParamsForm');
 
-        Route::post('instruction/dossier/dsf', 'InstructionController@loadDsf')->name('instruction.dsf');
-        Route::get('instruction/dossier/create', 'InstructionController@createDossier')->name('instruction.dossier.create');
-        Route::get('instruction/dossier/{id}', 'InstructionController@getDossier')->name('instruction.dossier');
-        Route::get('instruction/dossier', 'InstructionController@findDossier')->name('instruction.dossier.find');
         Route::get('instruction/critere/choices', 'InstructionController@getChoices')->name('instruction.critere.choices');
         Route::post('instruction/critere/reponse', 'InstructionController@saveCritereReponse')->name('instruction.critere.reponse');
     });

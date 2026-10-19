@@ -5,7 +5,6 @@ namespace Modules\Simulator\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Modules\Simulator\Contracts\SimulatorInterface;
 use Modules\Simulator\Domain\Enums\AmortizationType;
 use Modules\Simulator\Domain\Enums\DeferralType;
@@ -21,20 +20,34 @@ class SimulatorController extends Controller
 {
     public function __construct(private readonly SimulatorInterface $simulator) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): \Inertia\Response
     {
-        $context = [
-            'currencies' => (array) config('simulator.currencies', []),
-            'periodicities' => Periodicity::cases(),
-            'amortization_types' => AmortizationType::cases(),
-            'deferral_types' => DeferralType::cases(),
-            'insurance_bases' => InsuranceBasis::cases(),
-            'default_currency' => (string) config('simulator.default_currency', 'XOF'),
-            'usury_rate_warning' => (float) config('simulator.usury_rate_warning', 0),
-            'preselected' => $this->preselectedFromQuery($request),
-        ];
+        $options = fn (array $cases) => array_map(fn ($c) => ['value' => $c->value, 'label' => $c->label()], $cases);
 
-        return view('simulator::index', $context);
+        return \Inertia\Inertia::render('Simulator/Index', [
+            'options' => [
+                'currencies' => array_values((array) config('simulator.currencies', [])),
+                'periodicities' => $options(Periodicity::cases()),
+                'amortizationTypes' => $options(AmortizationType::cases()),
+                'deferralTypes' => $options(DeferralType::cases()),
+                'insuranceBases' => $options(InsuranceBasis::cases()),
+            ],
+            'defaults' => [
+                'currency' => (string) config('simulator.default_currency', 'XOF'),
+                'firstPeriodDate' => now()->addMonth()->format('Y-m-d'),
+            ],
+            'usuryRate' => (float) config('simulator.usury_rate_warning', 0),
+            'preselected' => $this->preselectedFromQuery($request),
+            'urls' => [
+                'simulate' => route('simulator.api.simulate'),
+                'persist' => route('simulator.api.persist'),
+                'pdf' => route('simulator.api.export.pdf'),
+                'xlsx' => route('simulator.api.export.xlsx'),
+                'scenarios' => route('simulator.scenarios.index'),
+                'scenarioBase' => url('simulator/scenarios'),
+            ],
+            'breadcrumb' => [['label' => 'Simulateur de crédit']],
+        ]);
     }
 
     public function simulate(SimulateRequest $request): JsonResponse

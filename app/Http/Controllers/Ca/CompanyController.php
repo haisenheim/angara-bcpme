@@ -385,17 +385,6 @@ class CompanyController extends Controller
         );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-        $formes = Forme::all();
-
-        return view('/Ca/Companies/create', compact('formes'));
-    }
-
     public function saveProgramme(Request $request)
     {
         $data = $request->all();
@@ -550,18 +539,6 @@ class CompanyController extends Controller
         Session::flash('success', 'Enregistrement effectué avec succès!');
 
         return redirect(route('ca.entreprises.show', $token));
-    }
-
-    public function createQuestionnaire(string $token)
-    {
-        //
-        $item = Entreprise::where('token', $token)->first();
-        if (! $item) {
-            return back();
-        }
-        $criteres = QuestionSousCritere::all();
-
-        return view('/Ca/Companies/questionnaire', compact('item', 'criteres'));
     }
 
     public function saveQuestionnaire(Request $request)
