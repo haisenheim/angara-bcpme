@@ -7,14 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Dossier;
 use App\Models\DossierEntreeRelation;
 use App\Models\FichierType;
-use App\Services\InstructionDossierConsultationService;
+use App\Services\Inertia\DossierInstructionPagePresenter;
+use App\Services\Inertia\DossierWorkspacePresenter;
+use App\Support\Inertia\DataTable;
 use Illuminate\Http\Request;
 
 class InstructionController extends Controller
 {
     use StoresDossierPieces;
 
-    public function pending()
+    public function pending(Request $request)
     {
         $items = DossierEntreeRelation::query()
             ->where('statut', DossierEntreeRelation::STATUT_EN_VALIDATION_INSTRUCTION)
@@ -22,20 +24,76 @@ class InstructionController extends Controller
             ->whereHas('entreprise', fn ($q) => $q->where('agence_id', auth()->user()->agence_id))
             ->with(['entreprise.agence', 'programmeSelections.programme'])
             ->orderByDesc('programmes_submitted_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('ChefFiliere.instructions.pending', compact('items'));
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'client', 'label' => 'Client'],
+                ['key' => 'agence', 'label' => 'Agence'],
+                ['key' => 'soumis', 'label' => 'Soumis le'],
+                ['key' => 'programmes', 'label' => 'Programmes'],
+            ])
+            ->row(fn (DossierEntreeRelation $eer) => [
+                'href' => $eer->entreprise?->token ? route('chef-filiere.clients.show', $eer->entreprise->token) : null,
+                'cells' => [
+                    'client' => $eer->entreprise?->name ?? '—',
+                    'agence' => $eer->entreprise?->agence?->name,
+                    'soumis' => $eer->programmes_submitted_at ? \Carbon\Carbon::parse($eer->programmes_submitted_at)->format('d/m/Y H:i') : null,
+                    'programmes' => $eer->programmeSelections->pluck('programme.name')->filter()->implode(', ') ?: null,
+                ],
+            ])
+            ->empty('Aucun dossier en attente de validation.');
+
+        return \Inertia\Inertia::render('Dossiers/Index', [
+            'title' => 'En attente de validation',
+            'subtitle' => 'Dossiers soumis après structuration — le chef d\'agence valide avant instruction.',
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Instruction — en attente'],
+            ],
+        ]);
     }
 
-    public function inProgress()
+    public function inProgress(Request $request)
     {
         $items = Dossier::query()
             ->where('agence_id', auth()->user()->agence_id)
-            ->with(['entreprise', 'programme', 'instructionProgrammes.programme', 'gestionnaire', 'analyste'])
+            ->with(['entreprise', 'programme', 'instructionProgrammes.programme', 'gestionnaire', 'analyste', 'indicateurs', 'reponses'])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('ChefFiliere.instructions.in_progress', compact('items'));
+        $table = DataTable::make($items, $request)
+            ->columns([
+                ['key' => 'client', 'label' => 'Client'],
+                ['key' => 'programmes', 'label' => 'Programme(s)'],
+                ['key' => 'gestionnaire', 'label' => 'Gestionnaire'],
+                ['key' => 'analyste', 'label' => 'Analyste'],
+                ['key' => 'statut', 'label' => 'Statut'],
+            ])
+            ->row(fn (Dossier $d) => [
+                'href' => route('chef-filiere.instructions.dossier.show', $d->token),
+                'cells' => [
+                    'client' => $d->entreprise?->name ?? '—',
+                    'programmes' => $d->programmesLabel() ?: null,
+                    'gestionnaire' => $d->gestionnaire?->name,
+                    'analyste' => $d->analyste?->name,
+                    'statut' => ['badge' => $d->status['name'] ?? '—', 'variant' => ($d->status['status'] ?? false) ? 'info' : 'neutral'],
+                ],
+            ])
+            ->empty('Aucun dossier d\'instruction pour cette agence.');
+
+        return \Inertia\Inertia::render('Dossiers/Index', [
+            'title' => 'En cours d\'instruction',
+            'subtitle' => 'Suivi en lecture seule des dossiers instruits par les équipes (gestionnaire, analyste) pour votre agence.',
+            'table' => $table->toArray(),
+            'breadcrumb' => [
+                ['label' => 'Tableau de bord', 'href' => route('chef-filiere.dashboard')],
+                ['label' => 'Instruction — en cours'],
+            ],
+        ]);
     }
 
     public function showDossier(string $token)
@@ -43,25 +101,19 @@ class InstructionController extends Controller
         $dossier = Dossier::query()
             ->where('token', $token)
             ->where('agence_id', auth()->user()->agence_id)
-            ->with([
-                'entreprise.agence',
-                'programme',
-                'instructionProgrammes.programme',
-                'gestionnaire',
-                'analyste',
-                'agence',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
-            ])
+            ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme', 'entreprise.agence', 'indicateurs', 'reponses']))
             ->firstOrFail();
 
-        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($dossier);
-        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+        $props = app(DossierWorkspacePresenter::class)->fiche($dossier, ['route' => 'chef-filiere', 'label' => 'Chef de filière', 'title' => 'Chef de filière'], auth()->user(), true, [
+            'store' => 'chef-filiere.instructions.dossier.pieces.store',
+            'update' => 'chef-filiere.instructions.dossier.pieces.update',
+            'destroy' => 'chef-filiere.instructions.dossier.pieces.destroy',
+            'upload' => true,
+            'manageOwn' => true,
+        ], 'chef-filiere.instructions.in-progress', 'Instruction en cours', 'chef-filiere.clients.show', false);
+        $props['dossier']['suivi'] = $dossier->status['name'] ?? null;
 
-        return view('ChefFiliere.instructions.dossier_show', compact('dossier', 'instructionConsultation', 'fichierTypes'));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     public function storeDossierPiece(Request $request, string $token)

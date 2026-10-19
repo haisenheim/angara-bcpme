@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierListResource;
 use App\Models\Dossier;
 use App\Models\FichierType;
+use App\Services\Inertia\DossierInstructionPagePresenter;
+use App\Services\Inertia\DossierWorkspacePresenter;
+use App\Services\Inertia\InstructionDossierListPresenter;
 use App\Services\InstructionDossierConsultationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -16,10 +19,21 @@ class DossierController extends Controller
     use StoresDossierPieces;
 
     //
-    public function index()
+    public function index(Request $request)
     {
-        //
-        return view('/Regional/Dossiers/index');
+        // Même périmètre que fetchAll : dossiers de la direction régionale (representation_id).
+        $scope = Dossier::query()->where('representation_id', auth()->user()->representation_id);
+
+        return \Inertia\Inertia::render('Dossiers/Index', app(InstructionDossierListPresenter::class)->present($request, $scope, clone $scope, [
+            'showRoute' => 'regional.dossiers.show',
+            'dashboard' => 'regional.dashboard',
+            'title' => 'Dossiers d\'instruction',
+            'subtitle' => 'Liste de tous les dossiers d\'instruction de la direction régionale.',
+            'columns' => ['programme', 'signataire', 'entreprise', 'gestionnaire', 'agence', 'direction', 'secteur', 'statut', 'date'],
+            'filters' => [],
+            'stats' => false,
+            'searchPlaceholder' => 'Entreprise, programme, analyste, gestionnaire…',
+        ]));
     }
 
     public function fetchAll(){
@@ -28,35 +42,29 @@ class DossierController extends Controller
         return response()->json($items);
     }
 
-    public function show($token){
-
+    public function show($token)
+    {
         $item = Dossier::query()
             ->where('token', $token)
             ->where('representation_id', auth()->user()->representation_id)
-            ->with([
-                'instructionProgrammes.programme',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
-            ])
+            ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme']))
             ->firstOrFail();
-        $instructionConsultation = app(InstructionDossierConsultationService::class)->build($item);
-        $resp = Http::get('http://localhost:8080/entreprise/dossier?id='.$item->id);
-        $resp = json_decode($resp->body(),true);
-        $dossier = $resp['dossier'];
-        //dd($dossier);
-        $entreprise = $resp['entreprise'];
-        $engagements = $resp['engagements'];
-        $criteres = $resp['criteres'];
-        $indicateurs = $dossier['indicateurs'];
-        $banques = $resp['banques'];
-        $sme = $resp['sme'];
 
-        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
+        // Consultation : grille et rapport en lecture (les boutons de saisie de l'ancien écran pointaient vers
+        // des routes inaccessibles à ce profil), dépôt de pièces conservé.
+        $ws = app(DossierWorkspacePresenter::class);
+        $notation = $ws->notation($item);
+        $props = $ws->fiche($item, ['route' => 'regional', 'label' => 'Responsable régional', 'title' => 'Responsable régional'], auth()->user(), true, [
+            'store' => 'regional.dossier.pieces.store',
+            'update' => 'regional.dossier.pieces.update',
+            'destroy' => 'regional.dossier.pieces.destroy',
+            'upload' => true,
+            'manageOwn' => true,
+        ], 'regional.dossiers.index', 'Dossiers d\'instruction', 'regional.entreprises.show');
+        $props['workspace'] = $ws->consultation($item, $notation, null, null);
+        $props['links']['engagements'] = $item->entreprise ? ($notation['engagementGridUrl'] ?? null) : null;
 
-        return view('/Regional/dossiers/show', compact('item', 'dossier', 'entreprise', 'engagements', 'indicateurs', 'criteres', 'sme', 'banques', 'instructionConsultation', 'fichierTypes'));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     public function storeDossierPiece(Request $request, string $token)

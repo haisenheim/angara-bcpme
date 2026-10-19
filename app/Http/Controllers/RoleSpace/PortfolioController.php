@@ -1553,16 +1553,10 @@ class PortfolioController extends Controller
         ]);
         $space = $this->resolveSpace();
         $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
-        $data = app(DossierInstructionShowPresenter::class)->presentForDossier($dossier);
+        $ws = app(\App\Services\Inertia\DossierWorkspacePresenter::class);
+        $data = $ws->notation($dossier);
 
-        return view('RoleSpace.dossiers.instruction_detail', array_merge(
-            compact('space'),
-            [
-                'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
-                'dossiersListRoute' => $routesForViews['list'],
-            ],
-            $data,
-        ));
+        return \Inertia\Inertia::render('Dossiers/Instruction', $ws->instructionPage($dossier, $space, auth()->user(), $routesForViews, $data));
     }
 
     /**
@@ -1637,15 +1631,24 @@ class PortfolioController extends Controller
         }
         $dossier->loadMissing(['fichiersDossier.type', 'fichiersDossier.uploadedBy']);
         $space = $this->resolveSpace();
-        $item = $dossier;
         $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
+        $prefix = $routesForViews['prefix'];
+        $ws = app(\App\Services\Inertia\DossierWorkspacePresenter::class);
 
-        return view('RoleSpace.dossiers.analyse_critique', [
-            'space' => $space,
-            'item' => $item,
-            'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
-            'dossiersListRoute' => $routesForViews['list'],
-        ]);
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($dossier, auth()->user(), [
+            'title' => 'Analyse critique — sept zones analyste (lecture seule)',
+            'kicker' => 'Sept zones — analyse critique',
+            'intro' => 'Les rubriques ci-dessous alimentent l’avis du chargé d’instruction ; le dossier d’analyse critique reprend ce même contenu (document dédié).',
+            'zonesTitle' => 'Sept zones de l’analyse critique',
+            'zones' => $ws->legacyZones($dossier, null, []),
+            'links' => array_values(array_filter([
+                \Illuminate\Support\Facades\Route::has("$prefix.dossier-analyse-critique") ? ['label' => 'Dossier d’analyse critique (PDF / export)', 'href' => route("$prefix.dossier-analyse-critique", $dossier->token), 'icon' => 'description'] : null,
+                \Illuminate\Support\Facades\Route::has("$prefix.instruction") ? ['label' => 'Contenu d’instruction (grille détaillée)', 'href' => route("$prefix.instruction", $dossier->token), 'icon' => 'table_view'] : null,
+            ])),
+            'showRoute' => "$prefix.show",
+            'listRoute' => $routesForViews['list'],
+            'dashboardRoute' => $space['route'].'.dashboard',
+        ]));
     }
 
     private function redirectUnlessCanViewAnalystInstructionWork(Dossier $dossier): ?RedirectResponse
@@ -1755,17 +1758,21 @@ class PortfolioController extends Controller
             return $redirect;
         }
         $space = $this->resolveSpace();
-        $item = $dossier;
         $doc = app(InstructionAnalyseCritiqueDossierDocumentService::class)->build($dossier);
         $routesForViews = $this->roleSpaceDossierRoutesForViews($space);
+        $prefix = $routesForViews['prefix'];
+        $ws = app(\App\Services\Inertia\DossierWorkspacePresenter::class);
 
-        return view('RoleSpace.dossiers.dossier_analyse_critique', [
-            'space' => $space,
-            'item' => $item,
-            'doc' => $doc,
-            'roleSpaceDossiersRoutePrefix' => $routesForViews['prefix'],
-            'dossiersListRoute' => $routesForViews['list'],
-        ]);
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($dossier, auth()->user(), $ws->analyseCritiqueDocument($dossier, $doc) + [
+            'title' => 'Dossier d’analyse critique',
+            'intro' => 'Analyse critique de l’analyste financier — rubriques alignées sur la fiche dossier.',
+            'links' => array_values(array_filter([
+                \Illuminate\Support\Facades\Route::has("$prefix.dossier-analyse-critique.pdf") ? ['label' => 'Exporter en PDF', 'href' => route("$prefix.dossier-analyse-critique.pdf", $dossier->token), 'icon' => 'picture_as_pdf', 'external' => true] : null,
+            ])),
+            'showRoute' => "$prefix.show",
+            'listRoute' => $routesForViews['list'],
+            'dashboardRoute' => $space['route'].'.dashboard',
+        ]));
     }
 
     public function dossierAnalyseCritiqueSynthesePdf(string $token)

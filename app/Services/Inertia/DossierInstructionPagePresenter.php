@@ -22,6 +22,8 @@ class DossierInstructionPagePresenter
     public const HUB_SPACES = [
         'respexp', 'juridique', 'analyste-juridique', 'reng', 'analyste-credit',
         'rerx', 'analyste-risques', 'dg', 'dga', 'conformite',
+        // Espaces agence / analyste financier : le Blade affichait aussi le parcours unifié des pôles.
+        'analyste', 'ca', 'gestionnaire',
     ];
 
     /** Relations nécessaires à la page (chargées en une fois). */
@@ -51,12 +53,19 @@ class DossierInstructionPagePresenter
      * @param  array{route: string, label: string, title: string}  $space
      * @param  array<string, Collection<int, User>>  $analystes  analystes affectables par espace responsable
      * @param  array{prefix: string, list: string}  $routes  préfixe des routes dossier de l'espace (PortfolioController::roleSpaceDossierRoutesForViews)
+     * @param  array{
+     *     pieces?: array{store?: ?string, update?: ?string, destroy?: ?string, upload?: bool, manageOwn?: bool, lockWhenClosed?: bool},
+     *     entrepriseRoute?: ?string,
+     *     hub?: bool,
+     * }  $options  surcharges pour les espaces hors RoleSpace (analyste, chef d'agence, gestionnaire, admin…)
      */
-    public function present(Dossier $dossier, array $space, User $user, bool $readonly, array $analystes, array $routes): array
+    public function present(Dossier $dossier, array $space, User $user, bool $readonly, array $analystes, array $routes, array $options = []): array
     {
         $route = $space['route'];
-        $isHub = in_array($route, self::HUB_SPACES, true);
+        $isHub = $options['hub'] ?? in_array($route, self::HUB_SPACES, true);
         $canClose = ! $readonly && $this->delegation->userCanCloseInstruction($user, $dossier);
+
+        $pieceRoutes = $this->pieceRoutes($routes['prefix'], $readonly, $options['pieces'] ?? []);
 
         return [
             'space' => $space,
@@ -65,14 +74,32 @@ class DossierInstructionPagePresenter
             'steps' => $this->steps($dossier),
             'poles' => $isHub ? $this->poles($dossier) : [],
             'timeline' => $this->timeline($dossier),
-            'pieces' => $this->pieces($dossier, $user, $readonly, $routes['prefix']),
+            'pieces' => $this->pieces($dossier, $user, $pieceRoutes),
             'delegation' => [
                 'rule' => $this->delegation->describeRuleForInstructionClosure($dossier),
                 'status' => $this->delegation->instructionClosureStatutLabel($dossier),
                 'canClose' => $canClose,
             ],
             'actions' => $readonly ? [] : $this->actions($dossier, $route, $user, $analystes, $canClose),
-            'links' => $this->links($dossier, $route, $routes),
+            'links' => $this->links($dossier, $route, $routes, $pieceRoutes, $options['entrepriseRoute'] ?? "$route.entreprises.show"),
+        ];
+    }
+
+    /**
+     * Routes et droits sur les pièces jointes. Par défaut (espaces RoleSpace) : routes « {prefix}.pieces.* »,
+     * dépôt et gestion de ses propres pièces hors lecture seule, rien de modifiable une fois le dossier clos.
+     *
+     * @return array{store: ?string, update: ?string, destroy: ?string, upload: bool, manageOwn: bool, lockWhenClosed: bool}
+     */
+    private function pieceRoutes(string $prefix, bool $readonly, array $o): array
+    {
+        return [
+            'store' => array_key_exists('store', $o) ? $o['store'] : "$prefix.pieces.store",
+            'update' => array_key_exists('update', $o) ? $o['update'] : "$prefix.pieces.update",
+            'destroy' => array_key_exists('destroy', $o) ? $o['destroy'] : "$prefix.pieces.destroy",
+            'upload' => $o['upload'] ?? ! $readonly,
+            'manageOwn' => $o['manageOwn'] ?? ! $readonly,
+            'lockWhenClosed' => $o['lockWhenClosed'] ?? true,
         ];
     }
 
@@ -110,6 +137,11 @@ class DossierInstructionPagePresenter
                 'financier' => $this->money($dip->budget_appui_financier),
                 'nonFinancier' => $this->money($dip->budget_appui_non_financier),
             ])->values(),
+            'programmesTotaux' => $d->instructionProgrammes->isNotEmpty() ? [
+                'financier' => $this->money($d->instructionProgrammes->sum(fn ($dip) => (float) $dip->budget_appui_financier)),
+                'nonFinancier' => $this->money($d->instructionProgrammes->sum(fn ($dip) => (float) $dip->budget_appui_non_financier)),
+                'general' => $this->money($d->instructionProgrammes->sum(fn ($dip) => (float) $dip->budget_appui_financier + (float) $dip->budget_appui_non_financier)),
+            ] : null,
             'closed' => $d->isInstructionClosed(),
             'createdAt' => $this->date($d->created_at),
         ];
@@ -558,7 +590,7 @@ class DossierInstructionPagePresenter
         return $actions;
     }
 
-    private function links(Dossier $d, string $route, array $routes): array
+    private function links(Dossier $d, string $route, array $routes, array $pieceRoutes, ?string $entrepriseRoute): array
     {
         $prefix = $routes['prefix'];
         $links = [];
@@ -571,10 +603,13 @@ class DossierInstructionPagePresenter
             $links[$key] = Route::has($name) ? route($name, $d->token) : null;
         }
         $links['list'] = Route::has($routes['list']) ? route($routes['list']) : null;
-        $links['entreprise'] = $d->entreprise?->token && Route::has("$route.entreprises.show")
-            ? route("$route.entreprises.show", $d->entreprise->token)
+        $links['entreprise'] = $d->entreprise?->token && $entrepriseRoute && Route::has($entrepriseRoute)
+            ? route($entrepriseRoute, $d->entreprise->token)
             : null;
-        $links['piecesStore'] = Route::has("$prefix.pieces.store") ? route("$prefix.pieces.store", $d->token) : null;
+        $canUpload = $pieceRoutes['upload'] && ! ($pieceRoutes['lockWhenClosed'] && $d->isInstructionClosed());
+        $links['piecesStore'] = $canUpload && $pieceRoutes['store'] && Route::has($pieceRoutes['store'])
+            ? route($pieceRoutes['store'], $d->token)
+            : null;
 
         return $links;
     }
@@ -597,12 +632,14 @@ class DossierInstructionPagePresenter
      * Pièces jointes du dossier. Seul l'auteur d'une pièce peut la remplacer ou la supprimer
      * (règle de StoresDossierPieces), et rien n'est modifiable une fois le dossier clos.
      */
-    private function pieces(Dossier $d, User $user, bool $readonly, string $prefix): array
+    public function pieces(Dossier $d, User $user, array $pieceRoutes): array
     {
-        $editable = ! $readonly && ! $d->isInstructionClosed();
+        $editable = $pieceRoutes['manageOwn'] && ! ($pieceRoutes['lockWhenClosed'] && $d->isInstructionClosed());
+        $update = $pieceRoutes['update'];
+        $destroy = $pieceRoutes['destroy'];
 
-        return $d->fichiersDossier->map(function ($f) use ($d, $user, $editable, $prefix) {
-            $mine = $editable && (int) $f->uploaded_by_user_id === (int) $user->id;
+        return $d->fichiersDossier->map(function ($f) use ($d, $user, $editable, $update, $destroy) {
+            $mine = $editable && $f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) $user->id;
 
             return [
                 'id' => $f->id,
@@ -612,8 +649,8 @@ class DossierInstructionPagePresenter
                 'url' => $f->path,
                 'uploadedBy' => $f->uploadedBy?->name,
                 'uploadedAt' => $this->date($f->uploaded_at, true),
-                'updateUrl' => $mine && Route::has("$prefix.pieces.update") ? route("$prefix.pieces.update", [$d->token, $f->id]) : null,
-                'destroyUrl' => $mine && Route::has("$prefix.pieces.destroy") ? route("$prefix.pieces.destroy", [$d->token, $f->id]) : null,
+                'updateUrl' => $mine && $update && Route::has($update) ? route($update, ['token' => $d->token, 'piece' => $f->id]) : null,
+                'destroyUrl' => $mine && $destroy && Route::has($destroy) ? route($destroy, ['token' => $d->token, 'piece' => $f->id]) : null,
             ];
         })->values()->all();
     }
@@ -658,7 +695,7 @@ class DossierInstructionPagePresenter
         return trim(strip_tags((string) $html)) !== '';
     }
 
-    private function money($value): ?string
+    public function money($value): ?string
     {
         if ($value === null || $value === '') {
             return null;
@@ -667,7 +704,7 @@ class DossierInstructionPagePresenter
         return number_format((float) $value, 0, ',', ' ').' FCFA';
     }
 
-    private function date($value, bool $withTime = false): ?string
+    public function date($value, bool $withTime = false): ?string
     {
         if (! $value instanceof CarbonInterface) {
             return null;

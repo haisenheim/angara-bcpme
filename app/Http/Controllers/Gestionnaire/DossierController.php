@@ -11,15 +11,25 @@ use App\Models\Dossier;
 use App\Models\FichierType;
 use App\Models\Instruction\Critere;
 use App\Models\Instruction\IndicateurFinancier;
+use App\Services\Inertia\DossierInstructionPagePresenter;
+use App\Services\Inertia\DossierWorkspacePresenter;
+use App\Services\Inertia\InstructionDossierListPresenter;
 use Illuminate\Http\Request;
 
 class DossierController extends Controller
 {
     use StoresDossierPieces;
 
-    public function index()
+    public function index(Request $request)
     {
-        return view('/Gestionnaire/Dossiers/index');
+        $filtered = $this->applyFilters($this->baseQuery()->clone(), $this->parseFilters($request));
+
+        return \Inertia\Inertia::render('Dossiers/Index', app(InstructionDossierListPresenter::class)->present($request, $filtered, $this->baseQuery(), [
+            'showRoute' => 'gestionnaire.dossiers.show',
+            'dashboard' => 'gestionnaire.dashboard',
+            'title' => 'Dossiers d\'instruction',
+            'subtitle' => 'Liste de vos dossiers d\'instruction.',
+        ]));
     }
 
     public function fetchAll(){
@@ -140,8 +150,16 @@ class DossierController extends Controller
         if (! $item) {
             return back();
         }
+        $ws = app(DossierWorkspacePresenter::class);
 
-        return view('Gestionnaire/Dossiers/analyse_critique', compact('item'));
+        return \Inertia\Inertia::render('Dossiers/AnalyseCritique', $ws->analyseCritiquePage($item, auth()->user(), [
+            'title' => 'Grille d\'analyse critique',
+            'kicker' => 'Grille d\'analyse critique',
+            'zones' => $ws->legacyZones($item, route('gestionnaire.dossier.set.analyse'), [8], 'sequence', true, true, '9. Remarques et recommandations du chef d\'agence'),
+            'showRoute' => 'gestionnaire.dossiers.show',
+            'listRoute' => 'gestionnaire.dossiers.index',
+            'dashboardRoute' => 'gestionnaire.dashboard',
+        ]));
     }
 
     public function setAnalyse(Request $request)
@@ -171,49 +189,20 @@ class DossierController extends Controller
                         $q2->where('gestionnaire_id', $uid)->orWhere('user_id', $uid);
                     });
             })
-            ->with([
-                'entreprise',
-                'entreprise.juridiqueAvisUser',
-                'entreprise.conformiteAvisUser',
-                'programme',
-                'instructionProgrammes.programme',
-                'analyste',
-                'agence',
-                'chefFiliereSubmittedToAgenceBy',
-                'instructionAgenceValidatedBy',
-                'instructionAgenceRejectedBy',
-                'juridiqueAnalysteUser',
-                'juridiqueAnalysteAssignedBy',
-                'juridiqueAnalysteSubmittedToRejuBy',
-                'juridiqueAnalysteUser',
-                'juridiqueSubmittedToEngagementsBy',
-                'rengAnalysteCreditUser',
-                'rengAnalysteCreditAssignedBy',
-                'rengAnalysteCreditSubmittedBy',
-                'rengSubmittedToRisquesBy',
-                'rerxAnalysteRisquesUser',
-                'rerxAnalysteRisquesAssignedBy',
-                'rerxAnalysteRisquesSubmittedBy',
-                'rerxSubmittedToDirectionBy',
-                'exploitationAvisCreditUser',
-                'exploitationEngagementsDecisionUser',
-                'juridiqueInstructionSubmittedBy',
-                'fichiersDossier.type',
-                'fichiersDossier.uploadedBy',
-            ])
+            ->with(array_merge(DossierInstructionPagePresenter::RELATIONS, ['programme']))
             ->firstOrFail();
 
-        $instructionConsultation = app(\App\Services\InstructionDossierConsultationService::class)->build($dossier);
-        $fichierTypes = FichierType::query()->orderBy('name')->get(['id', 'name']);
-        $instructionClosureStatutLabel = app(\App\Services\StructurationClosureService::class)->closureStatutLabel($dossier);
+        // Lecture seule (comme le Blade) : pas de dépôt, mais l'auteur d'une pièce peut la remplacer ou la supprimer.
+        $props = app(DossierWorkspacePresenter::class)->fiche($dossier, ['route' => 'gestionnaire', 'label' => 'Gestionnaire', 'title' => 'Gestionnaire'], auth()->user(), true, [
+            'store' => 'gestionnaire.dossier.pieces.store',
+            'update' => 'gestionnaire.dossier.pieces.update',
+            'destroy' => 'gestionnaire.dossier.pieces.destroy',
+            'upload' => false,
+            'manageOwn' => true,
+        ], 'gestionnaire.dossiers.index', 'Dossiers d\'instruction', 'gestionnaire.entreprises.show');
+        $props['links']['grilleAnalyse'] = route('gestionnaire.dossier.get.grille.analyse', $dossier->token);
 
-        $space = [
-            'route' => 'gestionnaire',
-            'title' => 'Gestionnaire',
-        ];
-        $readonly = true;
-
-        return view('RoleSpace.dossiers.show', compact('dossier', 'instructionConsultation', 'fichierTypes', 'instructionClosureStatutLabel', 'space', 'readonly'));
+        return \Inertia\Inertia::render('Dossiers/Show', $props);
     }
 
     public function storeDossierPiece(Request $request, string $token)
