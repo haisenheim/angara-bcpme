@@ -7,6 +7,7 @@ import PageHeader from '@/Components/ui/PageHeader.vue';
 import Button from '@/Components/ui/Button.vue';
 import Card from '@/Components/ui/Card.vue';
 import StatusBadge from '@/Components/ui/StatusBadge.vue';
+import SafeHtml from '@/Components/ui/SafeHtml.vue';
 
 const props = defineProps({
     entreprise: { type: Object, required: true },
@@ -54,7 +55,10 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                 </div>
                 <div>
                     <dt class="font-semibold uppercase tracking-wider text-on-surface-variant">Synthèse consolidée</dt>
-                    <dd class="mt-1 whitespace-pre-wrap rounded-lg border border-surface-container-highest bg-surface-container-low p-3 text-on-surface">{{ analyseCritique?.synthese || '—' }}</dd>
+                    <dd class="mt-1 rounded-lg border border-surface-container-highest bg-surface-container-low p-3 text-on-surface">
+                        <SafeHtml v-if="analyseCritique?.synthese" :html="analyseCritique.synthese" multiline />
+                        <template v-else>—</template>
+                    </dd>
                 </div>
             </dl>
         </Card>
@@ -73,7 +77,7 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                         </div>
                     </div>
                     <div class="mt-2 text-on-surface-variant">{{ a.by }}</div>
-                    <p v-if="a.contenu" class="mt-1 whitespace-pre-wrap text-on-surface">{{ a.contenu }}</p>
+                    <SafeHtml v-if="a.contenu" :html="a.contenu" multiline class="mt-1 leading-relaxed text-on-surface" />
                 </li>
                 <li v-if="!(analyseCritique?.avis ?? []).length" class="py-4 text-center text-on-surface-variant">Aucun avis n'a encore été consolidé.</li>
             </ul>

@@ -178,7 +178,7 @@ const hasMemberActions = computed(() => props.equipe.some((m) => m.actions?.leng
             <template v-if="structuration.analyseCritique.statut" #actions>
                 <StatusBadge>{{ structuration.analyseCritique.statut }}</StatusBadge>
             </template>
-            <p v-if="structuration.analyseCritique.synthese" class="mb-4 whitespace-pre-wrap text-xs leading-relaxed text-on-surface">{{ structuration.analyseCritique.synthese }}</p>
+            <SafeHtml v-if="structuration.analyseCritique.synthese" :html="structuration.analyseCritique.synthese" multiline class="mb-4 text-xs leading-relaxed text-on-surface" />
             <ul class="divide-y divide-surface-container-highest text-xs">
                 <li v-for="(a, i) in structuration.analyseCritique.avis" :key="i" class="py-3">
                     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -187,7 +187,7 @@ const hasMemberActions = computed(() => props.equipe.some((m) => m.actions?.leng
                             <StatusBadge v-if="a.etat">{{ a.etat }}</StatusBadge>{{ a.by }}<template v-if="a.at"> • {{ a.at }}</template>
                         </span>
                     </div>
-                    <p v-if="a.contenu" class="mt-1 whitespace-pre-wrap text-on-surface">{{ a.contenu }}</p>
+                    <SafeHtml v-if="a.contenu" :html="a.contenu" multiline class="mt-1 leading-relaxed text-on-surface" />
                 </li>
                 <li v-if="!structuration.analyseCritique.avis.length" class="py-3 text-on-surface-variant">Aucun avis n'a encore été consolidé.</li>
             </ul>
