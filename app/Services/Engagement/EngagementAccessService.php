@@ -42,6 +42,7 @@ class EngagementAccessService
             (int) config('angara.role_analyste_credit', 20),
             (int) config('angara.role_analyste_conformite', 21),
             (int) config('angara.role_chef_filiere', 24),
+            (int) config('angara.role_auditeur', 22),
             (int) config('angara.role_dg', 4),
             (int) config('angara.role_dga', 5),
         ], fn ($id) => $id > 0));

@@ -26,6 +26,7 @@ const props = defineProps({
     actions: Array,
     links: Object,
     fichierTypes: { type: Array, default: () => [] },
+    piecesAfterClosure: { type: Boolean, default: false },
     // Espace de travail propre au profil (analyste financier, chef d'agence, consultation admin / régional).
     workspace: { type: Object, default: null },
 });
@@ -188,7 +189,7 @@ const toolLinks = computed(() => [
                 </div>
             </Card>
 
-            <PiecesManager v-else-if="tab === 'pieces'" :pieces="pieces" :types="fichierTypes" :store-url="links.piecesStore" />
+            <PiecesManager v-else-if="tab === 'pieces'" :pieces="pieces" :types="fichierTypes" :store-url="links.piecesStore" :after-closure="piecesAfterClosure" />
 
             <Card v-else title="Historique complet">
                 <Timeline :events="timeline" />

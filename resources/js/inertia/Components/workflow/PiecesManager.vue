@@ -14,6 +14,8 @@ const props = defineProps({
     pieces: { type: Array, default: () => [] },
     types: { type: Array, default: () => [] },
     storeUrl: { type: String, default: null },
+    // Dossier clôturé : dépôt autorisé à titre exceptionnel (audit interne, engagements).
+    afterClosure: { type: Boolean, default: false },
 });
 
 const editing = ref(null); // null | { mode: 'create' } | { mode: 'update', piece }
@@ -52,6 +54,11 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
             <Button v-if="storeUrl && types.length" icon="upload_file" @click="open('create')">Déposer une pièce</Button>
         </header>
 
+        <div v-if="afterClosure" class="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <Icon name="lock_clock" class="text-base text-amber-700" />
+            <span>Dossier clôturé : vous pouvez encore <strong>ajouter</strong> des pièces (audit, engagements). Elles sont marquées « Ajoutée après clôture » ; les pièces existantes ne peuvent plus être remplacées ni supprimées.</span>
+        </div>
+
         <ul class="divide-y divide-surface-container-highest text-xs">
             <li v-for="piece in pieces" :key="piece.id" class="flex items-center justify-between gap-3 py-2.5">
                 <div class="flex min-w-0 items-center gap-2">
@@ -59,6 +66,7 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                     <div class="min-w-0">
                         <a :href="piece.url" target="_blank" rel="noopener" class="block truncate font-semibold text-on-surface hover:text-secondary">{{ piece.name }}</a>
                         <span class="text-[11px] text-on-surface-variant">{{ piece.type ?? 'Type non précisé' }} • {{ piece.uploadedBy }} • {{ piece.uploadedAt }}</span>
+                        <span v-if="piece.afterClosure" class="ml-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">Ajoutée après clôture</span>
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-1">

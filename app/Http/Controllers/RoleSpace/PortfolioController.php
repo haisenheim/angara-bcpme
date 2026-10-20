@@ -42,6 +42,17 @@ class PortfolioController extends Controller
         return in_array($route ?? $this->resolveSpace()['route'], self::PORTFOLIO_CONSULTATION_SPACES, true);
     }
 
+    /**
+     * Ajout de pièces sur un dossier d'instruction déjà clôturé (DG / DGA ou délégataire) :
+     * auditeurs internes, responsable engagements et analyste crédit ayant travaillé sur le dossier.
+     * Remplacement et suppression restent interdits après clôture (traçabilité).
+     */
+    protected function canAddPieceAfterClosure(Dossier $dossier, string $route): bool
+    {
+        return in_array($route, ['respaud', 'auditeur', 'reng'], true)
+            || ($route === 'analyste-credit' && (int) $dossier->reng_analyste_credit_user_id === (int) auth()->id());
+    }
+
     /** Le dossier est-il affecté à l'analyste connecté (espaces analyste crédit / juridique) ? */
     protected function isDossierAssignedToCurrentAnalyst(Dossier $dossier, string $route): bool
     {
@@ -775,7 +786,14 @@ class PortfolioController extends Controller
         $props = app(\App\Services\Inertia\DossierInstructionPagePresenter::class)->present(
             $dossier, $space, auth()->user(), $readonly, $analystes, $routes
         );
-        $props['fichierTypes'] = $readonly ? [] : FichierType::query()->orderBy('name')->get(['id', 'name']);
+        // Dossier clos : seuls les profils habilités (audit, engagements) peuvent encore ajouter des pièces.
+        $canAddPieces = ! $readonly && (! $dossier->isInstructionClosed() || $this->canAddPieceAfterClosure($dossier, $route));
+        $storeRoute = $routes['prefix'].'.pieces.store';
+        $props['links']['piecesStore'] = $canAddPieces && \Illuminate\Support\Facades\Route::has($storeRoute)
+            ? route($storeRoute, $dossier->token)
+            : null;
+        $props['piecesAfterClosure'] = $canAddPieces && $dossier->isInstructionClosed();
+        $props['fichierTypes'] = $canAddPieces ? FichierType::query()->orderBy('name')->get(['id', 'name']) : [];
         $props['breadcrumb'] = [
             ['label' => 'Tableau de bord', 'href' => route("$route.dashboard")],
             ['label' => 'Dossiers d\'instruction', 'href' => \Illuminate\Support\Facades\Route::has($routes['list']) ? route($routes['list']) : null],
@@ -844,7 +862,7 @@ class PortfolioController extends Controller
         $dossier = $this->dossierQueryForCurrentSpace($token, true)->firstOrFail();
         $redirectRoute = $space['route'].'.dossiers.show';
 
-        if ($dossier->isInstructionClosed()) {
+        if ($dossier->isInstructionClosed() && ! $this->canAddPieceAfterClosure($dossier, $space['route'])) {
             return redirect()
                 ->route($redirectRoute, $dossier->token)
                 ->with('info', 'Ce dossier d’instruction est clos : aucune modification n’est possible.');

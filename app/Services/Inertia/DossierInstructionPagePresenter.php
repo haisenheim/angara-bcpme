@@ -638,7 +638,9 @@ class DossierInstructionPagePresenter
         $update = $pieceRoutes['update'];
         $destroy = $pieceRoutes['destroy'];
 
-        return $d->fichiersDossier->map(function ($f) use ($d, $user, $editable, $update, $destroy) {
+        $closedAt = $d->instruction_closure_validated_at ?? $d->instruction_closure_rejected_at;
+
+        return $d->fichiersDossier->map(function ($f) use ($d, $user, $editable, $update, $destroy, $closedAt) {
             $mine = $editable && $f->uploaded_by_user_id && (int) $f->uploaded_by_user_id === (int) $user->id;
 
             return [
@@ -649,6 +651,8 @@ class DossierInstructionPagePresenter
                 'url' => $f->path,
                 'uploadedBy' => $f->uploadedBy?->name,
                 'uploadedAt' => $this->date($f->uploaded_at, true),
+                // Pièce versée après la clôture du dossier (audit, engagements).
+                'afterClosure' => $closedAt && $f->uploaded_at && \Carbon\Carbon::parse($f->uploaded_at)->gt(\Carbon\Carbon::parse($closedAt)),
                 'updateUrl' => $mine && $update && Route::has($update) ? route($update, ['token' => $d->token, 'piece' => $f->id]) : null,
                 'destroyUrl' => $mine && $destroy && Route::has($destroy) ? route($destroy, ['token' => $d->token, 'piece' => $f->id]) : null,
             ];
