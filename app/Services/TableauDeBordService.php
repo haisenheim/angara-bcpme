@@ -213,22 +213,26 @@ class TableauDeBordService
         return $q;
     }
 
+    /**
+     * Périmètre appliqué aux dossiers. Colonnes qualifiées (dossiers.*) : les requêtes de répartition
+     * joignent `entreprises`, qui possède aussi agence_id, gestionnaire_id et created_at.
+     */
     private function applyDossierScope(Builder $q, array $scope): void
     {
         if (! empty($scope['agence_id'])) {
-            $q->where('agence_id', $scope['agence_id']);
+            $q->where($q->qualifyColumn('agence_id'), $scope['agence_id']);
         }
         if (! empty($scope['gestionnaire_id'])) {
-            $q->where('gestionnaire_id', $scope['gestionnaire_id']);
+            $q->where($q->qualifyColumn('gestionnaire_id'), $scope['gestionnaire_id']);
         }
         if (! empty($scope['analyste_id'])) {
-            $q->where('analyste_id', $scope['analyste_id']);
+            $q->where($q->qualifyColumn('analyste_id'), $scope['analyste_id']);
         }
         if (! empty($scope['from'])) {
-            $q->where('created_at', '>=', $this->normalizeDate($scope['from']));
+            $q->where($q->qualifyColumn('created_at'), '>=', $this->normalizeDate($scope['from']));
         }
         if (! empty($scope['to'])) {
-            $q->where('created_at', '<=', $this->normalizeDate($scope['to'])?->endOfDay());
+            $q->where($q->qualifyColumn('created_at'), '<=', $this->normalizeDate($scope['to'])?->endOfDay());
         }
     }
 
@@ -284,7 +288,7 @@ class TableauDeBordService
     {
         $q = Entreprise::query();
         if (! empty($scope['agence_id'])) {
-            $q->where('agence_id', $scope['agence_id']);
+            $q->where('entreprises.agence_id', $scope['agence_id']);
         }
         $q->whereHas('dossiers', function (Builder $qq) use ($scope) {
             $qq->whereNotNull('instruction_agence_validated_at');
