@@ -102,26 +102,24 @@ class GestionnaireEntrepriseActions
             return $row;
         })->values()->all();
 
-        // Avis du gestionnaire par critère (prospect uniquement).
-        if ($item->prospect) {
-            $avisMap = ($item->critereAvis ?? collect())->keyBy('critere_id');
-            $sheet['questionnaire'] = collect($sheet['questionnaire'])->map(function ($q) use ($token, $avisMap) {
-                if (! empty($q['critereId'])) {
-                    $current = $avisMap->get($q['critereId']);
-                    $q['actions'] = [[
-                        'key' => 'avis-critere-'.$q['critereId'],
-                        'label' => $current?->avis ? 'Modifier mon avis' : 'Saisir mon avis', 'icon' => 'rate_review', 'variant' => 'secondary',
-                        'title' => 'Avis du gestionnaire — '.$q['critere'], 'wide' => true,
-                        'description' => 'Laisser le champ vide puis enregistrer supprime l\'avis de ce critère.',
-                        'fields' => [['name' => 'avis', 'label' => 'Avis', 'type' => 'richtext', 'value' => $current?->avis ?? '']],
-                        'submits' => [['label' => 'Enregistrer', 'variant' => 'primary',
-                            'url' => route('gestionnaire.entreprises.prospects.avis-criteres.store', [$token, 'critere_id' => $q['critereId']])]],
-                    ]];
-                }
+        // Avis du gestionnaire par critère (prospect et client).
+        $avisMap = ($item->critereAvis ?? collect())->keyBy('critere_id');
+        $sheet['questionnaire'] = collect($sheet['questionnaire'])->map(function ($q) use ($token, $avisMap) {
+            if (! empty($q['critereId'])) {
+                $current = $avisMap->get($q['critereId']);
+                $q['actions'] = [[
+                    'key' => 'avis-critere-'.$q['critereId'],
+                    'label' => $current?->avis ? 'Modifier mon avis' : 'Saisir mon avis', 'icon' => 'rate_review', 'variant' => 'secondary',
+                    'title' => 'Avis du gestionnaire — '.$q['critere'], 'wide' => true,
+                    'description' => 'Laisser le champ vide puis enregistrer supprime l\'avis de ce critère.',
+                    'fields' => [['name' => 'avis', 'label' => 'Avis', 'type' => 'richtext', 'value' => $current?->avis ?? '']],
+                    'submits' => [['label' => 'Enregistrer', 'variant' => 'primary',
+                        'url' => route('gestionnaire.entreprises.prospects.avis-criteres.store', [$token, 'critere_id' => $q['critereId']])]],
+                ]];
+            }
 
-                return $q;
-            })->values()->all();
-        }
+            return $q;
+        })->values()->all();
 
         return $sheet;
     }

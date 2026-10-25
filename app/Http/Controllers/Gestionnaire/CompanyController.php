@@ -500,9 +500,9 @@ class CompanyController extends ExtendedController
      */
     public function storeProspectCritereAvis(Request $request, string $token)
     {
+        // Prospects et clients : l'avis par critère reste modifiable après le passage en client.
         $item = Entreprise::query()
             ->where('token', $token)
-            ->where('prospect', true)
             ->firstOrFail();
 
         $uid = auth()->id();
@@ -565,6 +565,25 @@ class CompanyController extends ExtendedController
         return redirect()
             ->route('gestionnaire.entreprises.show', $item->token)
             ->with('success', 'Avis enregistré pour ce critère.');
+    }
+
+    /**
+     * Ne garde l'obligation de saisie que pour les champs listés (schéma de formulaire Inertia).
+     *
+     * @param  array<int, array{fields: array}>  $steps
+     * @param  array<int, string>  $keep
+     */
+    private function onlyRequired(array $steps, array $keep): array
+    {
+        return array_map(function (array $step) use ($keep) {
+            $step['fields'] = array_map(function (array $f) use ($keep) {
+                $f['required'] = in_array($f['name'] ?? '', $keep, true);
+
+                return $f;
+            }, $step['fields'] ?? []);
+
+            return $step;
+        }, $steps);
     }
 
     public function fetchAll()
@@ -919,17 +938,28 @@ class CompanyController extends ExtendedController
             return $this->updateProspectDraft($request, $item);
         }
 
+        // Fiche client : complétion progressive, seule la dénomination est obligatoire.
+        $request->validate(['name' => ['required', 'string', 'max:255']], ['name.required' => 'La dénomination est obligatoire.']);
+
         $data = $request->except('_token', 'type_personnel');
-        $type_personnel = $request->type_personnel;
-        $ar = Arrondissement::find($data['arrondissement_id']);
-        $data['departement_id'] = $ar->departement_id;
-        $data['region_id'] = $ar->departement->region_id;
-        $data['personnel_'.$type_personnel] = 1;
+        $ar = ! empty($data['arrondissement_id']) ? Arrondissement::with('departement')->find($data['arrondissement_id']) : null;
+        if ($ar) {
+            $data['departement_id'] = $ar->departement_id;
+            $data['region_id'] = $ar->departement?->region_id;
+        } else {
+            unset($data['arrondissement_id']); // commune non renseignée : localisation existante conservée
+        }
+        $typePersonnel = $request->input('type_personnel');
+        if (in_array($typePersonnel, ['permanent', 'saisonier', 'mixte'], true)) {
+            $data['personnel_permanent'] = $typePersonnel === 'permanent' ? 1 : 0;
+            $data['personnel_saisonier'] = $typePersonnel === 'saisonier' ? 1 : 0;
+            $data['personnel_mixte'] = $typePersonnel === 'mixte' ? 1 : 0;
+        }
         Entreprise::updateOrCreate(['token' => $data['token']], $data);
 
-        Session::flash('success', 'Enregistrement effectué avec succès!');
+        Session::flash('success', 'Fiche client enregistrée.');
 
-        return redirect(route('gestionnaire.entreprises.index'));
+        return redirect()->route('gestionnaire.entreprises.show', $data['token']);
     }
 
     /**
@@ -1463,7 +1493,8 @@ class CompanyController extends ExtendedController
                 'enforceRequired' => true,
                 'submitLabel' => 'Enregistrer les modifications',
                 'cancelHref' => route('gestionnaire.entreprises.show', $item->token),
-                'steps' => app(EntrepriseFormSchema::class)->entrepriseSteps($item, false),
+                // Complétion progressive : seule la dénomination est exigée, les autres champs peuvent rester vides.
+                'steps' => $this->onlyRequired(app(EntrepriseFormSchema::class)->entrepriseSteps($item, false), ['name']),
             ],
             'breadcrumb' => $this->ficheBreadcrumb($item, 'Modifier'),
         ]);
