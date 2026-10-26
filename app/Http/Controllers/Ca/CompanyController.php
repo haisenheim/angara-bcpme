@@ -19,6 +19,7 @@ use App\Models\Region;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\EntrepriseDuplicateGuard;
 use App\Services\Inertia\EntrepriseListPresenter;
 use App\Services\Inertia\EntrepriseShowPage;
 use App\Services\ProspectEntrepriseTableExportService;
@@ -620,7 +621,7 @@ class CompanyController extends Controller
         $data['user_id'] = auth()->user()->id;
         $data['agence_id'] = auth()->user()->agence_id;
         $data['representation_id'] = auth()->user()->representation_id;
-        $entreprise = Entreprise::where('phone', $data['phone'])->orWhere('email', $data['email'])->first();
+        $entreprise = app(EntrepriseDuplicateGuard::class)->findForLinking($data, (int) $request->entreprise_id);
         if (! $entreprise) {
             $entreprise = Entreprise::create($data);
         }

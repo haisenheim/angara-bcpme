@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Engagement\EngagementLigne;
+use App\Services\EntrepriseDuplicateGuard;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,29 @@ class Entreprise extends Model
             'promu_client_at' => 'datetime',
             'prospect_rejected_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Anti-doublon : NIU et RCCM normalisés et uniques sur l'ensemble des clients et prospects,
+     * quel que soit le chemin de création (formulaires, tiers, import).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Entreprise $entreprise) {
+            foreach (array_keys(EntrepriseDuplicateGuard::IDENTIFIERS) as $field) {
+                if ($entreprise->isDirty($field)) {
+                    $entreprise->{$field} = EntrepriseDuplicateGuard::normalize($entreprise->{$field});
+                }
+            }
+
+            if ($entreprise->isDirty(array_keys(EntrepriseDuplicateGuard::IDENTIFIERS))) {
+                app(EntrepriseDuplicateGuard::class)->assertUnique(
+                    $entreprise->isDirty('niu') ? $entreprise->niu : null,
+                    $entreprise->isDirty('rccm') ? $entreprise->rccm : null,
+                    $entreprise->exists ? (int) $entreprise->getKey() : null
+                );
+            }
+        });
     }
 
     public function getRouteKeyName(): string

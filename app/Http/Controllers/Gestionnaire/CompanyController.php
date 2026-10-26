@@ -28,6 +28,7 @@ use App\Models\Service;
 use App\Models\Tier;
 use App\Models\User;
 use App\Services\ClientEntrepriseTableExportService;
+use App\Services\EntrepriseDuplicateGuard;
 use App\Services\Inertia\EntrepriseFormSchema;
 use App\Services\Inertia\EntrepriseListPresenter;
 use App\Services\Inertia\EntrepriseShowPage;
@@ -1358,23 +1359,7 @@ class CompanyController extends ExtendedController
         $linkedExisting = false;
 
         DB::transaction(function () use ($prospectData, $request, $meta, $parentEntreprise, &$linkedExisting) {
-            $entreprise = Entreprise::query()
-                ->where('id', '!=', $parentEntreprise->id)
-                ->where(function ($query) use ($prospectData) {
-                    $hasIdentifier = false;
-
-                    foreach (['rccm', 'niu', 'email', 'phone'] as $field) {
-                        if (! empty($prospectData[$field])) {
-                            $query->orWhere($field, $prospectData[$field]);
-                            $hasIdentifier = true;
-                        }
-                    }
-
-                    if (! $hasIdentifier) {
-                        $query->whereRaw('1 = 0');
-                    }
-                })
-                ->first();
+            $entreprise = app(EntrepriseDuplicateGuard::class)->findForLinking($prospectData, $parentEntreprise->id);
 
             if ($entreprise) {
                 $linkedExisting = true;
