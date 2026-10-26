@@ -42,6 +42,13 @@ class InstructionClosureController extends Controller
             return back();
         }
 
+        $missing = $dossier->missingPrerequisitesForInstructionClosure();
+        if ($missing !== []) {
+            return back()
+                ->withErrors(['instruction_closure_note' => 'Accord impossible : il manque '.implode(', ', $missing).'.'])
+                ->withInput();
+        }
+
         $closedNow = false;
         DB::connection($central)->transaction(function () use ($dossier, $data, &$closedNow, $central) {
             $dLocked = Dossier::on($central)->whereKey($dossier->id)->lockForUpdate()->firstOrFail();

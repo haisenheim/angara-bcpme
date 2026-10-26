@@ -9,6 +9,7 @@ import { computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Icon from '@/Components/ui/Icon.vue';
 import Button from '@/Components/ui/Button.vue';
+import RichTextEditor from '@/Components/ui/RichTextEditor.vue';
 import RejectionBanner from '@/Components/workflow/RejectionBanner.vue';
 
 const props = defineProps({
@@ -21,6 +22,7 @@ const form = useForm({
     dossier_id: props.composer.editDossierId ?? '',
     engagements_sollicites_total: props.composer.values.engagements_sollicites_total ?? '',
     engagements_en_cours_total: props.composer.values.engagements_en_cours_total ?? '',
+    chef_filiere_avis: props.composer.values.chef_filiere_avis ?? '',
     lignes: props.composer.values.lignes.map((l) => ({ ...blankLine(), ...l, programme_id: l.programme_id ?? '' })),
 });
 
@@ -120,6 +122,13 @@ const inputClass = 'w-full rounded-lg border-surface-container-highest text-sm f
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">{{ label }}</div>
                     <div class="text-sm font-bold text-on-surface">{{ fcfa(value) }}</div>
                 </div>
+            </div>
+
+            <!-- Avis du chef de filière : obligatoire avant la soumission au chef d'agence -->
+            <div class="space-y-1.5">
+                <label class="block text-xs font-semibold text-on-surface">Avis du chef de filière<span class="text-error"> *</span></label>
+                <RichTextEditor v-model="form.chef_filiere_avis" word-count />
+                <p v-if="form.errors.chef_filiere_avis" class="text-xs text-error">{{ form.errors.chef_filiere_avis }}</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5">

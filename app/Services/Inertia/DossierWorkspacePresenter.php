@@ -456,7 +456,10 @@ class DossierWorkspacePresenter
                 'variant' => 'primary',
                 'title' => 'Valider la structuration',
                 'description' => 'Confirmez la validation de la structuration soumise par le chef de filière (décision chef d’agence).',
-                'fields' => [['name' => 'closing_note', 'label' => 'Commentaire interne (optionnel)', 'type' => 'textarea', 'required' => false]],
+                'fields' => [
+                    ['name' => 'instruction_agence_ca_avis', 'label' => 'Avis du chef d’agence', 'type' => 'richtext', 'required' => true, 'value' => (string) ($d->instruction_agence_ca_avis ?? '')],
+                    ['name' => 'closing_note', 'label' => 'Commentaire interne (optionnel)', 'type' => 'textarea', 'required' => false],
+                ],
                 'submits' => [['label' => 'Valider la structuration', 'url' => route('ca.workflow.instruction-dossiers.approve', $d->token), 'variant' => 'primary']],
             ];
             $actions[] = [

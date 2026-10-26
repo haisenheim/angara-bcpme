@@ -343,7 +343,17 @@ class ClientController extends Controller
             'lignes.*.budget_appui_non_financier' => 'nullable|numeric|min:0',
             'engagements_sollicites_total' => 'required|numeric|min:0',
             'engagements_en_cours_total' => 'required|numeric|min:0',
+            'chef_filiere_avis' => 'required|string|max:65535',
+        ], [
+            'chef_filiere_avis.required' => 'Votre avis de chef de filière est obligatoire avant la soumission au chef d\'agence.',
         ]);
+
+        if (strlen(trim(strip_tags($validated['chef_filiere_avis']))) === 0) {
+            return redirect()
+                ->route('chef-filiere.clients.show', $token)
+                ->withErrors(['chef_filiere_avis' => 'Votre avis de chef de filière est obligatoire avant la soumission au chef d\'agence.'])
+                ->withInput();
+        }
 
         $lignes = collect($validated['lignes'])
             ->map(function (array $row) {
@@ -517,6 +527,7 @@ class ClientController extends Controller
                     $dossier->update([
                         'chef_filiere_submitted_to_agence_at' => $submittedAt,
                         'chef_filiere_submitted_to_agence_by_user_id' => $submittedByUserId,
+                        'chef_filiere_avis' => $validated['chef_filiere_avis'],
                     ]);
                 });
 

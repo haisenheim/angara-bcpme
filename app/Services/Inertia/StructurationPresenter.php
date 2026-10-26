@@ -128,6 +128,7 @@ class StructurationPresenter
             'values' => [
                 'engagements_sollicites_total' => $edit?->engagements_sollicites_total !== null ? (float) $edit->engagements_sollicites_total : null,
                 'engagements_en_cours_total' => $edit?->engagements_en_cours_total !== null ? (float) $edit->engagements_en_cours_total : null,
+                'chef_filiere_avis' => (string) ($edit?->chef_filiere_avis ?? ''),
                 'lignes' => $lignes ?: [['programme_id' => null, 'budget_appui_financier' => 0, 'budget_appui_non_financier' => 0]],
             ],
         ];

@@ -1475,6 +1475,13 @@ class PortfolioController extends Controller
                 ->withInput();
         }
 
+        if ($validated['decision'] === 'accord' && ! $dossier->hasExploitationAvisCreditFilled()) {
+            return redirect()
+                ->route('respexp.dossiers.show', $token)
+                ->withErrors(['decision' => 'Renseignez et enregistrez votre avis de crédit avant de donner votre accord.'])
+                ->withInput();
+        }
+
         $dossier->exploitation_engagements_decision = $validated['decision'];
         $dossier->exploitation_engagements_decision_comment = $validated['comment'] ?? null;
         $dossier->exploitation_engagements_decision_at = now();

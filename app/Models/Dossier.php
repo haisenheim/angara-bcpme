@@ -753,6 +753,33 @@ class Dossier extends Model
         return $this->direction_rejected_to_risques_at !== null;
     }
 
+    /**
+     * Prérequis manquants avant l'accord de clôture (DG / DGA / délégataire) : le dossier doit avoir
+     * été transmis à la direction et chaque intervenant du circuit doit avoir saisi son avis.
+     * L'avis du chef de filière, exigé à la soumission, n'est pas repris (dossiers antérieurs sans ce champ).
+     *
+     * @return list<string> libellés des éléments manquants (vide = accord possible)
+     */
+    public function missingPrerequisitesForInstructionClosure(): array
+    {
+        $filled = fn (?string $html): bool => strlen(trim(strip_tags((string) $html))) > 0;
+
+        $checks = [
+            'avis du chef d’agence' => $this->hasInstructionAgenceCaAvisSubstance(),
+            'analyse de l’analyste financier' => $this->hasExploitationAnalysteInstructionAvisSubstance(),
+            'avis de crédit du responsable exploitation' => $this->hasExploitationAvisCreditFilled(),
+            'avis de l’analyste juridique' => $this->hasJuridiqueAnalysteAvisFilled(),
+            'avis du responsable juridique' => $this->hasJuridiqueResponsableAvisFilled(),
+            'avis de l’analyste crédit' => $filled($this->reng_analyste_credit_avis),
+            'avis du responsable engagements' => $this->hasRengResponsableAvisFilled(),
+            'avis de l’analyste risques' => $filled($this->rerx_analyste_risques_avis),
+            'avis du responsable risques' => $this->hasRerxResponsableAvisFilled(),
+            'transmission du dossier à la direction par le pôle risques' => $this->isSubmittedToDirectionFromRerx(),
+        ];
+
+        return array_keys(array_filter($checks, fn (bool $ok) => ! $ok));
+    }
+
     public function directionRejectedToRisquesBy()
     {
         return $this->belongsTo(User::class, 'direction_rejected_to_risques_by_user_id');
@@ -1035,7 +1062,13 @@ class Dossier extends Model
             );
         }
 
-        $push($this->chef_filiere_submitted_to_agence_at, 'Transmission du dossier d’instruction au chef d’agence (chef de filière)', $this->chefFiliereSubmittedToAgenceBy, null, 'transmission');
+        $push(
+            $this->chef_filiere_submitted_to_agence_at,
+            'Transmission du dossier d’instruction au chef d’agence (chef de filière)',
+            $this->chefFiliereSubmittedToAgenceBy,
+            $htmlFilled((string) ($this->chef_filiere_avis ?? '')) ? $this->chef_filiere_avis : null,
+            'transmission'
+        );
         $valClotureBody = null;
         if ($this->instruction_agence_closing_note) {
             $valClotureBody = '<p class="mb-0 small"><strong>Note :</strong> '.e($this->instruction_agence_closing_note).'</p>';
@@ -1044,7 +1077,7 @@ class Dossier extends Model
         if ($this->instruction_agence_ca_avis_saved_at && $htmlFilled((string) ($this->instruction_agence_ca_avis ?? ''))) {
             $push(
                 $this->instruction_agence_ca_avis_saved_at,
-                'Avis du chef d’agence (après validation de la transmission)',
+                'Avis du chef d’agence',
                 $this->instructionAgenceCaAvisSavedBy,
                 $this->instruction_agence_ca_avis,
                 'avis'

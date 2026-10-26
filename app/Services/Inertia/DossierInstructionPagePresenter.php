@@ -454,6 +454,9 @@ class DossierInstructionPagePresenter
                         'icon' => 'fact_check',
                         'variant' => 'secondary',
                         'title' => 'Validation du dossier des engagements',
+                        'description' => $d->hasExploitationAvisCreditFilled()
+                            ? null
+                            : 'L’accord n’est possible qu’après l’enregistrement de votre avis de crédit.',
                         'fields' => [
                             ['name' => 'decision', 'label' => 'Décision', 'type' => 'radio', 'required' => true,
                                 'value' => $d->exploitation_engagements_decision,
@@ -559,13 +562,16 @@ class DossierInstructionPagePresenter
         }
 
         if ($canClose && ! $d->isInstructionClosed()) {
+            $missing = $d->missingPrerequisitesForInstructionClosure();
             $actions[] = [
                 'key' => 'close-approve',
                 'label' => 'Accorder et clôturer',
                 'icon' => 'verified',
                 'variant' => 'success',
                 'title' => 'Accorder le dossier',
-                'description' => 'Fin de parcours du dossier d\'instruction au titre de la délégation de pouvoir.',
+                'description' => $missing === []
+                    ? 'Fin de parcours du dossier d\'instruction au titre de la délégation de pouvoir.'
+                    : 'Accord impossible pour l\'instant : tous les intervenants doivent avoir saisi leur avis. Manquant : '.implode(', ', $missing).'.',
                 'fields' => [['name' => 'instruction_closure_note', 'label' => 'Note de clôture', 'type' => 'textarea', 'required' => true]],
                 'submits' => [['label' => 'Accorder', 'url' => route('instruction.dossiers.closure.approve', $d->token), 'variant' => 'success']],
             ];

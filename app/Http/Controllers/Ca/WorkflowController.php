@@ -731,9 +731,18 @@ class WorkflowController extends Controller
 
     public function approveInstructionBundle(Request $request, string $token)
     {
-        $request->validate([
+        $data = $request->validate([
+            'instruction_agence_ca_avis' => 'required|string|max:65535',
             'closing_note' => 'nullable|string|max:5000',
+        ], [
+            'instruction_agence_ca_avis.required' => 'Votre avis de chef d’agence est obligatoire pour valider le dossier.',
         ]);
+
+        if (strlen(trim(strip_tags($data['instruction_agence_ca_avis']))) === 0) {
+            return back()
+                ->withErrors(['instruction_agence_ca_avis' => 'Votre avis de chef d’agence est obligatoire pour valider le dossier.'])
+                ->withInput();
+        }
 
         $central = 'central_app_mysql';
         $dossier = $this->baseInstructionDossierQuery()
@@ -775,7 +784,7 @@ class WorkflowController extends Controller
 
         $validatedNow = false;
 
-        DB::connection($central)->transaction(function () use ($eer, $dossier, &$validatedNow, $central, $request) {
+        DB::connection($central)->transaction(function () use ($eer, $dossier, &$validatedNow, $central, $request, $data) {
             $dLocked = Dossier::on($central)->whereKey($dossier->id)->lockForUpdate()->firstOrFail();
             if ($dLocked->instruction_agence_validated_at !== null || $dLocked->instruction_agence_rejected_at !== null) {
                 return;
@@ -794,6 +803,10 @@ class WorkflowController extends Controller
             $dLocked->instruction_agence_validated_at = now();
             $dLocked->instruction_agence_validated_by_user_id = auth()->id();
             $dLocked->instruction_agence_closing_note = $request->input('closing_note');
+            // L'avis saisi à la validation est celui transmis ensuite au responsable exploitation (modifiable jusqu'à la transmission).
+            $dLocked->instruction_agence_ca_avis = $data['instruction_agence_ca_avis'];
+            $dLocked->instruction_agence_ca_avis_saved_at = now();
+            $dLocked->instruction_agence_ca_avis_saved_by_user_id = auth()->id();
             $dLocked->save();
             $validatedNow = true;
         });
